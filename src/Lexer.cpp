@@ -1,0 +1,93 @@
+#include "Lexer.hpp"
+
+#include <filesystem>
+#include <fstream>
+#include <sstream>
+
+#include "ErrorHandler.hpp"
+
+jl::Lexer::Lexer(std::string& file_path)
+    : m_file_path(file_path)
+{
+    std::ifstream file(file_path);
+
+    if (!file.good()) {
+        ErrorHandler::error(file_path, 0, "File not found");
+        std::exit(1);
+    }
+
+    m_file_size = std::filesystem::file_size(file_path);
+
+    std::ostringstream ss;
+    ss << file.rdbuf();
+    m_source = ss.str();
+}
+
+void jl::Lexer::scan()
+{
+    while (is_at_end()) {
+        start = current;
+        scan_token();
+    }
+}
+
+bool jl::Lexer::is_at_end()
+{
+    return current < m_file_size;
+}
+
+void jl::Lexer::scan_token()
+{
+    char c = advance();
+
+    switch (c) {
+    case '(':
+        add_token(Token::LEFT_PAR);
+        break;
+    case ')':
+        add_token(Token::RIGHT_PAR);
+        break;
+    case '{':
+        add_token(Token::LEFT_BRACE);
+        break;
+    case '}':
+        add_token(Token::RIGHT_BRACE);
+        break;
+    case ',':
+        add_token(Token::COMMA);
+        break;
+    case '.':
+        add_token(Token::DOT);
+        break;
+    case '-':
+        add_token(Token::MINUS);
+        break;
+    case '+':
+        add_token(Token::PLUS);
+        break;
+    case '*':
+        add_token(Token::STAR);
+        break;
+    case ';':
+        add_token(Token::SEMI_COLON);
+        break;
+    case EOF:
+        add_token(Token::END_OF_FILE);
+        break;
+    default:
+        std::string msg = "No such symbol" + c;
+        ErrorHandler::error(m_file_path, line, msg.c_str(), start);
+        break;
+    }
+}
+
+char jl::Lexer::advance()
+{
+    return m_source[current++];
+}
+
+void jl::Lexer::add_token(Token::TokenType type)
+{
+    std::string lexeme = m_source.substr(start, current - start);
+    m_tokens.push_back(Token(type, lexeme, line));
+}
