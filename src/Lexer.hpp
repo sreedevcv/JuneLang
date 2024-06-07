@@ -28,5 +28,6 @@ private:
     void scan_token();
     char advance();
     void add_token(Token::TokenType type);
+    bool match(char expected);
 };
 } // namespace jl

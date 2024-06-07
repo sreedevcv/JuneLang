@@ -25,7 +25,7 @@ jl::Lexer::Lexer(std::string& file_path)
 
 void jl::Lexer::scan()
 {
-    while (is_at_end()) {
+    while (!is_at_end()) {
         start = current;
         scan_token();
     }
@@ -33,7 +33,7 @@ void jl::Lexer::scan()
 
 bool jl::Lexer::is_at_end()
 {
-    return current < m_file_size;
+    return current >= m_file_size;
 }
 
 void jl::Lexer::scan_token()
@@ -71,8 +71,17 @@ void jl::Lexer::scan_token()
     case ';':
         add_token(Token::SEMI_COLON);
         break;
-    case EOF:
-        add_token(Token::END_OF_FILE);
+    case '!':
+        add_token(match('=') ? Token::BANG_EQUAL : Token::BANG);
+        break;
+    case '=':
+        add_token(match('=') ? Token::EQUAL_EQUAL : Token::EQUAL);
+        break;
+    case '<':
+        add_token(match('=') ? Token::LESS_EQUAL : Token::LESS);
+        break;
+    case '>':
+        add_token(match('=') ? Token::GREATER_EQUAL : Token::GREATER);
         break;
     default:
         std::string msg = "No such symbol" + c;
@@ -90,4 +99,15 @@ void jl::Lexer::add_token(Token::TokenType type)
 {
     std::string lexeme = m_source.substr(start, current - start);
     m_tokens.push_back(Token(type, lexeme, line));
+}
+
+bool jl::Lexer::match(char expected)
+{
+    if (is_at_end())
+        return false;
+    if (m_source[current] != expected)
+        return false;
+
+    current++;
+    return true;
 }
