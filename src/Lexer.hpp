@@ -13,6 +13,7 @@ public:
     Lexer(std::string& file_path);
     ~Lexer() = default;
     void scan();
+    std::vector<Token> get_tokens();
 
 private:
     std::string m_file_path;

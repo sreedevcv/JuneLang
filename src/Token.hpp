@@ -57,9 +57,12 @@ public:
     Token(TokenType type, std::string& lexeme, Value value, int line);
     ~Token();
 
+    TokenType get_tokentype() const;
+    const std::string& get_lexeme() const;
+
     private:
         TokenType m_type;
-        std::string m_lexem;
+        std::string m_lexeme;
         int m_line;
         Value m_value;
 };

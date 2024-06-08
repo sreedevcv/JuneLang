@@ -3,6 +3,7 @@
 #include <filesystem>
 #include <fstream>
 #include <sstream>
+#include <string>
 
 #include "ErrorHandler.hpp"
 
@@ -29,6 +30,11 @@ void jl::Lexer::scan()
         start = current;
         scan_token();
     }
+}
+
+std::vector<jl::Token> jl::Lexer::get_tokens()
+{
+    return m_tokens;
 }
 
 bool jl::Lexer::is_at_end()
@@ -84,7 +90,7 @@ void jl::Lexer::scan_token()
         add_token(match('=') ? Token::GREATER_EQUAL : Token::GREATER);
         break;
     default:
-        std::string msg = "No such symbol" + c;
+        std::string msg = "No such symbol" + std::to_string(c);
         ErrorHandler::error(m_file_path, line, msg.c_str(), start);
         break;
     }
