@@ -7,7 +7,7 @@ jl::Token::Token(TokenType type, std::string& lexeme, int line)
 {
 }
 
-jl::Token::Token(TokenType type, std::string& lexeme, Value value, int line)
+jl::Token::Token(TokenType type, std::string& lexeme, int line, Value value)
 : Token(type, lexeme, line)
 {
     m_value = value;
@@ -25,4 +25,19 @@ jl::Token::TokenType jl::Token::get_tokentype() const
 const std::string& jl::Token::get_lexeme() const
 {
     return m_lexeme;
+}
+
+const jl::Token::Value jl::Token::get_value() const
+{
+    return m_value;
+}
+
+int jl::Token::get_int() const
+{
+    return std::get<0>(m_value);
+}
+
+double jl::Token::get_float() const
+{
+    return std::get<1>(m_value);
 }

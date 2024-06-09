@@ -1,15 +1,17 @@
 #include <catch2/catch_test_macros.hpp>
 
-#include "Lexer.hpp"
-#include "Token.hpp"
 #include <string>
 #include <vector>
+#include <iostream>
 
-TEST_CASE("Lexer Scan", "[Lexer]")
+#include "Lexer.hpp"
+#include "Token.hpp"
+
+TEST_CASE("Lexer Scan Basic", "[Lexer]")
 {
     using namespace jl;
 
-    std::string path = "../../tests/scripts/lexer_test.jun";
+    std::string path = "../../tests/scripts/lexer_test_1.jun";
     Lexer lexer(path);
     lexer.scan();
     std::vector<Token> scanned_tokens = lexer.get_tokens();
@@ -19,5 +21,37 @@ TEST_CASE("Lexer Scan", "[Lexer]")
 
     for (int i = 0; i < scanned_tokens.size(); i++) {
         REQUIRE(scanned_tokens[i].get_tokentype() == expected_tokens[i]);
+    }
+}
+
+TEST_CASE("Lexer Scan", "[Lexer]")
+{
+    using namespace jl;
+
+    std::string path = "../../tests/scripts/lexer_test_2.jun";
+    Lexer lexer(path);
+    lexer.scan();
+    std::vector<Token> scanned_tokens = lexer.get_tokens();
+    std::vector<Token::TokenType> expected_tokens = { Token::STAR, Token::STAR, Token::PLUS, Token::MINUS, Token::MINUS, Token::STRING, Token::PLUS, Token::INT, Token::FLOAT, Token::IDENTIFIER, Token::IDENTIFIER, Token::AND, Token::OR, Token::IDENTIFIER, Token::IF };
+
+    REQUIRE(scanned_tokens.size() == expected_tokens.size());
+
+    for (int i = 0; i < scanned_tokens.size(); i++) {
+        REQUIRE(scanned_tokens[i].get_tokentype() == expected_tokens[i]);
+
+        switch (scanned_tokens[i].get_tokentype()) {
+        case Token::STRING:
+            REQUIRE(std::get<std::string>(scanned_tokens[i].get_value()) == "hello+==");
+            break;
+        case Token::INT:
+            REQUIRE(std::get<int>(scanned_tokens[i].get_value()) == 123);
+            break;
+        case Token::FLOAT:
+            std::cout << "MDKMKD:" << std::get<double>(scanned_tokens[i].get_value()) << " " << std::stod("434.534") << std::endl;
+            REQUIRE(std::get<double>(scanned_tokens[i].get_value()) == std::stod("434.534"));
+            break;
+        default:
+            break;
+        }
     }
 }

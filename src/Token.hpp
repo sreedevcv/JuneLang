@@ -33,7 +33,8 @@ public:
         LESS_EQUAL,
         // Literals
         STRING,
-        NUMBER,
+        FLOAT,
+        INT,
         IDENTIFIER,
         // Keywords
         AND,
@@ -51,14 +52,18 @@ public:
         VAR,
     };
 
-    using Value = std::variant<int, float, std::string>;
+    using Value = std::variant<int, double, std::string>;
 
     Token(TokenType type, std::string& lexeme, int line);
-    Token(TokenType type, std::string& lexeme, Value value, int line);
+    Token(TokenType type, std::string& lexeme, int line, Value value);
     ~Token();
 
     TokenType get_tokentype() const;
     const std::string& get_lexeme() const;
+    const Value get_value() const;
+    int get_int() const;
+    double get_float() const;
+    // const 
 
     private:
         TokenType m_type;

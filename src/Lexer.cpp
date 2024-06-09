@@ -27,7 +27,7 @@ jl::Lexer::Lexer(std::string& file_path)
 void jl::Lexer::scan()
 {
     while (!is_at_end()) {
-        start = current;
+        m_start = m_current;
         scan_token();
     }
 }
@@ -39,7 +39,7 @@ std::vector<jl::Token> jl::Lexer::get_tokens()
 
 bool jl::Lexer::is_at_end()
 {
-    return current >= m_file_size;
+    return m_current >= m_file_size;
 }
 
 void jl::Lexer::scan_token()
@@ -89,31 +89,157 @@ void jl::Lexer::scan_token()
     case '>':
         add_token(match('=') ? Token::GREATER_EQUAL : Token::GREATER);
         break;
+    case ' ':
+    case '\t':
+    case '\r':
+        break;
+    case '\n':
+        m_line++;
+        break;
+    case '/':
+        if (match('/')) {
+            while (peek() != '\n' && !is_at_end()) {
+                advance();
+            }
+        } else {
+            add_token(Token::SLASH);
+        }
+        break;
+    case '"':
+        scan_string();
+        break;
     default:
-        std::string msg = "No such symbol" + std::to_string(c);
-        ErrorHandler::error(m_file_path, line, msg.c_str(), start);
+        if (is_digit(c)) {
+            scan_number();
+        } else if (is_alpha(c)) {
+            scan_identifier();
+        } else {
+            std::string msg = "No such symbol" + std::to_string(c);
+            ErrorHandler::error(m_file_path, m_line, msg.c_str(), m_start);
+        }
         break;
     }
 }
 
 char jl::Lexer::advance()
 {
-    return m_source[current++];
+    return m_source[m_current++];
 }
 
 void jl::Lexer::add_token(Token::TokenType type)
 {
-    std::string lexeme = m_source.substr(start, current - start);
-    m_tokens.push_back(Token(type, lexeme, line));
+    std::string lexeme = m_source.substr(m_start, m_current - m_start);
+    m_tokens.push_back(Token(type, lexeme, m_line));
+}
+
+void jl::Lexer::add_token(Token::TokenType type, Token::Value value)
+{
+    std::string lexeme = m_source.substr(m_start, m_current - m_start);
+    m_tokens.push_back(Token(type, lexeme, m_line, value));
 }
 
 bool jl::Lexer::match(char expected)
 {
     if (is_at_end())
         return false;
-    if (m_source[current] != expected)
+    if (m_source[m_current] != expected)
         return false;
 
-    current++;
+    m_current++;
     return true;
+}
+
+char jl::Lexer::peek()
+{
+    if (is_at_end()) {
+        return '\0';
+    }
+
+    return m_source[m_current];
+}
+
+void jl::Lexer::scan_string()
+{
+    while (peek() != '"' && !is_at_end()) {
+        if (peek() == '\n') {
+            m_line++;
+        }
+        advance();
+    }
+
+    if (is_at_end()) {
+        ErrorHandler::error(m_file_path, m_line, "Unterminated string, expected \"", m_current);
+        return;
+    }
+
+    advance(); // Read the ending '"'
+    std::string value = m_source.substr(m_start + 1, (m_current - 1) - (m_start + 1));
+    add_token(Token::STRING, value);
+}
+
+bool jl::Lexer::is_digit(char c)
+{
+    return c >= '0' && c <= '9';
+}
+
+void jl::Lexer::scan_number()
+{
+    bool is_float = false;
+
+    while (is_digit(peek()) && !is_at_end()) {
+        advance();
+    }
+
+    if (peek() == '.') {
+        if (is_digit(peek_next())) {
+            advance();
+            is_float = true;
+            while(is_digit(peek())) {
+                advance();
+            }
+        } else {
+            ErrorHandler::error(m_file_path, m_line, "Expected digits after '.'");
+            return;
+        }
+    }
+
+    if (is_float) {
+        add_token(Token::FLOAT, std::stod(m_source.substr(m_start, m_current - m_start)));
+    } else {
+        add_token(Token::INT, std::stoi(m_source.substr(m_start, m_current - m_start)));
+    }
+}
+
+char jl::Lexer::peek_next()
+{
+    if (m_current + 1 >= m_source.size()) {
+        return '\0';
+    }
+
+    return m_source[m_current + 1];
+}
+
+bool jl::Lexer::is_alpha(char c)
+{
+    return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '_'; 
+}
+
+bool jl::Lexer::is_alphanumeric(char c)
+{
+    return is_digit(c) || is_alpha(c); 
+}
+
+void jl::Lexer::scan_identifier()
+{
+    while (is_alphanumeric(peek())) {
+        advance();
+    }
+
+    std::string lexeme = m_source.substr(m_start, m_current - m_start);
+
+    if (m_reserved_words.contains(lexeme)) {
+        add_token(m_reserved_words[lexeme]);
+    } else {
+        add_token(Token::IDENTIFIER);
+    }
 }
