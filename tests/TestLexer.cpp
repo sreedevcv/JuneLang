@@ -1,13 +1,13 @@
 #include <catch2/catch_test_macros.hpp>
 
+#include <iostream>
 #include <string>
 #include <vector>
-#include <iostream>
 
 #include "Lexer.hpp"
 #include "Token.hpp"
 
-TEST_CASE("Lexer Scan Basic", "[Lexer]")
+TEST_CASE("Lexer Scan 1", "[Lexer]")
 {
     using namespace jl;
 
@@ -24,7 +24,7 @@ TEST_CASE("Lexer Scan Basic", "[Lexer]")
     }
 }
 
-TEST_CASE("Lexer Scan", "[Lexer]")
+TEST_CASE("Lexer Scan 2", "[Lexer]")
 {
     using namespace jl;
 
@@ -53,5 +53,22 @@ TEST_CASE("Lexer Scan", "[Lexer]")
         default:
             break;
         }
+    }
+}
+
+TEST_CASE("Lexer Keyword Scan", "[Lexer]")
+{
+    using namespace jl;
+
+    std::string path = "../../tests/scripts/lexer_test_3.jun";
+    Lexer lexer(path);
+    lexer.scan();
+    std::vector<Token> scanned_tokens = lexer.get_tokens();
+    std::vector<Token::TokenType> expected_tokens = { Token::IDENTIFIER, Token::FOR, Token::IDENTIFIER, Token::IF, Token::AND, Token::IDENTIFIER, Token::OR, Token::IDENTIFIER, Token::NOT, Token::INT, Token::WHILE, Token::THEN, Token::END, Token::FLOAT, Token::TRUE, Token::IDENTIFIER, Token::IDENTIFIER, Token::FALSE, Token::LEFT_PAR, Token::RIGHT_PAR, Token::LEFT_BRACE, Token::RIGHT_BRACE, Token::RETURN, Token::VAR };
+
+    REQUIRE(scanned_tokens.size() == expected_tokens.size());
+
+    for (int i = 0; i < scanned_tokens.size(); i++) {
+        REQUIRE(scanned_tokens[i].get_tokentype() == expected_tokens[i]);
     }
 }
