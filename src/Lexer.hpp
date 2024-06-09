@@ -5,6 +5,7 @@
 #include <vector>
 
 #include "Token.hpp"
+#include "Expr.hpp"
 
 namespace jl {
 class Lexer {
@@ -55,6 +56,7 @@ private:
         { "false", Token::FALSE },
         { "return", Token::RETURN },
         { "var", Token::VAR },
+        { "null", Token::NULL_ },
     };
 };
 } // namespace jl

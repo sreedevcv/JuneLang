@@ -50,6 +50,7 @@ public:
         FALSE,
         RETURN,
         VAR,
+        NULL_,
     };
 
     using Value = std::variant<int, double, std::string>;

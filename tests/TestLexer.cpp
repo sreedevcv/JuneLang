@@ -47,7 +47,6 @@ TEST_CASE("Lexer Scan 2", "[Lexer]")
             REQUIRE(std::get<int>(scanned_tokens[i].get_value()) == 123);
             break;
         case Token::FLOAT:
-            std::cout << "MDKMKD:" << std::get<double>(scanned_tokens[i].get_value()) << " " << std::stod("434.534") << std::endl;
             REQUIRE(std::get<double>(scanned_tokens[i].get_value()) == std::stod("434.534"));
             break;
         default:
@@ -64,7 +63,7 @@ TEST_CASE("Lexer Keyword Scan", "[Lexer]")
     Lexer lexer(path);
     lexer.scan();
     std::vector<Token> scanned_tokens = lexer.get_tokens();
-    std::vector<Token::TokenType> expected_tokens = { Token::IDENTIFIER, Token::FOR, Token::IDENTIFIER, Token::IF, Token::AND, Token::IDENTIFIER, Token::OR, Token::IDENTIFIER, Token::NOT, Token::INT, Token::WHILE, Token::THEN, Token::END, Token::FLOAT, Token::TRUE, Token::IDENTIFIER, Token::IDENTIFIER, Token::FALSE, Token::LEFT_PAR, Token::RIGHT_PAR, Token::LEFT_BRACE, Token::RIGHT_BRACE, Token::RETURN, Token::VAR };
+    std::vector<Token::TokenType> expected_tokens = { Token::IDENTIFIER, Token::FOR, Token::IDENTIFIER, Token::IF, Token::AND, Token::IDENTIFIER, Token::OR, Token::IDENTIFIER, Token::NOT, Token::INT, Token::WHILE, Token::THEN, Token::END, Token::FLOAT, Token::TRUE, Token::IDENTIFIER, Token::IDENTIFIER, Token::FALSE, Token::LEFT_PAR, Token::RIGHT_PAR, Token::LEFT_BRACE, Token::RIGHT_BRACE, Token::RETURN, Token::VAR, Token::NULL_ };
 
     REQUIRE(scanned_tokens.size() == expected_tokens.size());
 

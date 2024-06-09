@@ -1,5 +1,7 @@
 #include "Token.hpp"
 
+#include "Expr.hpp"
+
 jl::Token::Token(TokenType type, std::string& lexeme, int line)
     : m_type(type)
     , m_lexeme(lexeme)

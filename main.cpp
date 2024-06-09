@@ -1,14 +1,23 @@
 #include <iostream>
 
-#include "Lexer.hpp"
+#include "Expr.hpp"
 
 int main()
 {
     std::cout << "Hello World\n";
+    jl::Token::TokenType t1 = jl::Token::TokenType::INT;
+    jl::Token::TokenType t2 = jl::Token::TokenType::FLOAT;
+    jl::Token::TokenType t3 = jl::Token::TokenType::PLUS;
+    std::string lx = "+";
+    jl::Token::Value v1(123);
+    jl::Token::Value v2(43.43);
+    jl::Expr* l1 = new jl::Literal(v1, t1);
+    jl::Expr* l2 = new jl::Literal(v2, t2);
+    jl::Token tok = jl::Token(t3, lx, 1);
+    jl::Binary b1(*l1, tok, *l2);
 
-    std::string file_name = "../tests/scripts/lexer_test_2.jun";
-    jl::Lexer lexer(file_name);
-    lexer.scan();
+    jl::Unary u(tok, b1);
 
-    std::cout << lexer.get_tokens().size() << "\n";
+    jl::IExprVisitor* visitor = new jl::ParsetreePrinter();
+    u.accept(*visitor);
 }
