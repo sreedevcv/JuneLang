@@ -43,3 +43,8 @@ double jl::Token::get_float() const
 {
     return std::get<1>(m_value);
 }
+
+int jl::Token::get_line() const
+{
+    return m_line;
+}

@@ -30,6 +30,8 @@ void jl::Lexer::scan()
         m_start = m_current;
         scan_token();
     }
+
+    add_token(Token::END_OF_FILE);
 }
 
 std::vector<jl::Token> jl::Lexer::get_tokens()

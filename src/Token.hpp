@@ -53,7 +53,7 @@ public:
         NULL_,
     };
 
-    using Value = std::variant<int, double, std::string>;
+    using Value = std::variant<int, double, bool, std::string>;
 
     Token(TokenType type, std::string& lexeme, int line);
     Token(TokenType type, std::string& lexeme, int line, Value value);
@@ -64,8 +64,8 @@ public:
     const Value get_value() const;
     int get_int() const;
     double get_float() const;
-    // const 
-
+    int get_line() const;
+    
     private:
         TokenType m_type;
         std::string m_lexeme;

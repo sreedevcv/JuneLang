@@ -15,11 +15,11 @@ class Literal;
 
 class IExprVisitor {
 public:
-    virtual void visitAssignExpr(Assign* expr, void* context) = 0;
-    virtual void visitBinaryExpr(Binary* expr, void* context) = 0;
-    virtual void visitGroupingExpr(Grouping* expr, void* context) = 0;
-    virtual void visitUnaryExpr(Unary* expr, void* context) = 0;
-    virtual void visitLiteralExpr(Literal* expr, void* context) = 0;
+    virtual void visit_assign_expr(Assign* expr, void* context) = 0;
+    virtual void visit_binary_expr(Binary* expr, void* context) = 0;
+    virtual void visit_grouping_expr(Grouping* expr, void* context) = 0;
+    virtual void visit_unary_expr(Unary* expr, void* context) = 0;
+    virtual void visit_literal_expr(Literal* expr, void* context) = 0;
 
     virtual void* get_context() = 0;
 };
@@ -33,7 +33,7 @@ class Assign : public Expr {
 public:
     inline virtual void accept(IExprVisitor& visitor, void* context) override
     {
-        visitor.visitAssignExpr(this, context);
+        visitor.visit_assign_expr(this, context);
     }
 };
 
@@ -52,7 +52,7 @@ public:
 
     inline virtual void accept(IExprVisitor& visitor, void* context) override
     {
-        visitor.visitBinaryExpr(this, context);
+        visitor.visit_binary_expr(this, context);
     }
 };
 
@@ -66,7 +66,7 @@ public:
     }
     inline virtual void accept(IExprVisitor& visitor, void* context) override
     {
-        visitor.visitGroupingExpr(this, context);
+        visitor.visit_grouping_expr(this, context);
     }
 };
 
@@ -83,7 +83,7 @@ public:
 
     inline virtual void accept(IExprVisitor& visitor, void* context) override
     {
-        visitor.visitLiteralExpr(this, context);
+        visitor.visit_literal_expr(this, context);
     }
 };
 
@@ -100,7 +100,7 @@ public:
 
     inline virtual void accept(IExprVisitor& visitor, void* context) override
     {
-        visitor.visitUnaryExpr(this, context);
+        visitor.visit_unary_expr(this, context);
     }
 };
 
@@ -109,21 +109,22 @@ class ParsetreePrinter : public IExprVisitor {
 public:
     std::string context;
 
-    inline void visitAssignExpr(Assign* expr, void* context) override
+    inline void visit_assign_expr(Assign* expr, void* context) override
     {
     }
-    inline void visitBinaryExpr(Binary* expr, void* context) override
+    inline void visit_binary_expr(Binary* expr, void* context) override
     {
         parenthesize(expr->m_oper->get_lexeme(), { expr->m_left, expr->m_right });
     }
-    inline void visitGroupingExpr(Grouping* expr, void* context) override
+    inline void visit_grouping_expr(Grouping* expr, void* context) override
     {
+        parenthesize("group", {expr->m_expr});
     }
-    inline void visitUnaryExpr(Unary* expr, void* context) override
+    inline void visit_unary_expr(Unary* expr, void* context) override
     {
         parenthesize(expr->m_oper->get_lexeme(), { expr->m_expr });
     }
-    inline void visitLiteralExpr(Literal* expr, void* context) override
+    inline void visit_literal_expr(Literal* expr, void* context) override
     {
         std::string* cntx = reinterpret_cast<std::string*>(context);
 
