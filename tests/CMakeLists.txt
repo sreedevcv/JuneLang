@@ -1,14 +1,14 @@
 include(AddCatch2)
 
 add_executable(unit_tests 
-    # TestMain.cpp
+    TestMain.cpp
     TestLexer.cpp
+    TestParser.cpp
 )
 
 target_link_libraries(unit_tests PRIVATE 
     Catch2::Catch2WithMain
     JuneInterpreter
-    # Catch2::Catch2WithMain
 )
 
 include(CTest)

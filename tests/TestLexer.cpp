@@ -15,7 +15,7 @@ TEST_CASE("Lexer Scan 1", "[Lexer]")
     Lexer lexer(path);
     lexer.scan();
     std::vector<Token> scanned_tokens = lexer.get_tokens();
-    std::vector<Token::TokenType> expected_tokens = { Token::STAR, Token::EQUAL, Token::PLUS, Token::BANG, Token::MINUS, Token::SEMI_COLON, Token::LESS, Token::GREATER, Token::LESS_EQUAL, Token::GREATER_EQUAL, Token::BANG_EQUAL, Token::EQUAL_EQUAL };
+    std::vector<Token::TokenType> expected_tokens = { Token::STAR, Token::EQUAL, Token::PLUS, Token::BANG, Token::MINUS, Token::SEMI_COLON, Token::LESS, Token::GREATER, Token::LESS_EQUAL, Token::GREATER_EQUAL, Token::BANG_EQUAL, Token::EQUAL_EQUAL, Token::END_OF_FILE };
 
     REQUIRE(scanned_tokens.size() == expected_tokens.size());
 
@@ -32,7 +32,7 @@ TEST_CASE("Lexer Scan 2", "[Lexer]")
     Lexer lexer(path);
     lexer.scan();
     std::vector<Token> scanned_tokens = lexer.get_tokens();
-    std::vector<Token::TokenType> expected_tokens = { Token::STAR, Token::STAR, Token::PLUS, Token::MINUS, Token::MINUS, Token::STRING, Token::PLUS, Token::INT, Token::FLOAT, Token::IDENTIFIER, Token::IDENTIFIER, Token::AND, Token::OR, Token::IDENTIFIER, Token::IF };
+    std::vector<Token::TokenType> expected_tokens = { Token::STAR, Token::STAR, Token::PLUS, Token::MINUS, Token::MINUS, Token::STRING, Token::PLUS, Token::INT, Token::FLOAT, Token::IDENTIFIER, Token::IDENTIFIER, Token::AND, Token::OR, Token::IDENTIFIER, Token::IF, Token::END_OF_FILE };
 
     REQUIRE(scanned_tokens.size() == expected_tokens.size());
 
@@ -63,7 +63,7 @@ TEST_CASE("Lexer Keyword Scan", "[Lexer]")
     Lexer lexer(path);
     lexer.scan();
     std::vector<Token> scanned_tokens = lexer.get_tokens();
-    std::vector<Token::TokenType> expected_tokens = { Token::IDENTIFIER, Token::FOR, Token::IDENTIFIER, Token::IF, Token::AND, Token::IDENTIFIER, Token::OR, Token::IDENTIFIER, Token::NOT, Token::INT, Token::WHILE, Token::THEN, Token::END, Token::FLOAT, Token::TRUE, Token::IDENTIFIER, Token::IDENTIFIER, Token::FALSE, Token::LEFT_PAR, Token::RIGHT_PAR, Token::LEFT_BRACE, Token::RIGHT_BRACE, Token::RETURN, Token::VAR, Token::NULL_ };
+    std::vector<Token::TokenType> expected_tokens = { Token::IDENTIFIER, Token::FOR, Token::IDENTIFIER, Token::IF, Token::AND, Token::IDENTIFIER, Token::OR, Token::IDENTIFIER, Token::NOT, Token::INT, Token::WHILE, Token::THEN, Token::END, Token::FLOAT, Token::TRUE, Token::IDENTIFIER, Token::IDENTIFIER, Token::FALSE, Token::LEFT_PAR, Token::RIGHT_PAR, Token::LEFT_BRACE, Token::RIGHT_BRACE, Token::RETURN, Token::VAR, Token::NULL_, Token::END_OF_FILE };
 
     REQUIRE(scanned_tokens.size() == expected_tokens.size());
 

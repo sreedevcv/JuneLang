@@ -8,19 +8,6 @@
 int main()
 {
     std::cout << "Hello World\n";
-    // jl::Token::TokenType t1 = jl::Token::TokenType::INT;
-    // jl::Token::TokenType t2 = jl::Token::TokenType::FLOAT;
-    // jl::Token::TokenType t3 = jl::Token::TokenType::PLUS;
-    // std::string lx = "+";
-    // jl::Unary u(new jl::Token(t3, lx, 1),
-    //     new jl::Binary(
-    //         new jl::Literal(new jl::Token::Value(123), t1),
-    //         new jl::Token(t3, lx, 1),
-    //         new jl::Literal(new jl::Token::Value(12.5), t2)));
-    // jl::IExprVisitor* visitor = new jl::ParsetreePrinter();
-    // u.accept(*visitor, visitor->get_context());
-    // std::string* context = (std::string*)visitor->get_context();
-    // std::cout << *context << "\n";
     std::string file = "../tests/scripts/parser_test_1.jun";
     jl::Lexer lexer(file);
 
