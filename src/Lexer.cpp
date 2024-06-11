@@ -7,6 +7,12 @@
 
 #include "ErrorHandler.hpp"
 
+jl::Lexer::Lexer(const char* source)
+{
+    m_source = source;
+    m_file_path = "REPL";
+}
+
 jl::Lexer::Lexer(std::string& file_path)
     : m_file_path(file_path)
 {
@@ -17,7 +23,7 @@ jl::Lexer::Lexer(std::string& file_path)
         std::exit(1);
     }
 
-    m_file_size = std::filesystem::file_size(file_path);
+    // m_file_size = std::filesystem::file_size(file_path);
 
     std::ostringstream ss;
     ss << file.rdbuf();
@@ -41,7 +47,7 @@ std::vector<jl::Token> jl::Lexer::get_tokens()
 
 bool jl::Lexer::is_at_end()
 {
-    return m_current >= m_file_size;
+    return m_current >= m_source.size();
 }
 
 void jl::Lexer::scan_token()

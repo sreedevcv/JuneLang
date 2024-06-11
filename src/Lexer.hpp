@@ -10,6 +10,7 @@
 namespace jl {
 class Lexer {
 public:
+    Lexer(const char* source);
     Lexer(std::string& file_path);
     ~Lexer() = default;
     void scan();
@@ -23,7 +24,7 @@ private:
     int m_line = 1;
     int m_current = 0;
     int m_start = 0;
-    int m_file_size = 0;
+    // int m_file_size = 0;
 
     bool match(char expected);
     bool is_at_end();
