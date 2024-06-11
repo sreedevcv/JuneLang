@@ -34,17 +34,37 @@ const jl::Token::Value jl::Token::get_value() const
     return m_value;
 }
 
-int jl::Token::get_int() const
-{
-    return std::get<0>(m_value);
-}
-
-double jl::Token::get_float() const
-{
-    return std::get<1>(m_value);
-}
-
 int jl::Token::get_line() const
 {
     return m_line;
+}
+
+bool jl::is_int(jl::Token::Value& value)
+{
+    return value.index() == 0;
+}
+
+bool jl::is_float(jl::Token::Value& value)
+{
+    return value.index() == 1;
+}
+
+bool jl::is_bool(jl::Token::Value& value)
+{
+    return value.index() == 2;
+}
+
+bool jl::is_string(jl::Token::Value& value)
+{
+    return value.index() == 3;
+}
+
+bool jl::is_null(jl::Token::Value& value)
+{
+    return value.index() == 4;
+}
+
+bool jl::is_number(Token::Value& value)
+{
+    return is_int(value) || is_float(value);
 }

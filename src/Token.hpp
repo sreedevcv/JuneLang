@@ -53,7 +53,7 @@ public:
         NULL_,
     };
 
-    using Value = std::variant<int, double, bool, std::string>;
+    using Value = std::variant<int, double, bool, std::string, char>;
 
     Token(TokenType type, std::string& lexeme, int line);
     Token(TokenType type, std::string& lexeme, int line, Value value);
@@ -62,8 +62,6 @@ public:
     TokenType get_tokentype() const;
     const std::string& get_lexeme() const;
     const Value get_value() const;
-    int get_int() const;
-    double get_float() const;
     int get_line() const;
     
     private:
@@ -72,4 +70,12 @@ public:
         int m_line;
         Value m_value;
 };
+
+bool is_int(Token::Value& value);
+bool is_float(Token::Value& value);
+bool is_bool(Token::Value& value);
+bool is_string(Token::Value& value);
+bool is_null(Token::Value& value);
+bool is_number(Token::Value& value);
+
 } // namespace jl
