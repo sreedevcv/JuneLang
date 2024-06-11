@@ -240,7 +240,15 @@ void jl::Lexer::scan_identifier()
     std::string lexeme = m_source.substr(m_start, m_current - m_start);
 
     if (m_reserved_words.contains(lexeme)) {
-        add_token(m_reserved_words[lexeme]);
+        if (lexeme == "true") {
+            add_token(Token::TRUE, true);
+        } else if (lexeme == "false") {
+            add_token(Token::FALSE, false);
+        } else if (lexeme == "null") {
+            add_token(Token::NULL_, '\0');
+        } else {
+            add_token(m_reserved_words[lexeme]);
+        }
     } else {
         add_token(Token::IDENTIFIER);
     }
