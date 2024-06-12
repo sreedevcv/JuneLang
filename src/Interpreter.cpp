@@ -2,12 +2,12 @@
 
 #include "ErrorHandler.hpp"
 
-void jl::Interpreter::interpret(Expr* expr)
+void jl::Interpreter::interpret(Expr* expr, Token::Value* value)
 {
     try {
         Token::Value context;
         evaluate(expr, &context);
-        std::cout << stringify(context) << "\n";
+        *value = context;
     } catch (const char *exc) {
         std::cout << ErrorHandler::get_error_count() << " Errors ocuured" << std::endl;
     }

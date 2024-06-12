@@ -10,7 +10,8 @@ public:
     Interpreter() = default;
     ~Interpreter() = default;
 
-    void interpret(Expr* expr);
+    void interpret(Expr* expr, Token::Value* value = nullptr);
+    std::string stringify(Token::Value& value);
 
 private:
     virtual void visit_assign_expr(Assign* expr, void* context) override;
@@ -28,6 +29,5 @@ private:
     void do_arith_operation(Token::Value& left, Token::Value& right, void *context, Op op);
     void append_strings(Token::Value& left, Token::Value& right, void* context);
     bool is_equal(Token::Value& left, Token::Value& right);
-    std::string stringify(Token::Value& value);
 };
 } // namespace jl
