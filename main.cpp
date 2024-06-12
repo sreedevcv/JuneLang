@@ -26,7 +26,8 @@ int main()
     // }
 
 
-    jl::Lexer lexer("(1 + 2) * 6 == 18");
+    // jl::Lexer lexer("(1 + 2) * 6 + \"18\"");
+    jl::Lexer lexer("\"hello \" + \"hai\"");
     lexer.scan();
 
     if (!jl::ErrorHandler::has_error()) {
@@ -37,12 +38,9 @@ int main()
         if (e == nullptr)
             return 0;
 
-        // jl::IExprVisitor* visitor = new jl::ParsetreePrinter();
-        // e->accept(*visitor, visitor->get_context());
-        // std::string* context = (std::string*)visitor->get_context();
-        // std::cout << *context << "\n";
-
+        jl::Token::Value v;
         jl::Interpreter interpreter;
-        interpreter.interpret(e);
+        interpreter.interpret(e, &v);
+        std::cout << interpreter.stringify(v) << "\n";
     }
 }

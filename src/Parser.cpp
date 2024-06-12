@@ -81,32 +81,9 @@ jl::Expr* jl::Parser::unary()
 
 jl::Expr* jl::Parser::primary()
 {
-    if (match({ Token::FALSE })) {
-        Token::Value* value = new Token::Value(false);
-        return new Literal(value, Token::FALSE);
-    }
-    if (match({ Token::TRUE })) {
-        Token::Value* value = new Token::Value(true);
-        return new Literal(value, Token::TRUE);
-    }
-    if (match({ Token::NULL_ })) {
-        // TODO::Refactor Token::Value to handle null
-        Token::Value* value = new Token::Value(false);
-        return new Literal(value, Token::NULL_);
-    }
-
-    // TODO::Refactor Token::Value to remove these ugly branches
-    if (match({ Token::INT })) {
+    if (match({ Token::INT, Token::FLOAT, Token::STRING, Token::FALSE, Token::TRUE, Token::NULL_ })) {
         Token::Value* value = new Token::Value(previous().get_value());
-        return new Literal(value, Token::INT);
-    }
-    if (match({ Token::FLOAT })) {
-        Token::Value* value = new Token::Value(previous().get_value());
-        return new Literal(value, Token::FLOAT);
-    }
-    if (match({ Token::STRING })) {
-        Token::Value* value = new Token::Value(previous().get_value());
-        return new Literal(value, Token::STRING);
+        return new Literal(value);
     }
 
     if (match({ Token::LEFT_PAR })) {
