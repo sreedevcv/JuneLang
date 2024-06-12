@@ -73,11 +73,9 @@ public:
 class Literal : public Expr {
 public:
     Token::Value* m_value;
-    Token::TokenType m_type;
 
-    inline Literal(Token::Value* value, Token::TokenType type)
+    inline Literal(Token::Value* value)
         : m_value(value)
-        , m_type(type)
     {
     }
 
@@ -104,7 +102,6 @@ public:
     }
 };
 
-
 class ParsetreePrinter : public IExprVisitor {
 public:
     std::string context;
@@ -118,7 +115,7 @@ public:
     }
     inline void visit_grouping_expr(Grouping* expr, void* context) override
     {
-        parenthesize("group", {expr->m_expr});
+        parenthesize("group", { expr->m_expr });
     }
     inline void visit_unary_expr(Unary* expr, void* context) override
     {
@@ -127,20 +124,13 @@ public:
     inline void visit_literal_expr(Literal* expr, void* context) override
     {
         std::string* cntx = reinterpret_cast<std::string*>(context);
-
-        switch (expr->m_type) {
-        case Token::INT:
-            cntx->append(std::to_string(std::get<int>(*(expr->m_value))));
-            break;
-        case Token::FLOAT:
+        if (is_int(*expr->m_value)) {
+            cntx->append(std::to_string(std::get<int>(*expr->m_value)));
+        } else if (is_float(*expr->m_value)) {
             cntx->append(std::to_string(std::get<double>(*(expr->m_value))));
-            break;
-        case Token::STRING:
+        } else if (is_string(*expr->m_value)) {
             cntx->append(std::get<std::string>(*(expr->m_value)));
-            break;
-
-        default:
-            break;
+        } else {
         }
     }
 
