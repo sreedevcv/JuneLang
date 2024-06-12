@@ -32,7 +32,13 @@ TEST_CASE("Lexer Scan 2", "[Lexer]")
     Lexer lexer(path);
     lexer.scan();
     std::vector<Token> scanned_tokens = lexer.get_tokens();
-    std::vector<Token::TokenType> expected_tokens = { Token::STAR, Token::STAR, Token::PLUS, Token::MINUS, Token::MINUS, Token::STRING, Token::PLUS, Token::INT, Token::FLOAT, Token::IDENTIFIER, Token::IDENTIFIER, Token::AND, Token::OR, Token::IDENTIFIER, Token::IF, Token::END_OF_FILE };
+    std::vector<Token::TokenType> expected_tokens = { Token::STAR, Token::STAR, Token::PLUS, Token::MINUS, Token::NEW_LINE, Token::NEW_LINE, Token::NEW_LINE,
+        Token::NEW_LINE, Token::NEW_LINE, Token::MINUS, Token::NEW_LINE,
+        Token::STRING, Token::NEW_LINE, Token::NEW_LINE, Token::PLUS, Token::NEW_LINE,
+        Token::NEW_LINE, Token::INT, Token::NEW_LINE, Token::FLOAT, Token::NEW_LINE,
+        Token::NEW_LINE, Token::IDENTIFIER, Token::IDENTIFIER, Token::AND, Token::OR, Token::NEW_LINE,
+        Token::IDENTIFIER, Token::IF, Token::NEW_LINE,
+        Token::END_OF_FILE };
 
     REQUIRE(scanned_tokens.size() == expected_tokens.size());
 
@@ -63,7 +69,7 @@ TEST_CASE("Lexer Keyword Scan", "[Lexer]")
     Lexer lexer(path);
     lexer.scan();
     std::vector<Token> scanned_tokens = lexer.get_tokens();
-    std::vector<Token::TokenType> expected_tokens = { Token::IDENTIFIER, Token::FOR, Token::IDENTIFIER, Token::IF, Token::AND, Token::IDENTIFIER, Token::OR, Token::IDENTIFIER, Token::NOT, Token::INT, Token::WHILE, Token::THEN, Token::END, Token::FLOAT, Token::TRUE, Token::IDENTIFIER, Token::IDENTIFIER, Token::FALSE, Token::LEFT_PAR, Token::RIGHT_PAR, Token::LEFT_BRACE, Token::RIGHT_BRACE, Token::RETURN, Token::VAR, Token::NULL_, Token::END_OF_FILE };
+    std::vector<Token::TokenType> expected_tokens = { Token::IDENTIFIER, Token::FOR, Token::IDENTIFIER, Token::IF, Token::NEW_LINE, Token::AND, Token::IDENTIFIER, Token::OR, Token::IDENTIFIER, Token::NOT, Token::NEW_LINE, Token::INT, Token::WHILE, Token::NEW_LINE, Token::THEN, Token::END, Token::FLOAT, Token::TRUE, Token::IDENTIFIER, Token::NEW_LINE, Token::IDENTIFIER, Token::FALSE, Token::LEFT_PAR, Token::RIGHT_PAR, Token::LEFT_BRACE, Token::RIGHT_BRACE, Token::RETURN, Token::VAR, Token::NEW_LINE, Token::NULL_, Token::NEW_LINE, Token::NEW_LINE, Token::END_OF_FILE };
 
     REQUIRE(scanned_tokens.size() == expected_tokens.size());
 

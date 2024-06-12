@@ -82,6 +82,10 @@ void jl::Lexer::scan_token()
     case '*':
         add_token(Token::STAR);
         break;
+    case '\n':
+        add_token(Token::NEW_LINE);
+        m_line++;
+        break;
     case ';':
         add_token(Token::SEMI_COLON);
         break;
@@ -101,9 +105,7 @@ void jl::Lexer::scan_token()
     case '\t':
     case '\r':
         break;
-    case '\n':
-        m_line++;
-        break;
+
     case '/':
         if (match('/')) {
             while (peek() != '\n' && !is_at_end()) {
@@ -202,7 +204,7 @@ void jl::Lexer::scan_number()
         if (is_digit(peek_next())) {
             advance();
             is_float = true;
-            while(is_digit(peek())) {
+            while (is_digit(peek())) {
                 advance();
             }
         } else {
@@ -229,12 +231,12 @@ char jl::Lexer::peek_next()
 
 bool jl::Lexer::is_alpha(char c)
 {
-    return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '_'; 
+    return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '_';
 }
 
 bool jl::Lexer::is_alphanumeric(char c)
 {
-    return is_digit(c) || is_alpha(c); 
+    return is_digit(c) || is_alpha(c);
 }
 
 void jl::Lexer::scan_identifier()
