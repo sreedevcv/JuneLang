@@ -12,6 +12,13 @@ jl::Environment::Environment(Environment* enclosing)
 {
 }
 
+jl::Environment::~Environment()
+{
+    if (m_enclosing != nullptr) {
+        delete m_enclosing;
+    }
+}
+
 void jl::Environment::define(const std::string& name, const Token::Value& value)
 {
     if (!m_values.contains(name)) {

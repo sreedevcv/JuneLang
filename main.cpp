@@ -11,12 +11,30 @@ int main()
     // std::cout << "Hello World\n";
 
     jl::Lexer lexer(
-    R"(var a = 1.0
-        var b = 2.5
-        var c = 2
-        c = (a + b)*c 
-        print c)"
-    );
+        R"(
+
+            var a = "global a"
+            var b = "global b"
+            var c = "global c"
+            [
+            var a = "outer a"
+            var b = "outer b"
+            [
+                var a = "inner a"
+                print a
+                print b
+                print c
+            ]
+            print a
+            print b
+            print c
+            ]
+            print a
+            print b
+            print c
+            print a + "-" + b + "-" + c
+
+    )");
     // jl::Lexer lexer("\"hello \" + \"hai\"");
     // lexer.scan();
 
@@ -24,11 +42,11 @@ int main()
         lexer.scan();
         auto tokens = lexer.get_tokens();
         jl::Parser parser(tokens);
-        auto toks = parser.parseStatements();
+        auto stmts = parser.parseStatements();
 
         jl::Token::Value v;
         jl::Interpreter interpreter;
-        interpreter.interpret(toks);
+        interpreter.interpret(stmts);
         // std::cout << interpreter.stringify(v) << "\n";
     }
 }

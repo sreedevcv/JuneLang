@@ -2,6 +2,16 @@
 
 #include "ErrorHandler.hpp"
 
+jl::Interpreter::Interpreter()
+    : m_env(new Environment(nullptr))
+{
+}
+
+jl::Interpreter::~Interpreter()
+{
+    delete m_env;
+}
+
 void jl::Interpreter::interpret(Expr* expr, Token::Value* value)
 {
     try {
@@ -25,10 +35,14 @@ void jl::Interpreter::interpret(std::vector<Stmt*>& statements)
     }
 }
 
+// --------------------------------------------------------------------------------
+// -------------------------------Expressions--------------------------------------
+// --------------------------------------------------------------------------------
+
 void jl::Interpreter::visit_assign_expr(Assign* expr, void* context)
 {
     evaluate(expr->m_expr, context);
-    env.assign(expr->m_token, *static_cast<Token::Value*>(context));
+    m_env->assign(expr->m_token, *static_cast<Token::Value*>(context));
 }
 
 void jl::Interpreter::visit_binary_expr(Binary* expr, void* context)
@@ -157,7 +171,7 @@ void jl::Interpreter::visit_literal_expr(Literal* expr, void* context)
 // Returns the token value as the context
 void jl::Interpreter::visit_variable_expr(Variable* expr, void* context)
 {
-    *static_cast<Token::Value*>(context) = env.get(expr->m_name);
+    *static_cast<Token::Value*>(context) = m_env->get(expr->m_name);
 }
 
 void* jl::Interpreter::get_expr_context()
@@ -165,11 +179,16 @@ void* jl::Interpreter::get_expr_context()
     return nullptr;
 }
 
+// --------------------------------------------------------------------------------
+// -------------------------------Statements---------------------------------------
+// --------------------------------------------------------------------------------
+
+
 void jl::Interpreter::visit_print_stmt(PrintStmt* stmt, void* context)
 {
     evaluate(stmt->m_expr, context);
     Token::Value* value = static_cast<Token::Value*>(context);
-    std::cout << stringify(*value);
+    std::cout << stringify(*value) << std::endl;
 }
 
 void jl::Interpreter::visit_expr_stmt(ExprStmt* stmt, void* context)
@@ -186,7 +205,17 @@ void jl::Interpreter::visit_var_stmt(VarStmt* stmt, void* context)
         evaluate(stmt->m_initializer, &value);
     }
 
-    env.define(stmt->m_name.get_lexeme(), value);
+    m_env->define(stmt->m_name.get_lexeme(), value);
+}
+
+void jl::Interpreter::visit_block_stmt(BlockStmt* stmt, void* context)
+{
+    Environment* new_env = new Environment(m_env);
+    execute_block(stmt->m_statements, new_env);
+}
+
+void jl::Interpreter::visit_empty_stmt(EmptyStmt* stmt, void* context)
+{
 }
 
 void* jl::Interpreter::get_stmt_context()
@@ -231,6 +260,27 @@ void jl::Interpreter::append_strings(Token::Value& left, Token::Value& right, vo
     left_str.append(right_str);
 
     *static_cast<Token::Value*>(context) = left_str;
+}
+
+void jl::Interpreter::execute_block(std::vector<Stmt*>& statements, Environment* new_env)
+{
+    Environment* previous = m_env;
+    bool exception_ocurred = false;
+
+    try {
+        m_env = new_env;
+        Token::Value value;
+        for (auto stmt: statements) {
+            stmt->accept(*this, &value);
+        }
+    } catch(...) {
+        exception_ocurred = true;
+        m_env = previous;
+    }
+
+    if (!exception_ocurred) {
+        m_env = previous;
+    }
 }
 
 bool jl::Interpreter::is_equal(Token::Value& left, Token::Value& right)

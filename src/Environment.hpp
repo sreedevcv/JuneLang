@@ -10,6 +10,7 @@ class Environment {
 public:
     Environment();
     Environment(Environment *enclosing);
+    ~Environment();
 
     /* Stores a copy of variable name and token::value in map if
         they dont already exists otherwise throws an exception */

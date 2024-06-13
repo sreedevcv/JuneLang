@@ -218,6 +218,9 @@ jl::Stmt* jl::Parser::statement()
     if (match({ Token::PRINT })) {
         return print_statement();
     }
+    if (match({Token::LEFT_SQUARE})) {
+        return new BlockStmt(block());
+    }
 
     return expr_statement();
 }
@@ -227,6 +230,9 @@ jl::Stmt* jl::Parser::declaration()
     try {
         if (match({ Token::VAR })) {
             return var_declaration();
+        }
+        if (match({Token::NEW_LINE})) {
+            return new EmptyStmt();
         }
         return statement();
     } catch (const char* e) {
@@ -260,4 +266,16 @@ jl::Stmt* jl::Parser::var_declaration()
 
     consume(Token::NEW_LINE, "Expected newline after variable declaration");
     return new VarStmt(name, initializer);
+}
+
+std::vector<jl::Stmt*> jl::Parser::block()
+{
+    std::vector<Stmt*> statements;
+
+    while (!check(Token::RIGHT_SQUARE) && !is_at_end()) {
+        statements.push_back(declaration());
+    }
+
+    consume(Token::RIGHT_SQUARE, "Expect ] after block");
+    return statements;
 }

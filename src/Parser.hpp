@@ -26,6 +26,7 @@ private:
     Expr* unary();
     Expr* primary();
     Expr* assignment();
+    
 
     void synchronize();
     bool match(std::vector<Token::TokenType>&& types);
@@ -41,5 +42,6 @@ private:
     Stmt* print_statement();
     Stmt* expr_statement();
     Stmt* var_declaration();
+    std::vector<Stmt*> block();
 };
 } // namespace jl
