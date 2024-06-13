@@ -34,6 +34,8 @@ public:
     {
         visitor.visit_expr_stmt(this, context);
     }
+
+    virtual ~ExprStmt() = default;
 };
 
 class PrintStmt : public Stmt {
@@ -49,6 +51,8 @@ public:
     {
         visitor.visit_print_stmt(this, context);
     }
+
+    virtual ~PrintStmt() = default;
 };
 
 class VarStmt : public Stmt {
@@ -66,6 +70,8 @@ public:
     {
         visitor.visit_var_stmt(this, context);
     }
+
+    virtual ~VarStmt() = default;
 };
 
 }

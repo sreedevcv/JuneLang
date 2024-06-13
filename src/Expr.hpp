@@ -34,10 +34,21 @@ public:
 
 class Assign : public Expr {
 public:
+    Expr* m_expr;
+    Token& m_token;
+
+    inline Assign(Expr* expr, Token& token)
+        : m_expr(expr)
+        , m_token(token)
+    {
+    }
+
     inline virtual void accept(IExprVisitor& visitor, void* context) override
     {
         visitor.visit_assign_expr(this, context);
     }
+
+    virtual ~Assign() = default;
 };
 
 class Binary : public Expr {
@@ -57,6 +68,8 @@ public:
     {
         visitor.visit_binary_expr(this, context);
     }
+
+    virtual ~Binary() = default;
 };
 
 class Grouping : public Expr {
@@ -71,6 +84,8 @@ public:
     {
         visitor.visit_grouping_expr(this, context);
     }
+
+    virtual ~Grouping() = default;
 };
 
 class Literal : public Expr {
@@ -86,6 +101,8 @@ public:
     {
         visitor.visit_literal_expr(this, context);
     }
+
+    virtual ~Literal() = default;
 };
 
 class Unary : public Expr {
@@ -103,6 +120,8 @@ public:
     {
         visitor.visit_unary_expr(this, context);
     }
+
+    virtual ~Unary() = default;
 };
 
 class Variable : public Expr {
@@ -118,6 +137,8 @@ public:
     {
         visitor.visit_variable_expr(this, context);
     }
+
+    virtual ~Variable() = default;
 };
 
 class ParsetreePrinter : public IExprVisitor {
