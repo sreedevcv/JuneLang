@@ -7,11 +7,13 @@
 #include "Token.hpp"
 
 namespace jl {
+
 class Assign;
 class Binary;
 class Grouping;
 class Unary;
 class Literal;
+class Variable;
 
 class IExprVisitor {
 public:
@@ -20,8 +22,9 @@ public:
     virtual void visit_grouping_expr(Grouping* expr, void* context) = 0;
     virtual void visit_unary_expr(Unary* expr, void* context) = 0;
     virtual void visit_literal_expr(Literal* expr, void* context) = 0;
+    virtual void visit_variable_expr(Variable* expr, void* context) = 0;
 
-    virtual void* get_context() = 0;
+    virtual void* get_expr_context() = 0;
 };
 
 class Expr {
@@ -102,6 +105,21 @@ public:
     }
 };
 
+class Variable : public Expr {
+public:
+    Token& m_name;
+
+    inline Variable(Token& name)
+        : m_name(name)
+    {
+    }
+
+    inline virtual void accept(IExprVisitor& visitor, void* context) override
+    {
+        visitor.visit_variable_expr(this, context);
+    }
+};
+
 class ParsetreePrinter : public IExprVisitor {
 public:
     std::string context;
@@ -120,6 +138,10 @@ public:
     inline void visit_unary_expr(Unary* expr, void* context) override
     {
         parenthesize(expr->m_oper->get_lexeme(), { expr->m_expr });
+    }
+    inline void visit_variable_expr(Variable* expr, void* context) override
+    {
+        parenthesize(expr->m_name.get_lexeme(), {});
     }
     inline void visit_literal_expr(Literal* expr, void* context) override
     {
@@ -145,7 +167,7 @@ public:
         context.append(")");
     }
 
-    inline virtual void* get_context()
+    inline virtual void* get_expr_context()
     {
         return &context;
     }

@@ -26,8 +26,8 @@ TEST_CASE("Parser Expression Test", "[Parser]")
         REQUIRE(e != nullptr);
 
         jl::IExprVisitor* visitor = new jl::ParsetreePrinter();
-        e->accept(*visitor, visitor->get_context());
-        std::string* context = (std::string*)visitor->get_context();
+        e->accept(*visitor, visitor->get_expr_context());
+        std::string* context = (std::string*)visitor->get_expr_context();
         REQUIRE(*context == std::string("(== (group (+ 12 (* (group (- 32 9)) 5))) (<= 34 (group (/ 7 8))))"));
     }
 }

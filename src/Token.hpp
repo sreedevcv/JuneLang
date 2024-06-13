@@ -21,6 +21,7 @@ public:
         LEFT_PAR,
         RIGHT_PAR,
         SEMI_COLON,
+        NEW_LINE,
         END_OF_FILE,
         // One or Two Characters
         BANG,
@@ -40,6 +41,8 @@ public:
         AND,
         OR,
         NOT,
+        CLASS,
+        FUNC,
         IF,
         THEN,
         WHILE,
@@ -50,6 +53,7 @@ public:
         FALSE,
         RETURN,
         VAR,
+        PRINT,
         NULL_,
     };
 

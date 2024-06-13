@@ -37,6 +37,9 @@ void jl::Lexer::scan()
         scan_token();
     }
 
+    /* replaced ; with newline hence make sure that even the final statement has a
+    newline to correctly parse */
+    add_token(Token::NEW_LINE);     
     add_token(Token::END_OF_FILE);
 }
 

@@ -16,6 +16,19 @@ jl::Expr* jl::Parser::parse()
     }
 }
 
+std::vector<jl::Stmt*> jl::Parser::parseStatements()
+{
+    std::vector<Stmt*> statements;
+    try {
+        while (!is_at_end()) {
+            statements.push_back(declaration());
+        }
+    } catch (const char* e) {
+    }
+
+    return statements;
+}
+
 jl::Expr* jl::Parser::expression()
 {
     return equality();
@@ -86,6 +99,10 @@ jl::Expr* jl::Parser::primary()
         return new Literal(value);
     }
 
+    if (match({Token::IDENTIFIER})) {
+        return new Variable(previous());
+    }
+
     if (match({ Token::LEFT_PAR })) {
         Expr* expr = expression();
         consume(Token::RIGHT_PAR, "Expect ) after expression");
@@ -95,7 +112,31 @@ jl::Expr* jl::Parser::primary()
     // TODO::Improve error function
     std::string file = std::string("Unknown");
     ErrorHandler::error(file, peek().get_line(), "Expected expression");
-    throw "exception";
+    throw "parse-exception";
+}
+
+void jl::Parser::synchronize()
+{
+    advance();
+
+    while (!is_at_end()) {
+        if (previous().get_tokentype() == Token::NEW_LINE)
+            return;
+
+        switch (peek().get_tokentype()) {
+        case Token::CLASS:
+        case Token::FUNC:
+        case Token::VAR:
+        case Token::FOR:
+        case Token::IF:
+        case Token::WHILE:
+        case Token::PRINT:
+        case Token::RETURN:
+            return;
+        }
+
+        advance();
+    }
 }
 
 bool jl::Parser::match(std::vector<Token::TokenType>&& types)
@@ -146,6 +187,55 @@ jl::Token& jl::Parser::consume(Token::TokenType type, const char* msg)
         // TODO::Improve error function
         std::string file = std::string("Unknown");
         ErrorHandler::error(file, token.get_line(), msg);
-        throw "exception";
+        throw "parse-exception";
     }
+}
+
+jl::Stmt* jl::Parser::statement()
+{
+    if (match({ Token::PRINT })) {
+        return print_statement();
+    }
+
+    return expr_statement();
+}
+
+jl::Stmt* jl::Parser::declaration()
+{
+    try {
+        if (match({ Token::VAR })) {
+            return var_declaration();
+        }
+        return statement();
+    } catch (const char* e) {
+        synchronize();
+        return nullptr;
+    }
+}
+
+jl::Stmt* jl::Parser::print_statement()
+{
+    Expr* expr = expression();
+    consume(Token::NEW_LINE, "Expected newline after expression");
+    return new PrintStmt(expr);
+}
+
+jl::Stmt* jl::Parser::expr_statement()
+{
+    Expr* expr = expression();
+    consume(Token::NEW_LINE, "Expected newline after expression");
+    return new ExprStmt(expr);
+}
+
+jl::Stmt* jl::Parser::var_declaration()
+{
+    Token& name = consume(Token::IDENTIFIER, "Expected a variable name");
+    Expr* initializer = nullptr;
+
+    if (match({Token::EQUAL})) {
+        initializer = expression();
+    }
+
+    consume(Token::NEW_LINE, "Expected newline after variable declaration");
+    return new VarStmt(name, initializer);
 }

@@ -8,7 +8,19 @@ void jl::Interpreter::interpret(Expr* expr, Token::Value* value)
         Token::Value context;
         evaluate(expr, &context);
         *value = context;
-    } catch (const char *exc) {
+    } catch (const char* exc) {
+        std::cout << ErrorHandler::get_error_count() << " Errors ocuured" << std::endl;
+    }
+}
+
+void jl::Interpreter::interpret(std::vector<Stmt*>& statements)
+{
+    try {
+        Token::Value value;
+        for (auto stmt : statements) {
+            stmt->accept(*this, &value);
+        }
+    } catch (const char* exc) {
         std::cout << ErrorHandler::get_error_count() << " Errors ocuured" << std::endl;
     }
 }
@@ -140,7 +152,42 @@ void jl::Interpreter::visit_literal_expr(Literal* expr, void* context)
     *static_cast<Token::Value*>(context) = *expr->m_value;
 }
 
-void* jl::Interpreter::get_context()
+// Returns the token value as the context
+void jl::Interpreter::visit_variable_expr(Variable* expr, void* context)
+{
+    *static_cast<Token::Value*>(context) = env.get(expr->m_name);
+}
+
+void* jl::Interpreter::get_expr_context()
+{
+    return nullptr;
+}
+
+void jl::Interpreter::visit_print_stmt(PrintStmt* stmt, void* context)
+{
+    evaluate(stmt->m_expr, context);
+    Token::Value* value = static_cast<Token::Value*>(context);
+    std::cout << stringify(*value);
+}
+
+void jl::Interpreter::visit_expr_stmt(ExprStmt* stmt, void* context)
+{
+    // Evaluate and discard the context value
+    evaluate(stmt->m_expr, context);
+}
+
+void jl::Interpreter::visit_var_stmt(VarStmt* stmt, void* context)
+{
+    // Set value as null
+    Token::Value value = '\0';
+    if (stmt->m_initializer != nullptr) {
+        evaluate(stmt->m_initializer, &value);
+    }
+
+    env.define(stmt->m_name.get_lexeme(), value);
+}
+
+void* jl::Interpreter::get_stmt_context()
 {
     return nullptr;
 }

@@ -2,6 +2,7 @@
 
 #include "Expr.hpp"
 #include "Token.hpp"
+#include "Stmt.hpp"
 
 namespace jl {
 class Parser {
@@ -10,7 +11,8 @@ public:
     ~Parser() = default;
 
     Expr* parse();
-    
+    std::vector<Stmt*> parseStatements();
+
 private:
     std::vector<Token> m_tokens;
 
@@ -24,6 +26,7 @@ private:
     Expr* unary();
     Expr* primary();
 
+    void synchronize();
     bool match(std::vector<Token::TokenType>&& types);
     bool check(Token::TokenType type);
     bool is_at_end();
@@ -31,5 +34,11 @@ private:
     Token& peek();
     Token& previous();
     Token& consume(Token::TokenType type, const char* msg);
+
+    Stmt* statement();
+    Stmt* declaration();
+    Stmt* print_statement();
+    Stmt* expr_statement();
+    Stmt* var_declaration();
 };
 } // namespace jl
