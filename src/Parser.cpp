@@ -1,5 +1,7 @@
 #include "Parser.hpp"
 
+#include <typeinfo>
+
 #include "ErrorHandler.hpp"
 
 jl::Parser::Parser(std::vector<Token>& tokens)
@@ -31,7 +33,7 @@ std::vector<jl::Stmt*> jl::Parser::parseStatements()
 
 jl::Expr* jl::Parser::expression()
 {
-    return equality();
+    return assignment();
 }
 
 jl::Expr* jl::Parser::equality()
@@ -113,6 +115,26 @@ jl::Expr* jl::Parser::primary()
     std::string file = std::string("Unknown");
     ErrorHandler::error(file, peek().get_line(), "Expected expression");
     throw "parse-exception";
+}
+
+jl::Expr* jl::Parser::assignment()
+{
+    Expr* expr = equality();
+
+    if (match({Token::EQUAL})) {
+        Token& equals = previous();
+        Expr* value = assignment();
+
+        if (dynamic_cast<Variable*>(expr)) {
+            Token& name = static_cast<Variable*>(expr)->m_name;
+            return new Assign(value, name);
+        }
+
+        std::string filename = "Unknown";
+        ErrorHandler::error(filename, equals.get_line(), "invalid assignment target");
+    }
+
+    return expr;
 }
 
 void jl::Parser::synchronize()

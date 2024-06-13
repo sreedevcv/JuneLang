@@ -27,6 +27,8 @@ void jl::Interpreter::interpret(std::vector<Stmt*>& statements)
 
 void jl::Interpreter::visit_assign_expr(Assign* expr, void* context)
 {
+    evaluate(expr->m_expr, context);
+    env.assign(expr->m_token, *static_cast<Token::Value*>(context));
 }
 
 void jl::Interpreter::visit_binary_expr(Binary* expr, void* context)

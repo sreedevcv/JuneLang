@@ -11,9 +11,11 @@ public:
     /* Stores a copy of variable name and token::value in map if
         they dont already exists otherwise throws an exception */
     void define(const std::string& name, const Token::Value& value);
-    /* Retruves the sored reference to a token otherwise
+    /* Retrives the sored reference to a token otherwise
         throws an exception */
     Token::Value& get(const Token& name);
+
+    void assign(const Token& token, const Token::Value& value);
 
 private:
     std::unordered_map<std::string, Token::Value> m_values;

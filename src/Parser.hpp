@@ -25,6 +25,7 @@ private:
     Expr* factor();
     Expr* unary();
     Expr* primary();
+    Expr* assignment();
 
     void synchronize();
     bool match(std::vector<Token::TokenType>&& types);

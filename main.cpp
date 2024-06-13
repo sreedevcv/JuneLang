@@ -12,8 +12,11 @@ int main()
 
     jl::Lexer lexer(
     R"(var a = 1.0
-        var b
-        print a + b)");
+        var b = 2.5
+        var c = 2
+        c = (a + b)*c 
+        print c)"
+    );
     // jl::Lexer lexer("\"hello \" + \"hai\"");
     // lexer.scan();
 

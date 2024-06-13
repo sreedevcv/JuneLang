@@ -23,3 +23,15 @@ jl::Token::Value& jl::Environment::get(const Token& token)
     ErrorHandler::error(fname, token.get_line(), "variable does not exist");
     throw "exception";
 }
+
+void jl::Environment::assign(const Token& token, const Token::Value& value)
+{
+    if (m_values.contains(token.get_lexeme())) {
+        m_values[token.get_lexeme()] = value;
+        return;
+    }
+
+    std::string fname = "unknown";
+    ErrorHandler::error(fname, token.get_line(), "Udefined variable");
+    throw "exception";
+}
