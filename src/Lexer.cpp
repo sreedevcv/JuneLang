@@ -70,6 +70,12 @@ void jl::Lexer::scan_token()
     case '}':
         add_token(Token::RIGHT_BRACE);
         break;
+    case '[':
+        add_token(Token::LEFT_SQUARE);
+        break;
+    case ']':
+        add_token(Token::RIGHT_SQUARE);
+        break;
     case ',':
         add_token(Token::COMMA);
         break;

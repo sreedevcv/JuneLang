@@ -2,6 +2,16 @@
 
 #include "ErrorHandler.hpp"
 
+jl::Environment::Environment()
+    : m_enclosing(nullptr)
+{
+}
+
+jl::Environment::Environment(Environment* enclosing)
+    : m_enclosing(enclosing)
+{
+}
+
 void jl::Environment::define(const std::string& name, const Token::Value& value)
 {
     if (!m_values.contains(name)) {
@@ -19,6 +29,10 @@ jl::Token::Value& jl::Environment::get(const Token& token)
         return m_values[token.get_lexeme()];
     }
 
+    if (m_enclosing != nullptr) {
+        return m_enclosing->get(token);
+    }
+
     std::string fname = "unknown";
     ErrorHandler::error(fname, token.get_line(), "variable does not exist");
     throw "exception";
@@ -28,6 +42,11 @@ void jl::Environment::assign(const Token& token, const Token::Value& value)
 {
     if (m_values.contains(token.get_lexeme())) {
         m_values[token.get_lexeme()] = value;
+        return;
+    }
+
+    if (m_enclosing != nullptr) {
+        m_enclosing->assign(token, value);
         return;
     }
 
