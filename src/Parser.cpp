@@ -171,13 +171,14 @@ jl::Expr* jl::Parser::unary()
         Expr* right = unary();
         return new Unary(&oper, right);
     }
-    return primary();
+
+    return call();
 }
 
 jl::Expr* jl::Parser::primary()
 {
     if (match({ Token::INT, Token::FLOAT, Token::STRING, Token::FALSE, Token::TRUE, Token::NULL_ })) {
-        Token::Value* value = new Token::Value(previous().get_value());
+        Value* value = new Value(previous().get_value());
         return new Literal(value);
     }
 
@@ -243,6 +244,39 @@ jl::Expr* jl::Parser::and_expr()
     return expr;
 }
 
+jl::Expr* jl::Parser::call()
+{
+    Expr* expr = primary();
+
+    while (true) {
+        if (match({ Token::LEFT_PAR })) {
+            expr = finish_call(expr);
+        } else {
+            break;
+        }
+    }
+
+    return expr;
+}
+
+jl::Expr* jl::Parser::finish_call(Expr* callee)
+{
+    std::vector<Expr*> arguments;
+
+    if (!check(Token::RIGHT_PAR)) {
+        do {
+            if (arguments.size() > 255) {
+                std::string fname = "Call";
+                ErrorHandler::error(fname, peek().get_line(), "Cannot have more than 255 args for a call");
+            }
+            arguments.push_back(expression());
+        } while (match({ Token::COMMA }));
+    }
+
+    Token& paren = consume(Token::RIGHT_PAR, "Expect ) after arguments");
+    return new Call(callee, paren, arguments);
+}
+
 // --------------------------------------------------------------------------------
 // -------------------------------Statements---------------------------------------
 // --------------------------------------------------------------------------------
@@ -258,10 +292,10 @@ jl::Stmt* jl::Parser::statement()
     if (match({ Token::IF })) {
         return if_stmt();
     }
-    if (match({Token::WHILE})) {
+    if (match({ Token::WHILE })) {
         return while_statement();
     }
-    if (match({Token::FOR})) {
+    if (match({ Token::FOR })) {
         return for_statement();
     }
 
@@ -271,6 +305,9 @@ jl::Stmt* jl::Parser::statement()
 jl::Stmt* jl::Parser::declaration()
 {
     try {
+        if (match({ Token::FUNC })) {
+            return function("function");
+        }
         if (match({ Token::VAR })) {
             return var_declaration();
         }
@@ -341,9 +378,9 @@ jl::Stmt* jl::Parser::while_statement()
 jl::Stmt* jl::Parser::for_statement()
 {
     Stmt* initializer;
-    if (match({Token::SEMI_COLON})) {
+    if (match({ Token::SEMI_COLON })) {
         initializer = nullptr;
-    } else if (match({Token::VAR})) {
+    } else if (match({ Token::VAR })) {
         initializer = var_declaration();
     } else {
         initializer = expr_statement();
@@ -361,11 +398,10 @@ jl::Stmt* jl::Parser::for_statement()
     }
     consume(Token::SEMI_COLON, "Expected ; after clauses");
 
-
     Stmt* body = statement();
 
-    if (increment !=nullptr) {
-        body = new BlockStmt({body, new ExprStmt(increment)});
+    if (increment != nullptr) {
+        body = new BlockStmt({ body, new ExprStmt(increment) });
     }
     if (condition == nullptr) {
         condition = new Literal(&Token::global_true_constant);
@@ -373,10 +409,36 @@ jl::Stmt* jl::Parser::for_statement()
     body = new WhileStmt(condition, body);
 
     if (initializer != nullptr) {
-        body = new BlockStmt({initializer, body});
+        body = new BlockStmt({ initializer, body });
     }
 
     return body;
+}
+
+jl::Stmt* jl::Parser::function(const char* kind)
+{
+    Token& name = consume(Token::IDENTIFIER, "Expeced func name");
+
+    consume(Token::LEFT_PAR, "Expected ( after fun name");
+    std::vector<Token*> parameters;
+
+    if (!check(Token::RIGHT_PAR)) {
+        do {
+            if (parameters.size() >= 255) {
+                std::string fname = "function";
+                ErrorHandler::error(fname, peek().get_line(), "Cannot have more than 255 params");
+            }
+            Token& param = consume(Token::IDENTIFIER, "Expected param name");
+            parameters.push_back(&param);
+
+        } while (match({Token::COMMA}));
+    }
+
+    consume(Token::RIGHT_PAR, "Expected ) after func params");
+    consume(Token::LEFT_SQUARE, "Expected [ befor func body");
+
+    std::vector<Stmt*> body = block();
+    return new FuncStmt(name, parameters, body);
 }
 
 std::vector<jl::Stmt*> jl::Parser::block()

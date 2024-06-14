@@ -1,10 +1,12 @@
 #include "Interpreter.hpp"
 
 #include "ErrorHandler.hpp"
+#include "Callable.hpp"
 
 jl::Interpreter::Interpreter()
     : m_env(new Environment(nullptr))
 {
+    m_global_env = m_env;
 }
 
 jl::Interpreter::~Interpreter()
@@ -12,10 +14,10 @@ jl::Interpreter::~Interpreter()
     delete m_env;
 }
 
-void jl::Interpreter::interpret(Expr* expr, Token::Value* value)
+void jl::Interpreter::interpret(Expr* expr, Value* value)
 {
     try {
-        Token::Value context;
+        Value context;
         evaluate(expr, &context);
         *value = context;
     } catch (const char* exc) {
@@ -26,7 +28,7 @@ void jl::Interpreter::interpret(Expr* expr, Token::Value* value)
 void jl::Interpreter::interpret(std::vector<Stmt*>& statements)
 {
     try {
-        Token::Value value;
+        Value value;
         for (auto stmt : statements) {
             stmt->accept(*this, &value);
         }
@@ -42,15 +44,15 @@ void jl::Interpreter::interpret(std::vector<Stmt*>& statements)
 void jl::Interpreter::visit_assign_expr(Assign* expr, void* context)
 {
     evaluate(expr->m_expr, context);
-    m_env->assign(expr->m_token, *static_cast<Token::Value*>(context));
+    m_env->assign(expr->m_token, *static_cast<Value*>(context));
 }
 
 void jl::Interpreter::visit_binary_expr(Binary* expr, void* context)
 {
     evaluate(expr->m_left, context);
-    Token::Value left = *static_cast<Token::Value*>(context);
+    Value left = *static_cast<Value*>(context);
     evaluate(expr->m_right, context);
-    Token::Value right = *static_cast<Token::Value*>(context);
+    Value right = *static_cast<Value*>(context);
 
     switch (expr->m_oper->get_tokentype()) {
     case Token::MINUS:
@@ -120,10 +122,10 @@ void jl::Interpreter::visit_binary_expr(Binary* expr, void* context)
         }
         break;
     case Token::EQUAL_EQUAL:
-        *static_cast<Token::Value*>(context) = is_equal(left, right);
+        *static_cast<Value*>(context) = is_equal(left, right);
         break;
     case Token::BANG_EQUAL:
-        *static_cast<Token::Value*>(context) = !is_equal(left, right);
+        *static_cast<Value*>(context) = !is_equal(left, right);
         break;
     default:
         break;
@@ -138,7 +140,7 @@ void jl::Interpreter::visit_grouping_expr(Grouping* expr, void* context)
 void jl::Interpreter::visit_unary_expr(Unary* expr, void* context)
 {
     evaluate(expr->m_expr, context);
-    Token::Value* right = static_cast<Token::Value*>(context);
+    Value* right = static_cast<Value*>(context);
 
     switch (expr->m_oper->get_tokentype()) {
     case Token::MINUS:
@@ -155,7 +157,7 @@ void jl::Interpreter::visit_unary_expr(Unary* expr, void* context)
         }
         break;
     case Token::BANG:
-        *right = !is_truthy(static_cast<Token::Value*>(right));
+        *right = !is_truthy(static_cast<Value*>(right));
         context = right;
         break;
     default:
@@ -165,20 +167,20 @@ void jl::Interpreter::visit_unary_expr(Unary* expr, void* context)
 
 void jl::Interpreter::visit_literal_expr(Literal* expr, void* context)
 {
-    *static_cast<Token::Value*>(context) = *expr->m_value;
+    *static_cast<Value*>(context) = *expr->m_value;
 }
 
 // Returns the token value as the context
 void jl::Interpreter::visit_variable_expr(Variable* expr, void* context)
 {
-    *static_cast<Token::Value*>(context) = m_env->get(expr->m_name);
+    *static_cast<Value*>(context) = m_env->get(expr->m_name);
 }
 
 void jl::Interpreter::visit_logical_expr(Logical* expr, void* context)
 {
-    // Token::Value value;
+    // Value value;
     evaluate(expr->m_left, context);
-    bool truth = is_truthy(static_cast<Token::Value*>(context));
+    bool truth = is_truthy(static_cast<Value*>(context));
 
     if (expr->m_oper.get_tokentype() == Token::OR) {
         if (truth) {
@@ -196,6 +198,34 @@ void jl::Interpreter::visit_logical_expr(Logical* expr, void* context)
     // Return whatever is evaluated inside right expr`
 }
 
+void jl::Interpreter::visit_call_expr(Call* expr, void* context)
+{
+    evaluate(expr->m_callee, context);
+    std::vector<Value> arguments(expr->m_arguments.size());
+
+    for (int i = 0; i < expr->m_arguments.size(); i++) {
+        evaluate(expr->m_arguments[i], &arguments[i]);
+    }
+
+    if (!dynamic_cast<Callable*>(expr->m_callee)) {
+        std::string fname = "Call";
+        ErrorHandler::error(fname, expr->m_paren.get_line(), "Not a function or class to call");
+        throw "exception";
+    }
+
+    Callable* function = reinterpret_cast<Callable*>(expr->m_callee);
+    if (arguments.size() != function->arity()) {
+        std::string fname = "Call";
+        ErrorHandler::error(fname, expr->m_paren.get_line(), "Arity of call and declararion do not match");
+        throw "exception";
+    }
+
+    Value value = function->call(this, arguments);
+    *static_cast<Value*>(context) = value;
+}
+
+
+
 void* jl::Interpreter::get_expr_context()
 {
     return nullptr;
@@ -209,7 +239,7 @@ void* jl::Interpreter::get_expr_context()
 void jl::Interpreter::visit_print_stmt(PrintStmt* stmt, void* context)
 {
     evaluate(stmt->m_expr, context);
-    Token::Value* value = static_cast<Token::Value*>(context);
+    Value* value = static_cast<Value*>(context);
     std::cout << stringify(*value) << std::endl;
 }
 
@@ -222,7 +252,7 @@ void jl::Interpreter::visit_expr_stmt(ExprStmt* stmt, void* context)
 void jl::Interpreter::visit_var_stmt(VarStmt* stmt, void* context)
 {
     // Set value as null
-    Token::Value value = '\0';
+    Value value = '\0';
     if (stmt->m_initializer != nullptr) {
         evaluate(stmt->m_initializer, &value);
     }
@@ -242,7 +272,7 @@ void jl::Interpreter::visit_empty_stmt(EmptyStmt* stmt, void* context)
 
 void jl::Interpreter::visit_if_stmt(IfStmt* stmt, void* context)
 {   
-    Token::Value value;
+    Value value;
     evaluate(stmt->m_condition, &value);
     if (is_truthy(&value)) {
         stmt->m_then_stmt->accept(*this, context);
@@ -253,7 +283,7 @@ void jl::Interpreter::visit_if_stmt(IfStmt* stmt, void* context)
 
 void jl::Interpreter::visit_while_stmt(WhileStmt* stmt, void* context)
 {
-    Token::Value value;
+    Value value;
     while (is_truthy(&value)) {
         stmt->m_body->accept(*this, context);
         evaluate(stmt->m_condition, &value);
@@ -261,7 +291,14 @@ void jl::Interpreter::visit_while_stmt(WhileStmt* stmt, void* context)
     
     // make context null
     value = '\0';
-    *static_cast<Token::Value*>(context) = value;
+    *static_cast<Value*>(context) = value;
+}
+
+void jl::Interpreter::visit_func_stmt(FuncStmt* stmt, void* context)
+{
+    Function* function = new Function(stmt);
+    // m_env->define(stmt->m_name.get_lexeme(), function);
+    // return null
 }
 
 void* jl::Interpreter::get_stmt_context()
@@ -274,7 +311,7 @@ void jl::Interpreter::evaluate(Expr* expr, void* context)
     expr->accept(*this, context);
 }
 
-bool jl::Interpreter::is_truthy(Token::Value* value)
+bool jl::Interpreter::is_truthy(Value* value)
 {
     if (is_null(*value) || (is_bool(*value) && std::get<bool>(*value) == false)) {
         return false;
@@ -283,9 +320,9 @@ bool jl::Interpreter::is_truthy(Token::Value* value)
 }
 
 template <typename Op>
-void jl::Interpreter::do_arith_operation(Token::Value& left, Token::Value& right, void* context, Op op)
+void jl::Interpreter::do_arith_operation(Value& left, Value& right, void* context, Op op)
 {
-    Token::Value* value_context = static_cast<Token::Value*>(context);
+    Value* value_context = static_cast<Value*>(context);
     if (is_float(left) || is_float(right)) {
         double a = is_float(left) ? std::get<double>(left) : std::get<int>(left);
         double b = is_float(right) ? std::get<double>(right) : std::get<int>(right);
@@ -299,13 +336,13 @@ void jl::Interpreter::do_arith_operation(Token::Value& left, Token::Value& right
     }
 }
 
-void jl::Interpreter::append_strings(Token::Value& left, Token::Value& right, void* context)
+void jl::Interpreter::append_strings(Value& left, Value& right, void* context)
 {
     std::string left_str = std::get<std::string>(left);
     std::string& right_str = std::get<std::string>(right);
     left_str.append(right_str);
 
-    *static_cast<Token::Value*>(context) = left_str;
+    *static_cast<Value*>(context) = left_str;
 }
 
 void jl::Interpreter::execute_block(std::vector<Stmt*>& statements, Environment* new_env)
@@ -315,7 +352,7 @@ void jl::Interpreter::execute_block(std::vector<Stmt*>& statements, Environment*
 
     try {
         m_env = new_env;
-        Token::Value value;
+        Value value;
         for (auto stmt: statements) {
             stmt->accept(*this, &value);
         }
@@ -329,7 +366,7 @@ void jl::Interpreter::execute_block(std::vector<Stmt*>& statements, Environment*
     }
 }
 
-bool jl::Interpreter::is_equal(Token::Value& left, Token::Value& right)
+bool jl::Interpreter::is_equal(Value& left, Value& right)
 {
     if (left.index() != right.index()) {
         return false;
@@ -337,7 +374,7 @@ bool jl::Interpreter::is_equal(Token::Value& left, Token::Value& right)
     return left == right;
 }
 
-std::string jl::Interpreter::stringify(Token::Value& value)
+std::string jl::Interpreter::stringify(Value& value)
 {
     if (is_null(value)) {
         return "null";

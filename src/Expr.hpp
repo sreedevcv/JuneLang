@@ -5,6 +5,7 @@
 #include <vector>
 
 #include "Token.hpp"
+#include "Value.hpp"
 
 namespace jl {
 
@@ -15,6 +16,7 @@ class Unary;
 class Literal;
 class Variable;
 class Logical;
+class Call;
 
 class IExprVisitor {
 public:
@@ -25,6 +27,7 @@ public:
     virtual void visit_literal_expr(Literal* expr, void* context) = 0;
     virtual void visit_variable_expr(Variable* expr, void* context) = 0;
     virtual void visit_logical_expr(Logical* expr, void* context) = 0;
+    virtual void visit_call_expr(Call* expr, void* context) = 0;
     virtual void* get_expr_context() = 0;
 };
 
@@ -91,9 +94,9 @@ public:
 
 class Literal : public Expr {
 public:
-    Token::Value* m_value;
+    Value* m_value;
 
-    inline Literal(Token::Value* value)
+    inline Literal(Value* value)
         : m_value(value)
     {
     }
@@ -163,6 +166,27 @@ public:
     virtual ~Logical() = default;
 };
 
+class Call : public Expr {
+public:
+    Expr* m_callee;
+    Token& m_paren;
+    std::vector<Expr*> m_arguments;
+
+    inline Call(Expr* callee, Token& paren, std::vector<Expr*>& arguments)
+        : m_callee(callee)
+        , m_paren(paren)
+        , m_arguments(arguments)
+    {
+    }
+
+    inline virtual void accept(IExprVisitor& visitor, void* context) override
+    {
+        visitor.visit_call_expr(this, context);
+    }
+
+    virtual ~Call() = default;
+};
+
 class ParsetreePrinter : public IExprVisitor {
 public:
     std::string context;
@@ -187,6 +211,9 @@ public:
         parenthesize(expr->m_name.get_lexeme(), {});
     }
     inline void visit_logical_expr(Logical* expr, void* context) override
+    {
+    }
+    inline void visit_call_expr(Call* expr, void* context) override
     {
     }
     inline void visit_literal_expr(Literal* expr, void* context) override

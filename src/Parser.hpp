@@ -28,6 +28,8 @@ private:
     Expr* assignment();
     Expr* or_expr();
     Expr* and_expr();
+    Expr* call();
+    Expr* finish_call(Expr* callee);
 
     Stmt* statement();
     Stmt* declaration();
@@ -37,6 +39,7 @@ private:
     Stmt* if_stmt();
     Stmt* while_statement();
     Stmt* for_statement();
+    Stmt* function(const char* kind);
     std::vector<Stmt*> block();
 
     void synchronize();

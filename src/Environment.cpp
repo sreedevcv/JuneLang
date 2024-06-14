@@ -19,7 +19,7 @@ jl::Environment::~Environment()
     }
 }
 
-void jl::Environment::define(const std::string& name, const Token::Value& value)
+void jl::Environment::define(const std::string& name, const Value& value)
 {
     if (!m_values.contains(name)) {
         m_values[name] = value;
@@ -30,7 +30,7 @@ void jl::Environment::define(const std::string& name, const Token::Value& value)
     }
 }
 
-jl::Token::Value& jl::Environment::get(const Token& token)
+jl::Value& jl::Environment::get(const Token& token)
 {
     if (m_values.contains(token.get_lexeme())) {
         return m_values[token.get_lexeme()];
@@ -45,7 +45,7 @@ jl::Token::Value& jl::Environment::get(const Token& token)
     throw "exception";
 }
 
-void jl::Environment::assign(const Token& token, const Token::Value& value)
+void jl::Environment::assign(const Token& token, const Value& value)
 {
     if (m_values.contains(token.get_lexeme())) {
         m_values[token.get_lexeme()] = value;

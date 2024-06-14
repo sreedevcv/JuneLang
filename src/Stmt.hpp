@@ -11,6 +11,7 @@ class BlockStmt;
 class EmptyStmt;
 class IfStmt;
 class WhileStmt;
+class FuncStmt;
 
 class IStmtVisitor {
 public:
@@ -21,6 +22,7 @@ public:
     virtual void visit_empty_stmt(EmptyStmt* stmt, void* context) = 0;
     virtual void visit_if_stmt(IfStmt* stmt, void* context) = 0;
     virtual void visit_while_stmt(WhileStmt* stmt, void* context) = 0;
+    virtual void visit_func_stmt(FuncStmt* stmt, void* context) = 0;
     virtual void* get_stmt_context() = 0;
 };
 
@@ -148,6 +150,27 @@ public:
     }
 
     virtual ~WhileStmt() = default;
+};
+
+class FuncStmt : public Stmt {
+public:
+    Token& m_name;
+    std::vector<Token*> m_params;
+    std::vector<Stmt*> m_body;
+
+    inline FuncStmt(Token& name, std::vector<Token*>& params, std::vector<Stmt*>& body)
+        : m_name(name)
+        , m_params(params)
+        , m_body(body)
+    {
+    }
+
+    inline virtual void accept(IStmtVisitor& visitor, void* context) override
+    {
+        visitor.visit_func_stmt(this, context);
+    }
+
+    virtual ~FuncStmt() = default;
 };
 
 }

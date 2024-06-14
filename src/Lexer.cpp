@@ -151,7 +151,7 @@ void jl::Lexer::add_token(Token::TokenType type)
     m_tokens.push_back(Token(type, lexeme, m_line));
 }
 
-void jl::Lexer::add_token(Token::TokenType type, Token::Value value)
+void jl::Lexer::add_token(Token::TokenType type, Value value)
 {
     std::string lexeme = m_source.substr(m_start, m_current - m_start);
     m_tokens.push_back(Token(type, lexeme, m_line, value));

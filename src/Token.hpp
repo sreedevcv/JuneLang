@@ -3,6 +3,8 @@
 #include <string>
 #include <variant>
 
+#include "Value.hpp"
+
 namespace jl {
 class Token {
 public:
@@ -58,8 +60,6 @@ public:
         NULL_,
     };
 
-    using Value = std::variant<int, double, bool, std::string, char>;
-
     Token(TokenType type, std::string& lexeme, int line);
     Token(TokenType type, std::string& lexeme, int line, Value value);
     ~Token();
@@ -68,7 +68,7 @@ public:
     const std::string& get_lexeme() const;
     const Value get_value() const;
     int get_line() const;
-    
+
     static Value global_true_constant;
     static Value global_false_constant;
 
@@ -79,10 +79,11 @@ private:
     Value m_value;
 };
 
-bool is_int(Token::Value& value);
-bool is_float(Token::Value& value);
-bool is_bool(Token::Value& value);
-bool is_string(Token::Value& value);
-bool is_null(Token::Value& value);
-bool is_number(Token::Value& value);
+bool is_int(Value& value);
+bool is_float(Value& value);
+bool is_bool(Value& value);
+bool is_string(Value& value);
+bool is_null(Value& value);
+bool is_number(Value& value);
+bool is_callable(Value& value);
 } // namespace jl

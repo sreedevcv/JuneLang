@@ -44,7 +44,7 @@ TEST_CASE("Interpreter Simple Expressions", "[Interpreter]")
         jl::Expr* e = parser.parse();
         REQUIRE(e != nullptr);
 
-        jl::Token::Value value;
+        jl::Value value;
         jl::Interpreter interpreter;
         interpreter.interpret(e, &value);
         std::string result = interpreter.stringify(value);

@@ -12,23 +12,25 @@ int main()
 
     jl::Lexer lexer(
     R"(
-        var index = 10;
-        var sum = 0;
+        // var index = 10;
+        // var sum = 0;
 
-        while index > 0
-        [
-            sum = sum + index;
-            index = index - 1;
-        ]
+        // while index > 0
+        // [
+        //     sum = sum + index;
+        //     index = index - 1;
+        // ]
 
-        var a = 0;
-        var temp;
+        // var a = 0;
+        // var temp;
 
-        for var b = 1; a < 10000; b = temp + b; [
-            print a;
-            temp = a;
-            a = b;
-        ]
+        // for var b = 1; a < 10000; b = temp + b; [
+        //     print a;
+        //     temp = a;
+        //     a = b;
+        // ]
+
+        print "Hello";
 
     )");
     // jl::Lexer lexer("\"hello \" + \"hai\"");
@@ -40,7 +42,7 @@ int main()
         jl::Parser parser(tokens);
         auto stmts = parser.parseStatements();
 
-        jl::Token::Value v;
+        jl::Value v;
         jl::Interpreter interpreter;
         interpreter.interpret(stmts);
         // std::cout << interpreter.stringify(v) << "\n";

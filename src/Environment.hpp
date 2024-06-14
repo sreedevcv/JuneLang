@@ -12,18 +12,18 @@ public:
     Environment(Environment *enclosing);
     ~Environment();
 
-    /* Stores a copy of variable name and token::value in map if
+    /* Stores a copy of variable name and value in map if
         they dont already exists otherwise throws an exception */
-    void define(const std::string& name, const Token::Value& value);
+    void define(const std::string& name, const Value& value);
     /* Retrives the sored reference to a token otherwise
         throws an exception */
-    Token::Value& get(const Token& name);
+    Value& get(const Token& name);
 
-    void assign(const Token& token, const Token::Value& value);
+    void assign(const Token& token, const Value& value);
+    Environment* m_enclosing;
 
 private:
-    std::unordered_map<std::string, Token::Value> m_values;
-    Environment* m_enclosing;
+    std::unordered_map<std::string, Value> m_values;
 };
 
 } // namespace jl
