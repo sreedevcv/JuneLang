@@ -69,11 +69,14 @@ public:
     const Value get_value() const;
     int get_line() const;
     
-    private:
-        TokenType m_type;
-        std::string m_lexeme;
-        int m_line;
-        Value m_value;
+    static Value global_true_constant;
+    static Value global_false_constant;
+
+private:
+    TokenType m_type;
+    std::string m_lexeme;
+    int m_line;
+    Value m_value;
 };
 
 bool is_int(Token::Value& value);
@@ -82,5 +85,4 @@ bool is_bool(Token::Value& value);
 bool is_string(Token::Value& value);
 bool is_null(Token::Value& value);
 bool is_number(Token::Value& value);
-
 } // namespace jl

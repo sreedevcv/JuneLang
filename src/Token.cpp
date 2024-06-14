@@ -2,6 +2,9 @@
 
 #include "Expr.hpp"
 
+jl::Token::Value jl::Token::global_true_constant = jl::Token::Value(true);
+jl::Token::Value jl::Token::global_false_constant = jl::Token::Value(false);
+
 jl::Token::Token(TokenType type, std::string& lexeme, int line)
     : m_type(type)
     , m_lexeme(lexeme)
