@@ -37,9 +37,9 @@ void jl::Lexer::scan()
         scan_token();
     }
 
-    /* replaced ; with newline hence make sure that even the final statement has a
-    newline to correctly parse */
-    add_token(Token::NEW_LINE);     
+    // /* replaced ; with newline hence make sure that even the final statement has a
+    // newline to correctly parse */
+    // add_token(Token::NEW_LINE);     
     add_token(Token::END_OF_FILE);
 }
 
@@ -92,7 +92,7 @@ void jl::Lexer::scan_token()
         add_token(Token::STAR);
         break;
     case '\n':
-        add_token(Token::NEW_LINE);
+        // add_token(Token::NEW_LINE);
         m_line++;
         break;
     case ';':

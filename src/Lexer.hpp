@@ -49,6 +49,7 @@ private:
         { "not", Token::NOT },
         { "if", Token::IF },
         { "then", Token::THEN },
+        { "else", Token::ELSE },
         { "while", Token::WHILE },
         { "do", Token::DO },
         { "for", Token::FOR },
