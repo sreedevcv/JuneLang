@@ -22,7 +22,7 @@ int main()
             a = a * 2;
         ]
 
-        print a;
+        print (false and a) or 5;
     )");
     // jl::Lexer lexer("\"hello \" + \"hai\"");
     // lexer.scan();

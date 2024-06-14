@@ -26,7 +26,16 @@ private:
     Expr* unary();
     Expr* primary();
     Expr* assignment();
-    
+    Expr* or_expr();
+    Expr* and_expr();
+
+    Stmt* statement();
+    Stmt* declaration();
+    Stmt* print_statement();
+    Stmt* expr_statement();
+    Stmt* var_declaration();
+    Stmt* if_stmt();
+    std::vector<Stmt*> block();
 
     void synchronize();
     bool match(std::vector<Token::TokenType>&& types);
@@ -36,13 +45,5 @@ private:
     Token& peek();
     Token& previous();
     Token& consume(Token::TokenType type, const char* msg);
-
-    Stmt* statement();
-    Stmt* declaration();
-    Stmt* print_statement();
-    Stmt* expr_statement();
-    Stmt* var_declaration();
-    Stmt* if_stmt();
-    std::vector<Stmt*> block();
 };
 } // namespace jl

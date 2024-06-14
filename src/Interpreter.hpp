@@ -23,6 +23,7 @@ private:
     virtual void visit_unary_expr(Unary* expr, void* context) override;
     virtual void visit_literal_expr(Literal* expr, void* context) override;
     virtual void visit_variable_expr(Variable* expr, void* context) override;
+    virtual void visit_logical_expr(Logical* expr, void* context) override;
     virtual void* get_expr_context() override;
 
     virtual void visit_print_stmt(PrintStmt* stmt, void* context) override;

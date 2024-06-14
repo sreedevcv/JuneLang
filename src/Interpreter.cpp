@@ -174,6 +174,28 @@ void jl::Interpreter::visit_variable_expr(Variable* expr, void* context)
     *static_cast<Token::Value*>(context) = m_env->get(expr->m_name);
 }
 
+void jl::Interpreter::visit_logical_expr(Logical* expr, void* context)
+{
+    // Token::Value value;
+    evaluate(expr->m_left, context);
+    bool truth = is_truthy(static_cast<Token::Value*>(context));
+
+    if (expr->m_oper.get_tokentype() == Token::OR) {
+        if (truth) {
+            // return whatever is in context since first OR is truthy
+            return;
+        }
+    } else {
+        if (!truth) {
+            // return whatever is in context since first AND is falsey
+            return;
+        }
+    }
+
+    evaluate(expr->m_right, context);
+    // Return whatever is evaluated inside right expr`
+}
+
 void* jl::Interpreter::get_expr_context()
 {
     return nullptr;

@@ -14,6 +14,7 @@ class Grouping;
 class Unary;
 class Literal;
 class Variable;
+class Logical;
 
 class IExprVisitor {
 public:
@@ -23,6 +24,7 @@ public:
     virtual void visit_unary_expr(Unary* expr, void* context) = 0;
     virtual void visit_literal_expr(Literal* expr, void* context) = 0;
     virtual void visit_variable_expr(Variable* expr, void* context) = 0;
+    virtual void visit_logical_expr(Logical* expr, void* context) = 0;
 
     virtual void* get_expr_context() = 0;
 };
@@ -141,6 +143,25 @@ public:
     virtual ~Variable() = default;
 };
 
+class Logical : public Expr {
+public:
+    Expr* m_left;
+    Token& m_oper;
+    Expr* m_right;
+
+    inline Logical(Expr* left, Token& oper, Expr* right)
+        : m_left(left)
+        , m_oper(oper)
+        , m_right(right)
+    {
+    }
+
+    inline virtual void accept(IExprVisitor& visitor, void* context) override
+    {
+        visitor.visit_logical_expr(this, context);
+    }
+};
+
 class ParsetreePrinter : public IExprVisitor {
 public:
     std::string context;
@@ -163,6 +184,10 @@ public:
     inline void visit_variable_expr(Variable* expr, void* context) override
     {
         parenthesize(expr->m_name.get_lexeme(), {});
+    }
+    inline void visit_logical_expr(Logical* expr, void* context) override
+    {
+
     }
     inline void visit_literal_expr(Literal* expr, void* context) override
     {

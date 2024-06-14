@@ -31,112 +31,6 @@ std::vector<jl::Stmt*> jl::Parser::parseStatements()
     return statements;
 }
 
-jl::Expr* jl::Parser::expression()
-{
-    return assignment();
-}
-
-jl::Expr* jl::Parser::equality()
-{
-    Expr* expr = comparison();
-
-    while (match({ Token::BANG_EQUAL, Token::EQUAL_EQUAL })) {
-        Token& oper = previous();
-        Expr* right = comparison();
-        expr = new Binary(expr, &oper, right);
-    }
-    return expr;
-}
-
-jl::Expr* jl::Parser::comparison()
-{
-    Expr* expr = term();
-
-    while (match({ Token::GREATER, Token::GREATER_EQUAL, Token::LESS, Token::LESS_EQUAL })) {
-        Token& oper = previous();
-        Expr* right = term();
-        expr = new Binary(expr, &oper, right);
-    }
-    return expr;
-}
-
-jl::Expr* jl::Parser::term()
-{
-    Expr* expr = factor();
-
-    while (match({ Token::MINUS, Token::PLUS })) {
-        Token& oper = previous();
-        Expr* right = factor();
-        expr = new Binary(expr, &oper, right);
-    }
-    return expr;
-}
-
-jl::Expr* jl::Parser::factor()
-{
-    Expr* expr = unary();
-
-    while (match({ Token::SLASH, Token::STAR })) {
-        Token& oper = previous();
-        Expr* right = unary();
-        expr = new Binary(expr, &oper, right);
-    }
-    return expr;
-}
-
-jl::Expr* jl::Parser::unary()
-{
-    if (match({ Token::BANG, Token::MINUS })) {
-        Token& oper = previous();
-        Expr* right = unary();
-        return new Unary(&oper, right);
-    }
-    return primary();
-}
-
-jl::Expr* jl::Parser::primary()
-{
-    if (match({ Token::INT, Token::FLOAT, Token::STRING, Token::FALSE, Token::TRUE, Token::NULL_ })) {
-        Token::Value* value = new Token::Value(previous().get_value());
-        return new Literal(value);
-    }
-
-    if (match({Token::IDENTIFIER})) {
-        return new Variable(previous());
-    }
-
-    if (match({ Token::LEFT_PAR })) {
-        Expr* expr = expression();
-        consume(Token::RIGHT_PAR, "Expect ) after expression");
-        return new Grouping(expr);
-    }
-
-    // TODO::Improve error function
-    std::string file = std::string("Unknown");
-    ErrorHandler::error(file, peek().get_line(), "Expected expression");
-    throw "parse-exception";
-}
-
-jl::Expr* jl::Parser::assignment()
-{
-    Expr* expr = equality();
-
-    if (match({Token::EQUAL})) {
-        Token& equals = previous();
-        Expr* value = assignment();
-
-        if (dynamic_cast<Variable*>(expr)) {
-            Token& name = static_cast<Variable*>(expr)->m_name;
-            return new Assign(value, name);
-        }
-
-        std::string filename = "Unknown";
-        ErrorHandler::error(filename, equals.get_line(), "invalid assignment target");
-    }
-
-    return expr;
-}
-
 void jl::Parser::synchronize()
 {
     advance();
@@ -213,15 +107,155 @@ jl::Token& jl::Parser::consume(Token::TokenType type, const char* msg)
     }
 }
 
+// --------------------------------------------------------------------------------
+// -------------------------------Expressions--------------------------------------
+// --------------------------------------------------------------------------------
+
+jl::Expr* jl::Parser::expression()
+{
+    return assignment();
+}
+
+jl::Expr* jl::Parser::equality()
+{
+    Expr* expr = comparison();
+
+    while (match({ Token::BANG_EQUAL, Token::EQUAL_EQUAL })) {
+        Token& oper = previous();
+        Expr* right = comparison();
+        expr = new Binary(expr, &oper, right);
+    }
+    return expr;
+}
+
+jl::Expr* jl::Parser::comparison()
+{
+    Expr* expr = term();
+
+    while (match({ Token::GREATER, Token::GREATER_EQUAL, Token::LESS, Token::LESS_EQUAL })) {
+        Token& oper = previous();
+        Expr* right = term();
+        expr = new Binary(expr, &oper, right);
+    }
+    return expr;
+}
+
+jl::Expr* jl::Parser::term()
+{
+    Expr* expr = factor();
+
+    while (match({ Token::MINUS, Token::PLUS })) {
+        Token& oper = previous();
+        Expr* right = factor();
+        expr = new Binary(expr, &oper, right);
+    }
+    return expr;
+}
+
+jl::Expr* jl::Parser::factor()
+{
+    Expr* expr = unary();
+
+    while (match({ Token::SLASH, Token::STAR })) {
+        Token& oper = previous();
+        Expr* right = unary();
+        expr = new Binary(expr, &oper, right);
+    }
+    return expr;
+}
+
+jl::Expr* jl::Parser::unary()
+{
+    if (match({ Token::BANG, Token::MINUS })) {
+        Token& oper = previous();
+        Expr* right = unary();
+        return new Unary(&oper, right);
+    }
+    return primary();
+}
+
+jl::Expr* jl::Parser::primary()
+{
+    if (match({ Token::INT, Token::FLOAT, Token::STRING, Token::FALSE, Token::TRUE, Token::NULL_ })) {
+        Token::Value* value = new Token::Value(previous().get_value());
+        return new Literal(value);
+    }
+
+    if (match({ Token::IDENTIFIER })) {
+        return new Variable(previous());
+    }
+
+    if (match({ Token::LEFT_PAR })) {
+        Expr* expr = expression();
+        consume(Token::RIGHT_PAR, "Expect ) after expression");
+        return new Grouping(expr);
+    }
+
+    // TODO::Improve error function
+    std::string file = std::string("Unknown");
+    ErrorHandler::error(file, peek().get_line(), "Expected expression");
+    throw "parse-exception";
+}
+
+jl::Expr* jl::Parser::assignment()
+{
+    Expr* expr = or_expr();
+
+    if (match({ Token::EQUAL })) {
+        Token& equals = previous();
+        Expr* value = assignment();
+
+        if (dynamic_cast<Variable*>(expr)) {
+            Token& name = static_cast<Variable*>(expr)->m_name;
+            return new Assign(value, name);
+        }
+
+        std::string filename = "Unknown";
+        ErrorHandler::error(filename, equals.get_line(), "invalid assignment target");
+    }
+
+    return expr;
+}
+
+jl::Expr* jl::Parser::or_expr()
+{
+    Expr* expr = and_expr();
+
+    while (match({ Token::OR })) {
+        Token& oper = previous();
+        Expr* right = and_expr();
+        expr = new Logical(expr, oper, right);
+    }
+
+    return expr;
+}
+
+jl::Expr* jl::Parser::and_expr()
+{
+    Expr* expr = equality();
+
+    while (match({ Token::AND })) {
+        Token& oper = previous();
+        Expr* right = equality();
+        expr = new Logical(expr, oper, right);
+    }
+
+    return expr;
+}
+
+// --------------------------------------------------------------------------------
+// -------------------------------Statements---------------------------------------
+// --------------------------------------------------------------------------------
+
 jl::Stmt* jl::Parser::statement()
 {
     if (match({ Token::PRINT })) {
         return print_statement();
     }
-    if (match({Token::LEFT_SQUARE})) {
+    if (match({ Token::LEFT_SQUARE })) {
         return new BlockStmt(block());
     }
-    if (match({Token::IF})) {
+    if (match({ Token::IF })) {
         return if_stmt();
     }
 
@@ -234,7 +268,7 @@ jl::Stmt* jl::Parser::declaration()
         if (match({ Token::VAR })) {
             return var_declaration();
         }
-        if (match({Token::SEMI_COLON})) {
+        if (match({ Token::SEMI_COLON })) {
             return new EmptyStmt();
         }
         return statement();
@@ -263,7 +297,7 @@ jl::Stmt* jl::Parser::var_declaration()
     Token& name = consume(Token::IDENTIFIER, "Expected a variable name");
     Expr* initializer = nullptr;
 
-    if (match({Token::EQUAL})) {
+    if (match({ Token::EQUAL })) {
         initializer = expression();
     }
 
@@ -281,7 +315,7 @@ jl::Stmt* jl::Parser::if_stmt()
 
     Stmt* else_branch = nullptr;
 
-    if (match({Token::ELSE})) {
+    if (match({ Token::ELSE })) {
         // consume(Token::LEFT_SQUARE, "Expected [ after condition");
         else_branch = statement();
         // consume(Token::RIGHT_SQUARE, "Expected ] after statements in if block");
