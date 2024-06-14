@@ -45,6 +45,7 @@ public:
         FUNC,
         IF,
         THEN,
+        ELSE,
         WHILE,
         DO,
         FOR,
