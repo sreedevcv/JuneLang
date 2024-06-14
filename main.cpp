@@ -12,17 +12,24 @@ int main()
 
     jl::Lexer lexer(
     R"(
-        var a = 10;
+        var index = 10;
+        var sum = 0;
 
-        if 3 == 5 [
-            a = a + 1;
-        ]
-        else [
-            a = a -1;
-            a = a * 2;
+        while index > 0
+        [
+            sum = sum + index;
+            index = index - 1;
         ]
 
-        print (false and a) or 5;
+        var a = 0;
+        var temp;
+
+        for var b = 1; a < 10000; b = temp + b; [
+            print a;
+            temp = a;
+            a = b;
+        ]
+
     )");
     // jl::Lexer lexer("\"hello \" + \"hai\"");
     // lexer.scan();

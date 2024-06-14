@@ -32,6 +32,7 @@ private:
     virtual void visit_block_stmt(BlockStmt* stmt, void* context) override;
     virtual void visit_empty_stmt(EmptyStmt* stmt, void* context) override;
     virtual void visit_if_stmt(IfStmt* stmt, void* context) override;
+    virtual void visit_while_stmt(WhileStmt* stmt, void* context) override;
     virtual void* get_stmt_context() override;
 
     void evaluate(Expr* expr, void* context);

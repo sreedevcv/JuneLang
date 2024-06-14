@@ -25,7 +25,6 @@ public:
     virtual void visit_literal_expr(Literal* expr, void* context) = 0;
     virtual void visit_variable_expr(Variable* expr, void* context) = 0;
     virtual void visit_logical_expr(Logical* expr, void* context) = 0;
-
     virtual void* get_expr_context() = 0;
 };
 
@@ -160,6 +159,8 @@ public:
     {
         visitor.visit_logical_expr(this, context);
     }
+
+    virtual ~Logical() = default;
 };
 
 class ParsetreePrinter : public IExprVisitor {
@@ -187,7 +188,6 @@ public:
     }
     inline void visit_logical_expr(Logical* expr, void* context) override
     {
-
     }
     inline void visit_literal_expr(Literal* expr, void* context) override
     {

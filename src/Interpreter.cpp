@@ -251,6 +251,19 @@ void jl::Interpreter::visit_if_stmt(IfStmt* stmt, void* context)
     }
 }
 
+void jl::Interpreter::visit_while_stmt(WhileStmt* stmt, void* context)
+{
+    Token::Value value;
+    while (is_truthy(&value)) {
+        stmt->m_body->accept(*this, context);
+        evaluate(stmt->m_condition, &value);
+    }
+    
+    // make context null
+    value = '\0';
+    *static_cast<Token::Value*>(context) = value;
+}
+
 void* jl::Interpreter::get_stmt_context()
 {
     return nullptr;

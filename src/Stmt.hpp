@@ -10,6 +10,7 @@ class VarStmt;
 class BlockStmt;
 class EmptyStmt;
 class IfStmt;
+class WhileStmt;
 
 class IStmtVisitor {
 public:
@@ -19,6 +20,7 @@ public:
     virtual void visit_block_stmt(BlockStmt* stmt, void* context) = 0;
     virtual void visit_empty_stmt(EmptyStmt* stmt, void* context) = 0;
     virtual void visit_if_stmt(IfStmt* stmt, void* context) = 0;
+    virtual void visit_while_stmt(WhileStmt* stmt, void* context) = 0;
     virtual void* get_stmt_context() = 0;
 };
 
@@ -127,6 +129,25 @@ public:
     }
 
     virtual ~IfStmt() = default;
+};
+
+class WhileStmt : public Stmt {
+public:
+    Expr* m_condition;
+    Stmt* m_body;
+
+    inline WhileStmt(Expr* condition, Stmt* body)
+        : m_condition(condition)
+        , m_body(body)
+    {
+    }
+
+    inline virtual void accept(IStmtVisitor& visitor, void* context) override
+    {
+        visitor.visit_while_stmt(this, context);
+    }
+
+    virtual ~WhileStmt() = default;
 };
 
 }

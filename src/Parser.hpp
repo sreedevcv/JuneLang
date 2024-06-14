@@ -35,6 +35,8 @@ private:
     Stmt* expr_statement();
     Stmt* var_declaration();
     Stmt* if_stmt();
+    Stmt* while_statement();
+    Stmt* for_statement();
     std::vector<Stmt*> block();
 
     void synchronize();

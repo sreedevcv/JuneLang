@@ -258,6 +258,12 @@ jl::Stmt* jl::Parser::statement()
     if (match({ Token::IF })) {
         return if_stmt();
     }
+    if (match({Token::WHILE})) {
+        return while_statement();
+    }
+    if (match({Token::FOR})) {
+        return for_statement();
+    }
 
     return expr_statement();
 }
@@ -322,6 +328,55 @@ jl::Stmt* jl::Parser::if_stmt()
     }
 
     return new IfStmt(condition, then_branch, else_branch);
+}
+
+jl::Stmt* jl::Parser::while_statement()
+{
+    Expr* condition = expression();
+    Stmt* body = statement();
+
+    return new WhileStmt(condition, body);
+}
+
+jl::Stmt* jl::Parser::for_statement()
+{
+    Stmt* initializer;
+    if (match({Token::SEMI_COLON})) {
+        initializer = nullptr;
+    } else if (match({Token::VAR})) {
+        initializer = var_declaration();
+    } else {
+        initializer = expr_statement();
+    }
+
+    Expr* condition = nullptr;
+    if (!check(Token::SEMI_COLON)) {
+        condition = expression();
+    }
+    consume(Token::SEMI_COLON, "Expected ; after loop condition");
+
+    Expr* increment = nullptr;
+    if (!check(Token::SEMI_COLON)) {
+        increment = expression();
+    }
+    consume(Token::SEMI_COLON, "Expected ; after clauses");
+
+
+    Stmt* body = statement();
+
+    if (increment !=nullptr) {
+        body = new BlockStmt({body, new ExprStmt(increment)});
+    }
+    if (condition == nullptr) {
+        condition = new Literal(&Token::global_true_constant);
+    }
+    body = new WhileStmt(condition, body);
+
+    if (initializer != nullptr) {
+        body = new BlockStmt({initializer, body});
+    }
+
+    return body;
 }
 
 std::vector<jl::Stmt*> jl::Parser::block()
