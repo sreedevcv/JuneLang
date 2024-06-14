@@ -42,6 +42,7 @@ private:
     Stmt* print_statement();
     Stmt* expr_statement();
     Stmt* var_declaration();
+    Stmt* if_stmt();
     std::vector<Stmt*> block();
 };
 } // namespace jl

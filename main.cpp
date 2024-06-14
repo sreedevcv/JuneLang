@@ -11,29 +11,18 @@ int main()
     // std::cout << "Hello World\n";
 
     jl::Lexer lexer(
-        R"(
+    R"(
+        var a = 10;
 
-            var a = "global a"
-            var b = "global b"
-            var c = "global c"
-            [
-            var a = "outer a"
-            var b = "outer b"
-            [
-                var a = "inner a"
-                print a
-                print b
-                print c
-            ]
-            print a
-            print b
-            print c
-            ]
-            print a
-            print b
-            print c
-            print a + "-" + b + "-" + c
+        if 3 == 5 [
+            a = a + 1;
+        ]
+        else [
+            a = a -1;
+            a = a * 2;
+        ]
 
+        print a;
     )");
     // jl::Lexer lexer("\"hello \" + \"hai\"");
     // lexer.scan();

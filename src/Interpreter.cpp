@@ -218,6 +218,17 @@ void jl::Interpreter::visit_empty_stmt(EmptyStmt* stmt, void* context)
 {
 }
 
+void jl::Interpreter::visit_if_stmt(IfStmt* stmt, void* context)
+{   
+    Token::Value value;
+    evaluate(stmt->m_condition, &value);
+    if (is_truthy(&value)) {
+        stmt->m_then_stmt->accept(*this, context);
+    } else if (stmt->m_else_stmt != nullptr) {
+        stmt->m_else_stmt->accept(*this, context);
+    }
+}
+
 void* jl::Interpreter::get_stmt_context()
 {
     return nullptr;

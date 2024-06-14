@@ -142,7 +142,7 @@ void jl::Parser::synchronize()
     advance();
 
     while (!is_at_end()) {
-        if (previous().get_tokentype() == Token::NEW_LINE)
+        if (previous().get_tokentype() == Token::SEMI_COLON)
             return;
 
         switch (peek().get_tokentype()) {
@@ -221,6 +221,9 @@ jl::Stmt* jl::Parser::statement()
     if (match({Token::LEFT_SQUARE})) {
         return new BlockStmt(block());
     }
+    if (match({Token::IF})) {
+        return if_stmt();
+    }
 
     return expr_statement();
 }
@@ -231,7 +234,7 @@ jl::Stmt* jl::Parser::declaration()
         if (match({ Token::VAR })) {
             return var_declaration();
         }
-        if (match({Token::NEW_LINE})) {
+        if (match({Token::SEMI_COLON})) {
             return new EmptyStmt();
         }
         return statement();
@@ -244,14 +247,14 @@ jl::Stmt* jl::Parser::declaration()
 jl::Stmt* jl::Parser::print_statement()
 {
     Expr* expr = expression();
-    consume(Token::NEW_LINE, "Expected newline after expression");
+    consume(Token::SEMI_COLON, "Expected ; after expression");
     return new PrintStmt(expr);
 }
 
 jl::Stmt* jl::Parser::expr_statement()
 {
     Expr* expr = expression();
-    consume(Token::NEW_LINE, "Expected newline after expression");
+    consume(Token::SEMI_COLON, "Expected ; after expression");
     return new ExprStmt(expr);
 }
 
@@ -264,8 +267,27 @@ jl::Stmt* jl::Parser::var_declaration()
         initializer = expression();
     }
 
-    consume(Token::NEW_LINE, "Expected newline after variable declaration");
+    consume(Token::SEMI_COLON, "Expected ; after variable declaration");
     return new VarStmt(name, initializer);
+}
+
+// NOTE::Unsure whether wee need a delinter after condition to properly parse
+jl::Stmt* jl::Parser::if_stmt()
+{
+    Expr* condition = expression();
+    // consume(Token::LEFT_SQUARE, "Expected [ after condition");
+    Stmt* then_branch = statement();
+    // consume(Token::RIGHT_SQUARE, "Expected ] after statements in if block");
+
+    Stmt* else_branch = nullptr;
+
+    if (match({Token::ELSE})) {
+        // consume(Token::LEFT_SQUARE, "Expected [ after condition");
+        else_branch = statement();
+        // consume(Token::RIGHT_SQUARE, "Expected ] after statements in if block");
+    }
+
+    return new IfStmt(condition, then_branch, else_branch);
 }
 
 std::vector<jl::Stmt*> jl::Parser::block()

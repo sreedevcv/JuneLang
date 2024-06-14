@@ -9,6 +9,7 @@ class ExprStmt;
 class VarStmt;
 class BlockStmt;
 class EmptyStmt;
+class IfStmt;
 
 class IStmtVisitor {
 public:
@@ -17,6 +18,7 @@ public:
     virtual void visit_var_stmt(VarStmt* stmt, void* context) = 0;
     virtual void visit_block_stmt(BlockStmt* stmt, void* context) = 0;
     virtual void visit_empty_stmt(EmptyStmt* stmt, void* context) = 0;
+    virtual void visit_if_stmt(IfStmt* stmt, void* context) = 0;
     virtual void* get_stmt_context() = 0;
 };
 
@@ -104,6 +106,27 @@ public:
     {
         visitor.visit_empty_stmt(this, context);
     }
+};
+
+class IfStmt : public Stmt {
+public:
+    Expr* m_condition;
+    Stmt* m_then_stmt;
+    Stmt* m_else_stmt;
+
+    inline IfStmt(Expr* condition, Stmt* then_stmt, Stmt* else_stmt)
+        : m_condition(condition)
+        , m_then_stmt(then_stmt)
+        , m_else_stmt(else_stmt)
+    {
+    }
+
+    inline virtual void accept(IStmtVisitor& visitor, void* context) override
+    {
+        visitor.visit_if_stmt(this, context);
+    }
+
+    virtual ~IfStmt() = default;
 };
 
 }
