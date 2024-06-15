@@ -12,33 +12,13 @@ int main()
 
     jl::Lexer lexer(
     R"(
-        // var index = 10;
-        // var sum = 0;
-
-        // while index > 0
-        // [
-        //     sum = sum + index;
-        //     index = index - 1;
-        // ]
-
-        var a = 0;
-        var temp;
-
-        for var b = 1; a < 10000; b = temp + b; 
-        [
-            print a;
-            temp = a;
-            a = b;
+        fun add(a, b, c) [
+            print a + b + c;
         ]
 
-        print "Hello";
-
-        fun hello()
-        [
-        ]
-
-        hello();
-
+        add(1, 2, 3);
+        add(4, 5, 6);
+        
     )");
     // jl::Lexer lexer("\"hello \" + \"hai\"");
     // lexer.scan();

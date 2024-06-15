@@ -5,8 +5,8 @@
 
 jl::Interpreter::Interpreter(std::string& file_name)
     : m_file_name(file_name)
-    , m_env(new Environment(nullptr))
 {
+    m_env = new Environment(m_file_name);
     m_global_env = m_env;
 }
 
@@ -174,7 +174,7 @@ void jl::Interpreter::visit_literal_expr(Literal* expr, void* context)
 // Returns the token value as the context
 void jl::Interpreter::visit_variable_expr(Variable* expr, void* context)
 {
-    *static_cast<Value*>(context) = m_env->get(expr->m_name);
+    *static_cast<Value*>(context) = m_env->get_ref(expr->m_name);
 }
 
 void jl::Interpreter::visit_logical_expr(Logical* expr, void* context)
@@ -202,25 +202,27 @@ void jl::Interpreter::visit_logical_expr(Logical* expr, void* context)
 void jl::Interpreter::visit_call_expr(Call* expr, void* context)
 {
     evaluate(expr->m_callee, context);
+    Value *value = static_cast<Value*>(context);
+
     std::vector<Value> arguments(expr->m_arguments.size());
 
     for (int i = 0; i < expr->m_arguments.size(); i++) {
         evaluate(expr->m_arguments[i], &arguments[i]);
     }
 
-    if (!dynamic_cast<Callable*>(expr->m_callee)) {
+    if (!is_callable(*value) || !dynamic_cast<Callable*>(static_cast<FunctionCallable*>(std::get<void*>(*value)))) {
         ErrorHandler::error(m_file_name, "interpreting", "function call",  expr->m_paren.get_line(), "Only a function or class is callable", 0);
         throw "exception";
     }
 
-    Callable* function = reinterpret_cast<Callable*>(expr->m_callee);
+    FunctionCallable* function = static_cast<FunctionCallable*>(std::get<void*>(*value));
     if (arguments.size() != function->arity()) {
         ErrorHandler::error(m_file_name, "interpreting", "function call",  expr->m_paren.get_line(), "Arity of function call and its declararion do not match", 0);
         throw "exception";
     }
 
-    Value value = function->call(this, arguments);
-    *static_cast<Value*>(context) = value;
+    Value return_value = function->call(this, arguments);
+    *static_cast<Value*>(context) = return_value;
 }
 
 
@@ -283,6 +285,7 @@ void jl::Interpreter::visit_if_stmt(IfStmt* stmt, void* context)
 void jl::Interpreter::visit_while_stmt(WhileStmt* stmt, void* context)
 {
     Value value;
+    evaluate(stmt->m_condition, &value);
     while (is_truthy(&value)) {
         stmt->m_body->accept(*this, context);
         evaluate(stmt->m_condition, &value);
@@ -295,9 +298,9 @@ void jl::Interpreter::visit_while_stmt(WhileStmt* stmt, void* context)
 
 void jl::Interpreter::visit_func_stmt(FuncStmt* stmt, void* context)
 {
-    Function* function = new Function(stmt);
-    // m_env->define(stmt->m_name.get_lexeme(), function);
-    // return null
+    FunctionCallable* function = new FunctionCallable(stmt);
+    m_env->define(stmt->m_name.get_lexeme(), static_cast<void*>(function));
+    *static_cast<Value*>(context) = '\0';
 }
 
 void* jl::Interpreter::get_stmt_context()

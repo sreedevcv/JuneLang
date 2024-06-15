@@ -8,7 +8,7 @@ namespace jl {
 
 class Environment {
 public:
-    Environment();
+    Environment(std::string& file_name);
     Environment(Environment *enclosing);
     ~Environment();
 
@@ -17,13 +17,15 @@ public:
     void define(const std::string& name, const Value& value);
     /* Retrives the sored reference to a token otherwise
         throws an exception */
-    Value& get(const Token& name);
+    Value& get_ref(const Token& name);
+    Value get_copy(const Token& name);
 
     void assign(const Token& token, const Value& value);
     Environment* m_enclosing;
 
 private:
     std::unordered_map<std::string, Value> m_values;
+    std::string& m_file_name;
 };
 
 } // namespace jl

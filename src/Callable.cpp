@@ -1,11 +1,11 @@
 #include "Callable.hpp"
 
-jl::Function::Function(FuncStmt* declaration)
+jl::FunctionCallable::FunctionCallable(FuncStmt* declaration)
     : m_declaration(declaration)
 {
 }
 
-jl::Value jl::Function::call(Interpreter* interpreter, std::vector<Value>& arguments)
+jl::Value jl::FunctionCallable::call(Interpreter* interpreter, std::vector<Value>& arguments)
 {
     Environment* env = new Environment(interpreter->m_global_env);
 
@@ -15,10 +15,12 @@ jl::Value jl::Function::call(Interpreter* interpreter, std::vector<Value>& argum
 
     interpreter->execute_block(m_declaration->m_body, env);
 
+    // To prevent the env from deleting the enclosing global environment when it goes out of scope
     env->m_enclosing = nullptr;
+    return '\0';
 }
 
-int jl::Function::arity() 
+int jl::FunctionCallable::arity() 
 {
     return m_declaration->m_params.size();
 }

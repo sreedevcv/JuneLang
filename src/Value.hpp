@@ -10,5 +10,7 @@ using Value = std::variant<
     double,
     bool,
     std::string,
-    char>;
+    char,
+    void*
+    >;
 } // namespace jl
