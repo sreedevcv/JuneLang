@@ -60,6 +60,7 @@ private:
         { "var", Token::VAR },
         { "null", Token::NULL_ },
         { "print", Token::PRINT },
+        { "fun", Token::FUNC },
     };
 };
 } // namespace jl

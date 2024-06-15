@@ -33,6 +33,12 @@ int main()
 
         print "Hello";
 
+        fun hello()
+        [
+        ]
+
+        hello();
+
     )");
     // jl::Lexer lexer("\"hello \" + \"hai\"");
     // lexer.scan();
