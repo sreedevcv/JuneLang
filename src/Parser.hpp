@@ -7,7 +7,7 @@
 namespace jl {
 class Parser {
 public:
-    Parser(std::vector<Token>& tokens);
+    Parser(std::vector<Token>& tokens, std::string& file_name);
     ~Parser() = default;
 
     Expr* parse();
@@ -15,7 +15,7 @@ public:
 
 private:
     std::vector<Token> m_tokens;
-
+    std::string m_file_name;
     int m_current = 0;
 
     Expr* expression();

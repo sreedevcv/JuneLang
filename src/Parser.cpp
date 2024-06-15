@@ -4,8 +4,9 @@
 
 #include "ErrorHandler.hpp"
 
-jl::Parser::Parser(std::vector<Token>& tokens)
+jl::Parser::Parser(std::vector<Token>& tokens, std::string& file_name)
     : m_tokens(tokens)
+    , m_file_name(file_name)
 {
 }
 
@@ -49,6 +50,8 @@ void jl::Parser::synchronize()
         case Token::PRINT:
         case Token::RETURN:
             return;
+        default:
+            break;
         }
 
         advance();
@@ -101,8 +104,7 @@ jl::Token& jl::Parser::consume(Token::TokenType type, const char* msg)
     } else {
         Token& token = peek();
         // TODO::Improve error function
-        std::string file = std::string("Unknown");
-        ErrorHandler::error(file, token.get_line(), msg);
+        ErrorHandler::error(m_file_name, token.get_line(), msg);
         throw "parse-exception";
     }
 }
@@ -193,8 +195,7 @@ jl::Expr* jl::Parser::primary()
     }
 
     // TODO::Improve error function
-    std::string file = std::string("Unknown");
-    ErrorHandler::error(file, peek().get_line(), "Expected expression");
+    ErrorHandler::error(m_file_name, peek().get_line(), "Expected expression");
     throw "parse-exception";
 }
 
@@ -211,8 +212,7 @@ jl::Expr* jl::Parser::assignment()
             return new Assign(value, name);
         }
 
-        std::string filename = "Unknown";
-        ErrorHandler::error(filename, equals.get_line(), "invalid assignment target");
+        ErrorHandler::error(m_file_name, equals.get_line(), "invalid assignment target");
     }
 
     return expr;
@@ -266,8 +266,7 @@ jl::Expr* jl::Parser::finish_call(Expr* callee)
     if (!check(Token::RIGHT_PAR)) {
         do {
             if (arguments.size() > 255) {
-                std::string fname = "Call";
-                ErrorHandler::error(fname, peek().get_line(), "Cannot have more than 255 args for a call");
+                ErrorHandler::error(m_file_name, peek().get_line(), "Cannot have more than 255 args for a call");
             }
             arguments.push_back(expression());
         } while (match({ Token::COMMA }));
@@ -425,8 +424,7 @@ jl::Stmt* jl::Parser::function(const char* kind)
     if (!check(Token::RIGHT_PAR)) {
         do {
             if (parameters.size() >= 255) {
-                std::string fname = "function";
-                ErrorHandler::error(fname, peek().get_line(), "Cannot have more than 255 params");
+                ErrorHandler::error(m_file_name, peek().get_line(), "Cannot have more than 255 params");
             }
             Token& param = consume(Token::IDENTIFIER, "Expected param name");
             parameters.push_back(&param);

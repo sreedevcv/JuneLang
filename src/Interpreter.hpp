@@ -9,7 +9,7 @@
 namespace jl {
 class Interpreter : public IExprVisitor, public IStmtVisitor {
 public:
-    Interpreter();
+    Interpreter(std::string& file_name);
     ~Interpreter();
 
     void interpret(Expr* expr, Value* value = nullptr);
@@ -52,6 +52,6 @@ private:
     bool is_equal(Value& left, Value& right);
 
     Environment* m_env;
-    std::string file_name = "Unknown";
+    std::string m_file_name;
 };
 } // namespace jl

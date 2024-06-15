@@ -21,14 +21,15 @@ int main()
         //     index = index - 1;
         // ]
 
-        // var a = 0;
-        // var temp;
+        var a = 0;
+        var temp;
 
-        // for var b = 1; a < 10000; b = temp + b; [
-        //     print a;
-        //     temp = a;
-        //     a = b;
-        // ]
+        for var b = 1; a < 10000; b = temp + b; 
+        [
+            print a;
+            temp = a;
+            a = b;
+        ]
 
         print "Hello";
 
@@ -36,14 +37,16 @@ int main()
     // jl::Lexer lexer("\"hello \" + \"hai\"");
     // lexer.scan();
 
+    std::string file_name = "test";
+
     if (!jl::ErrorHandler::has_error()) {
         lexer.scan();
         auto tokens = lexer.get_tokens();
-        jl::Parser parser(tokens);
+        jl::Parser parser(tokens, file_name);
         auto stmts = parser.parseStatements();
 
         jl::Value v;
-        jl::Interpreter interpreter;
+        jl::Interpreter interpreter(file_name);
         interpreter.interpret(stmts);
         // std::cout << interpreter.stringify(v) << "\n";
     }

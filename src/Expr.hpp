@@ -240,7 +240,7 @@ public:
         context.append(")");
     }
 
-    inline virtual void* get_expr_context()
+    inline virtual void* get_expr_context() override
     {
         return &context;
     }
