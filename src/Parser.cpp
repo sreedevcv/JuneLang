@@ -103,8 +103,8 @@ jl::Token& jl::Parser::consume(Token::TokenType type, const char* msg)
         return advance();
     } else {
         Token& token = peek();
-        // TODO::Improve error function
-        ErrorHandler::error(m_file_name, token.get_line(), msg);
+        std::string error_where = "consuming a token (" + token.get_lexeme() + ")";
+        ErrorHandler::error(m_file_name, "parsing", error_where.c_str(), token.get_line(), msg, 0);
         throw "parse-exception";
     }
 }
@@ -190,12 +190,11 @@ jl::Expr* jl::Parser::primary()
 
     if (match({ Token::LEFT_PAR })) {
         Expr* expr = expression();
-        consume(Token::RIGHT_PAR, "Expect ) after expression");
+        consume(Token::RIGHT_PAR, "Expected ) after expression");
         return new Grouping(expr);
     }
 
-    // TODO::Improve error function
-    ErrorHandler::error(m_file_name, peek().get_line(), "Expected expression");
+    ErrorHandler::error(m_file_name, "parsing", "primary expression", peek().get_line(), "Expected a expression here", 0);
     throw "parse-exception";
 }
 
@@ -212,7 +211,7 @@ jl::Expr* jl::Parser::assignment()
             return new Assign(value, name);
         }
 
-        ErrorHandler::error(m_file_name, equals.get_line(), "invalid assignment target");
+        ErrorHandler::error(m_file_name, "parsing", "assignment", equals.get_line(), "Invalid assignment target, expected a variable", 0);
     }
 
     return expr;
@@ -266,13 +265,13 @@ jl::Expr* jl::Parser::finish_call(Expr* callee)
     if (!check(Token::RIGHT_PAR)) {
         do {
             if (arguments.size() > 255) {
-                ErrorHandler::error(m_file_name, peek().get_line(), "Cannot have more than 255 args for a call");
+                ErrorHandler::error(m_file_name, "parsing", "function call", peek().get_line(), "Cannot have more than 255 args for a call", 0);
             }
             arguments.push_back(expression());
         } while (match({ Token::COMMA }));
     }
 
-    Token& paren = consume(Token::RIGHT_PAR, "Expect ) after arguments");
+    Token& paren = consume(Token::RIGHT_PAR, "Expected ) after arguments");
     return new Call(callee, paren, arguments);
 }
 
@@ -395,7 +394,7 @@ jl::Stmt* jl::Parser::for_statement()
     if (!check(Token::SEMI_COLON)) {
         increment = expression();
     }
-    consume(Token::SEMI_COLON, "Expected ; after clauses");
+    consume(Token::SEMI_COLON, "Expected ; after all loop clauses");
 
     Stmt* body = statement();
 
@@ -416,7 +415,7 @@ jl::Stmt* jl::Parser::for_statement()
 
 jl::Stmt* jl::Parser::function(const char* kind)
 {
-    Token& name = consume(Token::IDENTIFIER, "Expeced func name");
+    Token& name = consume(Token::IDENTIFIER, "Expeced a function name here");
 
     consume(Token::LEFT_PAR, "Expected ( after fun name");
     std::vector<Token*> parameters;
@@ -424,16 +423,16 @@ jl::Stmt* jl::Parser::function(const char* kind)
     if (!check(Token::RIGHT_PAR)) {
         do {
             if (parameters.size() >= 255) {
-                ErrorHandler::error(m_file_name, peek().get_line(), "Cannot have more than 255 params");
+                ErrorHandler::error(m_file_name, "parsing", "function call", peek().get_line(), "Cannot have more than 255 parameters for a function", 0);
             }
-            Token& param = consume(Token::IDENTIFIER, "Expected param name");
+            Token& param = consume(Token::IDENTIFIER, "Expected parameter name here");
             parameters.push_back(&param);
 
         } while (match({Token::COMMA}));
     }
 
-    consume(Token::RIGHT_PAR, "Expected ) after func params");
-    consume(Token::LEFT_SQUARE, "Expected [ befor func body");
+    consume(Token::RIGHT_PAR, "Expected ) after function parameters");
+    consume(Token::LEFT_SQUARE, "Expected [ befor function body");
 
     std::vector<Stmt*> body = block();
     return new FuncStmt(name, parameters, body);
@@ -447,6 +446,6 @@ std::vector<jl::Stmt*> jl::Parser::block()
         statements.push_back(declaration());
     }
 
-    consume(Token::RIGHT_SQUARE, "Expect ] after block");
+    consume(Token::RIGHT_SQUARE, "Expected ] after block");
     return statements;
 }

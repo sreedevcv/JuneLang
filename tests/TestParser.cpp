@@ -20,7 +20,7 @@ TEST_CASE("Parser Expression Test", "[Parser]")
 
         REQUIRE(tokens.size() != 0);
 
-        jl::Parser parser(tokens);
+        jl::Parser parser(tokens, file);
         jl::Expr* e = parser.parse();
 
         REQUIRE(e != nullptr);

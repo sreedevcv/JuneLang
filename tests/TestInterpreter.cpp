@@ -31,6 +31,8 @@ TEST_CASE("Interpreter Simple Expressions", "[Interpreter]")
         "true"
     };
 
+    std::string file_name = "TestInterpreter";
+
     for (int i = 0; i < len; i++) {
         jl::Lexer lexer(expressions[i]);
         lexer.scan();
@@ -40,12 +42,13 @@ TEST_CASE("Interpreter Simple Expressions", "[Interpreter]")
         auto tokens = lexer.get_tokens();
         REQUIRE(tokens.size() != 0);
 
-        jl::Parser parser(tokens);
+        jl::Parser parser(tokens, file_name);
         jl::Expr* e = parser.parse();
         REQUIRE(e != nullptr);
 
+
         jl::Value value;
-        jl::Interpreter interpreter;
+        jl::Interpreter interpreter(file_name);
         interpreter.interpret(e, &value);
         std::string result = interpreter.stringify(value);
         REQUIRE(result == expected[i]);
