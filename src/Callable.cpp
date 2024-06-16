@@ -1,5 +1,11 @@
 #include "Callable.hpp"
 
+#include "ErrorHandler.hpp"
+
+// --------------------------------------------------------------------------------
+// -----------------------------FunctionCallable-----------------------------------
+// --------------------------------------------------------------------------------
+
 jl::FunctionCallable::FunctionCallable(FuncStmt* declaration, Environment* closure)
     : m_declaration(declaration)
     , m_closure(closure)
@@ -29,6 +35,51 @@ jl::Value jl::FunctionCallable::call(Interpreter* interpreter, std::vector<Value
 
 int jl::FunctionCallable::arity()
 {
-    return m_declaration->m_params.size();    return m_declaration->m_params.size();
+    return m_declaration->m_params.size();
+}
 
+std::string jl::FunctionCallable::to_string()
+{
+    return "<fn: " + m_declaration->m_name.get_lexeme() + ">";
+}
+
+// --------------------------------------------------------------------------------
+// ----------------------------ToIntNativeFunction---------------------------------
+// --------------------------------------------------------------------------------
+
+jl::Value jl::ToIntNativeFunction::call(Interpreter* interpreter, std::vector<Value>& arguments)
+{
+    Value& not_int = arguments[0];
+
+    if (is_int(not_int)) {
+        return not_int;
+    } else if (is_float(not_int)) {
+        return static_cast<int>(std::get<double>(not_int));
+    } else if (is_bool(not_int)) {
+        return std::get<bool>(not_int) ? 1 : 0;
+    } else if (is_null(not_int)) {
+        return 0;
+    } else if (is_string(not_int)) {
+        try {
+            int num = std::stoi(std::get<std::string>(not_int));
+            return num;
+        } catch(...) {
+            ErrorHandler::error(interpreter->m_file_name, "interpreting", "native function int()", 0, "Conversion cannot be performed on an invalid string", 0);
+            throw "runtime-error";
+            // return 0;
+        }
+    } else {
+        ErrorHandler::error(interpreter->m_file_name, "interpreting", "native function int()", 0, "Conversion cannot be performed on a callable", 0);
+        throw "runtime-error";
+    }
+}
+
+int jl::ToIntNativeFunction::arity()
+{
+    return 1;
+}
+
+std::string jl::ToIntNativeFunction::to_string()
+{
+    return "<native fn: int>";
 }

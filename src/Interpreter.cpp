@@ -8,6 +8,9 @@ jl::Interpreter::Interpreter(std::string& file_name)
 {
     m_env = new Environment(m_file_name);
     m_global_env = m_env;
+
+    ToIntNativeFunction* to_int_native_func = new ToIntNativeFunction();
+    m_global_env->define(to_int_native_func->m_name, static_cast<void*>(to_int_native_func));
 }
 
 jl::Interpreter::~Interpreter()
@@ -219,7 +222,7 @@ void jl::Interpreter::visit_call_expr(Call* expr, void* context)
         throw "exception";
     }
 
-    FunctionCallable* function = static_cast<FunctionCallable*>(std::get<void*>(*value));
+    Callable* function = static_cast<Callable*>(std::get<void*>(*value));
     if (arguments.size() != function->arity()) {
         ErrorHandler::error(m_file_name, "interpreting", "function call",  expr->m_paren.get_line(), "Arity of function call and its declararion do not match", 0);
         throw "exception";
@@ -408,7 +411,9 @@ std::string jl::Interpreter::stringify(Value& value)
         return std::to_string(std::get<int>(value));
     } else if (is_float(value)) {
         return std::to_string(std::get<double>(value));
-    } else {
+    } else if (is_string(value)) {
         return std::get<std::string>(value);
+    } else {
+        return static_cast<Callable*>(std::get<void*>(value))->to_string();
     }
 }

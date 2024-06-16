@@ -54,5 +54,7 @@ private:
 
     Environment* m_env;
     std::string m_file_name;
+
+    friend class ToIntNativeFunction;
 };
 } // namespace jl

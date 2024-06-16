@@ -31,11 +31,21 @@ int main()
             return fib(n - 2) + fib(n - 1);
         ]
 
-        for var i = 0; i < 20; i = i + 1; [
-            print fib(i);
-        ]
+        // for var i = 0; i < 20; i = i + 1; [
+        //     print fib(i);
+        // ]
 
-        
+        print fib;
+        print int;
+        print int(2);    
+        print int(10.5);    
+        print int("545");    
+        print int("-23233.4324");   
+        print int(true); 
+        print int(false); 
+        print int(null); 
+        // print int("hello");
+        // print int(fib);    
     )");
 
     std::string file_name = "test";
