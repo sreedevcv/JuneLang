@@ -40,6 +40,7 @@ private:
     Stmt* while_statement();
     Stmt* for_statement();
     Stmt* function(const char* kind);
+    Stmt* return_statement();
     std::vector<Stmt*> block();
 
     void synchronize();

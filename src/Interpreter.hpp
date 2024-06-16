@@ -40,6 +40,7 @@ private:
     virtual void visit_if_stmt(IfStmt* stmt, void* context) override;
     virtual void visit_while_stmt(WhileStmt* stmt, void* context) override;
     virtual void visit_func_stmt(FuncStmt* stmt, void* context) override;
+    virtual void visit_return_stmt(ReturnStmt* stmt, void* context) override;
 
     virtual void* get_stmt_context() override;
 

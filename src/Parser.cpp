@@ -296,6 +296,9 @@ jl::Stmt* jl::Parser::statement()
     if (match({ Token::FOR })) {
         return for_statement();
     }
+    if (match({Token::RETURN})) {
+        return return_statement();
+    }
 
     return expr_statement();
 }
@@ -436,6 +439,20 @@ jl::Stmt* jl::Parser::function(const char* kind)
 
     std::vector<Stmt*> body = block();
     return new FuncStmt(name, parameters, body);
+}
+
+jl::Stmt* jl::Parser::return_statement()
+{
+    Token& return_token = previous();
+    Expr* expr = nullptr;
+
+    if (!check(Token::SEMI_COLON)) {
+        expr = expression();    
+    }
+
+    consume(Token::SEMI_COLON, "Expected ; after return");
+
+    return new ReturnStmt(return_token, expr);
 }
 
 std::vector<jl::Stmt*> jl::Parser::block()

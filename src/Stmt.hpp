@@ -12,6 +12,7 @@ class EmptyStmt;
 class IfStmt;
 class WhileStmt;
 class FuncStmt;
+class ReturnStmt;
 
 class IStmtVisitor {
 public:
@@ -23,6 +24,7 @@ public:
     virtual void visit_if_stmt(IfStmt* stmt, void* context) = 0;
     virtual void visit_while_stmt(WhileStmt* stmt, void* context) = 0;
     virtual void visit_func_stmt(FuncStmt* stmt, void* context) = 0;
+    virtual void visit_return_stmt(ReturnStmt* stmt, void* context) = 0;
     virtual void* get_stmt_context() = 0;
 };
 
@@ -171,6 +173,25 @@ public:
     }
 
     virtual ~FuncStmt() = default;
+};
+
+class ReturnStmt : public Stmt {
+public:
+    Token& m_keyword;
+    Expr* m_expr;
+
+    inline ReturnStmt(Token& keyword, Expr* expr)
+        : m_keyword(keyword)
+        , m_expr(expr)
+    {
+    }
+
+    inline virtual void accept(IStmtVisitor& visitor, void* context) override
+    {
+        visitor.visit_return_stmt(this, context);
+    }
+
+    virtual ~ReturnStmt() = default;
 };
 
 }

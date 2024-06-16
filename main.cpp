@@ -13,11 +13,23 @@ int main()
     jl::Lexer lexer(
     R"(
         fun add(a, b, c) [
-            print a + b + c;
+            return a + b + c;
         ]
 
-        add(1, 2, 3);
-        add(4, 5, 6);
+        var a = add(1, 2, 3);
+        var b = add(4, 5, 6);
+
+        print a;
+        print b;
+
+        fun fib(n) [
+            if n <= 1 return n;
+            return fib(n - 2) + fib(n - 1);
+        ]
+
+        for var i = 0; i < 20; i = i + 1;
+            print fib(i);
+        
         
     )");
     // jl::Lexer lexer("\"hello \" + \"hai\"");
@@ -37,3 +49,17 @@ int main()
         // std::cout << interpreter.stringify(v) << "\n";
     }
 }
+
+/*
+
+        fun fib(n) [
+            if n <= 1 return n;
+            return fib(n - 2) + fib(n - 1);
+        ]
+
+        for var i = 0; i < 20; i = i + 1; [
+            print fib(i);
+        ]
+
+
+*/

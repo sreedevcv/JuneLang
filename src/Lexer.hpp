@@ -61,6 +61,7 @@ private:
         { "null", Token::NULL_ },
         { "print", Token::PRINT },
         { "fun", Token::FUNC },
+        { "return", Token::RETURN },
     };
 };
 } // namespace jl

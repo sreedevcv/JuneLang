@@ -303,6 +303,16 @@ void jl::Interpreter::visit_func_stmt(FuncStmt* stmt, void* context)
     *static_cast<Value*>(context) = '\0';
 }
 
+void jl::Interpreter::visit_return_stmt(ReturnStmt* stmt, void* context)
+{
+    Value value = '\0';
+    if (stmt->m_expr != nullptr) {
+        evaluate(stmt->m_expr, &value);
+    }
+
+    throw value;
+}
+
 void* jl::Interpreter::get_stmt_context()
 {
     return nullptr;
@@ -358,9 +368,17 @@ void jl::Interpreter::execute_block(std::vector<Stmt*>& statements, Environment*
         for (auto stmt: statements) {
             stmt->accept(*this, &value);
         }
-    } catch(...) {
+    } 
+    catch(const char* msg) {
         exception_ocurred = true;
         m_env = previous;
+    }
+    catch(Value value) {
+        // This happens during a function return
+        // Just rethrow the value so that FunctionCallable::call can handle it
+        exception_ocurred = true;
+        m_env = previous;
+        throw;
     }
 
     if (!exception_ocurred) {
