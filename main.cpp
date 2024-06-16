@@ -12,19 +12,29 @@ int main()
 
     jl::Lexer lexer(
     R"(
-        fun makeCounter() [
-            var i = 0;
-            fun count() [
-                i = i + 1;
-                print i;
-            ]
+        // fun makeCounter() [
+        //     var i = 0;
+        //     fun count() [
+        //         i = i + 1;
+        //         print i;
+        //     ]
 
-            return count;
+        //     return count;
+        // ]
+
+        // var counter = makeCounter();
+        // counter(); // "1".
+        // counter(); // "2".
+
+        fun fib(n) [
+            if n <= 1 return n;
+            return fib(n - 2) + fib(n - 1);
         ]
 
-        var counter = makeCounter();
-        counter(); // "1".
-        counter(); // "2".
+        for var i = 0; i < 20; i = i + 1; [
+            print fib(i);
+        ]
+
         
     )");
 

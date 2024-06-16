@@ -1,27 +1,35 @@
 #pragma once
 
-#include <functional>
+#include <map>
 
 #include "Expr.hpp"
 #include "Stmt.hpp"
-#include "Environment.hpp"
+#include "Interpreter.hpp"
 
-namespace jl {
-class Interpreter : public IExprVisitor, public IStmtVisitor {
+namespace jl
+{
+    
+class Resolver: public IExprVisitor, public IStmtVisitor {
 public:
-    Interpreter(std::string& file_name);
-    ~Interpreter();
-
-    void interpret(Expr* expr, Value* value = nullptr);
-    void interpret(std::vector<Stmt*>& statements);
-    void resolve(Expr* expr, int depth);
-    void execute_block(std::vector<Stmt*>& statements, Environment* new_env);
-    std::string stringify(Value& value);
-
-    Environment* m_global_env;
-
+    Resolver(Interpreter& interpreter, std::string& file_name);
+    ~Resolver() = default;
 
 private:
+    using Scope = std::map<std::string, bool>;
+
+    Interpreter& m_interpreter;
+    std::vector<Scope> m_scopes;
+    std::string& m_file_name;
+
+    void resolve(std::vector<Stmt*>& statements);
+    void resolve(Stmt* statement);
+    void resolve(Expr* expression);
+    void resolve_local(Expr* expr, Token& name);
+    void begin_scope();
+    void end_scope();
+    void declare(Token& name);
+    void define(Token& name);
+
     virtual void visit_assign_expr(Assign* expr, void* context) override;
     virtual void visit_binary_expr(Binary* expr, void* context) override;
     virtual void visit_grouping_expr(Grouping* expr, void* context) override;
@@ -41,18 +49,8 @@ private:
     virtual void visit_while_stmt(WhileStmt* stmt, void* context) override;
     virtual void visit_func_stmt(FuncStmt* stmt, void* context) override;
     virtual void visit_return_stmt(ReturnStmt* stmt, void* context) override;
-
     virtual void* get_stmt_context() override;
 
-    void evaluate(Expr* expr, void* context);
-    bool is_truthy(Value* value);
-
-    template<typename Op>
-    void do_arith_operation(Value& left, Value& right, void *context, Op op);
-    void append_strings(Value& left, Value& right, void* context);
-    bool is_equal(Value& left, Value& right);
-
-    Environment* m_env;
-    std::string m_file_name;
 };
+
 } // namespace jl

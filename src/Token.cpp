@@ -27,7 +27,7 @@ jl::Token::TokenType jl::Token::get_tokentype() const
     return m_type;
 }
 
-const std::string& jl::Token::get_lexeme() const
+std::string& jl::Token::get_lexeme()
 {
     return m_lexeme;
 }

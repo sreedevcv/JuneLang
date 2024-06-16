@@ -17,10 +17,10 @@ public:
     void define(const std::string& name, const Value& value);
     /* Retrives the sored reference to a token otherwise
         throws an exception */
-    Value& get_ref(const Token& name);
-    Value get_copy(const Token& name);
+    Value& get_ref( Token& name);
+    Value get_copy( Token& name);
 
-    void assign(const Token& token, const Value& value);
+    void assign( Token& token,  Value& value);
     Environment* m_enclosing;
 
 private:

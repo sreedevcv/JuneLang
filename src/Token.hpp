@@ -65,7 +65,7 @@ public:
     ~Token();
 
     TokenType get_tokentype() const;
-    const std::string& get_lexeme() const;
+    std::string& get_lexeme();
     const Value get_value() const;
     int get_line() const;
 
