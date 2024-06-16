@@ -298,7 +298,7 @@ void jl::Interpreter::visit_while_stmt(WhileStmt* stmt, void* context)
 
 void jl::Interpreter::visit_func_stmt(FuncStmt* stmt, void* context)
 {
-    FunctionCallable* function = new FunctionCallable(stmt);
+    FunctionCallable* function = new FunctionCallable(stmt, m_env);
     m_env->define(stmt->m_name.get_lexeme(), static_cast<void*>(function));
     *static_cast<Value*>(context) = '\0';
 }

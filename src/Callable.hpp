@@ -11,9 +11,10 @@ public:
     virtual int arity() = 0;
 };
 
+
 class FunctionCallable: public Callable {
 public:
-    FunctionCallable(FuncStmt* declaration);
+    FunctionCallable(FuncStmt* declaration, Environment* closure);
     virtual ~FunctionCallable() = default;
 
     virtual Value call(Interpreter *interpreter, std::vector<Value>& arguments) override;
@@ -21,6 +22,7 @@ public:
     
 private:
     FuncStmt* m_declaration;
+    Environment* m_closure;
 };
 
 } // namespace jl
