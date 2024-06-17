@@ -10,7 +10,7 @@ jl::Interpreter::Interpreter(std::string& file_name)
     m_global_env = m_env;
 
     ToIntNativeFunction* to_int_native_func = new ToIntNativeFunction();
-    m_global_env->define(to_int_native_func->m_name, static_cast<void*>(to_int_native_func));
+    m_global_env->define(to_int_native_func->m_name, static_cast<Callable*>(to_int_native_func));
 }
 
 jl::Interpreter::~Interpreter()
@@ -146,7 +146,7 @@ std::string jl::Interpreter::stringify(Value& value)
     } else if (is_instance(value)) {
         return std::get<Instance*>(value)->to_string();
     }else {
-        return static_cast<Callable*>(std::get<void*>(value))->to_string();
+        return std::get<Callable*>(value)->to_string();
     }
 }
 
@@ -330,12 +330,12 @@ void jl::Interpreter::visit_call_expr(Call* expr, void* context)
         evaluate(expr->m_arguments[i], &arguments[i]);
     }
 
-    if (!is_callable(*value) || !dynamic_cast<Callable*>(static_cast<FunctionCallable*>(std::get<void*>(*value)))) {
+    if (!is_callable(*value)) {
         ErrorHandler::error(m_file_name, "interpreting", "function call",  expr->m_paren.get_line(), "Only a function or class is callable", 0);
         throw "exception";
     }
 
-    Callable* function = static_cast<Callable*>(std::get<void*>(*value));
+    Callable* function = std::get<Callable*>(*value);
     if (arguments.size() != function->arity()) {
         ErrorHandler::error(m_file_name, "interpreting", "function call",  expr->m_paren.get_line(), "Arity of function call and its declararion do not match", 0);
         throw "exception";
@@ -419,7 +419,7 @@ void jl::Interpreter::visit_while_stmt(WhileStmt* stmt, void* context)
 void jl::Interpreter::visit_func_stmt(FuncStmt* stmt, void* context)
 {
     FunctionCallable* function = new FunctionCallable(stmt, m_env);
-    m_env->define(stmt->m_name.get_lexeme(), static_cast<void*>(function));
+    m_env->define(stmt->m_name.get_lexeme(), static_cast<Callable*>(function));
     *static_cast<Value*>(context) = '\0';
 }
 
@@ -435,9 +435,9 @@ void jl::Interpreter::visit_return_stmt(ReturnStmt* stmt, void* context)
 
 void jl::Interpreter::visit_class_stmt(ClassStmt* stmt, void* context)
 {
-    m_env->define(stmt->m_name.get_lexeme(), static_cast<void*>(nullptr));
+    m_env->define(stmt->m_name.get_lexeme(), static_cast<Callable*>(nullptr));
     ClassCallable* class_callable = new ClassCallable(stmt->m_name.get_lexeme());
-    m_env->assign(stmt->m_name, static_cast<Value>(static_cast<void*>(class_callable)));
+    m_env->assign(stmt->m_name, (static_cast<Callable*>(class_callable)));
 }
 
 void* jl::Interpreter::get_stmt_context()

@@ -80,7 +80,6 @@ void jl::Environment::assign(Token& token, Value&& value)
 
     ErrorHandler::error(m_file_name, token.get_line(), "Udefined variable");
     throw "exception";
-
 }
 
 void jl::Environment::assign_at(Token& token, Value& value, int depth)

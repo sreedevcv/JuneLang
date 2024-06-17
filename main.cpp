@@ -13,68 +13,15 @@ int main()
 
     jl::Lexer lexer(
         R"(
-        // fun makeCounter() [
-        //     var i = 0;
-        //     fun count() [
-        //         i = i + 1;
-        //         print i;
-        //     ]
 
-        //     return count;
-        // ]
-
-        // var counter = makeCounter();
-        // counter(); // "1".
-        // counter(); // "2".
-
-        // print fib;
-        // print int;
-        // print int(2);    
-        // print int(10.5);    
-        // print int("545");    
-        // print int("-23233.4324");   
-        // print int(true); 
-        // print int(false); 
-        // print int(null); 
-        // print int("hello");
-        // print int(fib); 
-
-        // var a = "global";
-        // [
-        //     fun showA() [
-        //         print a;
-        //     ]
-
-        //     showA();
-        //     var a = "block";
-        //     showA();
-        // ]
-
-        // fun bad() [
-        //     var a = "first";
-        //     var a = "second";
-        // ]
-
-        // var a = "outer";
-        // [
-        //     var a = a;
-        // ]
-
-        // return 1;
-
-        class DevonshireCream [
-            serveOn() [
-                return "Scones";
-            ]
+        fun fib(n) [
+            if n <= 1 return n;
+            return fib(n - 2) + fib(n - 1);
         ]
 
-        print DevonshireCream; // Prints "DevonshireCream".
-
-        class Bagel []
-        var bagel = Bagel();
-        print bagel; // Prints "Bagel instance".
-
-
+        for var i = 0; i < 20; i = i + 1; [
+            print fib(i);
+        ]
     )");
 
     std::string file_name = "test";
@@ -100,7 +47,6 @@ int main()
     if (jl::ErrorHandler::has_error()) {
         return 1;
     }
-
 
     jl::Value v;
     interpreter.interpret(stmts);

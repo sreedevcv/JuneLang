@@ -93,7 +93,7 @@ void jl::Resolver::define(Token& name)
 void jl::Resolver::visit_assign_expr(Assign* expr, void* context)
 {
     resolve(expr->m_expr);
-    resolve_local(expr->m_expr, expr->m_token);
+    resolve_local(expr, expr->m_token);
 }
 
 void jl::Resolver::visit_binary_expr(Binary* expr, void* context)

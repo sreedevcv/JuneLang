@@ -7,6 +7,7 @@
 
 namespace jl {
 class Instance;
+class Callable;
 
 using Value = std::variant<
     int,
@@ -14,7 +15,8 @@ using Value = std::variant<
     bool,
     std::string,
     char,
-    void*,   // Callable
+    // void*,   // Callable
+    Callable*,
     Instance*
     >;
 } // namespace jl
