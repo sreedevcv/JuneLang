@@ -17,6 +17,8 @@ class Literal;
 class Variable;
 class Logical;
 class Call;
+class Get;
+class Set;
 
 class IExprVisitor {
 public:
@@ -28,6 +30,8 @@ public:
     virtual void visit_variable_expr(Variable* expr, void* context) = 0;
     virtual void visit_logical_expr(Logical* expr, void* context) = 0;
     virtual void visit_call_expr(Call* expr, void* context) = 0;
+    virtual void visit_get_expr(Get* expr, void* context) = 0;
+    virtual void visit_set_expr(Set* expr, void* context) = 0;
     virtual void* get_expr_context() = 0;
 };
 
@@ -187,6 +191,46 @@ public:
     virtual ~Call() = default;
 };
 
+class Get : public Expr {
+public:
+    Token& m_name;
+    Expr* m_object;
+
+    inline Get(Token& name, Expr* expr)
+        : m_name(name)
+        , m_object(expr)
+    {
+    }
+
+    inline virtual void accept(IExprVisitor& visitor, void* context) override
+    {
+        visitor.visit_get_expr(this, context);
+    }
+
+    virtual ~Get() = default;
+};
+
+class Set : public Expr {
+public:
+    Token& m_name;
+    Expr* m_object;
+    Expr* m_value;
+
+    inline Set(Token& name, Expr* expr, Expr* value)
+        : m_name(name)
+        , m_object(expr)
+        , m_value(value)
+    {
+    }
+
+    inline virtual void accept(IExprVisitor& visitor, void* context) override
+    {
+        visitor.visit_set_expr(this, context);
+    }
+
+    virtual ~Set() = default;
+};
+
 class ParsetreePrinter : public IExprVisitor {
 public:
     std::string context;
@@ -214,6 +258,12 @@ public:
     {
     }
     inline void visit_call_expr(Call* expr, void* context) override
+    {
+    }
+    inline void visit_get_expr(Get* expr, void* context) override
+    {
+    }
+    inline void visit_set_expr(Set* expr, void* context) override
     {
     }
     inline void visit_literal_expr(Literal* expr, void* context) override

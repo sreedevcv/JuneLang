@@ -1,7 +1,7 @@
 #include "Interpreter.hpp"
 
-#include "ErrorHandler.hpp"
 #include "Callable.hpp"
+#include "ErrorHandler.hpp"
 
 jl::Interpreter::Interpreter(std::string& file_name)
     : m_file_name(file_name)
@@ -93,15 +93,13 @@ void jl::Interpreter::execute_block(std::vector<Stmt*>& statements, Environment*
     try {
         m_env = new_env;
         Value value;
-        for (auto stmt: statements) {
+        for (auto stmt : statements) {
             stmt->accept(*this, &value);
         }
-    } 
-    catch(const char* msg) {
+    } catch (const char* msg) {
         exception_ocurred = true;
         m_env = previous;
-    }
-    catch(Value value) {
+    } catch (Value value) {
         // This happens during a function return
         // Just rethrow the value so that FunctionCallable::call can handle it
         exception_ocurred = true;
@@ -145,11 +143,10 @@ std::string jl::Interpreter::stringify(Value& value)
         return std::get<std::string>(value);
     } else if (is_instance(value)) {
         return std::get<Instance*>(value)->to_string();
-    }else {
+    } else {
         return std::get<Callable*>(value)->to_string();
     }
 }
-
 
 // --------------------------------------------------------------------------------
 // -------------------------------Expressions--------------------------------------
@@ -179,7 +176,7 @@ void jl::Interpreter::visit_binary_expr(Binary* expr, void* context)
         if (is_number(left) && is_number(right)) {
             do_arith_operation(left, right, context, std::minus<>());
         } else {
-            ErrorHandler::error(m_file_name, "interpreting", "binary expression",  expr->m_oper->get_line(), "Left and right operands must be a number", 0);
+            ErrorHandler::error(m_file_name, "interpreting", "binary expression", expr->m_oper->get_line(), "Left and right operands must be a number", 0);
             throw "runtime-error";
         }
         break;
@@ -187,7 +184,7 @@ void jl::Interpreter::visit_binary_expr(Binary* expr, void* context)
         if (is_number(left) && is_number(right)) {
             do_arith_operation(left, right, context, std::multiplies<>());
         } else {
-            ErrorHandler::error(m_file_name, "interpreting", "binary expression",  expr->m_oper->get_line(), "Left and right operands must be a number", 0);
+            ErrorHandler::error(m_file_name, "interpreting", "binary expression", expr->m_oper->get_line(), "Left and right operands must be a number", 0);
             throw "runtime-error";
         }
         break;
@@ -195,7 +192,7 @@ void jl::Interpreter::visit_binary_expr(Binary* expr, void* context)
         if (is_number(left) && is_number(right)) {
             do_arith_operation(left, right, context, std::divides<>());
         } else {
-            ErrorHandler::error(m_file_name, "interpreting", "binary expression",  expr->m_oper->get_line(), "Left and right operands must be a number", 0);
+            ErrorHandler::error(m_file_name, "interpreting", "binary expression", expr->m_oper->get_line(), "Left and right operands must be a number", 0);
             throw "runtime-error";
         }
         break;
@@ -205,7 +202,7 @@ void jl::Interpreter::visit_binary_expr(Binary* expr, void* context)
         } else if (is_string(left) && is_string(right)) {
             append_strings(left, right, context);
         } else {
-            ErrorHandler::error(m_file_name, "interpreting", "binary expression",  expr->m_oper->get_line(), "Left and right operands must be a number", 0);
+            ErrorHandler::error(m_file_name, "interpreting", "binary expression", expr->m_oper->get_line(), "Left and right operands must be a number", 0);
             throw "runtime-error";
         }
         break;
@@ -213,7 +210,7 @@ void jl::Interpreter::visit_binary_expr(Binary* expr, void* context)
         if (is_number(left) && is_number(right)) {
             do_arith_operation(left, right, context, std::greater<>());
         } else {
-            ErrorHandler::error(m_file_name, "interpreting", "binary expression",  expr->m_oper->get_line(), "Left and right operands must be a number", 0);
+            ErrorHandler::error(m_file_name, "interpreting", "binary expression", expr->m_oper->get_line(), "Left and right operands must be a number", 0);
             throw "runtime-error";
         }
         break;
@@ -221,7 +218,7 @@ void jl::Interpreter::visit_binary_expr(Binary* expr, void* context)
         if (is_number(left) && is_number(right)) {
             do_arith_operation(left, right, context, std::less<>());
         } else {
-            ErrorHandler::error(m_file_name, "interpreting", "binary expression",  expr->m_oper->get_line(), "Left and right operands must be a number", 0);
+            ErrorHandler::error(m_file_name, "interpreting", "binary expression", expr->m_oper->get_line(), "Left and right operands must be a number", 0);
             throw "runtime-error";
         }
         break;
@@ -229,7 +226,7 @@ void jl::Interpreter::visit_binary_expr(Binary* expr, void* context)
         if (is_number(left) && is_number(right)) {
             do_arith_operation(left, right, context, std::greater_equal<>());
         } else {
-            ErrorHandler::error(m_file_name, "interpreting", "binary expression",  expr->m_oper->get_line(), "Left and right operands must be a number", 0);
+            ErrorHandler::error(m_file_name, "interpreting", "binary expression", expr->m_oper->get_line(), "Left and right operands must be a number", 0);
             throw "runtime-error";
         }
         break;
@@ -237,7 +234,7 @@ void jl::Interpreter::visit_binary_expr(Binary* expr, void* context)
         if (is_number(left) && is_number(right)) {
             do_arith_operation(left, right, context, std::less_equal<>());
         } else {
-            ErrorHandler::error(m_file_name, "interpreting", "binary expression",  expr->m_oper->get_line(), "Left and right operands must be a number", 0);
+            ErrorHandler::error(m_file_name, "interpreting", "binary expression", expr->m_oper->get_line(), "Left and right operands must be a number", 0);
             throw "runtime-error";
         }
         break;
@@ -272,7 +269,7 @@ void jl::Interpreter::visit_unary_expr(Unary* expr, void* context)
             }
             context = right;
         } else {
-            ErrorHandler::error(m_file_name, "interpreting", "unary expression",  expr->m_oper->get_line(), "Operand must be a number", 0);
+            ErrorHandler::error(m_file_name, "interpreting", "unary expression", expr->m_oper->get_line(), "Operand must be a number", 0);
             throw "runtime-error";
         }
         break;
@@ -322,7 +319,7 @@ void jl::Interpreter::visit_logical_expr(Logical* expr, void* context)
 void jl::Interpreter::visit_call_expr(Call* expr, void* context)
 {
     evaluate(expr->m_callee, context);
-    Value *value = static_cast<Value*>(context);
+    Value* value = static_cast<Value*>(context);
 
     std::vector<Value> arguments(expr->m_arguments.size());
 
@@ -331,13 +328,13 @@ void jl::Interpreter::visit_call_expr(Call* expr, void* context)
     }
 
     if (!is_callable(*value)) {
-        ErrorHandler::error(m_file_name, "interpreting", "function call",  expr->m_paren.get_line(), "Only a function or class is callable", 0);
+        ErrorHandler::error(m_file_name, "interpreting", "function call", expr->m_paren.get_line(), "Only a function or class is callable", 0);
         throw "exception";
     }
 
     Callable* function = std::get<Callable*>(*value);
     if (arguments.size() != function->arity()) {
-        ErrorHandler::error(m_file_name, "interpreting", "function call",  expr->m_paren.get_line(), "Arity of function call and its declararion do not match", 0);
+        ErrorHandler::error(m_file_name, "interpreting", "function call", expr->m_paren.get_line(), "Arity of function call and its declararion do not match", 0);
         throw "exception";
     }
 
@@ -345,7 +342,34 @@ void jl::Interpreter::visit_call_expr(Call* expr, void* context)
     *static_cast<Value*>(context) = return_value;
 }
 
+void jl::Interpreter::visit_get_expr(Get* expr, void* context)
+{
+    Value value;
+    evaluate(expr->m_object, &value);
 
+    if (is_instance(value)) {
+        *static_cast<Value*>(context) = std::get<Instance*>(value)->get(expr->m_name);
+    } else {
+        ErrorHandler::error(m_file_name, "interpreting", "get expression", expr->m_name.get_line(), "Attempted to get fields from a non-instance value", 0);
+        throw "runtime-exception";
+    }
+}
+
+void jl::Interpreter::visit_set_expr(Set* expr, void* context)
+{
+    Value object;
+    evaluate(expr->m_object, &object);
+
+    if (!is_instance(object)) {
+        ErrorHandler::error(m_file_name, "interpreting", "set expression", expr->m_name.get_line(), "Attempted to set fields to a non-instance value", 0);
+        throw "runtime-exception";
+    }
+
+    Value value;
+    evaluate(expr->m_value, &value);
+    std::get<Instance*>(object)->set(expr->m_name, value);
+    *static_cast<Value*>(context) = value;
+}
 
 void* jl::Interpreter::get_expr_context()
 {
@@ -355,7 +379,6 @@ void* jl::Interpreter::get_expr_context()
 // --------------------------------------------------------------------------------
 // -------------------------------Statements---------------------------------------
 // --------------------------------------------------------------------------------
-
 
 void jl::Interpreter::visit_print_stmt(PrintStmt* stmt, void* context)
 {
@@ -392,7 +415,7 @@ void jl::Interpreter::visit_empty_stmt(EmptyStmt* stmt, void* context)
 }
 
 void jl::Interpreter::visit_if_stmt(IfStmt* stmt, void* context)
-{   
+{
     Value value;
     evaluate(stmt->m_condition, &value);
     if (is_truthy(&value)) {
@@ -410,7 +433,7 @@ void jl::Interpreter::visit_while_stmt(WhileStmt* stmt, void* context)
         stmt->m_body->accept(*this, context);
         evaluate(stmt->m_condition, &value);
     }
-    
+
     // make context null
     value = '\0';
     *static_cast<Value*>(context) = value;

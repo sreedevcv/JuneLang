@@ -140,6 +140,17 @@ void jl::Resolver::visit_call_expr(Call* expr, void* context)
     }
 }
 
+void jl::Resolver::visit_get_expr(Get* expr, void* context)
+{
+    resolve(expr->m_object);
+}
+
+void jl::Resolver::visit_set_expr(Set* expr, void* context)
+{
+    resolve(expr->m_object);
+    resolve(expr->m_value);
+}
+
 void* jl::Resolver::get_expr_context()
 {
     return nullptr;

@@ -40,13 +40,15 @@ private:
 
 class Instance {
 public:
-    Instance();
     Instance(ClassCallable* class_callable);
     ~Instance() = default;
 
+    Value& get(Token& name);
+    void set(Token& name, Value& value);
     std::string to_string();
 private:
     ClassCallable* m_class;
+    std::map<std::string, Value> m_fields;
 };
 
 class ToIntNativeFunction : public Callable {

@@ -115,13 +115,25 @@ std::string jl::ClassCallable::to_string()
 // -------------------------------Instance------------------------------------
 // --------------------------------------------------------------------------------
 
-jl::Instance::Instance()
-{
-}
-
 jl::Instance::Instance(ClassCallable* class_callable)
     : m_class(class_callable)
 {
+}
+
+jl::Value& jl::Instance::get(Token& name)
+{
+    if (m_fields.contains(name.get_lexeme())) {
+        return m_fields[name.get_lexeme()];
+    }
+
+    std::string fname = "unknown";
+    ErrorHandler::error(fname, "interpreting", "field access", name.get_line(), "No such field exists for the class instance", 0);
+    throw "runtime-exception";
+}
+
+void jl::Instance::set(Token& name, Value& value)
+{
+    m_fields[name.get_lexeme()] = value;
 }
 
 std::string jl::Instance::to_string()

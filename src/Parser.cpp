@@ -209,6 +209,9 @@ jl::Expr* jl::Parser::assignment()
         if (dynamic_cast<Variable*>(expr)) {
             Token& name = static_cast<Variable*>(expr)->m_name;
             return new Assign(value, name);
+        } else if (dynamic_cast<Get*>(expr)) {
+            Get* get_expr = static_cast<Get*>(expr);
+            return new Set(get_expr->m_name, get_expr->m_object, value);
         }
 
         ErrorHandler::error(m_file_name, "parsing", "assignment", equals.get_line(), "Invalid assignment target, expected a variable", 0);
@@ -250,6 +253,9 @@ jl::Expr* jl::Parser::call()
     while (true) {
         if (match({ Token::LEFT_PAR })) {
             expr = finish_call(expr);
+        } else if (match({Token::DOT})) {
+            Token& name = consume(Token::IDENTIFIER, "Expected property name after '.'");
+            expr = new Get(name, expr);
         } else {
             break;
         }
