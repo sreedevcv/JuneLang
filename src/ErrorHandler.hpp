@@ -14,6 +14,8 @@ public:
     static int get_error_count();
     static StreamHandler m_stream;
 
+    static void clear_errors();
+
 private:
     static int error_count;
 };

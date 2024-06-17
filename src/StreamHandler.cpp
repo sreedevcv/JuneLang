@@ -28,7 +28,7 @@ void jl::StreamHandler::setOutputToFile(const std::string& filename)
     if (fileStream) {
         delete fileStream;
     }
-    fileStream = new std::ofstream(filename, std::ios::out | std::ios::app);
+    fileStream = new std::ofstream(filename, std::ios::out | std::ios::trunc);
     if (!fileStream->is_open()) {
         throw std::runtime_error("Failed to open file: " + filename);
     }
