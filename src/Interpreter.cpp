@@ -25,7 +25,7 @@ void jl::Interpreter::interpret(Expr* expr, Value* value)
         evaluate(expr, &context);
         *value = context;
     } catch (const char* exc) {
-        std::cout << ErrorHandler::get_error_count() << " Error[s] occured" << std::endl;
+        ErrorHandler::m_stream << ErrorHandler::get_error_count() << " Error[s] occured" << std::endl;
     }
 }
 
@@ -37,7 +37,7 @@ void jl::Interpreter::interpret(std::vector<Stmt*>& statements)
             stmt->accept(*this, &value);
         }
     } catch (const char* exc) {
-        std::cout << ErrorHandler::get_error_count() << " Error[s] ocuured" << std::endl;
+        ErrorHandler::m_stream << ErrorHandler::get_error_count() << " Error[s] ocuured" << std::endl;
     }
 }
 
@@ -361,7 +361,7 @@ void jl::Interpreter::visit_print_stmt(PrintStmt* stmt, void* context)
 {
     evaluate(stmt->m_expr, context);
     Value* value = static_cast<Value*>(context);
-    std::cout << stringify(*value) << std::endl;
+    ErrorHandler::m_stream << stringify(*value) << std::endl;
 }
 
 void jl::Interpreter::visit_expr_stmt(ExprStmt* stmt, void* context)

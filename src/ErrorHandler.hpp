@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string>
+#include "StreamHandler.hpp"
 
 namespace jl {
 class ErrorHandler {
@@ -11,6 +12,7 @@ public:
 
     static bool has_error();
     static int get_error_count();
+    static StreamHandler m_stream;
 
 private:
     static int error_count;

@@ -7,5 +7,6 @@ add_library(JuneInterpreter
     Environment.cpp
     Callable.cpp
     Resolver.cpp
+    StreamHandler.cpp
 )
 target_include_directories(JuneInterpreter PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
