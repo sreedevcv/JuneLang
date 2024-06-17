@@ -1,4 +1,5 @@
 #include "Callable.hpp"
+#include "Value.hpp"
 
 #include "ErrorHandler.hpp"
 
@@ -83,4 +84,47 @@ int jl::ToIntNativeFunction::arity()
 std::string jl::ToIntNativeFunction::to_string()
 {
     return "<native fn: int>";
+}
+
+// --------------------------------------------------------------------------------
+// -------------------------------ClassCallable------------------------------------
+// --------------------------------------------------------------------------------
+
+jl::ClassCallable::ClassCallable(std::string& name)
+    : m_name(name)
+{
+}
+
+jl::Value jl::ClassCallable::call(Interpreter* interpreter, std::vector<Value>& arguments)
+{
+    Instance* instance = new Instance(this);
+    return instance;
+}
+
+int jl::ClassCallable::arity()
+{
+    return 0;
+}
+
+std::string jl::ClassCallable::to_string()
+{
+    return m_name;
+}
+
+// --------------------------------------------------------------------------------
+// -------------------------------Instance------------------------------------
+// --------------------------------------------------------------------------------
+
+jl::Instance::Instance()
+{
+}
+
+jl::Instance::Instance(ClassCallable* class_callable)
+    : m_class(class_callable)
+{
+}
+
+std::string jl::Instance::to_string()
+{
+    return m_class->to_string() + " instance"; 
 }

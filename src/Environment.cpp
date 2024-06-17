@@ -66,6 +66,23 @@ void jl::Environment::assign(Token& token, Value& value)
     throw "exception";
 }
 
+void jl::Environment::assign(Token& token, Value&& value)
+{
+    if (m_values.contains(token.get_lexeme())) {
+        m_values[token.get_lexeme()] = std::move(value);
+        return;
+    }
+
+    if (m_enclosing != nullptr) {
+        m_enclosing->assign(token, std::move(value));
+        return;
+    }
+
+    ErrorHandler::error(m_file_name, token.get_line(), "Udefined variable");
+    throw "exception";
+
+}
+
 void jl::Environment::assign_at(Token& token, Value& value, int depth)
 {
     ancestor(depth)->m_values[token.get_lexeme()] = value;

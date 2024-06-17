@@ -306,6 +306,9 @@ jl::Stmt* jl::Parser::statement()
 jl::Stmt* jl::Parser::declaration()
 {
     try {
+        if (match({Token::CLASS})) {
+            return class_declaration();
+        }
         if (match({ Token::FUNC })) {
             return function("function");
         }
@@ -453,6 +456,20 @@ jl::Stmt* jl::Parser::return_statement()
     consume(Token::SEMI_COLON, "Expected ; after return");
 
     return new ReturnStmt(return_token, expr);
+}
+
+jl::Stmt* jl::Parser::class_declaration()
+{
+    Token& name = consume(Token::IDENTIFIER, "Expected a class name");
+    consume(Token::LEFT_SQUARE, "Expected a [ before class body");
+
+    std::vector<FuncStmt*> methods;
+    while (!check(Token::RIGHT_SQUARE) && !is_at_end()) {
+        methods.push_back(static_cast<FuncStmt*>(function("method")));
+    }
+
+    consume(Token::RIGHT_SQUARE, "Expected a ] after class body");
+    return new ClassStmt(name, methods);
 }
 
 std::vector<jl::Stmt*> jl::Parser::block()

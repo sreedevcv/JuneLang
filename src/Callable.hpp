@@ -26,10 +26,33 @@ private:
     Environment* m_closure;
 };
 
+class ClassCallable: public Callable {
+public:
+    ClassCallable(std::string& name);
+    virtual ~ClassCallable() = default;
+
+    virtual Value call(Interpreter* interpreter, std::vector<Value>& arguments) override;
+    virtual int arity() override;
+    virtual std::string to_string() override;
+private:
+    std::string m_name;
+};
+
+class Instance {
+public:
+    Instance();
+    Instance(ClassCallable* class_callable);
+    ~Instance() = default;
+
+    std::string to_string();
+private:
+    ClassCallable* m_class;
+};
+
 class ToIntNativeFunction : public Callable {
 public:
     ToIntNativeFunction() = default;
-    ~ToIntNativeFunction() = default;
+    virtual ~ToIntNativeFunction() = default;
 
     virtual Value call(Interpreter* interpreter, std::vector<Value>& arguments) override;
     virtual int arity() override;

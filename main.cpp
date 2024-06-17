@@ -27,15 +27,6 @@ int main()
         // counter(); // "1".
         // counter(); // "2".
 
-        fun fib(n) [
-            if n <= 1 return n;
-            return fib(n - 2) + fib(n - 1);
-        ]
-
-        // for var i = 0; i < 20; i = i + 1; [
-        //     print fib(i);
-        // ]
-
         // print fib;
         // print int;
         // print int(2);    
@@ -48,28 +39,41 @@ int main()
         // print int("hello");
         // print int(fib); 
 
-        var a = "global";
-        [
-            fun showA() [
-                print a;
+        // var a = "global";
+        // [
+        //     fun showA() [
+        //         print a;
+        //     ]
+
+        //     showA();
+        //     var a = "block";
+        //     showA();
+        // ]
+
+        // fun bad() [
+        //     var a = "first";
+        //     var a = "second";
+        // ]
+
+        // var a = "outer";
+        // [
+        //     var a = a;
+        // ]
+
+        // return 1;
+
+        class DevonshireCream [
+            serveOn() [
+                return "Scones";
             ]
-
-            showA();
-            var a = "block";
-            showA();
         ]
 
-        fun bad() [
-            var a = "first";
-            var a = "second";
-        ]
+        print DevonshireCream; // Prints "DevonshireCream".
 
-        var a = "outer";
-        [
-            var a = a;
-        ]
+        class Bagel []
+        var bagel = Bagel();
+        print bagel; // Prints "Bagel instance".
 
-        return 1;
 
     )");
 

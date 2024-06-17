@@ -62,6 +62,7 @@ private:
         { "print", Token::PRINT },
         { "fun", Token::FUNC },
         { "return", Token::RETURN },
+        { "class", Token::CLASS },
     };
 };
 } // namespace jl

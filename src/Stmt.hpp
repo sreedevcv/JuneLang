@@ -13,6 +13,7 @@ class IfStmt;
 class WhileStmt;
 class FuncStmt;
 class ReturnStmt;
+class ClassStmt;
 
 class IStmtVisitor {
 public:
@@ -25,6 +26,7 @@ public:
     virtual void visit_while_stmt(WhileStmt* stmt, void* context) = 0;
     virtual void visit_func_stmt(FuncStmt* stmt, void* context) = 0;
     virtual void visit_return_stmt(ReturnStmt* stmt, void* context) = 0;
+    virtual void visit_class_stmt(ClassStmt* stmt, void* context) = 0;
     virtual void* get_stmt_context() = 0;
 };
 
@@ -192,6 +194,25 @@ public:
     }
 
     virtual ~ReturnStmt() = default;
+};
+
+class ClassStmt : public Stmt {
+public:
+    Token& m_name;
+    std::vector<FuncStmt*> m_methods;
+
+    inline ClassStmt(Token& name, std::vector<FuncStmt*>& methods)
+        : m_name(name)
+        , m_methods(methods)
+    {
+    }
+
+    virtual ~ClassStmt() = default;
+
+    inline virtual void accept(IStmtVisitor& visitor, void* context) override
+    {
+        visitor.visit_class_stmt(this, context);
+    }
 };
 
 }

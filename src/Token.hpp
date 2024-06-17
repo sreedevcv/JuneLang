@@ -86,4 +86,5 @@ bool is_string(Value& value);
 bool is_null(Value& value);
 bool is_number(Value& value);
 bool is_callable(Value& value);
+bool is_instance(Value& value);
 } // namespace jl

@@ -2,15 +2,19 @@
 
 #include <string>
 #include <variant>
-// #include "Callable.hpp"
+
+// #include "Wrapper.hpp"
 
 namespace jl {
+class Instance;
+
 using Value = std::variant<
     int,
     double,
     bool,
     std::string,
     char,
-    void*
+    void*,   // Callable
+    Instance*
     >;
 } // namespace jl

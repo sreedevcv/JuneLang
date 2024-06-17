@@ -212,6 +212,12 @@ void jl::Resolver::visit_return_stmt(ReturnStmt* stmt, void* context)
     }
 }
 
+void jl::Resolver::visit_class_stmt(ClassStmt* stmt, void* context)
+{
+    declare(stmt->m_name);
+    define(stmt->m_name);
+}
+
 void* jl::Resolver::get_stmt_context()
 {
     return nullptr;

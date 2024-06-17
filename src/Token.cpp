@@ -76,3 +76,8 @@ bool jl::is_callable(Value& value)
 {
     return value.index() == 5;
 }
+
+bool jl::is_instance(Value& value)
+{
+    return value.index() == 6;
+}

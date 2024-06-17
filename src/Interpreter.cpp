@@ -46,6 +46,111 @@ void jl::Interpreter::resolve(Expr* expr, int depth)
     m_locals[expr] = depth;
 }
 
+void jl::Interpreter::evaluate(Expr* expr, void* context)
+{
+    expr->accept(*this, context);
+}
+
+bool jl::Interpreter::is_truthy(Value* value)
+{
+    if (is_null(*value) || (is_bool(*value) && std::get<bool>(*value) == false)) {
+        return false;
+    }
+    return true;
+}
+
+template <typename Op>
+void jl::Interpreter::do_arith_operation(Value& left, Value& right, void* context, Op op)
+{
+    Value* value_context = static_cast<Value*>(context);
+    if (is_float(left) || is_float(right)) {
+        double a = is_float(left) ? std::get<double>(left) : std::get<int>(left);
+        double b = is_float(right) ? std::get<double>(right) : std::get<int>(right);
+        left = op(a, b);
+        *value_context = left;
+    } else {
+        int a = std::get<int>(left);
+        int b = std::get<int>(right);
+        left = op(a, b);
+        *value_context = left;
+    }
+}
+
+void jl::Interpreter::append_strings(Value& left, Value& right, void* context)
+{
+    std::string left_str = std::get<std::string>(left);
+    std::string& right_str = std::get<std::string>(right);
+    left_str.append(right_str);
+
+    *static_cast<Value*>(context) = left_str;
+}
+
+void jl::Interpreter::execute_block(std::vector<Stmt*>& statements, Environment* new_env)
+{
+    Environment* previous = m_env;
+    bool exception_ocurred = false;
+
+    try {
+        m_env = new_env;
+        Value value;
+        for (auto stmt: statements) {
+            stmt->accept(*this, &value);
+        }
+    } 
+    catch(const char* msg) {
+        exception_ocurred = true;
+        m_env = previous;
+    }
+    catch(Value value) {
+        // This happens during a function return
+        // Just rethrow the value so that FunctionCallable::call can handle it
+        exception_ocurred = true;
+        m_env = previous;
+        throw;
+    }
+
+    if (!exception_ocurred) {
+        m_env = previous;
+    }
+}
+
+bool jl::Interpreter::is_equal(Value& left, Value& right)
+{
+    if (left.index() != right.index()) {
+        return false;
+    }
+    return left == right;
+}
+
+jl::Value& jl::Interpreter::look_up_variable(Token& name, Expr* expr)
+{
+    if (m_locals.contains(expr)) {
+        return m_env->get_at(name, m_locals[expr]);
+    } else {
+        return m_global_env->get(name);
+    }
+}
+
+std::string jl::Interpreter::stringify(Value& value)
+{
+    if (is_null(value)) {
+        return "null";
+    } else if (is_bool(value)) {
+        return std::get<bool>(value) ? "true" : "false";
+    } else if (is_int(value)) {
+        return std::to_string(std::get<int>(value));
+    } else if (is_float(value)) {
+        return std::to_string(std::get<double>(value));
+    } else if (is_string(value)) {
+        return std::get<std::string>(value);
+    } else if (is_instance(value)) {
+        return std::get<Instance*>(value)->to_string();
+    }else {
+        return static_cast<Callable*>(std::get<void*>(value))->to_string();
+    }
+}
+
+
 // --------------------------------------------------------------------------------
 // -------------------------------Expressions--------------------------------------
 // --------------------------------------------------------------------------------
@@ -328,109 +433,14 @@ void jl::Interpreter::visit_return_stmt(ReturnStmt* stmt, void* context)
     throw value;
 }
 
+void jl::Interpreter::visit_class_stmt(ClassStmt* stmt, void* context)
+{
+    m_env->define(stmt->m_name.get_lexeme(), static_cast<void*>(nullptr));
+    ClassCallable* class_callable = new ClassCallable(stmt->m_name.get_lexeme());
+    m_env->assign(stmt->m_name, static_cast<Value>(static_cast<void*>(class_callable)));
+}
+
 void* jl::Interpreter::get_stmt_context()
 {
     return nullptr;
-}
-
-void jl::Interpreter::evaluate(Expr* expr, void* context)
-{
-    expr->accept(*this, context);
-}
-
-bool jl::Interpreter::is_truthy(Value* value)
-{
-    if (is_null(*value) || (is_bool(*value) && std::get<bool>(*value) == false)) {
-        return false;
-    }
-    return true;
-}
-
-template <typename Op>
-void jl::Interpreter::do_arith_operation(Value& left, Value& right, void* context, Op op)
-{
-    Value* value_context = static_cast<Value*>(context);
-    if (is_float(left) || is_float(right)) {
-        double a = is_float(left) ? std::get<double>(left) : std::get<int>(left);
-        double b = is_float(right) ? std::get<double>(right) : std::get<int>(right);
-        left = op(a, b);
-        *value_context = left;
-    } else {
-        int a = std::get<int>(left);
-        int b = std::get<int>(right);
-        left = op(a, b);
-        *value_context = left;
-    }
-}
-
-void jl::Interpreter::append_strings(Value& left, Value& right, void* context)
-{
-    std::string left_str = std::get<std::string>(left);
-    std::string& right_str = std::get<std::string>(right);
-    left_str.append(right_str);
-
-    *static_cast<Value*>(context) = left_str;
-}
-
-void jl::Interpreter::execute_block(std::vector<Stmt*>& statements, Environment* new_env)
-{
-    Environment* previous = m_env;
-    bool exception_ocurred = false;
-
-    try {
-        m_env = new_env;
-        Value value;
-        for (auto stmt: statements) {
-            stmt->accept(*this, &value);
-        }
-    } 
-    catch(const char* msg) {
-        exception_ocurred = true;
-        m_env = previous;
-    }
-    catch(Value value) {
-        // This happens during a function return
-        // Just rethrow the value so that FunctionCallable::call can handle it
-        exception_ocurred = true;
-        m_env = previous;
-        throw;
-    }
-
-    if (!exception_ocurred) {
-        m_env = previous;
-    }
-}
-
-bool jl::Interpreter::is_equal(Value& left, Value& right)
-{
-    if (left.index() != right.index()) {
-        return false;
-    }
-    return left == right;
-}
-
-jl::Value& jl::Interpreter::look_up_variable(Token& name, Expr* expr)
-{
-    if (m_locals.contains(expr)) {
-        return m_env->get_at(name, m_locals[expr]);
-    } else {
-        return m_global_env->get(name);
-    }
-}
-
-std::string jl::Interpreter::stringify(Value& value)
-{
-    if (is_null(value)) {
-        return "null";
-    } else if (is_bool(value)) {
-        return std::get<bool>(value) ? "true" : "false";
-    } else if (is_int(value)) {
-        return std::to_string(std::get<int>(value));
-    } else if (is_float(value)) {
-        return std::to_string(std::get<double>(value));
-    } else if (is_string(value)) {
-        return std::get<std::string>(value);
-    } else {
-        return static_cast<Callable*>(std::get<void*>(value))->to_string();
-    }
 }
