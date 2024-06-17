@@ -43,6 +43,7 @@ void jl::Interpreter::interpret(std::vector<Stmt*>& statements)
 
 void jl::Interpreter::resolve(Expr* expr, int depth)
 {
+    m_locals[expr] = depth;
 }
 
 // --------------------------------------------------------------------------------
@@ -52,7 +53,13 @@ void jl::Interpreter::resolve(Expr* expr, int depth)
 void jl::Interpreter::visit_assign_expr(Assign* expr, void* context)
 {
     evaluate(expr->m_expr, context);
-    m_env->assign(expr->m_token, *static_cast<Value*>(context));
+    // m_env->assign(expr->m_token, *static_cast<Value*>(context));
+    Value value = *static_cast<Value*>(context);
+    if (m_locals.contains(expr)) {
+        m_env->assign_at(expr->m_token, value, m_locals[expr]);
+    } else {
+        m_global_env->assign(expr->m_token, value);
+    }
 }
 
 void jl::Interpreter::visit_binary_expr(Binary* expr, void* context)
@@ -181,7 +188,8 @@ void jl::Interpreter::visit_literal_expr(Literal* expr, void* context)
 // Returns the token value as the context
 void jl::Interpreter::visit_variable_expr(Variable* expr, void* context)
 {
-    *static_cast<Value*>(context) = m_env->get_ref(expr->m_name);
+    // *static_cast<Value*>(context) = m_env->get(expr->m_name);
+    *static_cast<Value*>(context) = look_up_variable(expr->m_name, expr);
 }
 
 void jl::Interpreter::visit_logical_expr(Logical* expr, void* context)
@@ -399,6 +407,15 @@ bool jl::Interpreter::is_equal(Value& left, Value& right)
         return false;
     }
     return left == right;
+}
+
+jl::Value& jl::Interpreter::look_up_variable(Token& name, Expr* expr)
+{
+    if (m_locals.contains(expr)) {
+        return m_env->get_at(name, m_locals[expr]);
+    } else {
+        return m_global_env->get(name);
+    }
 }
 
 std::string jl::Interpreter::stringify(Value& value)

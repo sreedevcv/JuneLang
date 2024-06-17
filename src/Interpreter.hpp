@@ -1,6 +1,7 @@
 #pragma once
 
 #include <functional>
+#include <map>
 
 #include "Expr.hpp"
 #include "Stmt.hpp"
@@ -19,7 +20,6 @@ public:
     std::string stringify(Value& value);
 
     Environment* m_global_env;
-
 
 private:
     virtual void visit_assign_expr(Assign* expr, void* context) override;
@@ -51,9 +51,11 @@ private:
     void do_arith_operation(Value& left, Value& right, void *context, Op op);
     void append_strings(Value& left, Value& right, void* context);
     bool is_equal(Value& left, Value& right);
+    Value& look_up_variable(Token& name, Expr* expr);
 
     Environment* m_env;
     std::string m_file_name;
+    std::map<Expr*, int> m_locals;
 
     friend class ToIntNativeFunction;
 };

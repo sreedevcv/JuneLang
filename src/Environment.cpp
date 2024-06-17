@@ -31,32 +31,23 @@ void jl::Environment::define(const std::string& name, const Value& value)
     }
 }
 
-jl::Value& jl::Environment::get_ref(Token& token)
+jl::Value& jl::Environment::get(Token& token)
 {
     if (m_values.contains(token.get_lexeme())) {
         return m_values[token.get_lexeme()];
     }
 
     if (m_enclosing != nullptr) {
-        return m_enclosing->get_ref(token);
+        return m_enclosing->get(token);
     }
 
     ErrorHandler::error(m_file_name, token.get_line(), "variable does not exist");
     throw "exception";
 }
 
-jl::Value jl::Environment::get_copy(Token& token)
+jl::Value& jl::Environment::get_at(Token& name, int depth)
 {
-    if (m_values.contains(token.get_lexeme())) {
-        return m_values[token.get_lexeme()];
-    }
-
-    if (m_enclosing != nullptr) {
-        return m_enclosing->get_copy(token);
-    }
-
-    ErrorHandler::error(m_file_name, token.get_line(), "variable does not exist");
-    throw "exception";
+    return ancestor(depth)->m_values[name.get_lexeme()];
 }
 
 void jl::Environment::assign(Token& token, Value& value)
@@ -73,4 +64,20 @@ void jl::Environment::assign(Token& token, Value& value)
 
     ErrorHandler::error(m_file_name, token.get_line(), "Udefined variable");
     throw "exception";
+}
+
+void jl::Environment::assign_at(Token& token, Value& value, int depth)
+{
+    ancestor(depth)->m_values[token.get_lexeme()] = value;
+}
+
+jl::Environment* jl::Environment::ancestor(int depth)
+{
+    Environment* env = this;
+
+    for (int i = 0; i < depth; i++) {
+        env = env->m_enclosing;
+    }
+
+    return env;
 }

@@ -14,17 +14,25 @@ public:
     Resolver(Interpreter& interpreter, std::string& file_name);
     ~Resolver() = default;
 
+    void resolve(std::vector<Stmt*>& statements);
+
+    enum FunctionType {
+        NONE,
+        FUNCTION,
+    };
+
 private:
     using Scope = std::map<std::string, bool>;
 
     Interpreter& m_interpreter;
     std::vector<Scope> m_scopes;
     std::string& m_file_name;
+    FunctionType m_current_function_type = NONE;
 
-    void resolve(std::vector<Stmt*>& statements);
     void resolve(Stmt* statement);
     void resolve(Expr* expression);
     void resolve_local(Expr* expr, Token& name);
+    void resolve_function(FuncStmt* stmt, FunctionType function_type);  
     void begin_scope();
     void end_scope();
     void declare(Token& name);
