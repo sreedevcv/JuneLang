@@ -153,6 +153,9 @@ void jl::Resolver::visit_set_expr(Set* expr, void* context)
 
 void jl::Resolver::visit_this_expr(This* expr, void* context)
 {
+    if (m_current_class_type == ClassType::NONE) {
+        ErrorHandler::error(m_file_name, "resolving", "self keyword", expr->m_keyword.get_line(), "Cannot use 'self' outside a class", 0);
+    }
     resolve_local(expr, expr->m_keyword);
 }
 
@@ -224,12 +227,18 @@ void jl::Resolver::visit_return_stmt(ReturnStmt* stmt, void* context)
         ErrorHandler::error(m_file_name, "resolving", "return statement", stmt->m_keyword.get_line(), "Return statement should be inside a function", 0);
     }
     if (stmt->m_expr != nullptr) {
+        if (m_current_function_type == INITIALIZER) {
+            ErrorHandler::error(m_file_name, "resolving", "return", stmt->m_keyword.get_line(), "Can't return a value from an initializer", 0);
+        }
         resolve(stmt->m_expr);
     }
 }
 
 void jl::Resolver::visit_class_stmt(ClassStmt* stmt, void* context)
 {
+    ClassType enclosing_class = m_current_class_type;
+    m_current_class_type = ClassType::CLASS;
+
     declare(stmt->m_name);
     define(stmt->m_name);
 
@@ -238,10 +247,14 @@ void jl::Resolver::visit_class_stmt(ClassStmt* stmt, void* context)
 
     for (FuncStmt* method: stmt->m_methods) {
         FunctionType declaration = METHOD;
+        if (method->m_name.get_lexeme() == "init") {
+            declaration = INITIALIZER;
+        }
         resolve_function(method, declaration);
     }
 
     end_scope();
+    m_current_class_type = enclosing_class;
 }
 
 void* jl::Resolver::get_stmt_context()

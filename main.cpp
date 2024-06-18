@@ -13,18 +13,31 @@ int main()
 
     jl::Lexer lexer(
         R"(
-            class Thing [
-                getCallback() [
-                    fun localFunction() [
-                        print self;
-                    ]
+            // class Thing [
+            //     getCallback() [
+            //         fun localFunction() [
+            //             print self;
+            //         ]
 
-                    return localFunction;
+            //         return localFunction;
+            //     ]
+            // ]
+
+            // var callback = Thing().getCallback();
+            // callback();
+
+            class Foo [
+                init() [
+                    return;
+                    print self;
                 ]
             ]
 
-            var callback = Thing().getCallback();
-            callback();
+            var a = Foo();
+            print a;
+            var b = a.init();
+            print a.init();
+
     )");
 
     std::string file_name = "test";

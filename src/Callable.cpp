@@ -7,9 +7,10 @@
 // -----------------------------FunctionCallable-----------------------------------
 // --------------------------------------------------------------------------------
 
-jl::FunctionCallable::FunctionCallable(FuncStmt* declaration, Environment* closure)
+jl::FunctionCallable::FunctionCallable(FuncStmt* declaration, Environment* closure, bool is_initalizer)
     : m_declaration(declaration)
     , m_closure(closure)
+    , m_is_initializer(is_initalizer)
 {
 }
 
@@ -24,11 +25,19 @@ jl::Value jl::FunctionCallable::call(Interpreter* interpreter, std::vector<Value
     try {
         interpreter->execute_block(m_declaration->m_body, env);
     } catch (Value value) {
+        if (m_is_initializer) {
+            return m_closure->get_at("self", 0);
+        }
         return value;
     }
 
-    // To prevent the env from deleting the enclosing environment (which might still be needed) when it goes out of scope
-    env->m_enclosing = nullptr;
+    // // To prevent the env from deleting the enclosing environment (which might still be needed) when it goes out of scope
+    // env->m_enclosing = nullptr;
+    if (m_is_initializer) {
+        std::string self = "self";
+        return m_closure->get_at("self", 0);
+    }
+    
     return '\0';
 }
 
@@ -46,7 +55,7 @@ jl::FunctionCallable* jl::FunctionCallable::bind(Instance* instance)
 {
     Environment* env = new Environment(m_closure);
     env->define("self", instance);
-    return new FunctionCallable(m_declaration, env);
+    return new FunctionCallable(m_declaration, env, m_is_initializer);
 }
 
 // --------------------------------------------------------------------------------
@@ -104,12 +113,19 @@ jl::ClassCallable::ClassCallable(std::string& name, std::map<std::string, Functi
 jl::Value jl::ClassCallable::call(Interpreter* interpreter, std::vector<Value>& arguments)
 {
     Instance* instance = new Instance(this);
+    std::string init_name = "init";
+    FunctionCallable* initializer = find_method(init_name);
+    if (initializer != nullptr) {
+        initializer->bind(instance)->call(interpreter, arguments);
+    }
     return instance;
 }
 
 int jl::ClassCallable::arity()
 {
-    return 0;
+    std::string init_name = "init";
+    FunctionCallable* initializer = find_method(init_name);
+    return initializer == nullptr ? 0 : initializer->arity();
 }
 
 std::string jl::ClassCallable::to_string()

@@ -19,7 +19,13 @@ public:
     enum FunctionType {
         NONE,
         FUNCTION,
+        INITIALIZER,
         METHOD,
+    };
+
+    enum class ClassType {
+        NONE,
+        CLASS,
     };
 
 private:
@@ -29,6 +35,7 @@ private:
     std::vector<Scope> m_scopes;
     std::string& m_file_name;
     FunctionType m_current_function_type = NONE;
+    ClassType m_current_class_type = ClassType::NONE;
 
     void resolve(Stmt* statement);
     void resolve(Expr* expression);

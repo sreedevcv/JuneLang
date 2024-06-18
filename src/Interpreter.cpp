@@ -448,7 +448,7 @@ void jl::Interpreter::visit_while_stmt(WhileStmt* stmt, void* context)
 
 void jl::Interpreter::visit_func_stmt(FuncStmt* stmt, void* context)
 {
-    FunctionCallable* function = new FunctionCallable(stmt, m_env);
+    FunctionCallable* function = new FunctionCallable(stmt, m_env, false);
     m_env->define(stmt->m_name.get_lexeme(), static_cast<Callable*>(function));
     *static_cast<Value*>(context) = '\0';
 }
@@ -469,7 +469,7 @@ void jl::Interpreter::visit_class_stmt(ClassStmt* stmt, void* context)
 
     std::map<std::string, FunctionCallable*> methods;
     for (FuncStmt* method : stmt->m_methods) {
-        FunctionCallable* func_callable = new FunctionCallable(method, m_env);
+        FunctionCallable* func_callable = new FunctionCallable(method, m_env, method->m_name.get_lexeme() == "init");
         methods[method->m_name.get_lexeme()] = func_callable;
     }
 

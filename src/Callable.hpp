@@ -15,7 +15,7 @@ public:
 
 class FunctionCallable : public Callable {
 public:
-    FunctionCallable(FuncStmt* declaration, Environment* closure);
+    FunctionCallable(FuncStmt* declaration, Environment* closure, bool is_initalizer);
     virtual ~FunctionCallable() = default;
 
     virtual Value call(Interpreter* interpreter, std::vector<Value>& arguments) override;
@@ -26,6 +26,7 @@ public:
 private:
     FuncStmt* m_declaration;
     Environment* m_closure;
+    bool m_is_initializer = false;
 };
 
 class ClassCallable: public Callable {
