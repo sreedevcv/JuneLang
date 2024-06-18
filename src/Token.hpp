@@ -58,6 +58,7 @@ public:
         VAR,
         PRINT,
         NULL_,
+        THIS,
     };
 
     Token(TokenType type, std::string& lexeme, int line);

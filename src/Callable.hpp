@@ -5,6 +5,7 @@
 
 namespace jl {
 
+
 class Callable {
 public:
     virtual Value call(Interpreter* interpreter, std::vector<Value>& arguments) = 0;
@@ -21,6 +22,7 @@ public:
     virtual int arity() override;
     virtual std::string to_string() override;
 
+    FunctionCallable* bind(Instance* instance);
 private:
     FuncStmt* m_declaration;
     Environment* m_closure;
@@ -28,14 +30,18 @@ private:
 
 class ClassCallable: public Callable {
 public:
-    ClassCallable(std::string& name);
+    ClassCallable(std::string& name, std::map<std::string, FunctionCallable*>& methods);
     virtual ~ClassCallable() = default;
 
     virtual Value call(Interpreter* interpreter, std::vector<Value>& arguments) override;
     virtual int arity() override;
     virtual std::string to_string() override;
+
+    FunctionCallable* find_method(std::string& name);
+
 private:
     std::string m_name;
+    std::map<std::string, FunctionCallable*> m_methods;
 };
 
 class Instance {
@@ -43,7 +49,7 @@ public:
     Instance(ClassCallable* class_callable);
     ~Instance() = default;
 
-    Value& get(Token& name);
+    Value get(Token& name);
     void set(Token& name, Value& value);
     std::string to_string();
 private:

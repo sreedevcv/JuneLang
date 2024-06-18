@@ -17,7 +17,7 @@ jl::Environment::Environment(Environment* enclosing)
 jl::Environment::~Environment()
 {
     if (m_enclosing != nullptr) {
-        delete m_enclosing;
+        // delete m_enclosing;
     }
 }
 
@@ -40,14 +40,16 @@ jl::Value& jl::Environment::get(Token& token)
     if (m_enclosing != nullptr) {
         return m_enclosing->get(token);
     }
-
-    ErrorHandler::error(m_file_name, token.get_line(), "variable does not exist");
+    
+    std::string msg = "variable does not exist: " + token.get_lexeme();
+    ErrorHandler::error(m_file_name, token.get_line(), msg.c_str());
     throw "exception";
 }
 
 jl::Value& jl::Environment::get_at(Token& name, int depth)
 {
-    return ancestor(depth)->m_values[name.get_lexeme()];
+    Environment* env = ancestor(depth);
+    return env->m_values[name.get_lexeme()];
 }
 
 void jl::Environment::assign(Token& token, Value& value)

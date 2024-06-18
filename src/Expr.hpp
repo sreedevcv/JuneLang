@@ -19,6 +19,7 @@ class Logical;
 class Call;
 class Get;
 class Set;
+class This;
 
 class IExprVisitor {
 public:
@@ -32,6 +33,7 @@ public:
     virtual void visit_call_expr(Call* expr, void* context) = 0;
     virtual void visit_get_expr(Get* expr, void* context) = 0;
     virtual void visit_set_expr(Set* expr, void* context) = 0;
+    virtual void visit_this_expr(This* expr, void* context) = 0;
     virtual void* get_expr_context() = 0;
 };
 
@@ -231,6 +233,23 @@ public:
     virtual ~Set() = default;
 };
 
+class This : public Expr {
+public:
+    Token& m_keyword;
+
+    inline This(Token& keyword)
+        : m_keyword(keyword)
+    {
+    }
+
+    inline virtual void accept(IExprVisitor& visitor, void* context) override
+    {
+        visitor.visit_this_expr(this, context);
+    }
+
+    virtual ~This() = default;
+};
+
 class ParsetreePrinter : public IExprVisitor {
 public:
     std::string context;
@@ -264,6 +283,9 @@ public:
     {
     }
     inline void visit_set_expr(Set* expr, void* context) override
+    {
+    }
+    inline void visit_this_expr(This* expr, void* context) override
     {
     }
     inline void visit_literal_expr(Literal* expr, void* context) override

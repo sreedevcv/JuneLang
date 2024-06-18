@@ -183,11 +183,12 @@ jl::Expr* jl::Parser::primary()
         Value* value = new Value(previous().get_value());
         return new Literal(value);
     }
-
+    if (match({Token::THIS})) {
+        return new This(previous());
+    }
     if (match({ Token::IDENTIFIER })) {
         return new Variable(previous());
     }
-
     if (match({ Token::LEFT_PAR })) {
         Expr* expr = expression();
         consume(Token::RIGHT_PAR, "Expected ) after expression");

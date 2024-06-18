@@ -151,6 +151,11 @@ void jl::Resolver::visit_set_expr(Set* expr, void* context)
     resolve(expr->m_value);
 }
 
+void jl::Resolver::visit_this_expr(This* expr, void* context)
+{
+    resolve_local(expr, expr->m_keyword);
+}
+
 void* jl::Resolver::get_expr_context()
 {
     return nullptr;
@@ -227,6 +232,16 @@ void jl::Resolver::visit_class_stmt(ClassStmt* stmt, void* context)
 {
     declare(stmt->m_name);
     define(stmt->m_name);
+
+    begin_scope();
+    m_scopes.back()["self"] = true;
+
+    for (FuncStmt* method: stmt->m_methods) {
+        FunctionType declaration = METHOD;
+        resolve_function(method, declaration);
+    }
+
+    end_scope();
 }
 
 void* jl::Resolver::get_stmt_context()

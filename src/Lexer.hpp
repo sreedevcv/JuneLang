@@ -63,6 +63,7 @@ private:
         { "fun", Token::FUNC },
         { "return", Token::RETURN },
         { "class", Token::CLASS },
+        { "self", Token::THIS },
     };
 };
 } // namespace jl

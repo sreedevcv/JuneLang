@@ -24,8 +24,6 @@ jl::Value jl::FunctionCallable::call(Interpreter* interpreter, std::vector<Value
     try {
         interpreter->execute_block(m_declaration->m_body, env);
     } catch (Value value) {
-        // To prevent the env from deleting the enclosing environment (which might still be needed) when it goes out of scope
-        env->m_enclosing = nullptr;
         return value;
     }
 
@@ -42,6 +40,13 @@ int jl::FunctionCallable::arity()
 std::string jl::FunctionCallable::to_string()
 {
     return "<fn: " + m_declaration->m_name.get_lexeme() + ">";
+}
+
+jl::FunctionCallable* jl::FunctionCallable::bind(Instance* instance)
+{
+    Environment* env = new Environment(m_closure);
+    env->define("self", instance);
+    return new FunctionCallable(m_declaration, env);
 }
 
 // --------------------------------------------------------------------------------
@@ -65,7 +70,7 @@ jl::Value jl::ToIntNativeFunction::call(Interpreter* interpreter, std::vector<Va
         try {
             int num = std::stoi(std::get<std::string>(not_int));
             return num;
-        } catch(...) {
+        } catch (...) {
             ErrorHandler::error(interpreter->m_file_name, "interpreting", "native function int()", 0, "Conversion cannot be performed on an invalid string", 0);
             throw "runtime-error";
             // return 0;
@@ -90,8 +95,9 @@ std::string jl::ToIntNativeFunction::to_string()
 // -------------------------------ClassCallable------------------------------------
 // --------------------------------------------------------------------------------
 
-jl::ClassCallable::ClassCallable(std::string& name)
+jl::ClassCallable::ClassCallable(std::string& name, std::map<std::string, FunctionCallable*>& methods)
     : m_name(name)
+    , m_methods(methods)
 {
 }
 
@@ -111,6 +117,14 @@ std::string jl::ClassCallable::to_string()
     return m_name;
 }
 
+jl::FunctionCallable* jl::ClassCallable::find_method(std::string& name)
+{
+    if (m_methods.contains(name)) {
+        return m_methods[name];
+    }
+    return nullptr;
+}
+
 // --------------------------------------------------------------------------------
 // -------------------------------Instance------------------------------------
 // --------------------------------------------------------------------------------
@@ -120,10 +134,16 @@ jl::Instance::Instance(ClassCallable* class_callable)
 {
 }
 
-jl::Value& jl::Instance::get(Token& name)
+jl::Value jl::Instance::get(Token& name)
 {
     if (m_fields.contains(name.get_lexeme())) {
         return m_fields[name.get_lexeme()];
+    }
+
+    FunctionCallable* method = m_class->find_method(name.get_lexeme());
+    if (method != nullptr) {
+        Callable* method_instance = method->bind(this);
+        return method_instance;
     }
 
     std::string fname = "unknown";
@@ -138,5 +158,5 @@ void jl::Instance::set(Token& name, Value& value)
 
 std::string jl::Instance::to_string()
 {
-    return m_class->to_string() + " instance"; 
+    return m_class->to_string() + " instance";
 }

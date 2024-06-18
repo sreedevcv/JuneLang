@@ -13,14 +13,18 @@ int main()
 
     jl::Lexer lexer(
         R"(
-        fun fib(n) [
-            if n <= 1 return n;
-            return fib(n - 2) + fib(n - 1);
-        ]
+            class Thing [
+                getCallback() [
+                    fun localFunction() [
+                        print self;
+                    ]
 
-        for var i = 0; i < 20; i = i + 1; [
-            print fib(i);
-        ]
+                    return localFunction;
+                ]
+            ]
+
+            var callback = Thing().getCallback();
+            callback();
     )");
 
     std::string file_name = "test";
@@ -62,5 +66,39 @@ int main()
             print fib(i);
         ]
 
+
+        class Thing [
+            getCallback() [
+                fun localFunction() [
+                    print self;
+                ]
+
+                return localFunction;
+            ]
+        ]
+
+        var callback = Thing().getCallback();
+        callback();
+
+
+                class Egotist [
+            speak() [
+                print self;
+            ]
+        ]
+
+        var method = Egotist().speak;
+        method();
+
+        class Cake [
+            taste() [
+                var adjective = "delicious";
+                print "The " + self.flavor + " cake is " + adjective + "!";
+            ]
+        ]
+
+        var cake = Cake();
+        cake.flavor = "German chocolate";
+        cake.taste();
 
 */

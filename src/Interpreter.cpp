@@ -1,5 +1,7 @@
 #include "Interpreter.hpp"
 
+#include <map>
+
 #include "Callable.hpp"
 #include "ErrorHandler.hpp"
 
@@ -15,7 +17,7 @@ jl::Interpreter::Interpreter(std::string& file_name)
 
 jl::Interpreter::~Interpreter()
 {
-    delete m_env;
+    // delete m_env;
 }
 
 void jl::Interpreter::interpret(Expr* expr, Value* value)
@@ -96,15 +98,15 @@ void jl::Interpreter::execute_block(std::vector<Stmt*>& statements, Environment*
         for (auto stmt : statements) {
             stmt->accept(*this, &value);
         }
-    } catch (const char* msg) {
-        exception_ocurred = true;
-        m_env = previous;
     } catch (Value value) {
         // This happens during a function return
         // Just rethrow the value so that FunctionCallable::call can handle it
         exception_ocurred = true;
         m_env = previous;
         throw;
+    } catch (const char* msg) {
+        exception_ocurred = true;
+        m_env = previous;
     }
 
     if (!exception_ocurred) {
@@ -371,6 +373,11 @@ void jl::Interpreter::visit_set_expr(Set* expr, void* context)
     *static_cast<Value*>(context) = value;
 }
 
+void jl::Interpreter::visit_this_expr(This* expr, void* context)
+{
+    *static_cast<Value*>(context) = look_up_variable(expr->m_keyword, expr);
+}
+
 void* jl::Interpreter::get_expr_context()
 {
     return nullptr;
@@ -459,7 +466,14 @@ void jl::Interpreter::visit_return_stmt(ReturnStmt* stmt, void* context)
 void jl::Interpreter::visit_class_stmt(ClassStmt* stmt, void* context)
 {
     m_env->define(stmt->m_name.get_lexeme(), static_cast<Callable*>(nullptr));
-    ClassCallable* class_callable = new ClassCallable(stmt->m_name.get_lexeme());
+
+    std::map<std::string, FunctionCallable*> methods;
+    for (FuncStmt* method : stmt->m_methods) {
+        FunctionCallable* func_callable = new FunctionCallable(method, m_env);
+        methods[method->m_name.get_lexeme()] = func_callable;
+    }
+
+    ClassCallable* class_callable = new ClassCallable(stmt->m_name.get_lexeme(), methods);
     m_env->assign(stmt->m_name, (static_cast<Callable*>(class_callable)));
 }
 
