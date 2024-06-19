@@ -13,34 +13,32 @@ int main()
 
     jl::Lexer lexer(
         R"(
-        class A [
-            method() [
-                print "A method";
+
+        class String
+        [
+            init(string)
+            [
+                self.str = string;
+            ]
+
+            append(string)
+            [
+                self.str = self.str + string;
+            ]
+
+            get()
+            [
+                return self.str;
             ]
         ]
 
-        class B : A [
-            method() [
-                print "B method";
-            ]
+        var a = String("Hai");
+        print a;
+        print a.get();
+        a.append(" World");
+        var b = a.get();
+        print b;
 
-            test() [
-                super.method();
-            ]
-        ]
-
-        class C : B []
-
-        C().test();
-
-        class Eclair [
-            cook() [
-                super.cook();
-                print "Pipe full of crème pâtissière.";
-            ]
-        ]
-
-        super.notEvenInAClass();
     )");
 
     std::string file_name = "test";
