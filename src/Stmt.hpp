@@ -33,6 +33,7 @@ public:
 class Stmt {
 public:
     virtual void accept(IStmtVisitor& visitor, void* context) = 0;
+    virtual ~Stmt() = default;
 };
 
 class ExprStmt : public Stmt {
@@ -49,7 +50,10 @@ public:
         visitor.visit_expr_stmt(this, context);
     }
 
-    virtual ~ExprStmt() = default;
+    virtual ~ExprStmt()
+    {
+        delete m_expr;
+    }
 };
 
 class PrintStmt : public Stmt {
@@ -66,7 +70,10 @@ public:
         visitor.visit_print_stmt(this, context);
     }
 
-    virtual ~PrintStmt() = default;
+    virtual ~PrintStmt()
+    {
+        delete m_expr;
+    }
 };
 
 class VarStmt : public Stmt {
@@ -85,7 +92,10 @@ public:
         visitor.visit_var_stmt(this, context);
     }
 
-    virtual ~VarStmt() = default;
+    virtual ~VarStmt()
+    {
+        delete m_initializer;
+    }
 };
 
 class BlockStmt : public Stmt {
@@ -102,7 +112,12 @@ public:
         visitor.visit_block_stmt(this, context);
     }
 
-    virtual ~BlockStmt() = default;
+    virtual ~BlockStmt()
+    {
+        for (auto stmt : m_statements) {
+            delete stmt;
+        }
+    }
 };
 
 class EmptyStmt : public Stmt {
@@ -134,7 +149,12 @@ public:
         visitor.visit_if_stmt(this, context);
     }
 
-    virtual ~IfStmt() = default;
+    virtual ~IfStmt()
+    {
+        delete m_condition;
+        delete m_then_stmt;
+        delete m_else_stmt;
+    }
 };
 
 class WhileStmt : public Stmt {
@@ -153,13 +173,17 @@ public:
         visitor.visit_while_stmt(this, context);
     }
 
-    virtual ~WhileStmt() = default;
+    virtual ~WhileStmt()
+    {
+        delete m_condition;
+        delete m_body;
+    }
 };
 
 class FuncStmt : public Stmt {
 public:
     Token& m_name;
-    std::vector<Token*> m_params;
+    std::vector<Token*> m_params;   // Should i delete these??
     std::vector<Stmt*> m_body;
 
     inline FuncStmt(Token& name, std::vector<Token*>& params, std::vector<Stmt*>& body)
@@ -174,7 +198,13 @@ public:
         visitor.visit_func_stmt(this, context);
     }
 
-    virtual ~FuncStmt() = default;
+    virtual ~FuncStmt()
+    {
+        for (auto stmt: m_body)
+        {
+            delete stmt;
+        }
+    }
 };
 
 class ReturnStmt : public Stmt {
@@ -193,7 +223,10 @@ public:
         visitor.visit_return_stmt(this, context);
     }
 
-    virtual ~ReturnStmt() = default;
+    virtual ~ReturnStmt()
+    {
+        delete m_expr;
+    }
 };
 
 class ClassStmt : public Stmt {
@@ -209,7 +242,14 @@ public:
     {
     }
 
-    virtual ~ClassStmt() = default;
+    virtual ~ClassStmt()
+    {
+        delete m_super_class;
+        for (auto method: m_methods)
+        {
+            delete method;
+        }
+    }
 
     inline virtual void accept(IStmtVisitor& visitor, void* context) override
     {

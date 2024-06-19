@@ -42,6 +42,7 @@ public:
 class Expr {
 public:
     virtual void accept(IExprVisitor& visitor, void* context) = 0;
+    virtual ~Expr() = default;
 };
 
 class Assign : public Expr {
@@ -60,7 +61,10 @@ public:
         visitor.visit_assign_expr(this, context);
     }
 
-    virtual ~Assign() = default;
+    virtual ~Assign()
+    {
+        delete m_expr;
+    }
 };
 
 class Binary : public Expr {
@@ -81,7 +85,11 @@ public:
         visitor.visit_binary_expr(this, context);
     }
 
-    virtual ~Binary() = default;
+    virtual ~Binary() 
+    {
+        delete m_left;
+        delete m_right;
+    }
 };
 
 class Grouping : public Expr {
@@ -97,7 +105,10 @@ public:
         visitor.visit_grouping_expr(this, context);
     }
 
-    virtual ~Grouping() = default;
+    virtual ~Grouping() 
+    {
+        delete m_expr;
+    }
 };
 
 class Literal : public Expr {
@@ -114,7 +125,10 @@ public:
         visitor.visit_literal_expr(this, context);
     }
 
-    virtual ~Literal() = default;
+    virtual ~Literal() 
+    {
+        delete m_value;
+    }
 };
 
 class Unary : public Expr {
@@ -133,7 +147,11 @@ public:
         visitor.visit_unary_expr(this, context);
     }
 
-    virtual ~Unary() = default;
+    virtual ~Unary()
+    {
+        delete m_expr;
+        delete m_oper;
+    }
 };
 
 class Variable : public Expr {
@@ -171,7 +189,11 @@ public:
         visitor.visit_logical_expr(this, context);
     }
 
-    virtual ~Logical() = default;
+    virtual ~Logical() 
+    {
+        delete m_left;
+        delete m_right;
+    }
 };
 
 class Call : public Expr {
@@ -192,7 +214,14 @@ public:
         visitor.visit_call_expr(this, context);
     }
 
-    virtual ~Call() = default;
+    virtual ~Call()
+    {
+        delete m_callee;
+        for (auto exp: m_arguments)
+        {
+            delete exp;
+        }
+    }
 };
 
 class Get : public Expr {
@@ -211,7 +240,10 @@ public:
         visitor.visit_get_expr(this, context);
     }
 
-    virtual ~Get() = default;
+    virtual ~Get()
+    {
+        delete m_object;
+    }
 };
 
 class Set : public Expr {
@@ -232,7 +264,11 @@ public:
         visitor.visit_set_expr(this, context);
     }
 
-    virtual ~Set() = default;
+    virtual ~Set()
+    {
+        delete m_object;
+        delete m_value;
+    }
 };
 
 class This : public Expr {
@@ -270,6 +306,10 @@ public:
 
     virtual ~Super() = default;
 };
+
+//----------------------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------------------
 
 class ParsetreePrinter : public IExprVisitor {
 public:

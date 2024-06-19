@@ -65,6 +65,10 @@ int main()
 
     jl::Value v;
     interpreter.interpret(stmts);
+
+    for (auto stmt: stmts) {
+        delete stmt;
+    }
 }
 
 /*
