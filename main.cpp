@@ -7,9 +7,11 @@
 #include "Parser.hpp"
 #include "Resolver.hpp"
 
+#include "Editor.hpp"
+
 int main()
 {
-    // std::cout << "Hello World\n";
+    jed::Editor();
 
     jl::Lexer lexer(
         R"(

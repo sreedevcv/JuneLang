@@ -27,5 +27,7 @@ set(BUILD_SHARED_LIBS OFF)
 FetchContent_MakeAvailable(glm)
 
 add_library(JuneEditor
+    Editor.cpp
 )
+
 target_include_directories(JuneEditor PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
