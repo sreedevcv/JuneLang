@@ -7,7 +7,7 @@
 // -----------------------------FunctionCallable-----------------------------------
 // --------------------------------------------------------------------------------
 
-jl::FunctionCallable::FunctionCallable(FuncStmt* declaration, Environment* closure, bool is_initalizer)
+jl::FunctionCallable::FunctionCallable(FuncStmt* declaration, std::shared_ptr<Environment>& closure, bool is_initalizer)
     : m_declaration(declaration)
     , m_closure(closure)
     , m_is_initializer(is_initalizer)
@@ -16,7 +16,7 @@ jl::FunctionCallable::FunctionCallable(FuncStmt* declaration, Environment* closu
 
 jl::Value jl::FunctionCallable::call(Interpreter* interpreter, std::vector<Value>& arguments)
 {
-    Environment* env = new Environment(m_closure);
+    std::shared_ptr<Environment> env = std::make_shared<Environment>(m_closure);
 
     for (int i = 0; i < m_declaration->m_params.size(); i++) {
         env->define(m_declaration->m_params[i]->get_lexeme(), arguments[i]);
@@ -52,7 +52,7 @@ std::string jl::FunctionCallable::to_string()
 
 jl::FunctionCallable* jl::FunctionCallable::bind(Instance* instance)
 {
-    Environment* env = new Environment(m_closure);
+    std::shared_ptr<Environment> env = std::make_shared<Environment>(m_closure);
     env->define(Token::global_this_lexeme, instance);
     return new FunctionCallable(m_declaration, env, m_is_initializer);
 }
@@ -110,6 +110,13 @@ jl::ClassCallable::ClassCallable(std::string& name, ClassCallable* super_class, 
 {
 }
 
+jl::ClassCallable::~ClassCallable()
+{
+    for (auto& [key, value]: m_methods) {
+        delete value;
+    }
+}
+
 jl::Value jl::ClassCallable::call(Interpreter* interpreter, std::vector<Value>& arguments)
 {
     Instance* instance = new Instance(this);
@@ -152,6 +159,17 @@ jl::FunctionCallable* jl::ClassCallable::find_method(std::string& name)
 jl::Instance::Instance(ClassCallable* class_callable)
     : m_class(class_callable)
 {
+}
+
+jl::Instance::~Instance()
+{
+    for (auto& [key, value]: m_fields) {
+        if (is_callable(value)) {
+            delete std::get<Callable*>(value);
+        } else if (is_instance(value)) {
+            delete std::get<Instance*>(value);
+        }
+    }
 }
 
 jl::Value jl::Instance::get(Token& name)

@@ -15,8 +15,8 @@ using Value = std::variant<
     bool,
     std::string,
     char,
-    // void*,   // Callable
     Callable*,
     Instance*
     >;
+
 } // namespace jl

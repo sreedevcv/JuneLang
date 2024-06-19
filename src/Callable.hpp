@@ -11,11 +11,12 @@ public:
     virtual Value call(Interpreter* interpreter, std::vector<Value>& arguments) = 0;
     virtual int arity() = 0;
     virtual std::string to_string() = 0;
+    ~Callable() = default;
 };
 
 class FunctionCallable : public Callable {
 public:
-    FunctionCallable(FuncStmt* declaration, Environment* closure, bool is_initalizer);
+    FunctionCallable(FuncStmt* declaration, std::shared_ptr<Environment>& closure, bool is_initalizer);
     virtual ~FunctionCallable() = default;
 
     virtual Value call(Interpreter* interpreter, std::vector<Value>& arguments) override;
@@ -25,14 +26,14 @@ public:
     FunctionCallable* bind(Instance* instance);
 private:
     FuncStmt* m_declaration;
-    Environment* m_closure;
+    std::shared_ptr<Environment> m_closure;
     bool m_is_initializer = false;
 };
 
 class ClassCallable: public Callable {
 public:
     ClassCallable(std::string& name, ClassCallable* super_class, std::map<std::string, FunctionCallable*>& methods);
-    virtual ~ClassCallable() = default;
+    virtual ~ClassCallable();
 
     virtual Value call(Interpreter* interpreter, std::vector<Value>& arguments) override;
     virtual int arity() override;
@@ -49,7 +50,7 @@ private:
 class Instance {
 public:
     Instance(ClassCallable* class_callable);
-    ~Instance() = default;
+    ~Instance();
 
     Value get(Token& name);
     void set(Token& name, Value& value);

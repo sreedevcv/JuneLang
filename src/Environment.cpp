@@ -8,7 +8,7 @@ jl::Environment::Environment(std::string& file_name)
 {
 }
 
-jl::Environment::Environment(Environment* enclosing)
+jl::Environment::Environment(std::shared_ptr<Environment>& enclosing)
     : m_enclosing(enclosing)
     , m_file_name(enclosing->m_file_name)
 {
@@ -16,8 +16,12 @@ jl::Environment::Environment(Environment* enclosing)
 
 jl::Environment::~Environment()
 {
-    if (m_enclosing != nullptr) {
-        // delete m_enclosing;
+    for (auto& [key, value]: m_values) {
+        if (is_callable(value)) {
+            delete std::get<Callable*>(value);
+        } else if (is_instance(value)) {
+            delete std::get<Instance*>(value);
+        }
     }
 }
 
@@ -100,8 +104,10 @@ jl::Environment* jl::Environment::ancestor(int depth)
     Environment* env = this;
 
     for (int i = 0; i < depth; i++) {
-        env = env->m_enclosing;
+        env = (env->m_enclosing).get();
     }
 
     return env;
 }
+
+// 2544 byte(s) leaked in 34 allocation(s).

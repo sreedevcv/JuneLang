@@ -11,7 +11,7 @@ namespace jl {
 class Environment {
 public:
     Environment(std::string& file_name);
-    Environment(Environment* enclosing);
+    Environment(std::shared_ptr<Environment>& enclosing);
     ~Environment();
 
     /* Stores a copy of variable name and value in map if
@@ -27,7 +27,7 @@ public:
     void assign_at(Token& token, Value& value, int depth);
     Environment* ancestor(int depth);
 
-    Environment* m_enclosing;
+    std::shared_ptr<Environment> m_enclosing;
 
 private:
     std::unordered_map<std::string, Value> m_values;

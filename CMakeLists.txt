@@ -2,12 +2,12 @@ cmake_minimum_required(VERSION 3.20.0)
 project(June VERSION 0.1.0)
 set(CMAKE_CXX_STANDARD 23)
 
-add_compile_options(-fsanitize=address)
-add_link_options(-fsanitize=address)
+# add_compile_options(-fsanitize=address)
+# add_link_options(-fsanitize=address)
 
 include(FetchContent)
 
-option(BUILD_TESTS "Build tests" OFF)
+option(BUILD_TESTS "Build tests" ON)
 option(BUILD_EDITOR "Build Editor" OFF)
 
 if (BUILD_TESTS)
