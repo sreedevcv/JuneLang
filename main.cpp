@@ -7,12 +7,8 @@
 #include "Parser.hpp"
 #include "Resolver.hpp"
 
-#include "Editor.hpp"
-
 int main()
 {
-    jed::Editor();
-
     jl::Lexer lexer(
         R"(
 
