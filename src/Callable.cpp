@@ -26,7 +26,7 @@ jl::Value jl::FunctionCallable::call(Interpreter* interpreter, std::vector<Value
         interpreter->execute_block(m_declaration->m_body, env);
     } catch (Value value) {
         if (m_is_initializer) {
-            return m_closure->get_at("self", 0);
+            return m_closure->get_at(Token::global_this_lexeme, 0);
         }
         return value;
     }
@@ -34,8 +34,7 @@ jl::Value jl::FunctionCallable::call(Interpreter* interpreter, std::vector<Value
     // // To prevent the env from deleting the enclosing environment (which might still be needed) when it goes out of scope
     // env->m_enclosing = nullptr;
     if (m_is_initializer) {
-        std::string self = "self";
-        return m_closure->get_at("self", 0);
+        return m_closure->get_at(Token::global_this_lexeme, 0);
     }
     
     return '\0';
@@ -54,7 +53,7 @@ std::string jl::FunctionCallable::to_string()
 jl::FunctionCallable* jl::FunctionCallable::bind(Instance* instance)
 {
     Environment* env = new Environment(m_closure);
-    env->define("self", instance);
+    env->define(Token::global_this_lexeme, instance);
     return new FunctionCallable(m_declaration, env, m_is_initializer);
 }
 
@@ -104,8 +103,9 @@ std::string jl::ToIntNativeFunction::to_string()
 // -------------------------------ClassCallable------------------------------------
 // --------------------------------------------------------------------------------
 
-jl::ClassCallable::ClassCallable(std::string& name, std::map<std::string, FunctionCallable*>& methods)
+jl::ClassCallable::ClassCallable(std::string& name, ClassCallable* super_class, std::map<std::string, FunctionCallable*>& methods)
     : m_name(name)
+    , m_super_class(super_class)
     , m_methods(methods)
 {
 }
@@ -137,6 +137,10 @@ jl::FunctionCallable* jl::ClassCallable::find_method(std::string& name)
 {
     if (m_methods.contains(name)) {
         return m_methods[name];
+    }
+
+    if (m_super_class != nullptr) {
+        return m_super_class->find_method(name);
     }
     return nullptr;
 }

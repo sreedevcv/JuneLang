@@ -159,6 +159,11 @@ void jl::Resolver::visit_this_expr(This* expr, void* context)
     resolve_local(expr, expr->m_keyword);
 }
 
+void jl::Resolver::visit_super_expr(Super* expr, void* context)
+{
+    resolve_local(expr, expr->m_keyword);
+}
+
 void* jl::Resolver::get_expr_context()
 {
     return nullptr;
@@ -242,8 +247,18 @@ void jl::Resolver::visit_class_stmt(ClassStmt* stmt, void* context)
     declare(stmt->m_name);
     define(stmt->m_name);
 
+    if (stmt->m_super_class != nullptr && stmt->m_name.get_lexeme() == stmt->m_super_class->m_name.get_lexeme()) {
+        ErrorHandler::error(m_file_name, "resolving", "class definition", stmt->m_name.get_line(), "A class cannot inherit from itself", 0);
+    }
+
+    if (stmt->m_super_class != nullptr) {
+        resolve(stmt->m_super_class);
+        begin_scope();
+        m_scopes.back()[Token::global_super_lexeme] = true;
+    }
+
     begin_scope();
-    m_scopes.back()["self"] = true;
+    m_scopes.back()[Token::global_this_lexeme] = true;
 
     for (FuncStmt* method: stmt->m_methods) {
         FunctionType declaration = METHOD;
@@ -254,6 +269,10 @@ void jl::Resolver::visit_class_stmt(ClassStmt* stmt, void* context)
     }
 
     end_scope();
+
+    if (stmt->m_super_class != nullptr) {
+        end_scope();
+    }
     m_current_class_type = enclosing_class;
 }
 

@@ -64,6 +64,7 @@ private:
         { "return", Token::RETURN },
         { "class", Token::CLASS },
         { "self", Token::THIS },
+        { "super", Token::SUPER },
     };
 };
 } // namespace jl

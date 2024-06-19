@@ -13,30 +13,25 @@ int main()
 
     jl::Lexer lexer(
         R"(
-            // class Thing [
-            //     getCallback() [
-            //         fun localFunction() [
-            //             print self;
-            //         ]
+        class A [
+            method() [
+                print "A method";
+            ]
+        ]
 
-            //         return localFunction;
-            //     ]
-            // ]
-
-            // var callback = Thing().getCallback();
-            // callback();
-
-            class Foo [
-                init() [
-                    return;
-                    print self;
-                ]
+        class B : A [
+            method() [
+                print "B method";
             ]
 
-            var a = Foo();
-            print a;
-            var b = a.init();
-            print a.init();
+            test() [
+                super.method();
+            ]
+        ]
+
+        class C : B []
+
+        C().test();
 
     )");
 

@@ -378,6 +378,21 @@ void jl::Interpreter::visit_this_expr(This* expr, void* context)
     *static_cast<Value*>(context) = look_up_variable(expr->m_keyword, expr);
 }
 
+void jl::Interpreter::visit_super_expr(Super* expr, void* context)
+{
+    int distance = m_locals[expr];
+    ClassCallable* super_class = static_cast<ClassCallable*>(std::get<Callable*>(m_env->get_at(Token::global_super_lexeme, distance)));
+    Value instance_value = m_env->get_at(Token::global_this_lexeme, distance - 1);
+    Instance* instance = std::get<Instance*>(instance_value);
+    FunctionCallable* method = super_class->find_method(expr->m_method.get_lexeme());
+
+    if (method == nullptr) {
+        ErrorHandler::error(m_file_name, "interpreting", "super keyword", expr->m_keyword.get_line(), "Udefined property called on super", 0);
+    }
+
+    *static_cast<Value*>(context) =  static_cast<Callable*>(method->bind(instance));
+}
+
 void* jl::Interpreter::get_expr_context()
 {
     return nullptr;
@@ -465,7 +480,21 @@ void jl::Interpreter::visit_return_stmt(ReturnStmt* stmt, void* context)
 
 void jl::Interpreter::visit_class_stmt(ClassStmt* stmt, void* context)
 {
+    Value super_class = static_cast<Callable*>(nullptr);
+    if (stmt->m_super_class != nullptr) {
+        evaluate(stmt->m_super_class, &super_class);
+        if (!(is_callable(super_class) && dynamic_cast<ClassCallable*>(std::get<Callable*>(super_class)))) {
+            ErrorHandler::error(m_file_name, "interpreting", "class definition", stmt->m_name.get_line(), "Super class must be a class", 0);
+            throw "runtime-exception";
+        }
+    }
+
     m_env->define(stmt->m_name.get_lexeme(), static_cast<Callable*>(nullptr));
+
+    if (stmt->m_super_class != nullptr) {
+        m_env = new Environment(m_env);
+        m_env->define(Token::global_super_lexeme, super_class);
+    }
 
     std::map<std::string, FunctionCallable*> methods;
     for (FuncStmt* method : stmt->m_methods) {
@@ -473,7 +502,12 @@ void jl::Interpreter::visit_class_stmt(ClassStmt* stmt, void* context)
         methods[method->m_name.get_lexeme()] = func_callable;
     }
 
-    ClassCallable* class_callable = new ClassCallable(stmt->m_name.get_lexeme(), methods);
+    ClassCallable* class_callable = new ClassCallable(stmt->m_name.get_lexeme(), static_cast<ClassCallable*>(std::get<Callable*>(super_class)), methods);
+
+    if (stmt->m_super_class != nullptr) {
+        m_env = m_env->m_enclosing;
+    }
+
     m_env->assign(stmt->m_name, (static_cast<Callable*>(class_callable)));
 }
 

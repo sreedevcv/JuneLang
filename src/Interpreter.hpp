@@ -34,6 +34,7 @@ private:
     virtual void visit_get_expr(Get* expr, void* context) override;
     virtual void visit_set_expr(Set* expr, void* context) override;
     virtual void visit_this_expr(This* expr, void* context) override;
+    virtual void visit_super_expr(Super* expr, void* context) override;
     virtual void* get_expr_context() override;
 
     virtual void visit_print_stmt(PrintStmt* stmt, void* context) override;

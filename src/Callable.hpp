@@ -31,7 +31,7 @@ private:
 
 class ClassCallable: public Callable {
 public:
-    ClassCallable(std::string& name, std::map<std::string, FunctionCallable*>& methods);
+    ClassCallable(std::string& name, ClassCallable* super_class, std::map<std::string, FunctionCallable*>& methods);
     virtual ~ClassCallable() = default;
 
     virtual Value call(Interpreter* interpreter, std::vector<Value>& arguments) override;
@@ -43,6 +43,7 @@ public:
 private:
     std::string m_name;
     std::map<std::string, FunctionCallable*> m_methods;
+    ClassCallable* m_super_class;
 };
 
 class Instance {

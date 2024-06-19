@@ -199,10 +199,12 @@ public:
 class ClassStmt : public Stmt {
 public:
     Token& m_name;
+    Variable* m_super_class;
     std::vector<FuncStmt*> m_methods;
 
-    inline ClassStmt(Token& name, std::vector<FuncStmt*>& methods)
+    inline ClassStmt(Token& name, Variable* super_class, std::vector<FuncStmt*>& methods)
         : m_name(name)
+        , m_super_class(super_class)
         , m_methods(methods)
     {
     }

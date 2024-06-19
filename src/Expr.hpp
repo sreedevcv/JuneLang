@@ -20,6 +20,7 @@ class Call;
 class Get;
 class Set;
 class This;
+class Super;
 
 class IExprVisitor {
 public:
@@ -34,6 +35,7 @@ public:
     virtual void visit_get_expr(Get* expr, void* context) = 0;
     virtual void visit_set_expr(Set* expr, void* context) = 0;
     virtual void visit_this_expr(This* expr, void* context) = 0;
+    virtual void visit_super_expr(Super* expr, void* context) = 0;
     virtual void* get_expr_context() = 0;
 };
 
@@ -250,6 +252,25 @@ public:
     virtual ~This() = default;
 };
 
+class Super : public Expr {
+public:
+    Token& m_keyword;
+    Token& m_method;
+
+    inline Super(Token& keyword, Token& method)
+        : m_keyword(keyword)
+        , m_method(method)
+    {
+    }
+
+    inline virtual void accept(IExprVisitor& visitor, void* context) override
+    {
+        visitor.visit_super_expr(this, context);
+    }
+
+    virtual ~Super() = default;
+};
+
 class ParsetreePrinter : public IExprVisitor {
 public:
     std::string context;
@@ -286,6 +307,9 @@ public:
     {
     }
     inline void visit_this_expr(This* expr, void* context) override
+    {
+    }
+    inline void visit_super_expr(Super* expr, void* context) override
     {
     }
     inline void visit_literal_expr(Literal* expr, void* context) override

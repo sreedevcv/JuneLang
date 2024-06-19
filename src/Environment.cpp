@@ -52,10 +52,10 @@ jl::Value& jl::Environment::get_at(Token& name, int depth)
     return env->m_values[name.get_lexeme()];
 }
 
-jl::Value& jl::Environment::get_at(std::string&& name, int depth)
+jl::Value& jl::Environment::get_at(std::string& name, int depth)
 {
     Environment* env = ancestor(depth);
-    return env->m_values[std::move(name)];
+    return env->m_values[name];
 }
 
 void jl::Environment::assign(Token& token, Value& value)

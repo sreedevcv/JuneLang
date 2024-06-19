@@ -4,6 +4,8 @@
 
 jl::Value jl::Token::global_true_constant = jl::Value(true);
 jl::Value jl::Token::global_false_constant = jl::Value(false);
+std::string jl::Token::global_super_lexeme = "super";
+std::string jl::Token::global_this_lexeme = "self";
 
 jl::Token::Token(TokenType type, std::string& lexeme, int line)
     : m_type(type)

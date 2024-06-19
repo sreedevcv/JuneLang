@@ -14,6 +14,7 @@ public:
         DOT,
         PLUS,
         MINUS,
+        COLON,
         STAR,
         SLASH,
         LEFT_BRACE,
@@ -59,6 +60,7 @@ public:
         PRINT,
         NULL_,
         THIS,
+        SUPER,
     };
 
     Token(TokenType type, std::string& lexeme, int line);
@@ -72,6 +74,8 @@ public:
 
     static Value global_true_constant;
     static Value global_false_constant;
+    static std::string global_super_lexeme;
+    static std::string global_this_lexeme;
 
 private:
     TokenType m_type;

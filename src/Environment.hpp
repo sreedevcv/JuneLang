@@ -20,7 +20,7 @@ public:
         throws an exception */
     Value& get(Token& name);
     Value& get_at(Token& name, int depth);
-    Value& get_at(std::string&& name, int depth);
+    Value& get_at(std::string& name, int depth);
     void assign(Token& token, Value& value);
     void assign(Token& token, Value&& value);
     void assign_at(Token& token, Value& value, int depth);

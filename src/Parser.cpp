@@ -194,6 +194,12 @@ jl::Expr* jl::Parser::primary()
         consume(Token::RIGHT_PAR, "Expected ) after expression");
         return new Grouping(expr);
     }
+    if (match({Token::SUPER})) {
+        Token& keyword = previous();
+        consume(Token::DOT, "Expected '.' after super");
+        Token& method = consume(Token::IDENTIFIER, "Expect superclass method name");
+        return new Super(keyword, method);
+    }
 
     ErrorHandler::error(m_file_name, "parsing", "primary expression", peek().get_line(), "Expected a expression here", 0);
     throw "parse-exception";
@@ -468,6 +474,13 @@ jl::Stmt* jl::Parser::return_statement()
 jl::Stmt* jl::Parser::class_declaration()
 {
     Token& name = consume(Token::IDENTIFIER, "Expected a class name");
+
+    Variable* super_class = nullptr;
+    if (match({Token::COLON})) {
+        consume(Token::IDENTIFIER, "Expected a super class name");
+        super_class = new Variable(previous());
+    }
+
     consume(Token::LEFT_SQUARE, "Expected a [ before class body");
 
     std::vector<FuncStmt*> methods;
@@ -476,7 +489,7 @@ jl::Stmt* jl::Parser::class_declaration()
     }
 
     consume(Token::RIGHT_SQUARE, "Expected a ] after class body");
-    return new ClassStmt(name, methods);
+    return new ClassStmt(name, super_class, methods);
 }
 
 std::vector<jl::Stmt*> jl::Parser::block()
