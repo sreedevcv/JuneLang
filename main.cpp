@@ -33,6 +33,14 @@ int main()
 
         C().test();
 
+        class Eclair [
+            cook() [
+                super.cook();
+                print "Pipe full of crème pâtissière.";
+            ]
+        ]
+
+        super.notEvenInAClass();
     )");
 
     std::string file_name = "test";

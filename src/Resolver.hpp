@@ -16,6 +16,7 @@ public:
 
     void resolve(std::vector<Stmt*>& statements);
 
+    // NOTE::Change this to a enum class for uniformity
     enum FunctionType {
         NONE,
         FUNCTION,
@@ -26,6 +27,7 @@ public:
     enum class ClassType {
         NONE,
         CLASS,
+        SUBCLASS,
     };
 
 private:

@@ -161,6 +161,11 @@ void jl::Resolver::visit_this_expr(This* expr, void* context)
 
 void jl::Resolver::visit_super_expr(Super* expr, void* context)
 {
+    if (m_current_class_type == ClassType::NONE) {
+        ErrorHandler::error(m_file_name, "resolving", "super", expr->m_keyword.get_line(), "Super keyword should be used within a class", 0);
+    } else if (m_current_class_type != ClassType::SUBCLASS) {
+        ErrorHandler::error(m_file_name, "resolving", "super", expr->m_keyword.get_line(), "Super keyword should be used within a sub-class", 0);
+    }
     resolve_local(expr, expr->m_keyword);
 }
 
@@ -252,6 +257,7 @@ void jl::Resolver::visit_class_stmt(ClassStmt* stmt, void* context)
     }
 
     if (stmt->m_super_class != nullptr) {
+        m_current_class_type = ClassType::SUBCLASS;
         resolve(stmt->m_super_class);
         begin_scope();
         m_scopes.back()[Token::global_super_lexeme] = true;
