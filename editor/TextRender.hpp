@@ -32,7 +32,7 @@ private:
 
     unsigned int m_vao;
     unsigned int m_vbo;
-    unsigned int m_font_size = 48;
+    unsigned int m_font_size = 24;
     unsigned int m_tab_width = 4;
 };
 

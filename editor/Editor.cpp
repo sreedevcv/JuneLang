@@ -62,16 +62,16 @@ void jed::Editor::start()
     glClearColor(0.85, 0.92, 1.0, 1.0);
 
     std::string text = std::string(R"(
-        class Cake [
-            taste() [
-                var adjective = "delicious";
-                print "The " + self.flavor + " cake is " + adjective + "!";
-            ]
-        ]
+class Cake [
+    taste() [
+        var adjective = "delicious";
+        print "The " + self.flavor + " cake is " + adjective + "!";
+    ]
+]
 
-        var cake = Cake();
-        cake.flavor = "German chocolate";
-        cake.taste();
+var cake = Cake();
+cake.flavor = "German chocolate";
+cake.taste();
 
     )");
     glm::mat4 projection = glm::ortho(0.0f, static_cast<float>(m_width), 0.0f, static_cast<float>(m_height));
@@ -79,14 +79,20 @@ void jed::Editor::start()
 
     while (!glfwWindowShouldClose(m_window)) {
         glClear(GL_COLOR_BUFFER_BIT);
+        handle_inputs();
 
         m_shader.set_uniform_matrix("projection", projection);
-        m_text_renderer.render_text(m_shader, text, 0.0f, 900.0f, 1.0f, glm::vec3(0.5, 0.8f, 0.2f));
-        check_for_opengl_error();
-        // break;
+        m_text_renderer.render_text(m_shader, text, 0.0f, 900.0f, 1.0f, glm::vec3(0.8f, 0.3f, 0.2f));
 
         glfwSwapBuffers(m_window);
         glfwPollEvents();
     }
     check_for_opengl_error();
+}
+
+void jed::Editor::handle_inputs()
+{
+    if (glfwGetKey(m_window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
+        glfwSetWindowShouldClose(m_window, true);
+    }
 }

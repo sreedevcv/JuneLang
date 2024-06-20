@@ -23,5 +23,7 @@ private:
     int m_height = 900;
     const char* title = "Editor";
     bool debug_mode;
+
+    void handle_inputs();
 };
 } // namespace jed

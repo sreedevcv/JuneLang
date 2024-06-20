@@ -13,7 +13,7 @@ jed::TextRender::TextRender()
         std::exit(-1);
     }
 
-    if (FT_New_Face(m_ft, "./res/fonts/BELL.TTF", 0, &m_face)) {
+    if (FT_New_Face(m_ft, "./res/fonts/CascadiaMono.ttf", 0, &m_face)) {
         std::cout << "Freetype Error: Could not load font" << std::endl;
         std::exit(-1);
     }
