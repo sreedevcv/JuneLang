@@ -26,8 +26,20 @@ set(GLM_BUILD_TESTS OFF)
 set(BUILD_SHARED_LIBS OFF)
 FetchContent_MakeAvailable(glm)
 
+
+
+# FetchContent_Declare(
+#     freetype
+#     GIT_REPOSITORY https://gitlab.freedesktop.org/freetype/freetype.git
+#     GIT_TAG 2b9fdec5fafd16fba93a9947563260ab9feb9029
+# )
+# FetchContent_MakeAvailable(freetype)
+
+
 add_library(JuneEditor
     Editor.cpp
+    glad.c
 )
 
+target_link_libraries(JuneEditor PRIVATE glfw glm::glm)
 target_include_directories(JuneEditor PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})

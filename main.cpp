@@ -1,74 +1,80 @@
 #include <iostream>
 
-#include "ErrorHandler.hpp"
-#include "Expr.hpp"
-#include "Interpreter.hpp"
-#include "Lexer.hpp"
-#include "Parser.hpp"
-#include "Resolver.hpp"
+// #include "ErrorHandler.hpp"
+// #include "Expr.hpp"
+// #include "Interpreter.hpp"
+// #include "Lexer.hpp"
+// #include "Parser.hpp"
+// #include "Resolver.hpp"
+
+#include "Editor.hpp"
 
 int main()
 {
-    jl::Lexer lexer(
-        R"(
+    jed::Editor editor;
+    editor.start();
 
-        class String
-        [
-            init(string)
-            [
-                self.str = string;
-            ]
+    
+    // jl::Lexer lexer(
+    //     R"(
 
-            append(string)
-            [
-                self.str = self.str + string;
-            ]
+    //     class String
+    //     [
+    //         init(string)
+    //         [
+    //             self.str = string;
+    //         ]
 
-            get()
-            [
-                return self.str;
-            ]
-        ]
+    //         append(string)
+    //         [
+    //             self.str = self.str + string;
+    //         ]
 
-        var a = String("Hai");
-        print a;
-        print a.get();
-        a.append(" World");
-        var b = a.get();
-        print b;
+    //         get()
+    //         [
+    //             return self.str;
+    //         ]
+    //     ]
 
-    )");
+    //     var a = String("Hai");
+    //     print a;
+    //     print a.get();
+    //     a.append(" World");
+    //     var b = a.get();
+    //     print b;
 
-    std::string file_name = "test";
-    lexer.scan();
+    // )");
 
-    if (jl::ErrorHandler::has_error()) {
-        return 1;
-    }
+    // std::string file_name = "test";
+    // lexer.scan();
 
-    auto tokens = lexer.get_tokens();
-    jl::Parser parser(tokens, file_name);
-    auto stmts = parser.parseStatements();
+    // if (jl::ErrorHandler::has_error()) {
+    //     return 1;
+    // }
 
-    if (jl::ErrorHandler::has_error()) {
-        return 1;
-    }
+    // auto tokens = lexer.get_tokens();
+    // jl::Parser parser(tokens, file_name);
+    // auto stmts = parser.parseStatements();
 
-    jl::Interpreter interpreter(file_name);
+    // if (jl::ErrorHandler::has_error()) {
+    //     return 1;
+    // }
 
-    jl::Resolver resolver(interpreter, file_name);
-    resolver.resolve(stmts);
+    // jl::Interpreter interpreter(file_name);
 
-    if (jl::ErrorHandler::has_error()) {
-        return 1;
-    }
+    // jl::Resolver resolver(interpreter, file_name);
+    // resolver.resolve(stmts);
 
-    jl::Value v;
-    interpreter.interpret(stmts);
+    // if (jl::ErrorHandler::has_error()) {
+    //     return 1;
+    // }
 
-    for (auto stmt: stmts) {
-        delete stmt;
-    }
+    // jl::Value v;
+    // interpreter.interpret(stmts);
+
+    // for (auto stmt: stmts) {
+    //     delete stmt;
+    // }
 }
 
 /*
