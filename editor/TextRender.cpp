@@ -20,7 +20,7 @@ jed::TextRender::TextRender()
 
     std::cout << "Font loaded" << std::endl;
 
-    FT_Set_Pixel_Sizes(m_face, 0, 48);
+    FT_Set_Pixel_Sizes(m_face, 0, m_font_size);
 }
 
 void jed::TextRender::load_fonts()
@@ -80,10 +80,19 @@ void jed::TextRender::render_text(Shader &shader, std::string& text, float x, fl
     glActiveTexture(GL_TEXTURE0);
     glBindVertexArray(m_vao);
 
-    check_for_opengl_error();
+    const float original_x = x;
 
     for (auto c : text) {
         Character charachter = m_charachters[c];
+
+        if (c == '\n') {
+            y -= m_font_size;
+            x = original_x;
+            continue;
+        } else if (c == '\t') {
+            x += (m_charachters[' '].advance >> 6) * m_tab_width;
+            continue;
+        }
 
         float xpos = x + charachter.bearing.x * scale;
         float ypos = y - (charachter.size.y - charachter.bearing.y) * scale;

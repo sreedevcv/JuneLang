@@ -19,8 +19,8 @@ private:
     TextRender m_text_renderer;
     Shader m_shader;
 
-    int m_width = 800;
-    int m_height = 600;
+    int m_width = 1000;
+    int m_height = 900;
     const char* title = "Editor";
     bool debug_mode;
 };

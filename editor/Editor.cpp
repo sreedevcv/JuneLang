@@ -61,7 +61,19 @@ void jed::Editor::start()
 {
     glClearColor(0.85, 0.92, 1.0, 1.0);
 
-    std::string text = std::string("This is sample text");
+    std::string text = std::string(R"(
+        class Cake [
+            taste() [
+                var adjective = "delicious";
+                print "The " + self.flavor + " cake is " + adjective + "!";
+            ]
+        ]
+
+        var cake = Cake();
+        cake.flavor = "German chocolate";
+        cake.taste();
+
+    )");
     glm::mat4 projection = glm::ortho(0.0f, static_cast<float>(m_width), 0.0f, static_cast<float>(m_height));
     check_for_opengl_error();
 
@@ -69,7 +81,7 @@ void jed::Editor::start()
         glClear(GL_COLOR_BUFFER_BIT);
 
         m_shader.set_uniform_matrix("projection", projection);
-        m_text_renderer.render_text(m_shader, text, 25.0f, 25.0f, 1.0f, glm::vec3(0.5, 0.8f, 0.2f));
+        m_text_renderer.render_text(m_shader, text, 0.0f, 900.0f, 1.0f, glm::vec3(0.5, 0.8f, 0.2f));
         check_for_opengl_error();
         // break;
 
