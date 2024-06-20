@@ -39,7 +39,9 @@ FetchContent_MakeAvailable(glm)
 add_library(JuneEditor
     Editor.cpp
     glad.c
+    TextRender.cpp
+    Shader.cpp
 )
 
-target_link_libraries(JuneEditor PRIVATE glfw glm::glm)
+target_link_libraries(JuneEditor PRIVATE glfw glm::glm freetype)
 target_include_directories(JuneEditor PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})

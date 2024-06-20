@@ -14,7 +14,7 @@ int main()
     jed::Editor editor;
     editor.start();
 
-    
+
     // jl::Lexer lexer(
     //     R"(
 

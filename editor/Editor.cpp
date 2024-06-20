@@ -2,10 +2,10 @@
 
 #include <iostream>
 
+#include <string>
+
 jed::Editor::Editor()
 {
-    std::cout << "Hello World" << std::endl;
-
     glfwInit();
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
@@ -39,7 +39,15 @@ jed::Editor::Editor()
         std::exit(-1);
     }
 
-    std::cout << "Window and OpenGL inititalized\n";
+    std::cout << "Window and OpenGL inititalized" << std::endl;
+
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+    m_text_renderer.load_fonts();
+    m_shader.create_shader_using_files("res/shaders/text.vert", "res/shaders/text.frag");
+    m_shader.compile();
+    m_shader.use();
 }
 
 jed::Editor::~Editor()
@@ -52,10 +60,21 @@ jed::Editor::~Editor()
 void jed::Editor::start()
 {
     glClearColor(0.85, 0.92, 1.0, 1.0);
+
+    std::string text = std::string("This is sample text");
+    glm::mat4 projection = glm::ortho(0.0f, static_cast<float>(m_width), 0.0f, static_cast<float>(m_height));
+    check_for_opengl_error();
+
     while (!glfwWindowShouldClose(m_window)) {
         glClear(GL_COLOR_BUFFER_BIT);
+
+        m_shader.set_uniform_matrix("projection", projection);
+        m_text_renderer.render_text(m_shader, text, 25.0f, 25.0f, 1.0f, glm::vec3(0.5, 0.8f, 0.2f));
+        check_for_opengl_error();
+        // break;
 
         glfwSwapBuffers(m_window);
         glfwPollEvents();
     }
+    check_for_opengl_error();
 }

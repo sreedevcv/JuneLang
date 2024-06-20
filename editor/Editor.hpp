@@ -3,6 +3,9 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
+#include "TextRender.hpp"
+#include "Shader.hpp"
+
 namespace jed {
 class Editor {
 public:
@@ -13,6 +16,8 @@ public:
 
 private:
     GLFWwindow* m_window;
+    TextRender m_text_renderer;
+    Shader m_shader;
 
     int m_width = 800;
     int m_height = 600;

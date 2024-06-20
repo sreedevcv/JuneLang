@@ -5,6 +5,12 @@ set(CMAKE_CXX_STANDARD 23)
 # add_compile_options(-fsanitize=address)
 # add_link_options(-fsanitize=address)
 
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG ${CMAKE_SOURCE_DIR})
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE ${CMAKE_SOURCE_DIR})
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELWITHDEBINFO ${CMAKE_SOURCE_DIR})
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_MINSIZEREL ${CMAKE_SOURCE_DIR})
+
+
 include(FetchContent)
 include_directories("include")
 
@@ -18,16 +24,9 @@ endif()
 
 add_subdirectory(src)
 
-# message(STATUS "ndsknvjksnvjfnvjkfsdnjvkdsnkvsfvnfjk ${BUILD_JUNE_EDITOR}")
-
-
 if (BUILD_JUNE_EDITOR)
+    add_subdirectory(freetype)
     add_subdirectory(editor)
-    message(STATUS "glfw source dir: ${glfw_SOURCE_DIR}")
-    message(STATUS "glfw binary dir: ${glfw_BINARY_DIR}")
-    message(STATUS "glm source dir: ${glm_SOURCE_DIR}")
-    message(STATUS "glm binary dir: ${glm_BINARY_DIR}")
-
     add_executable(june
         main.cpp
     )
