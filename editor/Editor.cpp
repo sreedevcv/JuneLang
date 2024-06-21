@@ -53,6 +53,8 @@ jed::Editor::Editor()
             } else if (key == GLFW_KEY_RIGHT) {
                 editor->cursor.loc += 1;
             }
+
+            
         }
     };
 

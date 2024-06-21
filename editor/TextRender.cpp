@@ -192,7 +192,7 @@ void jed::TextRender::render_text(Shader& shader, TextData& text, float x, float
 void jed::TextRender::render_cursor(Shader& m_shader, Cursor cursor)
 {
     m_shader.use();
-    m_shader.set_uniform_vec("text_color", glm::vec3(0.0f, 0.0f, 0.0f));
+    m_shader.set_uniform_vec("text_color", glm::vec3(0.4f, 0.4f, 0.4f));
     glActiveTexture(GL_TEXTURE0);
     glBindVertexArray(m_vao);
 
