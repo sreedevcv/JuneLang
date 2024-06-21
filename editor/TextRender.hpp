@@ -41,6 +41,7 @@ private:
     int m_width;
     int m_height;
     glm::mat4 projection;
+    int m_cursor_advance;
 
     void draw_texture(float xpos, float ypos, float w, float h, unsigned int texture_id);
 };

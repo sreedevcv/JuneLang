@@ -4,6 +4,16 @@
 
 #include <string>
 
+
+void jed::charachter_callback(GLFWwindow* window, unsigned int codepoint)
+{
+    jed::Editor* editor = static_cast<jed::Editor*>(glfwGetWindowUserPointer(window));
+    char text = static_cast<char>(codepoint);
+    // std::cout << text << " " << editor->cursor.loc << std::endl;
+    editor->m_data.add_text_to_line(text, editor->cursor);
+    editor->cursor.loc = editor->cursor.loc + 1;
+};
+
 jed::Editor::Editor()
     : m_width(1000)
     , m_height(900)
@@ -22,7 +32,6 @@ jed::Editor::Editor()
     }
 
     glfwMakeContextCurrent(m_window);
-    glfwSetWindowUserPointer(m_window, this);
 
     static const auto mouse_move_callback = [](GLFWwindow* glfw_window, double x_pos_in, double y_pos_in) {
     };
@@ -39,16 +48,12 @@ jed::Editor::Editor()
         if (action == GLFW_PRESS) {
             if (key == GLFW_KEY_ENTER) {
                 editor->cursor.line += 1;
+            } else if (key == GLFW_KEY_LEFT) {
+                editor->cursor.loc -= 1;
+            } else if (key == GLFW_KEY_RIGHT) {
+                editor->cursor.loc += 1;
             }
         }
-    };
-
-    const auto charachter_callback = [](GLFWwindow* window, unsigned int codepoint) {
-        Editor* editor = static_cast<Editor*>(glfwGetWindowUserPointer(window));
-        char text = static_cast<char>(codepoint);
-        std::cout << text << " " << editor->cursor.loc << std::endl;
-        // editor->m_data.add_text_to_line(text, editor->cursor);
-        // editor->cursor.loc = editor->cursor.loc + 1;
     };
 
     // glfwSetCursorPosCallback(m_window, mouse_move_callback);
@@ -81,6 +86,8 @@ jed::Editor::~Editor()
 
 void jed::Editor::start()
 {
+    glfwSetWindowUserPointer(m_window, this);
+
     glClearColor(0.85, 0.92, 1.0, 1.0);
 
     // m_data.m_data.push_back("class Cake [");

@@ -86,6 +86,8 @@ void jed::TextRender::load_fonts()
             .advance = static_cast<unsigned int>(m_face->glyph->advance.x)
         };
         m_charachters[c] = character;
+
+        m_cursor_advance = (character.advance >> 6);
     }
 
     check_for_opengl_error();
@@ -160,7 +162,8 @@ void jed::TextRender::render_text(Shader& shader, TextData& text, float x, float
     const float original_x = x;
 
     for (auto line : text.m_data) {
-        for (auto c : line) {
+        for (int i = 0; i < line.size; i++) {
+            char c = line.data[i];
             Character charachter = m_charachters[c];
 
             if (c == '\t') {
@@ -194,7 +197,7 @@ void jed::TextRender::render_cursor(Shader& m_shader, Cursor cursor)
     glBindVertexArray(m_vao);
 
     int offset_from_top = (m_height - m_font_size) - cursor.line * m_font_size;
-    int offset_from_left = cursor.loc * m_font_size;
+    int offset_from_left = cursor.loc * m_cursor_advance;
 
     draw_texture(offset_from_left, offset_from_top, static_cast<float>(m_font_size), static_cast<float>(m_font_size), m_cursor_texture);
     glBindVertexArray(0);

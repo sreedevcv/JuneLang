@@ -13,6 +13,7 @@ public:
     ~Editor();
 
     void start();
+    friend void charachter_callback(GLFWwindow* window, unsigned int codepoint);
 
 private:
     GLFWwindow* m_window;
@@ -34,5 +35,6 @@ private:
     std::string testString = "";
 
     void handle_inputs();
+
 };
 } // namespace jed
