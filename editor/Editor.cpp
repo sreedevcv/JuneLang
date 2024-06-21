@@ -84,13 +84,19 @@ cake.taste();
     glm::mat4 projection = glm::ortho(0.0f, static_cast<float>(m_width), 0.0f, static_cast<float>(m_height));
     check_for_opengl_error();
 
+
     while (!glfwWindowShouldClose(m_window)) {
+        check_for_opengl_error();
         glClear(GL_COLOR_BUFFER_BIT);
         handle_inputs();
 
         m_shader.set_uniform_matrix("projection", projection);
         // m_text_renderer.render_text(m_shader, text, 0.0f, 900.0f, 1.0f, glm::vec3(0.8f, 0.3f, 0.2f));
         m_text_renderer.render_text(m_shader, m_data, 0.0f, 880.0f, 1.0f, glm::vec3(0.8f, 0.3f, 0.2f));
+        m_shader.set_uniform_matrix("projection", projection);
+        m_text_renderer.render_cursor(m_shader, cursor);
+        check_for_opengl_error();
+
 
         glfwSwapBuffers(m_window);
         glfwPollEvents();
@@ -102,5 +108,11 @@ void jed::Editor::handle_inputs()
 {
     if (glfwGetKey(m_window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
         glfwSetWindowShouldClose(m_window, true);
+    }
+    if (glfwGetKey(m_window, GLFW_KEY_S) == GLFW_RELEASE) {
+        cursor.line += 1;
+    }
+    if (glfwGetKey(m_window, GLFW_KEY_D) == GLFW_RELEASE) {
+        cursor.loc += 1;
     }
 }

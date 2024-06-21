@@ -3,8 +3,8 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
-#include "TextRender.hpp"
 #include "Shader.hpp"
+#include "TextRender.hpp"
 
 namespace jed {
 class Editor {
@@ -24,6 +24,11 @@ private:
     int m_height = 900;
     const char* title = "Editor";
     bool debug_mode;
+
+    Cursor cursor = {
+        .line = 10,
+        .loc = 30,
+    };
 
     void handle_inputs();
 };

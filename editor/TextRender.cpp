@@ -8,6 +8,7 @@
 
 jed::TextRender::TextRender()
 {
+    /* Initalize and load the font using freetype */
     if (FT_Init_FreeType(&m_ft)) {
         std::cout << "Freetype Error: Could not init FreeType Library" << std::endl;
         std::exit(-1);
@@ -27,6 +28,23 @@ void jed::TextRender::load_fonts()
 {
     check_for_opengl_error();
 
+    /* Create the texture for cursor */
+    uint8_t cursor_texture_data[] = {
+        255,
+        255,
+        255,
+        255,
+    };
+
+    glGenTextures(1, &m_cursor_texture);
+    glBindTexture(GL_TEXTURE_2D, m_cursor_texture);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, 2, 2, 0, GL_RED, GL_UNSIGNED_BYTE, cursor_texture_data);
+
+    // Generate vao and vbo
     glGenVertexArrays(1, &m_vao);
     glGenBuffers(1, &m_vbo);
     glBindVertexArray(m_vao);
@@ -93,7 +111,6 @@ void jed::TextRender::draw_texture(float xpos, float ypos, float w, float h, uns
 
 void jed::TextRender::render_text(Shader& shader, std::string& text, float x, float y, float scale, glm::vec3 color)
 {
-    check_for_opengl_error();
     shader.use();
     shader.set_uniform_vec("text_color", color);
     glActiveTexture(GL_TEXTURE0);
@@ -129,7 +146,6 @@ void jed::TextRender::render_text(Shader& shader, std::string& text, float x, fl
 
 void jed::TextRender::render_text(Shader& shader, TextData& text, float x, float y, float scale, glm::vec3 color)
 {
-    check_for_opengl_error();
     shader.use();
     shader.set_uniform_vec("text_color", color);
     glActiveTexture(GL_TEXTURE0);
@@ -161,4 +177,21 @@ void jed::TextRender::render_text(Shader& shader, TextData& text, float x, float
 
     glBindVertexArray(0);
     glBindTexture(GL_TEXTURE_2D, 0);
+}
+
+void jed::TextRender::render_cursor(Shader& m_shader, Cursor cursor)
+{
+    check_for_opengl_error();
+    m_shader.use();
+    m_shader.set_uniform_vec("text_color", glm::vec3(0.0f, 0.0f, 0.0f));
+    glActiveTexture(GL_TEXTURE0);
+    glBindVertexArray(m_vao);
+
+    int offset_from_top = cursor.line * m_font_size;
+    int offset_from_left = cursor.loc * m_font_size;
+    // draw_texture(static_cast<float>(offset_from_left), 900.0f - offset_from_top, 50.0f, 50.0f, m_cursor_texture);
+    draw_texture(20.0f, 20.0f, static_cast<float>(m_font_size), static_cast<float>(m_font_size), m_cursor_texture);
+    glBindVertexArray(0);
+    glBindTexture(GL_TEXTURE_2D, 0);
+    check_for_opengl_error();
 }
