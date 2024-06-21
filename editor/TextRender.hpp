@@ -7,6 +7,7 @@
 #include <map>
 
 #include "Shader.hpp"
+#include "TextData.hpp"
 
 namespace jed {
 
@@ -24,6 +25,7 @@ public:
 
     void load_fonts();
     void render_text(Shader &shader, std::string& text, float x, float y, float scale, glm::vec3 color);
+    void render_text(Shader &shader, TextData& text, float x, float y, float scale, glm::vec3 color);
 
 private:
     std::map<char, Character> m_charachters;
@@ -34,6 +36,8 @@ private:
     unsigned int m_vbo;
     unsigned int m_font_size = 24;
     unsigned int m_tab_width = 4;
+
+    void draw_texture(float xpos, float ypos, float w, float h, unsigned int texture_id);
 };
 
 } // namespace jed

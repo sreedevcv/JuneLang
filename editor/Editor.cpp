@@ -74,6 +74,13 @@ cake.flavor = "German chocolate";
 cake.taste();
 
     )");
+
+    m_data.m_data.push_back("class Cake [");
+    m_data.m_data.push_back("    taste() [");
+    m_data.m_data.push_back("        var adjective = \"delicious\";");
+    m_data.m_data.push_back("    ]");
+    m_data.m_data.push_back("]");
+
     glm::mat4 projection = glm::ortho(0.0f, static_cast<float>(m_width), 0.0f, static_cast<float>(m_height));
     check_for_opengl_error();
 
@@ -82,7 +89,8 @@ cake.taste();
         handle_inputs();
 
         m_shader.set_uniform_matrix("projection", projection);
-        m_text_renderer.render_text(m_shader, text, 0.0f, 900.0f, 1.0f, glm::vec3(0.8f, 0.3f, 0.2f));
+        // m_text_renderer.render_text(m_shader, text, 0.0f, 900.0f, 1.0f, glm::vec3(0.8f, 0.3f, 0.2f));
+        m_text_renderer.render_text(m_shader, m_data, 0.0f, 880.0f, 1.0f, glm::vec3(0.8f, 0.3f, 0.2f));
 
         glfwSwapBuffers(m_window);
         glfwPollEvents();

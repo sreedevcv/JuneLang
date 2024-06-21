@@ -17,6 +17,7 @@ public:
 private:
     GLFWwindow* m_window;
     TextRender m_text_renderer;
+    TextData m_data;
     Shader m_shader;
 
     int m_width = 1000;

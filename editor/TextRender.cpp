@@ -72,7 +72,26 @@ void jed::TextRender::load_fonts()
     FT_Done_FreeType(m_ft);
 }
 
-void jed::TextRender::render_text(Shader &shader, std::string& text, float x, float y, float scale, glm::vec3 color)
+void jed::TextRender::draw_texture(float xpos, float ypos, float w, float h, unsigned int texture_id)
+{
+    float vertices[6][4] = {
+        { xpos, ypos + h, 0.0f, 0.0f },
+        { xpos, ypos, 0.0f, 1.0f },
+        { xpos + w, ypos, 1.0f, 1.0f },
+
+        { xpos, ypos + h, 0.0f, 0.0f },
+        { xpos + w, ypos, 1.0f, 1.0f },
+        { xpos + w, ypos + h, 1.0f, 0.0f },
+    };
+
+    glBindTexture(GL_TEXTURE_2D, texture_id);
+    glBindBuffer(GL_ARRAY_BUFFER, m_vbo);
+    glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vertices), vertices);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glDrawArrays(GL_TRIANGLES, 0, 6);
+}
+
+void jed::TextRender::render_text(Shader& shader, std::string& text, float x, float y, float scale, glm::vec3 color)
 {
     check_for_opengl_error();
     shader.use();
@@ -100,22 +119,44 @@ void jed::TextRender::render_text(Shader &shader, std::string& text, float x, fl
         float w = charachter.size.x * scale;
         float h = charachter.size.y * scale;
 
-        float vertices[6][4] = {
-            { xpos, ypos + h, 0.0f, 0.0f },
-            { xpos, ypos, 0.0f, 1.0f },
-            { xpos + w, ypos, 1.0f, 1.0f },
-
-            { xpos, ypos + h, 0.0f, 0.0f },
-            { xpos + w, ypos, 1.0f, 1.0f },
-            { xpos + w, ypos + h, 1.0f, 0.0f },
-        };
-
-        glBindTexture(GL_TEXTURE_2D, charachter.texture_id);
-        glBindBuffer(GL_ARRAY_BUFFER, m_vbo);
-        glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vertices), vertices);
-        glBindBuffer(GL_ARRAY_BUFFER, 0);
-        glDrawArrays(GL_TRIANGLES, 0, 6);
+        draw_texture(xpos, ypos, w, h, charachter.texture_id);
         x += (charachter.advance >> 6) * scale;
+    }
+
+    glBindVertexArray(0);
+    glBindTexture(GL_TEXTURE_2D, 0);
+}
+
+void jed::TextRender::render_text(Shader& shader, TextData& text, float x, float y, float scale, glm::vec3 color)
+{
+    check_for_opengl_error();
+    shader.use();
+    shader.set_uniform_vec("text_color", color);
+    glActiveTexture(GL_TEXTURE0);
+    glBindVertexArray(m_vao);
+
+    const float original_x = x;
+
+    for (auto line : text.m_data) {
+        for (auto c : line) {
+            Character charachter = m_charachters[c];
+
+            if (c == '\t') {
+                x += (m_charachters[' '].advance >> 6) * m_tab_width;
+                continue;
+            }
+
+            float xpos = x + charachter.bearing.x * scale;
+            float ypos = y - (charachter.size.y - charachter.bearing.y) * scale;
+
+            float w = charachter.size.x * scale;
+            float h = charachter.size.y * scale;
+            draw_texture(xpos, ypos, w, h, charachter.texture_id);
+            x += (charachter.advance >> 6) * scale;
+        }
+
+        y -= m_font_size;
+        x = original_x;
     }
 
     glBindVertexArray(0);

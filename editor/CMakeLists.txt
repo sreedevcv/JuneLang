@@ -41,6 +41,7 @@ add_library(JuneEditor
     glad.c
     TextRender.cpp
     Shader.cpp
+    TextData.cpp
 )
 
 target_link_libraries(JuneEditor PRIVATE glfw glm::glm freetype)
