@@ -16,18 +16,19 @@ public:
 
 private:
     GLFWwindow* m_window;
-    TextRender m_text_renderer;
     TextData m_data;
     Shader m_shader;
 
     int m_width = 1000;
     int m_height = 900;
+    TextRender m_text_renderer; // Should be below width and height declaration
+
     const char* title = "Editor";
     bool debug_mode;
 
     Cursor cursor = {
-        .line = 10,
-        .loc = 30,
+        .line = 0,
+        .loc = 0,
     };
 
     void handle_inputs();

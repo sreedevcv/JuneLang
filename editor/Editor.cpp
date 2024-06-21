@@ -5,6 +5,9 @@
 #include <string>
 
 jed::Editor::Editor()
+    : m_width(1000)
+    , m_height(900)
+    ,m_text_renderer(TextRender(m_width, m_height))
 {
     glfwInit();
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
@@ -47,7 +50,6 @@ jed::Editor::Editor()
     m_text_renderer.load_fonts();
     m_shader.create_shader_using_files("res/shaders/text.vert", "res/shaders/text.frag");
     m_shader.compile();
-    m_shader.use();
 }
 
 jed::Editor::~Editor()
@@ -61,42 +63,23 @@ void jed::Editor::start()
 {
     glClearColor(0.85, 0.92, 1.0, 1.0);
 
-    std::string text = std::string(R"(
-class Cake [
-    taste() [
-        var adjective = "delicious";
-        print "The " + self.flavor + " cake is " + adjective + "!";
-    ]
-]
-
-var cake = Cake();
-cake.flavor = "German chocolate";
-cake.taste();
-
-    )");
-
     m_data.m_data.push_back("class Cake [");
     m_data.m_data.push_back("    taste() [");
     m_data.m_data.push_back("        var adjective = \"delicious\";");
     m_data.m_data.push_back("    ]");
     m_data.m_data.push_back("]");
 
-    glm::mat4 projection = glm::ortho(0.0f, static_cast<float>(m_width), 0.0f, static_cast<float>(m_height));
     check_for_opengl_error();
 
 
     while (!glfwWindowShouldClose(m_window)) {
-        check_for_opengl_error();
         glClear(GL_COLOR_BUFFER_BIT);
         handle_inputs();
 
-        m_shader.set_uniform_matrix("projection", projection);
         // m_text_renderer.render_text(m_shader, text, 0.0f, 900.0f, 1.0f, glm::vec3(0.8f, 0.3f, 0.2f));
         m_text_renderer.render_text(m_shader, m_data, 0.0f, 880.0f, 1.0f, glm::vec3(0.8f, 0.3f, 0.2f));
-        m_shader.set_uniform_matrix("projection", projection);
         m_text_renderer.render_cursor(m_shader, cursor);
         check_for_opengl_error();
-
 
         glfwSwapBuffers(m_window);
         glfwPollEvents();
@@ -109,10 +92,10 @@ void jed::Editor::handle_inputs()
     if (glfwGetKey(m_window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
         glfwSetWindowShouldClose(m_window, true);
     }
-    if (glfwGetKey(m_window, GLFW_KEY_S) == GLFW_RELEASE) {
-        cursor.line += 1;
-    }
-    if (glfwGetKey(m_window, GLFW_KEY_D) == GLFW_RELEASE) {
-        cursor.loc += 1;
-    }
+    // if (glfwGetKey(m_window, GLFW_KEY_S) == GLFW_RELEASE) {
+    //     cursor.line += 1;
+    // }
+    // if (glfwGetKey(m_window, GLFW_KEY_D) == GLFW_RELEASE) {
+    //     cursor.loc += 1;
+    // }
 }

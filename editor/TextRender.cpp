@@ -6,7 +6,10 @@
 
 #include "utils.hpp"
 
-jed::TextRender::TextRender()
+jed::TextRender::TextRender(int width, int height)
+    : m_width(width)
+    , m_height(height)
+    , projection(glm::ortho(0.0f, static_cast<float>(m_width), 0.0f, static_cast<float>(m_height)))
 {
     /* Initalize and load the font using freetype */
     if (FT_Init_FreeType(&m_ft)) {
@@ -22,6 +25,7 @@ jed::TextRender::TextRender()
     std::cout << "Font loaded" << std::endl;
 
     FT_Set_Pixel_Sizes(m_face, 0, m_font_size);
+    std::cout << m_width << " " << m_height << std::endl;
 }
 
 void jed::TextRender::load_fonts()
@@ -113,6 +117,7 @@ void jed::TextRender::render_text(Shader& shader, std::string& text, float x, fl
 {
     shader.use();
     shader.set_uniform_vec("text_color", color);
+    shader.set_uniform_matrix("projection", projection);
     glActiveTexture(GL_TEXTURE0);
     glBindVertexArray(m_vao);
 
@@ -148,6 +153,7 @@ void jed::TextRender::render_text(Shader& shader, TextData& text, float x, float
 {
     shader.use();
     shader.set_uniform_vec("text_color", color);
+    shader.set_uniform_matrix("projection", projection);
     glActiveTexture(GL_TEXTURE0);
     glBindVertexArray(m_vao);
 
@@ -187,10 +193,10 @@ void jed::TextRender::render_cursor(Shader& m_shader, Cursor cursor)
     glActiveTexture(GL_TEXTURE0);
     glBindVertexArray(m_vao);
 
-    int offset_from_top = cursor.line * m_font_size;
+    int offset_from_top = (m_height - m_font_size) - cursor.line * m_font_size;
     int offset_from_left = cursor.loc * m_font_size;
-    // draw_texture(static_cast<float>(offset_from_left), 900.0f - offset_from_top, 50.0f, 50.0f, m_cursor_texture);
-    draw_texture(20.0f, 20.0f, static_cast<float>(m_font_size), static_cast<float>(m_font_size), m_cursor_texture);
+
+    draw_texture(offset_from_left, offset_from_top, static_cast<float>(m_font_size), static_cast<float>(m_font_size), m_cursor_texture);
     glBindVertexArray(0);
     glBindTexture(GL_TEXTURE_2D, 0);
     check_for_opengl_error();
