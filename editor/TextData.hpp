@@ -15,12 +15,12 @@ public:
     TextData() = default;
     ~TextData() = default;
 
-    void add_text_to_line(const char* text, Cursor cursor);
+    void add_text_to_line(char text, Cursor cursor);
 
 private:
-    void append_text(const char* text, int line);
-    void prepend_text(const char* text, int line);
-    std::vector<std::string> m_data;
+    void append_text(char text, int line);
+    void prepend_text(char text, int line);
+    std::vector<char*> m_data;
 
     friend class TextRender;
     friend class Editor;

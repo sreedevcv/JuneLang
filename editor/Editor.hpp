@@ -31,6 +31,8 @@ private:
         .loc = 0,
     };
 
+    std::string testString = "";
+
     void handle_inputs();
 };
 } // namespace jed

@@ -183,11 +183,11 @@ void jed::TextRender::render_text(Shader& shader, TextData& text, float x, float
 
     glBindVertexArray(0);
     glBindTexture(GL_TEXTURE_2D, 0);
+    check_for_opengl_error();
 }
 
 void jed::TextRender::render_cursor(Shader& m_shader, Cursor cursor)
 {
-    check_for_opengl_error();
     m_shader.use();
     m_shader.set_uniform_vec("text_color", glm::vec3(0.0f, 0.0f, 0.0f));
     glActiveTexture(GL_TEXTURE0);

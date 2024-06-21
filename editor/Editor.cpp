@@ -7,7 +7,7 @@
 jed::Editor::Editor()
     : m_width(1000)
     , m_height(900)
-    ,m_text_renderer(TextRender(m_width, m_height))
+    , m_text_renderer(TextRender(m_width, m_height))
 {
     glfwInit();
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
@@ -22,6 +22,7 @@ jed::Editor::Editor()
     }
 
     glfwMakeContextCurrent(m_window);
+    glfwSetWindowUserPointer(m_window, this);
 
     static const auto mouse_move_callback = [](GLFWwindow* glfw_window, double x_pos_in, double y_pos_in) {
     };
@@ -33,9 +34,28 @@ jed::Editor::Editor()
         glViewport(0, 0, width, height);
     };
 
+    const auto key_callback = [](GLFWwindow* window, int key, int scancode, int action, int mods) {
+        Editor* editor = static_cast<Editor*>(glfwGetWindowUserPointer(window));
+        if (action == GLFW_PRESS) {
+            if (key == GLFW_KEY_ENTER) {
+                editor->cursor.line += 1;
+            }
+        }
+    };
+
+    const auto charachter_callback = [](GLFWwindow* window, unsigned int codepoint) {
+        Editor* editor = static_cast<Editor*>(glfwGetWindowUserPointer(window));
+        char text = static_cast<char>(codepoint);
+        std::cout << text << " " << editor->cursor.loc << std::endl;
+        // editor->m_data.add_text_to_line(text, editor->cursor);
+        // editor->cursor.loc = editor->cursor.loc + 1;
+    };
+
     // glfwSetCursorPosCallback(m_window, mouse_move_callback);
     // glfwSetScrollCallback(m_window, mouse_scroll_callback);
     glfwSetFramebufferSizeCallback(m_window, framebuffer_size_callback);
+    glfwSetCharCallback(m_window, charachter_callback);
+    glfwSetKeyCallback(m_window, key_callback);
 
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
         std::cout << "Failed to initialize GLAD" << std::endl;
@@ -63,14 +83,13 @@ void jed::Editor::start()
 {
     glClearColor(0.85, 0.92, 1.0, 1.0);
 
-    m_data.m_data.push_back("class Cake [");
-    m_data.m_data.push_back("    taste() [");
-    m_data.m_data.push_back("        var adjective = \"delicious\";");
-    m_data.m_data.push_back("    ]");
-    m_data.m_data.push_back("]");
+    // m_data.m_data.push_back("class Cake [");
+    // m_data.m_data.push_back("    taste() [");
+    // m_data.m_data.push_back("        var adjective = \"delicious\";");
+    // m_data.m_data.push_back("    ]");
+    // m_data.m_data.push_back("]");
 
     check_for_opengl_error();
-
 
     while (!glfwWindowShouldClose(m_window)) {
         glClear(GL_COLOR_BUFFER_BIT);
@@ -92,10 +111,4 @@ void jed::Editor::handle_inputs()
     if (glfwGetKey(m_window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
         glfwSetWindowShouldClose(m_window, true);
     }
-    // if (glfwGetKey(m_window, GLFW_KEY_S) == GLFW_RELEASE) {
-    //     cursor.line += 1;
-    // }
-    // if (glfwGetKey(m_window, GLFW_KEY_D) == GLFW_RELEASE) {
-    //     cursor.loc += 1;
-    // }
 }
