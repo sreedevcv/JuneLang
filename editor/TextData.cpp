@@ -55,6 +55,14 @@ void jed::TextData::make_new_line(Cursor cursor)
     m_data[cursor.line].size = cursor.loc;
 }
 
+void jed::TextData::delete_char(Cursor cursor)
+{
+    for (int i = cursor.loc - 1; i < m_data[cursor.line].size; i++) {
+        m_data[cursor.line].data[i] = m_data[cursor.line].data[i + 1];
+    }
+    m_data[cursor.line].size--;
+}
+
 int jed::TextData::get_line_size(int line)
 {
     return m_data[line].size;

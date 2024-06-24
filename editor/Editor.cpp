@@ -75,6 +75,12 @@ jed::Editor::Editor()
                 }
                 editor->m_data.bound_cursor_loc(editor->cursor);
                 break;
+            case GLFW_KEY_BACKSPACE:
+                if (editor->cursor.loc > 0) {
+                    editor->m_data.delete_char(editor->cursor);
+                    editor->cursor.loc -= 1;
+                }
+                break;
             default:
                 break;
             }
@@ -112,18 +118,14 @@ jed::Editor::~Editor()
 void jed::Editor::start()
 {
     glfwSetWindowUserPointer(m_window, this);
-
     glClearColor(0.85, 0.92, 1.0, 1.0);
-
-    // m_data.m_data.push_back("class Cake [");
-    // m_data.m_data.push_back("    taste() [");
-    // m_data.m_data.push_back("        var adjective = \"delicious\";");
-    // m_data.m_data.push_back("    ]");
-    // m_data.m_data.push_back("]");
-
     check_for_opengl_error();
 
+    float curr_time = glfwGetTime();
+
     while (!glfwWindowShouldClose(m_window)) {
+        float delta = glfwGetTime() - curr_time;
+
         glClear(GL_COLOR_BUFFER_BIT);
         handle_inputs();
 
@@ -142,5 +144,7 @@ void jed::Editor::handle_inputs()
 {
     if (glfwGetKey(m_window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
         glfwSetWindowShouldClose(m_window, true);
+    } else if (glfwGetKey(m_window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS) {
+        std::cout << "q";
     }
 }

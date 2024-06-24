@@ -17,6 +17,7 @@ public:
 
     void add_text_to_line(char text, Cursor cursor);
     void make_new_line(Cursor cursor);
+    void delete_char(Cursor cursor);
     int get_line_size(int line);
     int get_line_count();
 
