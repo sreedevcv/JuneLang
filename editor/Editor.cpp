@@ -5,6 +5,7 @@
 
 #include "Timer.hpp"
 #include "Rectangle.hpp"
+#include "Context.hpp"
 
 void jed::charachter_callback(GLFWwindow* window, unsigned int codepoint)
 {
@@ -53,23 +54,27 @@ jed::Editor::Editor()
                 editor->m_data.handle_enter(editor->cursor);
                 editor->cursor.line += 1;
                 editor->cursor.loc = 0;
+                editor->m_cursor_blink = true;
                 break;
             case GLFW_KEY_LEFT:
                 if (editor->cursor.loc > 0) {
                     editor->cursor.loc -= 1;
                 }
+                editor->m_cursor_blink = true;
                 break;
             case GLFW_KEY_RIGHT:
                 editor->cursor.loc += 1;
                 if (editor->cursor.loc > editor->m_data.get_line_size(editor->cursor.line)) {
                     editor->cursor.loc -= 1;
                 }
+                editor->m_cursor_blink = true;
                 break;
             case GLFW_KEY_UP:
                 if (editor->cursor.line > 0) {
                     editor->cursor.line -= 1;
                     editor->m_data.bound_cursor_loc(editor->cursor);
                 }
+                editor->m_cursor_blink = true;
                 break;
             case GLFW_KEY_DOWN:
                 editor->cursor.line += 1;
@@ -77,9 +82,18 @@ jed::Editor::Editor()
                     editor->cursor.line -= 1;
                 }
                 editor->m_data.bound_cursor_loc(editor->cursor);
+                editor->m_cursor_blink = true;
                 break;
             case GLFW_KEY_BACKSPACE:
                 editor->m_data.handle_backspace(editor->cursor);
+                editor->m_cursor_blink = true;
+                break;
+            case GLFW_KEY_TAB:
+                for (int i = 0; i < Context::get().tab_width; i++) {
+                    editor->m_data.add_text_to_line(' ', editor->cursor);
+                    editor->cursor.loc += 1;
+                }
+                editor->m_cursor_blink = true;
                 break;
             default:
                 break;

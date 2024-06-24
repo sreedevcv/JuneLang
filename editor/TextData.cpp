@@ -2,6 +2,8 @@
 
 #include <iostream>
 
+#include "Context.hpp"
+
 void jed::TextData::add_text_to_line(char text, Cursor cursor)
 {
     int current_size = m_data.size();
@@ -27,7 +29,7 @@ void jed::TextData::add_text_to_line(char text, Cursor cursor)
         s.size++;
     }
 
-    std::cout << "Text appeded: " << text << "|size: " << m_data[cursor.line].size << "|cap: " << m_data[cursor.line].capacity << "|cur: " << cursor.loc << std::endl;
+    // std::cout << "Text appeded: " << text << "|size: " << m_data[cursor.line].size << "|cap: " << m_data[cursor.line].capacity << "|cur: " << cursor.loc << std::endl;
     // std::cout << m_data[cursor.line].data << std::endl;
 }
 
@@ -59,11 +61,18 @@ void jed::TextData::handle_enter(Cursor cursor)
 void jed::TextData::handle_backspace(Cursor& cursor)
 {
     if (cursor.loc > 0) {
+        char c = m_data[cursor.line].data[cursor.loc - 1];
         for (int i = cursor.loc - 1; i < m_data[cursor.line].size - 1; i++) {
             m_data[cursor.line].data[i] = m_data[cursor.line].data[i + 1];
         }
         m_data[cursor.line].size--;
-        cursor.loc -= 1;
+
+        // if (c != '\t') {
+            cursor.loc -= 1;
+        // } else {
+        //     cursor.loc -= Context::get().tab_width;
+        // }
+        // std::cout << c << " " << Context::get().tab_width << "\n";
     } else {
         if (cursor.line == 0) {
             return;

@@ -4,6 +4,7 @@
 
 #include <glad/glad.h>
 
+#include "Context.hpp"
 #include "utils.hpp"
 
 jed::TextRender::TextRender(int width, int height)
@@ -24,7 +25,7 @@ jed::TextRender::TextRender(int width, int height)
 
     std::cout << "Font loaded" << std::endl;
 
-    FT_Set_Pixel_Sizes(m_face, 0, m_font_size);
+    FT_Set_Pixel_Sizes(m_face, 0, Context::get().font_size);
     std::cout << m_width << " " << m_height << std::endl;
 }
 
@@ -141,11 +142,11 @@ void jed::TextRender::render_text(Shader& shader, std::string& text, float x, fl
         Character charachter = m_charachters[c];
 
         if (c == '\n') {
-            y -= m_font_size;
+            y -= Context::get().font_size;
             x = original_x;
             continue;
         } else if (c == '\t') {
-            x += (m_charachters[' '].advance >> 6) * m_tab_width;
+            x += (m_charachters[' '].advance >> 6) * scale * Context::get().tab_width;
             continue;
         }
 
@@ -185,16 +186,20 @@ void jed::TextRender::render_text(Shader& shader, TextData& text, float x, float
         x = original_x;
         for (int i = 0; i < text.m_data[line].size; i++) {
             char c = text.m_data[line].data[i];
-            if (c == '\t') {
-                x += (m_charachters[' '].advance >> 6) * m_tab_width;
-                continue;
-            }
 
-            draw_char(c, x + m_gutter_width, y, scale);
+            // if (c == '\t') {
+            //     for (int j = 0; j < Context::get().tab_width; j++) {
+            //         draw_char(' ', x + Context::get().gutter_width, y, scale);
+            //         x += (m_charachters[' '].advance >> 6) * scale;
+            //     }
+            //     continue;
+            // }
+
+            draw_char(c, x + Context::get().gutter_width, y, scale);
             x += (m_charachters[c].advance >> 6) * scale;
         }
 
-        y -= m_font_size;
+        y -= Context::get().font_size;
         x = original_x;
     }
 
@@ -210,12 +215,12 @@ void jed::TextRender::render_cursor(Shader& m_shader, Cursor cursor, float delta
     glActiveTexture(GL_TEXTURE0);
     glBindVertexArray(m_vao);
 
-    const int offset_from_top = (m_height - m_font_size) - cursor.line * m_font_size;
+    const int offset_from_top = (m_height - Context::get().font_size) - cursor.line * Context::get().font_size;
     const int offset_from_left = cursor.loc * m_cursor_advance;
     const float cursor_width = 2.0f;
-    const float cursor_height = m_font_size;
+    const float cursor_height = Context::get().font_size;
 
-    draw_texture(offset_from_left + m_gutter_width, offset_from_top, cursor_width, cursor_height, m_cursor_texture);
+    draw_texture(offset_from_left + Context::get().gutter_width, offset_from_top, cursor_width, cursor_height, m_cursor_texture);
     glBindVertexArray(0);
     glBindTexture(GL_TEXTURE_2D, 0);
     check_for_opengl_error();
