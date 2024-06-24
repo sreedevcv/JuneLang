@@ -30,7 +30,7 @@ void jed::TextData::add_text_to_line(char text, Cursor cursor)
     // std::cout << m_data[cursor.line].data << std::endl;
 }
 
-void jed::TextData::make_new_line(Cursor cursor)
+void jed::TextData::handle_enter(Cursor cursor)
 {
     // Insert a new line
     insert_line(cursor.line);
@@ -55,12 +55,36 @@ void jed::TextData::make_new_line(Cursor cursor)
     m_data[cursor.line].size = cursor.loc;
 }
 
-void jed::TextData::delete_char(Cursor cursor)
+void jed::TextData::handle_backspace(Cursor& cursor)
 {
-    for (int i = cursor.loc - 1; i < m_data[cursor.line].size; i++) {
-        m_data[cursor.line].data[i] = m_data[cursor.line].data[i + 1];
+    if (cursor.loc > 0) {
+        for (int i = cursor.loc - 1; i < m_data[cursor.line].size - 1; i++) {
+            m_data[cursor.line].data[i] = m_data[cursor.line].data[i + 1];
+        }
+        m_data[cursor.line].size--;
+        cursor.loc -= 1;
+    } else {
+        if (cursor.line == 0) {
+            return;
+        }
+
+        int old_size = m_data[cursor.line].size;
+
+        // Copy all contents to the above line
+        for (int i = 0; i < m_data[cursor.line].size; i++) {
+            append_text(m_data[cursor.line].data[i], cursor.line - 1);
+        }
+        // Delete the current line
+        m_data[cursor.line].size = 0;
+        str deleted_line = m_data[cursor.line];
+
+        for (int i = cursor.line; i < get_line_count() - 1; i++) {
+            m_data[i] = m_data[i + 1];
+        }
+        m_data[get_line_count() - 1] = deleted_line;
+        cursor.line -= 1;
+        cursor.loc = m_data[cursor.line].size - old_size;
     }
-    m_data[cursor.line].size--;
 }
 
 int jed::TextData::get_line_size(int line)

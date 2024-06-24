@@ -16,8 +16,8 @@ public:
     ~TextData() = default;
 
     void add_text_to_line(char text, Cursor cursor);
-    void make_new_line(Cursor cursor);
-    void delete_char(Cursor cursor);
+    void handle_enter(Cursor cursor);
+    void handle_backspace(Cursor& cursor);
     int get_line_size(int line);
     int get_line_count();
 

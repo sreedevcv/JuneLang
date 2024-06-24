@@ -47,7 +47,7 @@ jed::Editor::Editor()
         if (action == GLFW_PRESS || action == GLFW_REPEAT) {
             switch (key) {
             case GLFW_KEY_ENTER:
-                editor->m_data.make_new_line(editor->cursor);
+                editor->m_data.handle_enter(editor->cursor);
                 editor->cursor.line += 1;
                 editor->cursor.loc = 0;
                 break;
@@ -76,10 +76,10 @@ jed::Editor::Editor()
                 editor->m_data.bound_cursor_loc(editor->cursor);
                 break;
             case GLFW_KEY_BACKSPACE:
-                if (editor->cursor.loc > 0) {
-                    editor->m_data.delete_char(editor->cursor);
-                    editor->cursor.loc -= 1;
-                }
+                // if (editor->cursor.loc > 0) {
+                    editor->m_data.handle_backspace(editor->cursor);
+                    // editor->cursor.loc -= 1;
+                // }
                 break;
             default:
                 break;
@@ -142,54 +142,14 @@ void jed::Editor::start()
 
 void jed::Editor::handle_inputs(float delta)
 {
-    static float diff = 1.0f;
-    diff += delta;
+    // static float diff = 1.0f;
+    // diff += delta;
 
-    if (diff < 900.0f) {
-        return;
-    }
+    // if (diff < 900.0f) {
+    //     return;
+    // }
 
     if (glfwGetKey(m_window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
         glfwSetWindowShouldClose(m_window, true);
     }
-    // if (glfwGetKey(m_window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS) {
-    //     std::cout << 'q';
-    // }
-    // if (glfwGetKey(m_window, GLFW_KEY_ENTER) == GLFW_PRESS) {
-    //     m_data.make_new_line(cursor);
-    //     cursor.line += 1;
-    //     cursor.loc = 0;
-    // }
-    // if (glfwGetKey(m_window, GLFW_KEY_LEFT) == GLFW_PRESS) {
-    //     if (cursor.loc > 0) {
-    //         cursor.loc -= 1;
-    //     }
-    // }
-    // if (glfwGetKey(m_window, GLFW_KEY_RIGHT) == GLFW_PRESS) {
-    //     cursor.loc += 1;
-    //     if (cursor.loc > m_data.get_line_size(cursor.line)) {
-    //         cursor.loc -= 1;
-    //     }
-    // }
-    // if (glfwGetKey(m_window, GLFW_KEY_UP) == GLFW_PRESS) {
-    //     if (cursor.line > 0) {
-    //         cursor.line -= 1;
-    //         m_data.bound_cursor_loc(cursor);
-    //     }
-    // }
-    // if (glfwGetKey(m_window, GLFW_KEY_DOWN) == GLFW_PRESS) {
-    //     cursor.line += 1;
-    //     if (cursor.line > m_data.get_line_count()) {
-    //         cursor.line -= 1;
-    //     }
-    //     m_data.bound_cursor_loc(cursor);
-    // }
-    // if (glfwGetKey(m_window, GLFW_KEY_BACKSPACE) == GLFW_PRESS) {
-    //     if (cursor.loc > 0) {
-    //         m_data.delete_char(cursor);
-    //         cursor.loc -= 1;
-    //     }
-    // }
-
-    diff = 0;
 }
