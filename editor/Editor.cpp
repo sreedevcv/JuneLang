@@ -70,7 +70,7 @@ jed::Editor::Editor()
                 break;
             case GLFW_KEY_DOWN:
                 editor->cursor.line += 1;
-                if (editor->cursor.line > editor->m_data.get_line_count()) {
+                if (editor->cursor.line >= editor->m_data.get_line_count()) {
                     editor->cursor.line -= 1;
                 }
                 editor->m_data.bound_cursor_loc(editor->cursor);

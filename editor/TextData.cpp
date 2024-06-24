@@ -10,6 +10,7 @@ void jed::TextData::add_text_to_line(char text, Cursor cursor)
     if (cursor.line >= current_size) {
         for (int i = 0; i < cursor.line - current_size + 1; i++) {
             m_data.push_back(make_new_str());
+            m_line_count += 1;
         }
     }
 
@@ -81,9 +82,10 @@ void jed::TextData::handle_backspace(Cursor& cursor)
         for (int i = cursor.line; i < get_line_count() - 1; i++) {
             m_data[i] = m_data[i + 1];
         }
-        m_data[get_line_count() - 1] = deleted_line;
-        cursor.line -= 1;
-        cursor.loc = m_data[cursor.line].size - old_size;
+        m_data[get_line_count() - 1] = deleted_line;        /* Move deleted line to end to save space */
+        cursor.line -= 1;                                   /* Move cursor to above line */
+        cursor.loc = m_data[cursor.line].size - old_size;   /* Move cursor to correct loc in above line */
+        m_line_count -= 1;
     }
 }
 
@@ -94,7 +96,7 @@ int jed::TextData::get_line_size(int line)
 
 int jed::TextData::get_line_count()
 {
-    return m_data.size();
+    return m_line_count;
 }
 
 void jed::TextData::bound_cursor_loc(Cursor& cursor)
@@ -147,6 +149,7 @@ void jed::TextData::insert_line(int pos)
     for (int i = m_data.size() - 2; i >= pos; i--) {
         m_data[i + 1] = m_data[i];
     }
+    m_line_count += 1;
 }
 
 jed::TextData::str jed::TextData::make_new_str()
