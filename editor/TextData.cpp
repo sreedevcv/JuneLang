@@ -4,7 +4,6 @@
 
 void jed::TextData::add_text_to_line(char text, Cursor cursor)
 {
-    _ASSERT(cursor.line >= 0);
     int current_size = m_data.size();
 
     // Add new lines

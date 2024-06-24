@@ -25,7 +25,6 @@ endif()
 add_subdirectory(src)
 
 if (BUILD_JUNE_EDITOR)
-    add_subdirectory(freetype)
     add_subdirectory(editor)
     add_executable(june
         main.cpp

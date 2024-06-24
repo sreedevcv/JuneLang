@@ -7,7 +7,13 @@ FetchContent_Declare(
 )
 
 if (UNIX)
-    set(GLFW_USE_WAYLAND ON CACHE BOOL "" FORCE)
+    set(GLFW_USE_WAYLAND OFF CACHE BOOL "" FORCE)
+    set(GLFW_BUILD_X11 ON CACHE BOOL "" FORCE)
+
+    
+    # set(GLFW_USE_WAYLAND ON CACHE BOOL "" FORCE)
+    # set(GLFW_BUILD_X11 OFF CACHE BOOL "" FORCE)
+
 elseif(WIN32)
     set(GLFW_USE_WAYLAND OFF CACHE BOOL "" FORCE)
 endif()
@@ -28,13 +34,12 @@ FetchContent_MakeAvailable(glm)
 
 
 
-# FetchContent_Declare(
-#     freetype
-#     GIT_REPOSITORY https://gitlab.freedesktop.org/freetype/freetype.git
-#     GIT_TAG 2b9fdec5fafd16fba93a9947563260ab9feb9029
-# )
-# FetchContent_MakeAvailable(freetype)
-
+FetchContent_Declare(
+    freetype
+    GIT_REPOSITORY https://github.com/freetype/freetype.git
+    GIT_TAG 044d142be7b6a93b6940367a1bc5847451ff4775
+)
+FetchContent_MakeAvailable(freetype)
 
 add_library(JuneEditor
     Editor.cpp
