@@ -46,6 +46,7 @@ private:
     int m_cursor_advance;
 
     void draw_texture(float xpos, float ypos, float w, float h, unsigned int texture_id);
+    void draw_char(char c, float x, float y, float scale);
 };
 
 } // namespace jed

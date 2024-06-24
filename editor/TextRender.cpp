@@ -99,13 +99,13 @@ void jed::TextRender::load_fonts()
 void jed::TextRender::draw_texture(float xpos, float ypos, float w, float h, unsigned int texture_id)
 {
     float vertices[6][4] = {
-        { xpos + m_gutter_width, ypos + h, 0.0f, 0.0f },
-        { xpos + m_gutter_width, ypos, 0.0f, 1.0f },
-        { xpos + w + m_gutter_width, ypos, 1.0f, 1.0f },
+        { xpos, ypos + h, 0.0f, 0.0f },
+        { xpos, ypos, 0.0f, 1.0f },
+        { xpos + w, ypos, 1.0f, 1.0f },
 
-        { xpos + m_gutter_width, ypos + h, 0.0f, 0.0f },
-        { xpos + w + m_gutter_width, ypos, 1.0f, 1.0f },
-        { xpos + w + m_gutter_width, ypos + h, 1.0f, 0.0f },
+        { xpos, ypos + h, 0.0f, 0.0f },
+        { xpos + w, ypos, 1.0f, 1.0f },
+        { xpos + w, ypos + h, 1.0f, 0.0f },
     };
 
     glBindTexture(GL_TEXTURE_2D, texture_id);
@@ -113,6 +113,18 @@ void jed::TextRender::draw_texture(float xpos, float ypos, float w, float h, uns
     glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vertices), vertices);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glDrawArrays(GL_TRIANGLES, 0, 6);
+}
+
+void jed::TextRender::draw_char(char c, float x, float y, float scale)
+{
+    Character charachter = m_charachters[c];
+
+    float xpos = x + charachter.bearing.x * scale;
+    float ypos = y - (charachter.size.y - charachter.bearing.y) * scale;
+
+    float w = charachter.size.x * scale;
+    float h = charachter.size.y * scale;
+    draw_texture(xpos, ypos, w, h, charachter.texture_id);
 }
 
 void jed::TextRender::render_text(Shader& shader, std::string& text, float x, float y, float scale, glm::vec3 color)
@@ -160,24 +172,26 @@ void jed::TextRender::render_text(Shader& shader, TextData& text, float x, float
     glBindVertexArray(m_vao);
 
     const float original_x = x;
+    int line_num = 1;
 
     for (auto line : text.m_data) {
+        std::string num = std::to_string(line_num++);
+
+        for (char c: num) {
+            draw_char(c, x, y, scale);
+            x += (m_charachters[c].advance >> 6) * scale;
+        }
+
+        x = original_x;
         for (int i = 0; i < line.size; i++) {
             char c = line.data[i];
-            Character charachter = m_charachters[c];
-
             if (c == '\t') {
                 x += (m_charachters[' '].advance >> 6) * m_tab_width;
                 continue;
             }
 
-            float xpos = x + charachter.bearing.x * scale;
-            float ypos = y - (charachter.size.y - charachter.bearing.y) * scale;
-
-            float w = charachter.size.x * scale;
-            float h = charachter.size.y * scale;
-            draw_texture(xpos, ypos, w, h, charachter.texture_id);
-            x += (charachter.advance >> 6) * scale;
+            draw_char(c, x + m_gutter_width, y, scale);
+            x += (m_charachters[c].advance >> 6) * scale;
         }
 
         y -= m_font_size;
@@ -201,7 +215,7 @@ void jed::TextRender::render_cursor(Shader& m_shader, Cursor cursor, float delta
     const float cursor_width = 2.0f;
     const float cursor_height = m_font_size;
 
-    draw_texture(offset_from_left, offset_from_top, cursor_width, cursor_height, m_cursor_texture);
+    draw_texture(offset_from_left + m_gutter_width, offset_from_top, cursor_width, cursor_height, m_cursor_texture);
     glBindVertexArray(0);
     glBindTexture(GL_TEXTURE_2D, 0);
     check_for_opengl_error();
