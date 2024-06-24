@@ -26,6 +26,7 @@ private:
 
     const char* title = "Editor";
     bool debug_mode;
+    bool m_cursor_blink = true;
 
     Cursor cursor = {
         .line = 0,

@@ -189,17 +189,19 @@ void jed::TextRender::render_text(Shader& shader, TextData& text, float x, float
     check_for_opengl_error();
 }
 
-void jed::TextRender::render_cursor(Shader& m_shader, Cursor cursor)
+void jed::TextRender::render_cursor(Shader& m_shader, Cursor cursor, float delta)
 {
     m_shader.use();
     m_shader.set_uniform_vec("text_color", glm::vec3(0.4f, 0.4f, 0.4f));
     glActiveTexture(GL_TEXTURE0);
     glBindVertexArray(m_vao);
 
-    int offset_from_top = (m_height - m_font_size) - cursor.line * m_font_size;
-    int offset_from_left = cursor.loc * m_cursor_advance;
+    const int offset_from_top = (m_height - m_font_size) - cursor.line * m_font_size;
+    const int offset_from_left = cursor.loc * m_cursor_advance;
+    const float cursor_width = 2.0f;
+    const float cursor_height = m_font_size;
 
-    draw_texture(offset_from_left, offset_from_top, static_cast<float>(m_font_size), static_cast<float>(m_font_size), m_cursor_texture);
+    draw_texture(offset_from_left, offset_from_top, cursor_width, cursor_height, m_cursor_texture);
     glBindVertexArray(0);
     glBindTexture(GL_TEXTURE_2D, 0);
     check_for_opengl_error();

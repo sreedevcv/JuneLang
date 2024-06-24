@@ -1,16 +1,17 @@
 #include "Editor.hpp"
 
 #include <iostream>
-
 #include <string>
+
+#include "Timer.hpp"
 
 void jed::charachter_callback(GLFWwindow* window, unsigned int codepoint)
 {
     jed::Editor* editor = static_cast<jed::Editor*>(glfwGetWindowUserPointer(window));
     char text = static_cast<char>(codepoint);
-    // std::cout << text << " " << editor->cursor.loc << std::endl;
     editor->m_data.add_text_to_line(text, editor->cursor);
     editor->cursor.loc = editor->cursor.loc + 1;
+    editor->m_cursor_blink = true;
 };
 
 jed::Editor::Editor()
@@ -44,6 +45,7 @@ jed::Editor::Editor()
 
     const auto key_callback = [](GLFWwindow* window, int key, int scancode, int action, int mods) {
         Editor* editor = static_cast<Editor*>(glfwGetWindowUserPointer(window));
+
         if (action == GLFW_PRESS || action == GLFW_REPEAT) {
             switch (key) {
             case GLFW_KEY_ENTER:
@@ -76,10 +78,7 @@ jed::Editor::Editor()
                 editor->m_data.bound_cursor_loc(editor->cursor);
                 break;
             case GLFW_KEY_BACKSPACE:
-                // if (editor->cursor.loc > 0) {
-                    editor->m_data.handle_backspace(editor->cursor);
-                    // editor->cursor.loc -= 1;
-                // }
+                editor->m_data.handle_backspace(editor->cursor);
                 break;
             default:
                 break;
@@ -121,17 +120,27 @@ void jed::Editor::start()
     glClearColor(0.85, 0.92, 1.0, 1.0);
     check_for_opengl_error();
 
-    float curr_time = glfwGetTime();
+    float prev_time = glfwGetTime();
+    Timer cursor_timer(1.0f);
 
     while (!glfwWindowShouldClose(m_window)) {
-        float delta = glfwGetTime() - curr_time;
+        float curr_time = glfwGetTime();
+        float delta = curr_time - prev_time;
+        prev_time = curr_time;
 
         glClear(GL_COLOR_BUFFER_BIT);
         handle_inputs(delta);
+        cursor_timer.update(delta);
 
-        // m_text_renderer.render_text(m_shader, text, 0.0f, 900.0f, 1.0f, glm::vec3(0.8f, 0.3f, 0.2f));
         m_text_renderer.render_text(m_shader, m_data, 0.0f, 880.0f, 1.0f, glm::vec3(0.8f, 0.3f, 0.2f));
-        m_text_renderer.render_cursor(m_shader, cursor);
+        if (cursor_timer.finished()) {
+            m_cursor_blink = !m_cursor_blink;
+            cursor_timer.reset();
+        }
+
+        if (m_cursor_blink) {
+            m_text_renderer.render_cursor(m_shader, cursor, delta);
+        }
         check_for_opengl_error();
 
         glfwSwapBuffers(m_window);
@@ -142,13 +151,6 @@ void jed::Editor::start()
 
 void jed::Editor::handle_inputs(float delta)
 {
-    // static float diff = 1.0f;
-    // diff += delta;
-
-    // if (diff < 900.0f) {
-    //     return;
-    // }
-
     if (glfwGetKey(m_window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
         glfwSetWindowShouldClose(m_window, true);
     }

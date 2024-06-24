@@ -26,7 +26,7 @@ public:
     void load_fonts();
     void render_text(Shader& shader, std::string& text, float x, float y, float scale, glm::vec3 color);
     void render_text(Shader& shader, TextData& text, float x, float y, float scale, glm::vec3 color);
-    void render_cursor(Shader& m_shader, Cursor cursor);
+    void render_cursor(Shader& m_shader, Cursor cursor, float delta);
 
 private:
     std::map<char, Character> m_charachters;
