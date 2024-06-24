@@ -27,6 +27,7 @@ private:
     void append_text(char text, int line);
     void prepend_text(char text, int line);
     void shift_one_back(int start, int line);
+    void grow_line(int line);
 
     std::vector<str> m_data;
     int m_data_grow_size = 20;

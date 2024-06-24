@@ -20,24 +20,14 @@ void jed::TextData::add_text_to_line(char text, Cursor cursor)
         append_text(text, cursor.line);
     } else {
         str& s = m_data[cursor.line];
-        if (s.size < s.capacity) {
-            shift_one_back(cursor.loc, cursor.line);
-            s.data[cursor.loc] = text;
-            s.size++;
+        if (s.size >= s.capacity) {
+            grow_line(cursor.line);
         }
+
+        shift_one_back(cursor.loc, cursor.line);
+        s.data[cursor.loc] = text;
+        s.size++;
     }
-
-    // std::string& line = m_data[cursor.line];
-
-    // if (cursor.loc == 0) {
-    // prepend_text(text, cursor.line);
-    // } else if (cursor.loc == line.size()) {
-    // append_text(text, cursor.line);
-    // } else {
-    //     std::string lhs = line.substr(0, cursor.loc);
-    //     std::string rhs = line.substr(cursor.loc, line.size());
-    //     m_data[cursor.line] = lhs + text + rhs;
-    // }
 
     std::cout << "Text appeded: " << text << "|size: " << m_data[cursor.line].size << "|cap: " << m_data[cursor.line].capacity << "|cur: " << cursor.loc << std::endl;
     // std::cout << m_data[cursor.line].data << std::endl;
@@ -49,7 +39,7 @@ void jed::TextData::append_text(char text, int line)
     if (s.size < s.capacity) {
         s.data[s.size++] = text;
     } else {
-        s.data = (char*)realloc(s.data, sizeof(char) * (s.capacity + m_data_grow_size));
+        grow_line(line);
         s.data[s.size++] = text;
     }
 }
@@ -62,6 +52,9 @@ void jed::TextData::prepend_text(char text, int line)
         shift_one_back(0, line);
         s.data[0] = text;
         s.size++;
+    } else {
+        grow_line(line);
+        s.data[s.size++] = text;
     }
 }
 
@@ -71,4 +64,11 @@ void jed::TextData::shift_one_back(int start, int line)
     for (int i = s.size - 1; i >= start; i--) {
         s.data[i + 1] = s.data[i];
     }
+}
+
+void jed::TextData::grow_line(int line)
+{
+    str& s = m_data[line];
+    s.capacity += m_data_grow_size;
+    s.data = (char*)realloc(s.data, sizeof(char) * s.capacity);
 }

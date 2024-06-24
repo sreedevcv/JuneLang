@@ -4,7 +4,6 @@
 
 #include <string>
 
-
 void jed::charachter_callback(GLFWwindow* window, unsigned int codepoint)
 {
     jed::Editor* editor = static_cast<jed::Editor*>(glfwGetWindowUserPointer(window));
@@ -46,15 +45,21 @@ jed::Editor::Editor()
     const auto key_callback = [](GLFWwindow* window, int key, int scancode, int action, int mods) {
         Editor* editor = static_cast<Editor*>(glfwGetWindowUserPointer(window));
         if (action == GLFW_PRESS) {
-            if (key == GLFW_KEY_ENTER) {
+            switch (key) {
+            case GLFW_KEY_ENTER:
                 editor->cursor.line += 1;
-            } else if (key == GLFW_KEY_LEFT) {
-                editor->cursor.loc -= 1;
-            } else if (key == GLFW_KEY_RIGHT) {
+                break;
+            case GLFW_KEY_LEFT:
+                if (editor->cursor.loc > 0) {
+                    editor->cursor.loc -= 1;
+                }
+                break;
+            case GLFW_KEY_RIGHT:
                 editor->cursor.loc += 1;
+                break;
+            default:
+                break;
             }
-
-            
         }
     };
 
