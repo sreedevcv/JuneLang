@@ -58,7 +58,8 @@ jed::Editor::Editor()
             if ((mods & GLFW_MOD_CONTROL) && key == GLFW_KEY_B) {
                 std::cout << "Building...\n";
                 auto code = editor->m_data.get_data();
-                // std::cout << 
+                std::cout << code << "\n\n";
+                std::cout << "Output...\n";
                 auto result = editor->run_code(code);
                 std::cout << result << "\n";
                 return;
@@ -205,6 +206,7 @@ void jed::Editor::handle_inputs(float delta)
 
 std::string jed::Editor::run_code(std::string& code)
 {
+    jl::ErrorHandler::reset();
     jl::ErrorHandler::m_stream.setOutputToStr();
     std::string result = "";
     jl::Lexer lexer(code.c_str());

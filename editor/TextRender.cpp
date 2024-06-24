@@ -186,15 +186,7 @@ void jed::TextRender::render_text(Shader& shader, TextData& text, float x, float
         x = original_x;
         for (int i = 0; i < text.m_data[line].size; i++) {
             char c = text.m_data[line].data[i];
-
-            // if (c == '\t') {
-            //     for (int j = 0; j < Context::get().tab_width; j++) {
-            //         draw_char(' ', x + Context::get().gutter_width, y, scale);
-            //         x += (m_charachters[' '].advance >> 6) * scale;
-            //     }
-            //     continue;
-            // }
-
+            /* Offset the x-axis with the gutter width */
             draw_char(c, x + Context::get().gutter_width, y, scale);
             x += (m_charachters[c].advance >> 6) * scale;
         }

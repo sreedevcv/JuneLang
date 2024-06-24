@@ -12,6 +12,7 @@ public:
 
     static bool has_error();
     static int get_error_count();
+    static void reset();
     static StreamHandler m_stream;
 
     static void clear_errors();

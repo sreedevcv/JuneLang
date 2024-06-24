@@ -44,6 +44,11 @@ int jl::ErrorHandler::get_error_count()
     return error_count;
 }
 
+void jl::ErrorHandler::reset()
+{
+    error_count = 0;
+}
+
 void jl::ErrorHandler::clear_errors()
 {
     error_count = 0;

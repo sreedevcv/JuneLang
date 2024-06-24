@@ -26,6 +26,7 @@ void jl::StreamHandler::setOutputToCerr()
 void jl::StreamHandler::setOutputToStr()
 {
     currentStreamType = StreamType::Str;
+    sstream = std::stringstream("");
 }
 
 void jl::StreamHandler::setOutputToFile(const std::string& filename)
