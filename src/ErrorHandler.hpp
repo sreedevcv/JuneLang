@@ -15,6 +15,7 @@ public:
     static StreamHandler m_stream;
 
     static void clear_errors();
+    static std::stringstream& get_string_stream();
 
 private:
     static int error_count;

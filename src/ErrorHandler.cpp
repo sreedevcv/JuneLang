@@ -48,3 +48,8 @@ void jl::ErrorHandler::clear_errors()
 {
     error_count = 0;
 }
+
+std::stringstream& jl::ErrorHandler::get_string_stream()
+{
+    return m_stream.get_string_stream();
+}

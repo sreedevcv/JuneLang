@@ -23,6 +23,11 @@ void jl::StreamHandler::setOutputToCerr()
     currentStreamType = StreamType::Cerr;
 }
 
+void jl::StreamHandler::setOutputToStr()
+{
+    currentStreamType = StreamType::Str;
+}
+
 void jl::StreamHandler::setOutputToFile(const std::string& filename)
 {
     if (fileStream) {
@@ -42,6 +47,15 @@ jl::StreamHandler& jl::StreamHandler::operator<<(std::ostream& (*manip)(std::ost
     return *this;
 }
 
+std::stringstream& jl::StreamHandler::get_string_stream()
+{
+    if (currentStreamType != StreamType::Str) {
+        std::cout << "FATAL ERROR : Cannot extract string stream from a non string stream StreamHandler" << std::endl;
+        std::exit(1);
+    }
+    return sstream;
+}
+
 std::ostream& jl::StreamHandler::getCurrentStream()
 {
     switch (currentStreamType) {
@@ -49,6 +63,8 @@ std::ostream& jl::StreamHandler::getCurrentStream()
         return std::cout;
     case StreamType::Cerr:
         return std::cerr;
+    case StreamType::Str:
+        return sstream;
     case StreamType::File:
         if (fileStream && fileStream->is_open()) {
             return *fileStream;

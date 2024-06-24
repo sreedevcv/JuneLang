@@ -22,6 +22,7 @@ public:
     int get_line_count();
 
     void bound_cursor_loc(Cursor& cursor);
+    std::string get_data();
 
 private:
     struct str {

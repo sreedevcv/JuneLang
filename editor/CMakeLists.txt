@@ -41,6 +41,8 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(freetype)
 
+include_directories("src/")
+
 add_library(JuneEditor
     Editor.cpp
     glad.c
@@ -52,5 +54,5 @@ add_library(JuneEditor
     Context.cpp
 )
 
-target_link_libraries(JuneEditor PRIVATE glfw glm::glm freetype)
+target_link_libraries(JuneEditor PRIVATE JuneInterpreter glfw glm::glm freetype)
 target_include_directories(JuneEditor PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})

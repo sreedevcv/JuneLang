@@ -115,6 +115,15 @@ void jed::TextData::bound_cursor_loc(Cursor& cursor)
     }
 }
 
+std::string jed::TextData::get_data()
+{
+    std::string code = "";
+    for (auto s: m_data) {
+        code.append(s.data, s.size);
+    }
+    return code;
+}
+
 void jed::TextData::append_text(char text, int line)
 {
     str& s = m_data[line];

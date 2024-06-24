@@ -11,7 +11,8 @@ public:
     enum class StreamType {
         Cout,
         Cerr,
-        File
+        File,
+        Str,
     };
 
     StreamHandler();
@@ -19,6 +20,7 @@ public:
 
     void setOutputToCout();
     void setOutputToCerr();
+    void setOutputToStr();
     void setOutputToFile(const std::string& filename);
 
     template <typename T>
@@ -32,9 +34,12 @@ public:
     // Overload for manipulators like std::endl
     StreamHandler& operator<<(std::ostream& (*manip)(std::ostream&));
 
+    std::stringstream& get_string_stream();
+
 private:
     StreamType currentStreamType;
     std::ofstream* fileStream;
+    std::stringstream sstream;
 
     std::ostream& getCurrentStream();
 };

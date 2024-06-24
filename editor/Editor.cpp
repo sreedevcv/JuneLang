@@ -3,9 +3,15 @@
 #include <iostream>
 #include <string>
 
-#include "Timer.hpp"
-#include "Rectangle.hpp"
 #include "Context.hpp"
+#include "Rectangle.hpp"
+#include "Timer.hpp"
+
+#include "ErrorHandler.hpp"
+#include "Interpreter.hpp"
+#include "Lexer.hpp"
+#include "Parser.hpp"
+#include "Resolver.hpp"
 
 void jed::charachter_callback(GLFWwindow* window, unsigned int codepoint)
 {
@@ -48,7 +54,28 @@ jed::Editor::Editor()
     const auto key_callback = [](GLFWwindow* window, int key, int scancode, int action, int mods) {
         Editor* editor = static_cast<Editor*>(glfwGetWindowUserPointer(window));
 
+        if (action == GLFW_PRESS) {
+            if ((mods & GLFW_MOD_CONTROL) && key == GLFW_KEY_B) {
+                std::cout << "Building...\n";
+                auto code = editor->m_data.get_data();
+                // std::cout << 
+                auto result = editor->run_code(code);
+                std::cout << result << "\n";
+                return;
+            }
+        }
+
         if (action == GLFW_PRESS || action == GLFW_REPEAT) {
+
+            if ((mods & GLFW_MOD_CONTROL) && key == GLFW_KEY_C) {
+                std::cout << "Ctrl + C pressed" << std::endl;
+                return;
+            }
+            if ((mods & GLFW_MOD_CONTROL) && key == GLFW_KEY_V) {
+                std::cout << "Ctrl + V pressed" << std::endl;
+                return;
+            }
+
             switch (key) {
             case GLFW_KEY_ENTER:
                 editor->m_data.handle_enter(editor->cursor);
@@ -175,3 +202,47 @@ void jed::Editor::handle_inputs(float delta)
         glfwSetWindowShouldClose(m_window, true);
     }
 }
+
+std::string jed::Editor::run_code(std::string& code)
+{
+    jl::ErrorHandler::m_stream.setOutputToStr();
+    std::string result = "";
+    jl::Lexer lexer(code.c_str());
+    std::string file_name = "LIVE";
+    lexer.scan();
+
+    if (jl::ErrorHandler::has_error()) {
+        result = jl::ErrorHandler::m_stream.get_string_stream().str();
+        return result;
+    }
+
+    auto tokens = lexer.get_tokens();
+    jl::Parser parser(tokens, file_name);
+    auto stmts = parser.parseStatements();
+
+    if (jl::ErrorHandler::has_error()) {
+        result = jl::ErrorHandler::m_stream.get_string_stream().str();
+        return result;
+    }
+
+    jl::Interpreter interpreter(file_name);
+
+    jl::Resolver resolver(interpreter, file_name);
+    resolver.resolve(stmts);
+
+    if (jl::ErrorHandler::has_error()) {
+        result = jl::ErrorHandler::m_stream.get_string_stream().str();
+        return result;
+    }
+
+    jl::Value v;
+    interpreter.interpret(stmts);
+
+    result = jl::ErrorHandler::get_string_stream().str();
+
+    for (auto stmt : stmts) {
+        delete stmt;
+    }
+
+    return result;
+};

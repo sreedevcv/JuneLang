@@ -1,11 +1,11 @@
 #include <iostream>
 
-// #include "ErrorHandler.hpp"
-// #include "Expr.hpp"
-// #include "Interpreter.hpp"
-// #include "Lexer.hpp"
-// #include "Parser.hpp"
-// #include "Resolver.hpp"
+#include "ErrorHandler.hpp"
+#include "Expr.hpp"
+#include "Interpreter.hpp"
+#include "Lexer.hpp"
+#include "Parser.hpp"
+#include "Resolver.hpp"
 
 #include "Editor.hpp"
 
@@ -17,31 +17,8 @@ int main()
 
     // jl::Lexer lexer(
     //     R"(
-
-    //     class String
-    //     [
-    //         init(string)
-    //         [
-    //             self.str = string;
-    //         ]
-
-    //         append(string)
-    //         [
-    //             self.str = self.str + string;
-    //         ]
-
-    //         get()
-    //         [
-    //             return self.str;
-    //         ]
-    //     ]
-
-    //     var a = String("Hai");
+    //     var a = 10;
     //     print a;
-    //     print a.get();
-    //     a.append(" World");
-    //     var b = a.get();
-    //     print b;
 
     // )");
 
@@ -75,6 +52,8 @@ int main()
     // for (auto stmt: stmts) {
     //     delete stmt;
     // }
+
+    std::cout << "Ended" << std::endl;
 }
 
 /*
