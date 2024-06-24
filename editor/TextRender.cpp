@@ -99,13 +99,13 @@ void jed::TextRender::load_fonts()
 void jed::TextRender::draw_texture(float xpos, float ypos, float w, float h, unsigned int texture_id)
 {
     float vertices[6][4] = {
-        { xpos, ypos + h, 0.0f, 0.0f },
-        { xpos, ypos, 0.0f, 1.0f },
-        { xpos + w, ypos, 1.0f, 1.0f },
+        { xpos + m_gutter_width, ypos + h, 0.0f, 0.0f },
+        { xpos + m_gutter_width, ypos, 0.0f, 1.0f },
+        { xpos + w + m_gutter_width, ypos, 1.0f, 1.0f },
 
-        { xpos, ypos + h, 0.0f, 0.0f },
-        { xpos + w, ypos, 1.0f, 1.0f },
-        { xpos + w, ypos + h, 1.0f, 0.0f },
+        { xpos + m_gutter_width, ypos + h, 0.0f, 0.0f },
+        { xpos + w + m_gutter_width, ypos, 1.0f, 1.0f },
+        { xpos + w + m_gutter_width, ypos + h, 1.0f, 0.0f },
     };
 
     glBindTexture(GL_TEXTURE_2D, texture_id);
@@ -205,4 +205,9 @@ void jed::TextRender::render_cursor(Shader& m_shader, Cursor cursor, float delta
     glBindVertexArray(0);
     glBindTexture(GL_TEXTURE_2D, 0);
     check_for_opengl_error();
+}
+
+glm::mat4& jed::TextRender::get_projection()
+{
+    return projection;
 }

@@ -4,6 +4,7 @@
 #include <string>
 
 #include "Timer.hpp"
+#include "Rectangle.hpp"
 
 void jed::charachter_callback(GLFWwindow* window, unsigned int codepoint)
 {
@@ -122,6 +123,9 @@ void jed::Editor::start()
 
     float prev_time = glfwGetTime();
     Timer cursor_timer(1.0f);
+    glm::vec3 color = glm::vec3(0.0f, 1.0f, 0.0f);
+    Rectangle rect(m_text_renderer.m_gutter_width, static_cast<float>(m_height), 0.0f, 0.0f, color);
+    rect.load();
 
     while (!glfwWindowShouldClose(m_window)) {
         float curr_time = glfwGetTime();
@@ -131,6 +135,8 @@ void jed::Editor::start()
         glClear(GL_COLOR_BUFFER_BIT);
         handle_inputs(delta);
         cursor_timer.update(delta);
+
+        rect.draw(m_shader, m_text_renderer.get_projection());
 
         m_text_renderer.render_text(m_shader, m_data, 0.0f, 880.0f, 1.0f, glm::vec3(0.8f, 0.3f, 0.2f));
         if (cursor_timer.finished()) {

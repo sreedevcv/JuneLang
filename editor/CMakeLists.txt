@@ -48,6 +48,7 @@ add_library(JuneEditor
     Shader.cpp
     TextData.cpp
     Timer.cpp
+    Rectangle.cpp
 )
 
 target_link_libraries(JuneEditor PRIVATE glfw glm::glm freetype)

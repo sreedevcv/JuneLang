@@ -6,6 +6,11 @@
 //     }
 
 #include <glad/glad.h>
+#include <glm/glm.hpp>
+
+#include <string>
+#include <iostream>
+
 
 inline GLenum glCheckError_(const char *file, int line)
 {

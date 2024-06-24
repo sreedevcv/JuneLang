@@ -27,7 +27,9 @@ public:
     void render_text(Shader& shader, std::string& text, float x, float y, float scale, glm::vec3 color);
     void render_text(Shader& shader, TextData& text, float x, float y, float scale, glm::vec3 color);
     void render_cursor(Shader& m_shader, Cursor cursor, float delta);
-
+    glm::mat4& get_projection();
+    float m_gutter_width = 24.0f + 1.0f; // Same as font size + padding
+    
 private:
     std::map<char, Character> m_charachters;
     FT_Library m_ft;
