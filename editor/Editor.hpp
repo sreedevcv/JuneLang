@@ -35,4 +35,6 @@ private:
     std::string run_code(std::string& code);
 
 };
+
+void charachter_callback(GLFWwindow* window, unsigned int codepoint);
 } // namespace jed
