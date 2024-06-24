@@ -174,17 +174,17 @@ void jed::TextRender::render_text(Shader& shader, TextData& text, float x, float
     const float original_x = x;
     int line_num = 1;
 
-    for (auto line : text.m_data) {
+    for (int line = 0; line < text.get_line_count(); line++) {
         std::string num = std::to_string(line_num++);
 
-        for (char c: num) {
+        for (char c : num) {
             draw_char(c, x, y, scale);
             x += (m_charachters[c].advance >> 6) * scale;
         }
 
         x = original_x;
-        for (int i = 0; i < line.size; i++) {
-            char c = line.data[i];
+        for (int i = 0; i < text.m_data[line].size; i++) {
+            char c = text.m_data[line].data[i];
             if (c == '\t') {
                 x += (m_charachters[' '].advance >> 6) * m_tab_width;
                 continue;
