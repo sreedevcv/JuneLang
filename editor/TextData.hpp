@@ -16,6 +16,11 @@ public:
     ~TextData() = default;
 
     void add_text_to_line(char text, Cursor cursor);
+    void make_new_line(Cursor cursor);
+    int get_line_size(int line);
+    int get_line_count();
+
+    void bound_cursor_loc(Cursor& cursor);
 
 private:
     struct str {
@@ -28,6 +33,8 @@ private:
     void prepend_text(char text, int line);
     void shift_one_back(int start, int line);
     void grow_line(int line);
+    void insert_line(int pos);
+    str make_new_str();
 
     std::vector<str> m_data;
     int m_data_grow_size = 20;

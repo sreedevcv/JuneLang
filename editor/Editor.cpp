@@ -47,7 +47,9 @@ jed::Editor::Editor()
         if (action == GLFW_PRESS) {
             switch (key) {
             case GLFW_KEY_ENTER:
+                editor->m_data.make_new_line(editor->cursor);
                 editor->cursor.line += 1;
+                editor->cursor.loc = 0;
                 break;
             case GLFW_KEY_LEFT:
                 if (editor->cursor.loc > 0) {
@@ -56,6 +58,22 @@ jed::Editor::Editor()
                 break;
             case GLFW_KEY_RIGHT:
                 editor->cursor.loc += 1;
+                if (editor->cursor.loc > editor->m_data.get_line_size(editor->cursor.line)) {
+                    editor->cursor.loc -= 1;
+                }
+                break;
+            case GLFW_KEY_UP:
+                if (editor->cursor.line > 0) {
+                    editor->cursor.line -= 1;
+                    editor->m_data.bound_cursor_loc(editor->cursor);
+                }
+                break;
+            case GLFW_KEY_DOWN:
+                editor->cursor.line += 1;
+                if (editor->cursor.line > editor->m_data.get_line_count()) {
+                    editor->cursor.line -= 1;
+                }
+                editor->m_data.bound_cursor_loc(editor->cursor);
                 break;
             default:
                 break;
