@@ -34,7 +34,7 @@ private:
 
     std::string testString = "";
 
-    void handle_inputs();
+    void handle_inputs(float delta);
 
 };
 } // namespace jed
