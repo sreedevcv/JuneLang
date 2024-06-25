@@ -39,11 +39,12 @@ private:
     str make_new_str();
 
     std::vector<str> m_data;
-    int m_data_grow_size = 20;
+    // int m_data_grow_size = 20;
     int m_line_count = 0;
 
     friend class TextRender;
     friend class Editor;
+    friend class FileHandler;
 };
 
 } // namespace jed

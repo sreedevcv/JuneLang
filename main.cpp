@@ -9,8 +9,13 @@
 
 #include "Editor.hpp"
 
+#include "FileHandler.hpp"
+
 int main()
 {
+    // jed::FileHandler fh;
+    // std::string file="main.cpp";
+    // std::cout << fh.open_and_read(file);
     jed::Editor editor;
     editor.start();
 

@@ -6,6 +6,7 @@
 #include "Context.hpp"
 #include "Rectangle.hpp"
 #include "Timer.hpp"
+#include "FileHandler.hpp"
 
 #include "ErrorHandler.hpp"
 #include "Interpreter.hpp"
@@ -63,6 +64,14 @@ jed::Editor::Editor()
                 auto result = editor->run_code(code);
                 std::cout << result << "\n";
                 return;
+            }
+
+            if ((mods & GLFW_MOD_CONTROL) && key == GLFW_KEY_O) {
+                FileHandler fh;
+                std::string file = ".gitignore";
+                if (fh.open_and_read(file)) {
+                    editor->m_data = fh.get_text_data();
+                }
             }
         }
 
@@ -152,8 +161,9 @@ jed::Editor::Editor()
 
 jed::Editor::~Editor()
 {
-    glfwDestroyWindow(m_window);
-    glfwTerminate();
+    /* NOTE:: If the shader is destroyed after destroying glfw window it results in a segfault */
+    // glfwDestroyWindow(m_window);
+    // glfwTerminate();
     std::cout << "Window destroyed\n";
 }
 

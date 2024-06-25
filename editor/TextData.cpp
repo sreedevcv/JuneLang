@@ -39,8 +39,8 @@ void jed::TextData::handle_enter(Cursor cursor)
     insert_line(cursor.line);
 
     // Reserve the necessary memory
-    int capacity_count = ((m_data[cursor.line].size - cursor.loc) / m_data_grow_size) + 1;
-    int capacity = capacity_count * m_data_grow_size;
+    int capacity_count = ((m_data[cursor.line].size - cursor.loc) / Context::get().data_grow_size) + 1;
+    int capacity = capacity_count * Context::get().data_grow_size;
     int size = m_data[cursor.line].size - cursor.loc;
 
     str s = {
@@ -48,7 +48,7 @@ void jed::TextData::handle_enter(Cursor cursor)
         .size = size,
         .capacity = capacity
     };
-    
+
     // Copy contents to new line
     for (int i = cursor.loc; i < m_data[cursor.line].size; i++) {
         s.data[i - cursor.loc] = m_data[cursor.line].data[i];
@@ -66,13 +66,7 @@ void jed::TextData::handle_backspace(Cursor& cursor)
             m_data[cursor.line].data[i] = m_data[cursor.line].data[i + 1];
         }
         m_data[cursor.line].size--;
-
-        // if (c != '\t') {
-            cursor.loc -= 1;
-        // } else {
-        //     cursor.loc -= Context::get().tab_width;
-        // }
-        // std::cout << c << " " << Context::get().tab_width << "\n";
+        cursor.loc -= 1;
     } else {
         if (cursor.line == 0) {
             return;
@@ -91,9 +85,9 @@ void jed::TextData::handle_backspace(Cursor& cursor)
         for (int i = cursor.line; i < get_line_count() - 1; i++) {
             m_data[i] = m_data[i + 1];
         }
-        m_data[get_line_count() - 1] = deleted_line;        /* Move deleted line to end to save space */
-        cursor.line -= 1;                                   /* Move cursor to above line */
-        cursor.loc = m_data[cursor.line].size - old_size;   /* Move cursor to correct loc in above line */
+        m_data[get_line_count() - 1] = deleted_line; /* Move deleted line to end to save space */
+        cursor.line -= 1; /* Move cursor to above line */
+        cursor.loc = m_data[cursor.line].size - old_size; /* Move cursor to correct loc in above line */
         m_line_count -= 1;
     }
 }
@@ -118,7 +112,7 @@ void jed::TextData::bound_cursor_loc(Cursor& cursor)
 std::string jed::TextData::get_data()
 {
     std::string code = "";
-    for (auto s: m_data) {
+    for (auto s : m_data) {
         code.append(s.data, s.size);
     }
     return code;
@@ -157,7 +151,7 @@ void jed::TextData::shift_one_back(int start, int line)
 void jed::TextData::grow_line(int line)
 {
     str& s = m_data[line];
-    s.capacity += m_data_grow_size;
+    s.capacity += Context::get().data_grow_size;
     s.data = (char*)realloc(s.data, sizeof(char) * s.capacity);
 }
 
@@ -173,8 +167,8 @@ void jed::TextData::insert_line(int pos)
 jed::TextData::str jed::TextData::make_new_str()
 {
     return str {
-        .data = (char*)malloc(sizeof(char) * m_data_grow_size),
+        .data = (char*)malloc(sizeof(char) * Context::get().data_grow_size),
         .size = 0,
-        .capacity = m_data_grow_size
+        .capacity = Context::get().data_grow_size
     };
 }
