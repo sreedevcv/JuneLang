@@ -7,9 +7,11 @@
 #include "Context.hpp"
 #include "utils.hpp"
 
-jed::TextRender::TextRender()
-    : m_width(Context::get().width)
-    , m_height(Context::get().height)
+jed::TextRender::TextRender(int width, int height, int x, int y)
+    : m_width(width)
+    , m_height(height)
+    , m_x(x)
+    , m_y(y)
 {
     /* Initalize and load the font using freetype */
     if (FT_Init_FreeType(&m_ft)) {
@@ -172,27 +174,29 @@ void jed::TextRender::render_text(Shader& shader, TextData& text, float x, float
     glBindVertexArray(m_vao);
 
     const float original_x = x;
+    const float original_y = y;
     int line_num = 1;
     y -= Context::get().font_size * scale;
 
     for (int line = 0; line < text.get_line_count(); line++) {
-        std::string num = std::to_string(line_num++);
-
-        // for (char c : num) {
-        //     draw_char(c, x, y, scale);
-        //     x += (m_charachters[c].advance >> 6) * scale;
-        // }
-
         x = original_x;
+
         for (int i = 0; i < text.m_data[line].size; i++) {
             char c = text.m_data[line].data[i];
-            /* Offset the x-axis with the gutter width */
             draw_char(c, x, y, scale);
             x += (m_charachters[c].advance >> 6) * scale;
+
+            if (x > original_x + m_width) {
+                break;
+            }
         }
 
         y -= Context::get().font_size;
         x = original_x;
+
+        if (y <= (Context::get().height - m_height - m_y) * scale) {
+            break;
+        }
     }
 
     glBindVertexArray(0);
@@ -200,15 +204,15 @@ void jed::TextRender::render_text(Shader& shader, TextData& text, float x, float
     check_for_opengl_error();
 }
 
-void jed::TextRender::render_cursor(Shader& m_shader, Cursor cursor, float delta, float x, float y, glm::vec3& color)
+void jed::TextRender::render_cursor(Shader& m_shader, Cursor cursor, glm::vec3& color)
 {
     m_shader.use();
     m_shader.set_uniform_vec("text_color", color);
     glActiveTexture(GL_TEXTURE0);
     glBindVertexArray(m_vao);
 
-    const int offset_from_top = (Context::get().height - y - Context::get().font_size) - (cursor.line * Context::get().font_size);
-    const int offset_from_left = x + cursor.loc * m_cursor_advance;
+    const int offset_from_top = (Context::get().height - m_y - Context::get().font_size) - (cursor.line * Context::get().font_size);
+    const int offset_from_left = m_x + cursor.loc * m_cursor_advance;
     const float cursor_width = 2.0f;
     const float cursor_height = Context::get().font_size;
 

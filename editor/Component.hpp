@@ -34,7 +34,7 @@ private:
     bool m_cursor_blink = false;
     Shader m_shader;
     Rectangle m_rect;
-    TextRender m_renderer;
+    TextRender m_renderer = TextRender(100, 100, 100, 100);
     TextData* m_data;
     Cursor m_cursor = {0, 0};
     Timer m_cursor_timer = Timer(1.0f);

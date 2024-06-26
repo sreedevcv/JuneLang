@@ -78,6 +78,7 @@ void jl::Lexer::scan_token()
         break;
     case ',':
         add_token(Token::COMMA);
+        break;
     case ':':
         add_token(Token::COLON);
         break;

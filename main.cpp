@@ -25,6 +25,16 @@ int main()
     //     var a = 10;
     //     print a;
 
+    //     fun temp(x, y)
+    //     [
+    //         for var i=x; i < y; i = i+1;
+    //         [
+    //             print i;
+    //         ]
+    //     ]
+
+    //     temp(10, 20);
+
     // )");
 
     // std::string file_name = "test";

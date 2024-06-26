@@ -11,6 +11,7 @@ void jed::Component::load(int width, int height, int x, int y, glm::vec3 color)
 
     m_rect = Rectangle(width, height, x, Context::get().height - height - y, m_bg_color);
     m_rect.load();
+    m_renderer = TextRender(m_width, m_height, x, y);
     m_renderer.load_fonts();
     m_shader.create_shader_using_files("res/shaders/text.vert", "res/shaders/text.frag");
     m_shader.compile();
@@ -34,7 +35,7 @@ void jed::Component::draw(float delta)
     }
 
     if (m_cursor_blink) {
-        m_renderer.render_cursor(m_shader, m_cursor, delta, m_x, m_y, m_cursor_color);
+        m_renderer.render_cursor(m_shader, m_cursor, m_cursor_color);
     }
 }
 void jed::Component::handle_text(char text)
