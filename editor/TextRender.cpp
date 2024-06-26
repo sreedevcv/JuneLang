@@ -10,7 +10,6 @@
 jed::TextRender::TextRender()
     : m_width(Context::get().width)
     , m_height(Context::get().height)
-    , projection(glm::ortho(0.0f, static_cast<float>(m_width), 0.0f, static_cast<float>(m_height)))
 {
     /* Initalize and load the font using freetype */
     if (FT_Init_FreeType(&m_ft)) {
@@ -132,7 +131,7 @@ void jed::TextRender::render_text(Shader& shader, std::string& text, float x, fl
 {
     shader.use();
     shader.set_uniform_vec("text_color", color);
-    shader.set_uniform_matrix("projection", projection);
+    shader.set_uniform_matrix("projection", Context::get().projection);
     glActiveTexture(GL_TEXTURE0);
     glBindVertexArray(m_vao);
 
@@ -168,26 +167,27 @@ void jed::TextRender::render_text(Shader& shader, TextData& text, float x, float
 {
     shader.use();
     shader.set_uniform_vec("text_color", color);
-    shader.set_uniform_matrix("projection", projection);
+    shader.set_uniform_matrix("projection", Context::get().projection);
     glActiveTexture(GL_TEXTURE0);
     glBindVertexArray(m_vao);
 
     const float original_x = x;
     int line_num = 1;
+    y -= Context::get().font_size * scale;
 
     for (int line = 0; line < text.get_line_count(); line++) {
         std::string num = std::to_string(line_num++);
 
-        for (char c : num) {
-            draw_char(c, x, y, scale);
-            x += (m_charachters[c].advance >> 6) * scale;
-        }
+        // for (char c : num) {
+        //     draw_char(c, x, y, scale);
+        //     x += (m_charachters[c].advance >> 6) * scale;
+        // }
 
         x = original_x;
         for (int i = 0; i < text.m_data[line].size; i++) {
             char c = text.m_data[line].data[i];
             /* Offset the x-axis with the gutter width */
-            draw_char(c, x + Context::get().gutter_width, y, scale);
+            draw_char(c, x, y, scale);
             x += (m_charachters[c].advance >> 6) * scale;
         }
 
@@ -200,19 +200,19 @@ void jed::TextRender::render_text(Shader& shader, TextData& text, float x, float
     check_for_opengl_error();
 }
 
-void jed::TextRender::render_cursor(Shader& m_shader, Cursor cursor, float delta)
+void jed::TextRender::render_cursor(Shader& m_shader, Cursor cursor, float delta, float x, float y, glm::vec3& color)
 {
     m_shader.use();
-    m_shader.set_uniform_vec("text_color", glm::vec3(0.4f, 0.4f, 0.4f));
+    m_shader.set_uniform_vec("text_color", color);
     glActiveTexture(GL_TEXTURE0);
     glBindVertexArray(m_vao);
 
-    const int offset_from_top = (m_height - Context::get().font_size) - cursor.line * Context::get().font_size;
-    const int offset_from_left = cursor.loc * m_cursor_advance;
+    const int offset_from_top = (Context::get().height - y - Context::get().font_size) - (cursor.line * Context::get().font_size);
+    const int offset_from_left = x + cursor.loc * m_cursor_advance;
     const float cursor_width = 2.0f;
     const float cursor_height = Context::get().font_size;
 
-    draw_texture(offset_from_left + Context::get().gutter_width, offset_from_top, cursor_width, cursor_height, m_cursor_texture);
+    draw_texture(offset_from_left, offset_from_top, cursor_width, cursor_height, m_cursor_texture);
     glBindVertexArray(0);
     glBindTexture(GL_TEXTURE_2D, 0);
     check_for_opengl_error();
@@ -220,5 +220,5 @@ void jed::TextRender::render_cursor(Shader& m_shader, Cursor cursor, float delta
 
 glm::mat4& jed::TextRender::get_projection()
 {
-    return projection;
+    return Context::get().projection;
 }

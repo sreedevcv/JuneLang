@@ -5,6 +5,7 @@
 
 #include "Shader.hpp"
 #include "TextRender.hpp"
+#include "Component.hpp"
 
 namespace jed {
 class Editor {
@@ -14,6 +15,7 @@ public:
 
     void start();
     friend void charachter_callback(GLFWwindow* window, unsigned int codepoint);
+    Component comp;
 
 private:
     GLFWwindow* m_window;
@@ -21,7 +23,7 @@ private:
     Shader m_shader;
     int m_width = 1000;
     int m_height = 900;
-    TextRender m_text_renderer; // Should be below width and height declaration
+    // TextRender m_text_renderer; // Should be below width and height declaration
     const char* title = "Editor";
     bool debug_mode;
     bool m_cursor_blink = true;
@@ -33,7 +35,6 @@ private:
 
     void handle_inputs(float delta);
     std::string run_code(std::string& code);
-
 };
 
 void charachter_callback(GLFWwindow* window, unsigned int codepoint);

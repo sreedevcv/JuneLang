@@ -26,7 +26,7 @@ public:
     void load_fonts();
     void render_text(Shader& shader, std::string& text, float x, float y, float scale, glm::vec3 color);
     void render_text(Shader& shader, TextData& text, float x, float y, float scale, glm::vec3 color);
-    void render_cursor(Shader& m_shader, Cursor cursor, float delta);
+    void render_cursor(Shader& m_shader, Cursor cursor, float delta, float x, float y, glm::vec3& color);
     glm::mat4& get_projection();
     float m_gutter_width = 24.0f + 1.0f; // Same as font size + padding
     
@@ -42,7 +42,6 @@ private:
     unsigned int m_cursor_texture;
     int m_width;
     int m_height;
-    glm::mat4 projection;
     int m_cursor_advance;
 
     void draw_texture(float xpos, float ypos, float w, float h, unsigned int texture_id);
