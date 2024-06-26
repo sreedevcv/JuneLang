@@ -114,6 +114,7 @@ std::string jed::TextData::get_data()
     std::string code = "";
     for (auto s : m_data) {
         code.append(s.data, s.size);
+        code.append("\n");
     }
     return code;
 }

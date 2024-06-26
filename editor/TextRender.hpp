@@ -13,7 +13,7 @@ namespace jed {
 
 class TextRender {
 public:
-    TextRender(int width, int height);
+    TextRender();
     ~TextRender() = default;
 
     struct Character {

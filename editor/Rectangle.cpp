@@ -15,6 +15,10 @@ jed::Rectangle::Rectangle(float width, float height, float x, float y, glm::vec3
 {
 }
 
+jed::Rectangle::Rectangle()
+{
+}
+
 void jed::Rectangle::load()
 {
     /* Create the texture for cursor */

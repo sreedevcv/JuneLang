@@ -7,9 +7,9 @@
 #include "Context.hpp"
 #include "utils.hpp"
 
-jed::TextRender::TextRender(int width, int height)
-    : m_width(width)
-    , m_height(height)
+jed::TextRender::TextRender()
+    : m_width(Context::get().width)
+    , m_height(Context::get().height)
     , projection(glm::ortho(0.0f, static_cast<float>(m_width), 0.0f, static_cast<float>(m_height)))
 {
     /* Initalize and load the font using freetype */

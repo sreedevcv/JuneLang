@@ -26,7 +26,7 @@ void jed::charachter_callback(GLFWwindow* window, unsigned int codepoint)
 jed::Editor::Editor()
     : m_width(1000)
     , m_height(900)
-    , m_text_renderer(TextRender(m_width, m_height))
+    , m_text_renderer()
 {
     glfwInit();
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
@@ -68,7 +68,7 @@ jed::Editor::Editor()
 
             if ((mods & GLFW_MOD_CONTROL) && key == GLFW_KEY_O) {
                 FileHandler fh;
-                std::string file = ".gitignore";
+                std::string file = "examples/test.jun";
                 if (fh.open_and_read(file)) {
                     editor->m_data = fh.get_text_data();
                 }

@@ -9,6 +9,7 @@ namespace jed {
 class Rectangle {
 public:
     Rectangle(float width, float height, float x, float y, glm::vec3 color);
+    Rectangle();
 
     void load();
     void draw(Shader& shader, glm::mat4& projection);
