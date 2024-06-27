@@ -43,10 +43,15 @@ jed::Editor::Editor()
     };
 
     static const auto mouse_scroll_callback = [](GLFWwindow* glfw_window, double x_offset, double y_offset) {
+        Editor* editor = static_cast<Editor*>(glfwGetWindowUserPointer(glfw_window));
+        editor->comp.handle_scroll_vert(y_offset);
+        editor->comp.handle_scroll_horz(x_offset);
     };
 
     const auto framebuffer_size_callback = [](GLFWwindow* glfw_window, int width, int height) {
         glViewport(0, 0, width, height);
+        Context::get().width = width;
+        Context::get().height = height;
     };
 
     const auto key_callback = [](GLFWwindow* window, int key, int scancode, int action, int mods) {
@@ -65,7 +70,8 @@ jed::Editor::Editor()
 
             if ((mods & GLFW_MOD_CONTROL) && key == GLFW_KEY_O) {
                 FileHandler fh;
-                std::string file = "examples/test.jun";
+                // std::string file = "examples/test.jun";
+                std::string file = "main.cpp";
                 if (fh.open_and_read(file)) {
                     editor->m_data = fh.get_text_data();
                 }
@@ -112,7 +118,7 @@ jed::Editor::Editor()
     };
 
     // glfwSetCursorPosCallback(m_window, mouse_move_callback);
-    // glfwSetScrollCallback(m_window, mouse_scroll_callback);
+    glfwSetScrollCallback(m_window, mouse_scroll_callback);
     glfwSetFramebufferSizeCallback(m_window, framebuffer_size_callback);
     glfwSetCharCallback(m_window, charachter_callback);
     glfwSetKeyCallback(m_window, key_callback);
@@ -147,7 +153,7 @@ void jed::Editor::start()
 
     float prev_time = glfwGetTime();
     glm::vec3 color = glm::vec3(0.0f, 1.0f, 0.0f);
-    comp.load(500, 500, 50, 500, color);
+    comp.load(500, 500, 100, 200, color);
     comp.set_data_source(&m_data);
     
     while (!glfwWindowShouldClose(m_window)) {

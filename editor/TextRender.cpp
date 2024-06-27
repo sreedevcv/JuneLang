@@ -28,6 +28,9 @@ jed::TextRender::TextRender(int width, int height, int x, int y)
 
     FT_Set_Pixel_Sizes(m_face, 0, Context::get().font_size);
     std::cout << m_width << " " << m_height << std::endl;
+
+    char_width = width / Context::get().font_size;
+    char_height = height / Context::get().font_size;
 }
 
 void jed::TextRender::load_fonts()
@@ -117,12 +120,19 @@ void jed::TextRender::draw_texture(float xpos, float ypos, float w, float h, uns
     glDrawArrays(GL_TRIANGLES, 0, 6);
 }
 
-void jed::TextRender::draw_char(char c, float x, float y, float scale)
+void jed::TextRender::draw_char(char c, float x, float y, float scale, glm::vec2& scorll_offset)
 {
     Character charachter = m_charachters[c];
 
-    float xpos = x + charachter.bearing.x * scale;
-    float ypos = y - (charachter.size.y - charachter.bearing.y) * scale;
+    float xpos = x + charachter.bearing.x * scale + scorll_offset.x;
+    float ypos = y - (charachter.size.y - charachter.bearing.y) * scale + scorll_offset.y;
+
+    if (!(ypos <= Context::get().height - m_y - Context::get().font_size && ypos >= Context::get().height - m_y - m_height)) {
+        return;
+    }
+    if ((xpos < m_x || xpos >= m_x + m_width)) {
+        return;
+    }
 
     float w = charachter.size.x * scale;
     float h = charachter.size.y * scale;
@@ -165,7 +175,7 @@ void jed::TextRender::render_text(Shader& shader, std::string& text, float x, fl
     glBindTexture(GL_TEXTURE_2D, 0);
 }
 
-void jed::TextRender::render_text(Shader& shader, TextData& text, float x, float y, float scale, glm::vec3 color)
+void jed::TextRender::render_text(Shader& shader, TextData& text, glm::vec2& scroll_offset, float scale, glm::vec3 color)
 {
     shader.use();
     shader.set_uniform_vec("text_color", color);
@@ -173,26 +183,26 @@ void jed::TextRender::render_text(Shader& shader, TextData& text, float x, float
     glActiveTexture(GL_TEXTURE0);
     glBindVertexArray(m_vao);
 
-    const float original_x = x;
-    const float original_y = y;
+    float x = m_x;
+    float y = Context::get().height - m_y;
     int line_num = 1;
     y -= Context::get().font_size * scale;
 
     for (int line = 0; line < text.get_line_count(); line++) {
-        x = original_x;
+        x = m_x;
 
         for (int i = 0; i < text.m_data[line].size; i++) {
             char c = text.m_data[line].data[i];
-            draw_char(c, x, y, scale);
+            draw_char(c, x, y, scale, scroll_offset);
             x += (m_charachters[c].advance >> 6) * scale;
 
-            if (x > original_x + m_width) {
+            if (x > m_x + m_width) {
                 break;
             }
         }
 
         y -= Context::get().font_size;
-        x = original_x;
+        x = m_x;
 
         if (y <= (Context::get().height - m_height - m_y) * scale) {
             break;
@@ -204,17 +214,24 @@ void jed::TextRender::render_text(Shader& shader, TextData& text, float x, float
     check_for_opengl_error();
 }
 
-void jed::TextRender::render_cursor(Shader& m_shader, Cursor cursor, glm::vec3& color)
+void jed::TextRender::render_cursor(Shader& m_shader, Cursor cursor, glm::vec2& scroll_offset, glm::vec3& color)
 {
     m_shader.use();
     m_shader.set_uniform_vec("text_color", color);
     glActiveTexture(GL_TEXTURE0);
     glBindVertexArray(m_vao);
 
-    const int offset_from_top = (Context::get().height - m_y - Context::get().font_size) - (cursor.line * Context::get().font_size);
-    const int offset_from_left = m_x + cursor.loc * m_cursor_advance;
+    const int offset_from_top = (Context::get().height - m_y - Context::get().font_size) - (cursor.line * Context::get().font_size) + scroll_offset.y;
+    const int offset_from_left = m_x + cursor.loc * m_cursor_advance + scroll_offset.x;
     const float cursor_width = 2.0f;
     const float cursor_height = Context::get().font_size;
+
+    if (!(offset_from_top <= Context::get().height - m_y - Context::get().font_size && offset_from_top >= Context::get().height - m_y - m_height)) {
+        return;
+    }
+    if ((offset_from_left < m_x || offset_from_left >= m_x + m_width)) {
+        return;
+    }
 
     draw_texture(offset_from_left, offset_from_top, cursor_width, cursor_height, m_cursor_texture);
     glBindVertexArray(0);

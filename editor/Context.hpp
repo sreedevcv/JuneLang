@@ -19,6 +19,8 @@ public:
 
     static Context& get();
 
+    float offset_y = 0.0f;
+
 private:
     Context() = default;
     ~Context() = default;

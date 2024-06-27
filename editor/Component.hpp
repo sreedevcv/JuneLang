@@ -24,6 +24,8 @@ public:
     void handle_arrow_down();
     void handle_backspace();
     void handle_tab();
+    void handle_scroll_vert(float offset);
+    void handle_scroll_horz(float offset);
 
 private:
     int m_width;
@@ -31,7 +33,9 @@ private:
     int m_x;
     int m_y;
     float m_scale = 1.0f;
+    float m_scroll_speed = 10.0f;
     bool m_cursor_blink = false;
+
     Shader m_shader;
     Rectangle m_rect;
     TextRender m_renderer = TextRender(100, 100, 100, 100);
@@ -42,6 +46,7 @@ private:
     glm::vec3 m_bg_color = glm::vec3(0.5, 0.5, 0.5);
     glm::vec3 m_cursor_color = glm::vec3(0.3, 0.3, 0.3);
     glm::vec3 m_text_color = glm::vec3(0.0, 0.2, 0.7);
+    glm::vec2 m_scroll_offset = {0.0f, 0.0f};
 };
 
 } // namespace jed

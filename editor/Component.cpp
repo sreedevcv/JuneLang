@@ -11,7 +11,7 @@ void jed::Component::load(int width, int height, int x, int y, glm::vec3 color)
 
     m_rect = Rectangle(width, height, x, Context::get().height - height - y, m_bg_color);
     m_rect.load();
-    m_renderer = TextRender(m_width, m_height, x, y);
+    m_renderer = TextRender(m_width, m_height, x, m_y);
     m_renderer.load_fonts();
     m_shader.create_shader_using_files("res/shaders/text.vert", "res/shaders/text.frag");
     m_shader.compile();
@@ -27,7 +27,7 @@ void jed::Component::draw(float delta)
     m_cursor_timer.update(delta);
 
     m_rect.draw(m_shader, Context::get().projection);
-    m_renderer.render_text(m_shader, *m_data, m_x, Context::get().height - m_y, m_scale, m_text_color);
+    m_renderer.render_text(m_shader, *m_data, m_scroll_offset, m_scale, m_text_color);
 
     if (m_cursor_timer.finished()) {
         m_cursor_blink = !m_cursor_blink;
@@ -35,15 +35,17 @@ void jed::Component::draw(float delta)
     }
 
     if (m_cursor_blink) {
-        m_renderer.render_cursor(m_shader, m_cursor, m_cursor_color);
+        m_renderer.render_cursor(m_shader, m_cursor, m_scroll_offset, m_cursor_color);
     }
 }
+
 void jed::Component::handle_text(char text)
 {
     m_data->add_text_to_line(text, m_cursor);
     m_cursor.loc = m_cursor.loc + 1;
     m_cursor_blink = true;
 }
+
 void jed::Component::handle_enter()
 {
     m_data->handle_enter(m_cursor);
@@ -101,4 +103,22 @@ void jed::Component::handle_tab()
         m_cursor.loc += 1;
     }
     m_cursor_blink = true;
+}
+
+void jed::Component::handle_scroll_vert(float offset)
+{
+    m_scroll_offset.y -= offset * m_scroll_speed;
+    if (m_scroll_offset.y < 0) {
+        m_scroll_offset.y = 0.0f;
+    }
+}
+
+void jed::Component::handle_scroll_horz(float offset)
+{
+    m_scroll_offset.x += offset * m_scroll_speed;
+    if (m_scroll_offset.x > 0.0f) {
+        m_scroll_offset.x = 0.0f;
+    }
+
+    std::cout << m_scroll_offset.x << "\n";
 }
