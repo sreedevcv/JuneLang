@@ -55,6 +55,7 @@ add_library(JuneEditor
     FileHandler.cpp
     Component.cpp
     EditComponent.cpp
+    MainComponent.cpp
 )
 
 target_link_libraries(JuneEditor PRIVATE JuneInterpreter glfw glm::glm freetype)

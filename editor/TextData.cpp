@@ -173,3 +173,15 @@ jed::TextData::str jed::TextData::make_new_str()
         .capacity = Context::get().data_grow_size
     };
 }
+
+void jed::TextData::clear()
+{
+    for (int i = 0; i < m_line_count; i++) {
+        free(m_data[i].data);
+        m_data[i].capacity = 0;
+        m_data[i].size = 0;
+    }
+
+    m_line_count = 0;
+    m_data.clear();
+}

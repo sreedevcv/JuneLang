@@ -73,7 +73,11 @@ jed::Editor::Editor()
                 // std::string file = "examples/test.jun";
                 std::string file = "main.cpp";
                 if (fh.open_and_read(file)) {
-                    editor->m_data = fh.get_text_data();
+                    // editor->m_data = fh.get_text_data();
+                    auto data = fh.get_text_data();
+                    editor->comp.set_new_data_source(fh.get_text_data());
+
+                    std::cout << data.get_line_count() << "\n";
                 }
             }
         }
@@ -153,8 +157,7 @@ void jed::Editor::start()
 
     float prev_time = glfwGetTime();
     glm::vec3 color = glm::vec3(0.0f, 1.0f, 0.0f);
-    comp.load(500, 500, 100, 200, color);
-    comp.set_data_source(&m_data);
+    comp.load_component();
     
     while (!glfwWindowShouldClose(m_window)) {
         float curr_time = glfwGetTime();

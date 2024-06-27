@@ -3,16 +3,15 @@
 #include "Rectangle.hpp"
 #include "TextRender.hpp"
 #include "Shader.hpp"
-#include "Timer.hpp"
 
 namespace jed {
 
 class Component {
 public:
     Component() = default;
-    ~Component() = default;
+    virtual ~Component() = default;
 
-    void load(int width, int height, int x, int y, glm::vec3 color);
+    void load(int width, int height, int x, int y);
     void set_data_source(TextData* data);
     virtual void draw(float delta);
 
@@ -39,15 +38,12 @@ protected:
     int m_x;
     int m_y;
     float m_scale = 1.0f;
-    float m_scroll_speed = 10.0f;
-    bool m_cursor_blink = false;
 
     Shader m_shader;
     Rectangle m_rect;
     TextRender m_renderer = TextRender(100, 100, 100, 100);
     TextData* m_data;
     Cursor m_cursor = {0, 0};
-    Timer m_cursor_timer = Timer(1.0f);
 
     glm::vec3 m_bg_color = glm::vec3(0.5, 0.5, 0.5);
     glm::vec3 m_cursor_color = glm::vec3(0.3, 0.3, 0.3);

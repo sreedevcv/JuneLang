@@ -4,8 +4,7 @@
 
 void jed::EditComponent::draw(float delta)
 {
-    m_rect.draw(m_shader, Context::get().projection);
-    m_renderer.render_text(m_shader, *m_data, m_scroll_offset, m_scale, m_text_color);
+    Component::draw(delta);
 
     m_cursor_timer.update(delta);
     if (m_cursor_timer.finished()) {

@@ -2,7 +2,7 @@
 
 #include "Context.hpp"
 
-void jed::Component::load(int width, int height, int x, int y, glm::vec3 color)
+void jed::Component::load(int width, int height, int x, int y)
 {
     m_width = width;
     m_height = height;
