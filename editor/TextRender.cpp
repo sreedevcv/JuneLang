@@ -196,7 +196,7 @@ void jed::TextRender::render_text(Shader& shader, TextData& text, glm::vec2& scr
             draw_char(c, x, y, scale, scroll_offset);
             x += (m_charachters[c].advance >> 6) * scale;
 
-            if (x > m_x + m_width) {
+            if (x + scroll_offset.x > m_x + m_width) {
                 break;
             }
         }
@@ -204,7 +204,7 @@ void jed::TextRender::render_text(Shader& shader, TextData& text, glm::vec2& scr
         y -= Context::get().font_size;
         x = m_x;
 
-        if (y <= (Context::get().height - m_height - m_y) * scale) {
+        if ((y + scroll_offset.y) <= (Context::get().height - m_height - m_y) * scale) {
             break;
         }
     }

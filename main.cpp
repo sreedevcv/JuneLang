@@ -19,6 +19,7 @@ int main()
     jed::Editor editor;
     editor.start();
 
+//----------------------------------qqqqqqqqqqqqqqqqqqqqqqqqqqaaaaaaaaaaaaaannnnnnnnnnnnnnnbbbbbbbbbbbbb
 
     // jl::Lexer lexer(
     //     R"(
@@ -34,7 +35,6 @@ int main()
     //     ]
 
     //     temp(10, 20);
-
     // )");
 
     // std::string file_name = "test";
