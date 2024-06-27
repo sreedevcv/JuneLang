@@ -16,11 +16,12 @@ public:
 
     void handle_enter() override;
     void handle_backspace() override;
+    void handle_scroll_vert(float offset) override;
 
 private:
     TextData m_text_data;
     TextData m_line_data;
-    Component m_line_gutter;
+    ScrollableComponent m_line_gutter;
     Component m_top_bar;
     float m_gutter_width = 50.0f;
     float m_top_bar_height = 50.0f;

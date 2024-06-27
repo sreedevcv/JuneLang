@@ -51,6 +51,15 @@ void jed::MainComponent::handle_backspace()
     EditComponent::handle_backspace();
 }
 
+void jed::MainComponent::handle_scroll_vert(float offset)
+{
+    EditComponent::handle_scroll_vert(offset);
+    m_line_gutter.handle_scroll_vert(offset);
+    if (m_line_gutter.m_scroll_offset.y < 0) {
+        m_line_gutter.m_scroll_offset.y = 0.0f;
+    }
+}
+
 void jed::MainComponent::update_line_data()
 {
     m_line_data.clear();

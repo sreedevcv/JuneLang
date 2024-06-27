@@ -49,6 +49,10 @@ protected:
     glm::vec3 m_cursor_color = glm::vec3(0.3, 0.3, 0.3);
     glm::vec3 m_text_color = glm::vec3(0.0, 0.2, 0.7);
     glm::vec2 m_scroll_offset = {0.0f, 0.0f};
+
+    friend class ScrollableComponent;
+    friend class EditComponent;
+    friend class MainComponent;
 };
 
 } // namespace jed
