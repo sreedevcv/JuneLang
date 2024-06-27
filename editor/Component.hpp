@@ -14,27 +14,26 @@ public:
 
     void load(int width, int height, int x, int y, glm::vec3 color);
     void set_data_source(TextData* data);
-    void draw(float delta);
+    virtual void draw(float delta);
 
     /* Input Handling Functions */
 
-    void handle_text(char text);
-    void handle_enter();
-    void handle_arrow_left();
-    void handle_arrow_right();
-    void handle_arrow_up();
-    void handle_arrow_down();
-    void handle_backspace();
-    void handle_tab();
-    void handle_scroll_vert(float offset);
-    void handle_scroll_horz(float offset);
+    virtual void handle_text(char text);
+    virtual void handle_enter();
+    virtual void handle_arrow_left();
+    virtual void handle_arrow_right();
+    virtual void handle_arrow_up();
+    virtual void handle_arrow_down();
+    virtual void handle_backspace();
+    virtual void handle_tab();
+    virtual void handle_scroll_vert(float offset);
+    virtual void handle_scroll_horz(float offset);
 
     void set_cursor_color(glm::vec3&& color);
     void set_bg_color(glm::vec3&& color);
     void set_text_color(glm::vec3&& color);
-    void enable_cursor(bool enable);
 
-private:
+protected:
     int m_width;
     int m_height;
     int m_x;
@@ -42,7 +41,6 @@ private:
     float m_scale = 1.0f;
     float m_scroll_speed = 10.0f;
     bool m_cursor_blink = false;
-    bool m_cursor_enabled = true;
 
     Shader m_shader;
     Rectangle m_rect;

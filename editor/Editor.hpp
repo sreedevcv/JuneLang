@@ -5,7 +5,7 @@
 
 #include "Shader.hpp"
 #include "TextRender.hpp"
-#include "Component.hpp"
+#include "EditComponent.hpp"
 
 namespace jed {
 class Editor {
@@ -15,7 +15,7 @@ public:
 
     void start();
     friend void charachter_callback(GLFWwindow* window, unsigned int codepoint);
-    Component comp;
+    EditComponent comp;
 
 private:
     GLFWwindow* m_window;
