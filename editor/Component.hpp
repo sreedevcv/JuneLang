@@ -16,6 +16,8 @@ public:
     void set_data_source(TextData* data);
     void draw(float delta);
 
+    /* Input Handling Functions */
+
     void handle_text(char text);
     void handle_enter();
     void handle_arrow_left();
@@ -27,6 +29,11 @@ public:
     void handle_scroll_vert(float offset);
     void handle_scroll_horz(float offset);
 
+    void set_cursor_color(glm::vec3&& color);
+    void set_bg_color(glm::vec3&& color);
+    void set_text_color(glm::vec3&& color);
+    void enable_cursor(bool enable);
+
 private:
     int m_width;
     int m_height;
@@ -35,6 +42,7 @@ private:
     float m_scale = 1.0f;
     float m_scroll_speed = 10.0f;
     bool m_cursor_blink = false;
+    bool m_cursor_enabled = true;
 
     Shader m_shader;
     Rectangle m_rect;
