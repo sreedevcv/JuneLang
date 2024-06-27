@@ -57,6 +57,8 @@ add_library(JuneEditor
     EditComponent.cpp
     MainComponent.cpp
     ScrollableComponent.cpp
+    Font.cpp
+    FontLoader.cpp
 )
 
 target_link_libraries(JuneEditor PRIVATE JuneInterpreter glfw glm::glm freetype)

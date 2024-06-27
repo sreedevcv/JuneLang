@@ -3,6 +3,7 @@
 #include "Rectangle.hpp"
 #include "TextRender.hpp"
 #include "Shader.hpp"
+#include "FontLoader.hpp"
 
 namespace jed {
 
@@ -39,9 +40,10 @@ protected:
     int m_y;
     float m_scale = 1.0f;
 
+    Font*& m_font = FontLoader::get()->font("res/fonts/CascadiaMono.ttf");
     Shader m_shader;
     Rectangle m_rect;
-    TextRender m_renderer = TextRender(100, 100, 100, 100);
+    TextRender m_renderer = TextRender(100, 100, 100, 100, m_font);
     TextData* m_data;
     Cursor m_cursor = {0, 0};
 

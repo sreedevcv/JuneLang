@@ -7,6 +7,7 @@
 #include "Rectangle.hpp"
 #include "Timer.hpp"
 #include "FileHandler.hpp"
+#include "FontLoader.hpp"
 
 #include "ErrorHandler.hpp"
 #include "Interpreter.hpp"
@@ -139,6 +140,7 @@ jed::Editor::Editor()
 
     m_shader.create_shader_using_files("res/shaders/text.vert", "res/shaders/text.frag");
     m_shader.compile();
+    FontLoader::load_fonts();
 }
 
 jed::Editor::~Editor()
