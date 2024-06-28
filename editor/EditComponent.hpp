@@ -31,7 +31,7 @@ protected:
 
 private:
     bool m_cursor_blink = false;
-    Timer m_cursor_timer = Timer(1.0f);
+    Timer m_cursor_timer = Timer(0.5f);
 };
 
 } // namespace jed
