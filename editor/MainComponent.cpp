@@ -80,6 +80,10 @@ void jed::MainComponent::set_current_file_name(std::string& file_name)
 
 void jed::MainComponent::update_line_data()
 {
+    if (m_line_count == m_text_data.get_line_count()) {
+        return;
+    }
+
     m_line_data.clear();
     for (int i = 0; i < m_text_data.get_line_count(); i++) {
         std::string line = std::to_string(i + 1);
@@ -91,4 +95,6 @@ void jed::MainComponent::update_line_data()
             m_line_cursor.loc += 1;
         }
     }
+
+    m_line_count = m_text_data.get_line_count();
 }
