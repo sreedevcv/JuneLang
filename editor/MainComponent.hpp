@@ -17,10 +17,12 @@ public:
     void handle_enter() override;
     void handle_backspace() override;
     void handle_scroll_vert(float offset) override;
+    void set_current_file_name(std::string& file_name);
 
 private:
     TextData m_text_data;
     TextData m_line_data;
+    TextData m_top_bar_file_name;
     ScrollableComponent m_line_gutter;
     Component m_top_bar;
     float m_gutter_width = 50.0f;

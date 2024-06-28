@@ -77,7 +77,7 @@ jed::Editor::Editor()
                     // editor->m_data = fh.get_text_data();
                     auto data = fh.get_text_data();
                     editor->comp.set_new_data_source(fh.get_text_data());
-
+                    editor->comp.set_current_file_name(file);
                     std::cout << data.get_line_count() << "\n";
                 }
             }

@@ -42,7 +42,8 @@ void jed::TextRender::draw_char(char c, float x, float y, float scale, glm::vec2
     float xpos = x + charachter.bearing.x * scale + scorll_offset.x;
     float ypos = y - (charachter.size.y - charachter.bearing.y) * scale + scorll_offset.y;
 
-    if (!(ypos <= Context::get().height - m_y - Context::get().font_size && ypos >= Context::get().height - m_y - m_height)) {
+    // THe -5.0f is to allow charachters like \", <, >, etc to be visible on the first line, otherwise the would fail the below test and won't be rendered
+    if (!(ypos - 5.0f <= Context::get().height - m_y - Context::get().font_size && ypos >= Context::get().height - m_y - m_height)) {
         return;
     }
     if ((xpos < m_x || xpos >= m_x + m_width)) {
@@ -119,7 +120,7 @@ void jed::TextRender::render_text(Shader& shader, TextData& text, glm::vec2& scr
         y -= Context::get().font_size;
         x = m_x;
 
-        if ((y + scroll_offset.y) <= (Context::get().height - m_height - m_y) * scale) {
+        if ((y + scroll_offset.y + 10.1f) <= (Context::get().height - m_height - m_y) * scale) {
             break;
         }
     }

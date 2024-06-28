@@ -22,14 +22,23 @@ void jed::MainComponent::load_component()
     int line_height = Context::get().height - m_top_bar_height;
     m_line_gutter.load(line_width, line_height, line_x, line_y);
     m_line_gutter.set_data_source(&m_line_data);
-
     m_line_data.add_text_to_line('1', m_line_cursor);
+
+    int bar_x = 0;
+    int bar_y = 0;
+    int bar_width = Context::get().width;
+    int bar_height = m_top_bar_height;
+    m_top_bar.load(bar_width, bar_height, bar_x, bar_y);
+    m_top_bar.set_data_source(&m_top_bar_file_name);
+    std::string file = "New File";
+    set_current_file_name(file);
 }
 
 void jed::MainComponent::draw(float delta)
 {
     EditComponent::draw(delta);
     m_line_gutter.draw(delta);
+    m_top_bar.draw(delta);
 }
 
 void jed::MainComponent::set_new_data_source(TextData& data)
@@ -57,6 +66,16 @@ void jed::MainComponent::handle_scroll_vert(float offset)
     m_line_gutter.handle_scroll_vert(offset);
     if (m_line_gutter.m_scroll_offset.y < 0) {
         m_line_gutter.m_scroll_offset.y = 0.0f;
+    }
+}
+
+void jed::MainComponent::set_current_file_name(std::string& file_name)
+{
+    m_top_bar_file_name.clear();
+    Cursor cursor = {0, 0};
+    for(char c: file_name) {
+        m_top_bar_file_name.add_text_to_line(c, cursor);
+        cursor.loc += 1;
     }
 }
 
