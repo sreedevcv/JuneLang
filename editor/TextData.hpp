@@ -12,7 +12,7 @@ struct Cursor {
 
 class TextData {
 public:
-    TextData() = default;
+    TextData();
     ~TextData() = default;
 
     void add_text_to_line(char text, Cursor cursor);

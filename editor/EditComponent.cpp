@@ -98,3 +98,29 @@ void jed::EditComponent::handle_scroll_horz(float offset)
         m_scroll_offset.x = 0.0f;
     }
 }
+
+void jed::EditComponent::handle_mouse_click(MouseButton button)
+{
+    int x_dist = Context::get().mouse_x - m_scroll_offset.x - m_x;
+    int loc_index = x_dist / m_font->m_cursor_advance;
+    int y_dist = Context::get().mouse_y + m_scroll_offset.y - m_y;
+    int line_index = y_dist / m_font->m_font_size;
+
+    int line_count = m_data->get_line_count();
+
+    /* Restrict line */
+    if (line_index < line_count) {
+        m_cursor.line = line_index;
+    } else {
+        m_cursor.line = line_count == 0 ? 0 : line_count - 1;
+    }
+
+    /* Restrict loc */
+    int line_size = m_data->get_line_size(m_cursor.line);
+    if (loc_index < line_size) {
+        m_cursor.loc = loc_index;
+    } else {
+        m_cursor.loc = line_size == 0 ? 0 : line_size;
+    }
+    m_cursor_blink = true;
+}

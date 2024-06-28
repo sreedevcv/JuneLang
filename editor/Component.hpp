@@ -16,6 +16,11 @@ public:
     void set_data_source(TextData* data);
     virtual void draw(float delta);
 
+    enum MouseButton {
+        LEFT,
+        RIGHT
+    };
+
     /* Input Handling Functions */
 
     virtual void handle_text(char text);
@@ -28,6 +33,9 @@ public:
     virtual void handle_tab();
     virtual void handle_scroll_vert(float offset);
     virtual void handle_scroll_horz(float offset);
+    virtual void handle_mouse_click(MouseButton button);
+
+    virtual void set_new_data_source(TextData& data);
 
     void set_cursor_color(glm::vec3&& color);
     void set_bg_color(glm::vec3&& color);
@@ -45,7 +53,6 @@ protected:
     Rectangle m_rect;
     TextRender m_renderer = TextRender(100, 100, 100, 100, m_font);
     TextData* m_data;
-    Cursor m_cursor = {0, 0};
 
     glm::vec3 m_bg_color = glm::vec3(0.5, 0.5, 0.5);
     glm::vec3 m_cursor_color = glm::vec3(0.3, 0.3, 0.3);

@@ -26,11 +26,11 @@ public:
     unsigned int m_vbo;
     unsigned int m_cursor_texture;
     int m_cursor_advance;
+    int m_font_size;
 
 private:
     FT_Library m_ft;
     FT_Face m_face;
-    int m_font_size;
 };
 
 } // namespace jed

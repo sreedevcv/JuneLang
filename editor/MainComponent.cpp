@@ -43,8 +43,9 @@ void jed::MainComponent::draw(float delta)
 
 void jed::MainComponent::set_new_data_source(TextData& data)
 {
-    m_text_data.clear();
-    m_text_data = data;
+    // m_text_data.clear();
+    // m_text_data = data;
+    Component::set_new_data_source(data);
     update_line_data();
 }
 

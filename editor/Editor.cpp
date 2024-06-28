@@ -45,9 +45,11 @@ jed::Editor::Editor()
         Context::get().mouse_y = y_pos_in;
     };
 
-    static const auto mouse_button_callback = [](GLFWwindow* window, int button, int action, int mods) {
+    static const auto mouse_button_callback = [](GLFWwindow* glfw_window, int button, int action, int mods) {
+        Editor* editor = static_cast<Editor*>(glfwGetWindowUserPointer(glfw_window));
         if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS) {
-            std::cout << "Clicked at: " << Context::get().mouse_x << " " << Context::get().mouse_y << "\n";
+            // std::cout << "Clicked at: " << Context::get().mouse_x << " " << Context::get().mouse_y << "\n";
+            editor->comp.handle_mouse_click(Component::LEFT);
         }
     };
 
@@ -55,6 +57,9 @@ jed::Editor::Editor()
         Editor* editor = static_cast<Editor*>(glfwGetWindowUserPointer(glfw_window));
         editor->comp.handle_scroll_vert(y_offset);
         editor->comp.handle_scroll_horz(x_offset);
+
+        editor->scomp.handle_scroll_vert(y_offset);
+        editor->scomp.handle_scroll_horz(x_offset);
     };
 
     const auto framebuffer_size_callback = [](GLFWwindow* glfw_window, int width, int height) {
@@ -83,6 +88,8 @@ jed::Editor::Editor()
                 std::string file = "main.cpp";
                 if (fh.open_and_read(file)) {
                     auto data = fh.get_text_data();
+                    // editor->scomp.set_new_data_source(data);
+
                     editor->comp.set_new_data_source(fh.get_text_data());
                     editor->comp.set_current_file_name(file);
                     std::cout << data.get_line_count() << "\n";
@@ -168,7 +175,10 @@ void jed::Editor::start()
     float prev_time = glfwGetTime();
     glm::vec3 color = glm::vec3(0.0f, 1.0f, 0.0f);
     comp.load_component();
-    
+    scomp.load(200, 150, 300, 350);
+    scomp.set_data_source(&m_data);
+    // m_data.add_text_to_line('1', {0, 0});
+
     while (!glfwWindowShouldClose(m_window)) {
         float curr_time = glfwGetTime();
         float delta = curr_time - prev_time;
@@ -178,6 +188,7 @@ void jed::Editor::start()
         handle_inputs(delta);
         
         comp.draw(delta);
+        // scomp.draw(delta);
 
         check_for_opengl_error();
         glfwSwapBuffers(m_window);

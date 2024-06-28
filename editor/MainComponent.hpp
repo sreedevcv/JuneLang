@@ -12,12 +12,12 @@ public:
     void load_component();
     void draw(float delta);
 
-    void set_new_data_source(TextData& data);
 
     void handle_enter() override;
     void handle_backspace() override;
     void handle_scroll_vert(float offset) override;
     void set_current_file_name(std::string& file_name);
+    void set_new_data_source(TextData& data) override;
 
 private:
     TextData m_text_data;

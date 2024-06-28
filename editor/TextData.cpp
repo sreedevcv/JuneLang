@@ -4,6 +4,12 @@
 
 #include "Context.hpp"
 
+jed::TextData::TextData()
+{
+    m_data.push_back(make_new_str());
+    m_line_count += 1;
+}
+
 void jed::TextData::add_text_to_line(char text, Cursor cursor)
 {
     int current_size = m_data.size();

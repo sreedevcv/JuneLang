@@ -67,6 +67,16 @@ void jed::Component::handle_scroll_horz(float offset)
 {
 }
 
+void jed::Component::handle_mouse_click(MouseButton button)
+{
+}
+
+void jed::Component::set_new_data_source(TextData& data)
+{
+    m_data->clear();
+    *m_data = data;
+}
+
 void jed::Component::set_cursor_color(glm::vec3&& color)
 {
     m_cursor_color = color;

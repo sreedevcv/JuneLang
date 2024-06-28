@@ -16,6 +16,7 @@ public:
     void start();
     friend void charachter_callback(GLFWwindow* window, unsigned int codepoint);
     MainComponent comp;
+    EditComponent scomp;
 
 private:
     GLFWwindow* m_window;
