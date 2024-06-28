@@ -10,14 +10,12 @@ public:
     int tab_width = 4;
 
     float font_size = 24.0f;
-    float gutter_width = font_size + 1.0f;
-
+    int mouse_x = 0;
+    int mouse_y = 0;
     int data_grow_size = 20;
     glm::mat4 projection = glm::ortho(0.0f, static_cast<float>(width), 0.0f, static_cast<float>(height));
 
     static Context& get();
-
-    float offset_y = 0.0f;
 
 private:
     Context() = default;

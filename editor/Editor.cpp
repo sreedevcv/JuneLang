@@ -41,6 +41,14 @@ jed::Editor::Editor()
     glfwMakeContextCurrent(m_window);
 
     static const auto mouse_move_callback = [](GLFWwindow* glfw_window, double x_pos_in, double y_pos_in) {
+        Context::get().mouse_x = x_pos_in;
+        Context::get().mouse_y = y_pos_in;
+    };
+
+    static const auto mouse_button_callback = [](GLFWwindow* window, int button, int action, int mods) {
+        if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS) {
+            std::cout << "Clicked at: " << Context::get().mouse_x << " " << Context::get().mouse_y << "\n";
+        }
     };
 
     static const auto mouse_scroll_callback = [](GLFWwindow* glfw_window, double x_offset, double y_offset) {
@@ -74,7 +82,6 @@ jed::Editor::Editor()
                 // std::string file = "examples/test.jun";
                 std::string file = "main.cpp";
                 if (fh.open_and_read(file)) {
-                    // editor->m_data = fh.get_text_data();
                     auto data = fh.get_text_data();
                     editor->comp.set_new_data_source(fh.get_text_data());
                     editor->comp.set_current_file_name(file);
@@ -122,9 +129,10 @@ jed::Editor::Editor()
         }
     };
 
-    // glfwSetCursorPosCallback(m_window, mouse_move_callback);
-    glfwSetScrollCallback(m_window, mouse_scroll_callback);
     glfwSetFramebufferSizeCallback(m_window, framebuffer_size_callback);
+    glfwSetMouseButtonCallback(m_window, mouse_button_callback);
+    glfwSetCursorPosCallback(m_window, mouse_move_callback);
+    glfwSetScrollCallback(m_window, mouse_scroll_callback);
     glfwSetCharCallback(m_window, charachter_callback);
     glfwSetKeyCallback(m_window, key_callback);
 
