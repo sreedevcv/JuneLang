@@ -83,21 +83,15 @@ void jed::EditComponent::handle_tab()
     m_cursor_blink = true;
 }
 
-void jed::EditComponent::handle_scroll_vert(float offset)
-{
-    ScrollableComponent::handle_scroll_vert(offset);
-    if (m_scroll_offset.y < 0) {
-        m_scroll_offset.y = 0.0f;
-    }
-}
+// void jed::EditComponent::handle_scroll_vert(float offset)
+// {
+//     ScrollableComponent::handle_scroll_vert(offset);
+// }
 
-void jed::EditComponent::handle_scroll_horz(float offset)
-{
-    ScrollableComponent::handle_scroll_horz(offset);
-    if (m_scroll_offset.x > 0.0f) {
-        m_scroll_offset.x = 0.0f;
-    }
-}
+// void jed::EditComponent::handle_scroll_horz(float offset)
+// {
+//     ScrollableComponent::handle_scroll_horz(offset);
+// }
 
 void jed::EditComponent::handle_mouse_click(MouseButton button)
 {

@@ -71,10 +71,20 @@ void jed::MainComponent::handle_backspace()
 
 void jed::MainComponent::handle_scroll_vert(float offset)
 {
-    EditComponent::handle_scroll_vert(offset);
-    m_line_gutter.handle_scroll_vert(offset);
-    if (m_line_gutter.m_scroll_offset.y < 0) {
-        m_line_gutter.m_scroll_offset.y = 0.0f;
+    if (!m_show_output_tab) {
+        ScrollableComponent::handle_scroll_vert(offset);
+        m_line_gutter.handle_scroll_vert(offset);
+    } else {
+        m_output_comp.handle_scroll_vert(offset);
+    }
+}
+
+void jed::MainComponent::handle_scroll_horz(float offset)
+{
+    if (!m_show_output_tab) {
+        ScrollableComponent::handle_scroll_horz(offset);
+    } else {
+        m_output_comp.handle_scroll_horz(offset);
     }
 }
 

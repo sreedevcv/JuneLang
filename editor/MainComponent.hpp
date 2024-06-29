@@ -16,6 +16,7 @@ public:
     void handle_enter() override;
     void handle_backspace() override;
     void handle_scroll_vert(float offset) override;
+    void handle_scroll_horz(float offset) override;
     void set_new_data_source(TextData& data) override;
     
     void set_current_file_name(std::string& file_name);

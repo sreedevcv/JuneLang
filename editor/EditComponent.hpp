@@ -22,8 +22,8 @@ public:
     virtual void handle_arrow_down() override;
     virtual void handle_backspace() override;
     virtual void handle_tab() override;
-    virtual void handle_scroll_vert(float offset) override;
-    virtual void handle_scroll_horz(float offset) override;
+    // virtual void handle_scroll_vert(float offset) override;
+    // virtual void handle_scroll_horz(float offset) override;
     virtual void handle_mouse_click(MouseButton button) override;
 
 protected:
