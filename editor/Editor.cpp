@@ -73,27 +73,36 @@ jed::Editor::Editor()
 
         if (action == GLFW_PRESS) {
             if ((mods & GLFW_MOD_CONTROL) && key == GLFW_KEY_B) {
-                std::cout << "Building...\n";
-                auto code = editor->m_data.get_data();
-                std::cout << code << "\n\n";
-                std::cout << "Output...\n";
+                MainComponent* mcomp = dynamic_cast<MainComponent*>(editor->in_focus);
+                if (!mcomp) {
+                    return;
+                }
+                auto code = mcomp->get_data();
                 auto result = editor->run_code(code);
-                std::cout << result << "\n";
+                mcomp->set_output_contents(result);  // create a method for textData that is same as fh.open_and_read
                 return;
             }
-
             if ((mods & GLFW_MOD_CONTROL) && key == GLFW_KEY_O) {
+                MainComponent* mcomp = dynamic_cast<MainComponent*>(editor->in_focus);
+                if (!mcomp) {
+                    return;
+                }
+
                 FileHandler fh;
-                // std::string file = "examples/test.jun";
-                std::string file = "main.cpp";
+                std::string file = "examples/test.jun";
                 if (fh.open_and_read(file)) {
                     auto data = fh.get_text_data();
-                    // editor->scomp.set_new_data_source(data);
-
-                    editor->comp.set_new_data_source(fh.get_text_data());
-                    editor->comp.set_current_file_name(file);
-                    std::cout << data.get_line_count() << "\n";
+                    mcomp->set_new_data_source(fh.get_text_data());
+                    mcomp->set_current_file_name(file);
                 }
+            }
+            if ((mods & GLFW_MOD_CONTROL) && key == GLFW_KEY_APOSTROPHE) {
+                MainComponent* mcomp = dynamic_cast<MainComponent*>(editor->in_focus);
+                if (!mcomp) {
+                    return;
+                }
+
+                mcomp->toggle_output_visibility();
             }
         }
 
@@ -107,28 +116,33 @@ jed::Editor::Editor()
                 std::cout << "Ctrl + V pressed" << std::endl;
                 return;
             }
+            if ((mods & GLFW_MOD_CONTROL) && key == GLFW_KEY_BACKSPACE) {
+                std::cout << "Ctrl + V pressed" << std::endl;
+                // editor->comp.delete_word();
+                return;
+            }
 
             switch (key) {
             case GLFW_KEY_ENTER:
-                editor->comp.handle_enter();
+                editor->in_focus->handle_enter();
                 break;
             case GLFW_KEY_LEFT:
-                editor->comp.handle_arrow_left();
+                editor->in_focus->handle_arrow_left();
                 break;
             case GLFW_KEY_RIGHT:
-                editor->comp.handle_arrow_right();
+                editor->in_focus->handle_arrow_right();
                 break;
             case GLFW_KEY_UP:
-                editor->comp.handle_arrow_up();
+                editor->in_focus->handle_arrow_up();
                 break;
             case GLFW_KEY_DOWN:
-                editor->comp.handle_arrow_down();
+                editor->in_focus->handle_arrow_down();
                 break;
             case GLFW_KEY_BACKSPACE:
-                editor->comp.handle_backspace();
+                editor->in_focus->handle_backspace();
                 break;
             case GLFW_KEY_TAB:
-                editor->comp.handle_tab();
+                editor->in_focus->handle_tab();
                 break;
             default:
                 break;
@@ -175,6 +189,8 @@ void jed::Editor::start()
     float prev_time = glfwGetTime();
     glm::vec3 color = glm::vec3(0.0f, 1.0f, 0.0f);
     comp.load_component();
+    in_focus = &comp;
+
     scomp.load(200, 150, 300, 350);
     scomp.set_data_source(&m_data);
     // m_data.add_text_to_line('1', {0, 0});

@@ -8,6 +8,7 @@
 #include "MainComponent.hpp"
 
 namespace jed {
+
 class Editor {
 public:
     Editor();
@@ -16,7 +17,8 @@ public:
     void start();
     friend void charachter_callback(GLFWwindow* window, unsigned int codepoint);
     MainComponent comp;
-    EditComponent scomp;
+    ScrollableComponent scomp;
+    Component* in_focus = nullptr;
 
 private:
     GLFWwindow* m_window;

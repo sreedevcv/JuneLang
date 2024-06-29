@@ -10,4 +10,5 @@ fun temp(x, y)
 ]
 
 
-temp(a, b)
+print "Hello  World";
+temp(a, b);

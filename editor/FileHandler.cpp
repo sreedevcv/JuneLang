@@ -15,15 +15,21 @@ bool jed::FileHandler::open_and_read(std::string& file_name)
     }
 
     std::string line;
+    bool has_contents = false;
 
     while (m_file.good()) {
+        if (!has_contents) {
+            m_contents.clear();
+            has_contents = true;
+        }
+
         std::getline(m_file, line);
 
-        int cap_count = (line.size() / Context::get().data_grow_size) + 1;
+        int capacity_factor = (line.size() / Context::get().data_grow_size) + 1;
         m_contents.m_data.push_back(TextData::str {
-            .data = (char*) malloc(sizeof(char) * cap_count * Context::get().data_grow_size),
+            .data = (char*) malloc(sizeof(char) * capacity_factor * Context::get().data_grow_size),
             .size = static_cast<int>(line.size()),
-            .capacity = cap_count * Context::get().data_grow_size
+            .capacity = capacity_factor * Context::get().data_grow_size
         });
         m_contents.m_line_count += 1;
 

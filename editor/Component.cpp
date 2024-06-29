@@ -27,6 +27,11 @@ void jed::Component::draw(float delta)
     m_renderer.render_text(m_shader, *m_data, m_scroll_offset, m_scale, m_text_color);
 }
 
+std::string jed::Component::get_data()
+{
+    return m_data->get_data();
+}
+
 void jed::Component::handle_text(char text)
 {
 }

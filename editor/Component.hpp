@@ -15,6 +15,7 @@ public:
     void load(int width, int height, int x, int y);
     void set_data_source(TextData* data);
     virtual void draw(float delta);
+    virtual std::string get_data();
 
     enum MouseButton {
         LEFT,

@@ -1,6 +1,7 @@
 #include "TextData.hpp"
 
 #include <iostream>
+#include <sstream>
 
 #include "Context.hpp"
 
@@ -12,7 +13,7 @@ jed::TextData::TextData()
 
 void jed::TextData::add_text_to_line(char text, Cursor cursor)
 {
-    int current_size = m_data.size();
+    int current_size = m_line_count;
 
     // Add new lines
     if (cursor.line >= current_size) {
@@ -92,7 +93,7 @@ void jed::TextData::handle_backspace(Cursor& cursor)
             m_data[i] = m_data[i + 1];
         }
         m_data[get_line_count() - 1] = deleted_line; /* Move deleted line to end to save space */
-        cursor.line -= 1; /* Move cursor to above line */
+        cursor.line -= 1;   /* Move cursor to above line */
         cursor.loc = m_data[cursor.line].size - old_size; /* Move cursor to correct loc in above line */
         m_line_count -= 1;
     }
@@ -115,6 +116,17 @@ void jed::TextData::bound_cursor_loc(Cursor& cursor)
     }
 }
 
+char jed::TextData::peek(Cursor& cursor)
+{
+    if (cursor.line >= get_line_count()) {
+        return '\0';
+    }
+    if (get_line_size(cursor.line) == 0) {
+        return '\0';
+    }
+    return m_data[cursor.line].data[cursor.loc];
+}
+
 std::string jed::TextData::get_data()
 {
     std::string code = "";
@@ -123,6 +135,26 @@ std::string jed::TextData::get_data()
         code.append("\n");
     }
     return code;
+}
+
+void jed::TextData::append_string(std::string data)
+{
+    std::string line;
+    std::istringstream stream(data);
+
+    while (stream.good()) {
+        std::getline(stream, line);
+
+        int capacity_factor = (line.size() / Context::get().data_grow_size) + 1;
+            m_data.push_back(TextData::str {
+                .data = (char*) malloc(sizeof(char) * capacity_factor * Context::get().data_grow_size),
+                .size = static_cast<int>(line.size()),
+                .capacity = capacity_factor * Context::get().data_grow_size
+            });
+            m_line_count += 1;
+
+            std::memmove(m_data.back().data, line.c_str(), line.size());
+    }
 }
 
 void jed::TextData::append_text(char text, int line)
