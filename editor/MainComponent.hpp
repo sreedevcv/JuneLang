@@ -29,9 +29,9 @@ private:
     TextData m_line_data;
     TextData m_top_bar_file_name;
     TextData m_output_data;
+    Component m_top_bar;
     ScrollableComponent m_line_gutter;
     ScrollableComponent m_output_comp;
-    Component m_top_bar;
     Cursor m_line_cursor{0, 0};
     float m_gutter_width = 50.0f;
     float m_top_bar_height = 50.0f;

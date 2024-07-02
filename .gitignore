@@ -1,6 +1,7 @@
 build/
 .vscode/
 freetype/
+.cache/
 tests/scripts/temp.txt
 june.exe
 june.pdb

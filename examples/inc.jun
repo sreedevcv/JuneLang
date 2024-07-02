@@ -1,0 +1,14 @@
+var a = 10;
+var b = 5;
+a += 5 + (b * 3);
+
+class Test [
+    init() [
+        self.x = 1;
+    ]
+]
+
+
+var test = Test();
+test.x += 2;
+print test.x;

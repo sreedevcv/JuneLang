@@ -4,10 +4,10 @@
 #include <string>
 
 #include "Context.hpp"
-#include "Rectangle.hpp"
-#include "Timer.hpp"
 #include "FileHandler.hpp"
 #include "FontLoader.hpp"
+#include "Rectangle.hpp"
+#include "Timer.hpp"
 
 #include "ErrorHandler.hpp"
 #include "Interpreter.hpp"
@@ -48,7 +48,6 @@ jed::Editor::Editor()
     static const auto mouse_button_callback = [](GLFWwindow* glfw_window, int button, int action, int mods) {
         Editor* editor = static_cast<Editor*>(glfwGetWindowUserPointer(glfw_window));
         if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS) {
-            // std::cout << "Clicked at: " << Context::get().mouse_x << " " << Context::get().mouse_y << "\n";
             editor->comp.handle_mouse_click(Component::LEFT);
         }
     };
@@ -57,9 +56,6 @@ jed::Editor::Editor()
         Editor* editor = static_cast<Editor*>(glfwGetWindowUserPointer(glfw_window));
         editor->comp.handle_scroll_vert(y_offset);
         editor->comp.handle_scroll_horz(x_offset);
-
-        editor->scomp.handle_scroll_vert(y_offset);
-        editor->scomp.handle_scroll_horz(x_offset);
     };
 
     const auto framebuffer_size_callback = [](GLFWwindow* glfw_window, int width, int height) {
@@ -79,7 +75,7 @@ jed::Editor::Editor()
                 }
                 auto code = mcomp->get_data();
                 auto result = editor->run_code(code);
-                mcomp->set_output_contents(result);  // create a method for textData that is same as fh.open_and_read
+                mcomp->set_output_contents(result); // create a method for textData that is same as fh.open_and_read
                 return;
             }
             if ((mods & GLFW_MOD_CONTROL) && key == GLFW_KEY_O) {
@@ -89,7 +85,7 @@ jed::Editor::Editor()
                 }
 
                 FileHandler fh;
-                std::string file = "examples/test.jun";
+                std::string file = "examples/inc.jun";
                 if (fh.open_and_read(file)) {
                     auto data = fh.get_text_data();
                     mcomp->set_new_data_source(fh.get_text_data());
@@ -202,7 +198,7 @@ void jed::Editor::start()
 
         glClear(GL_COLOR_BUFFER_BIT);
         handle_inputs(delta);
-        
+
         comp.draw(delta);
         // scomp.draw(delta);
 
@@ -258,9 +254,11 @@ std::string jed::Editor::run_code(std::string& code)
 
     result = jl::ErrorHandler::get_string_stream().str();
 
-    for (auto stmt : stmts) {
-        delete stmt;
-    }
+    /* Problem when plus_equal operator was added */
+
+    // for (auto stmt : stmts) {
+    //     delete stmt;
+    // }
 
     return result;
 };

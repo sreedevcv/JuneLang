@@ -1,7 +1,6 @@
 #pragma once
 
 #include <string>
-#include <variant>
 
 #include "Value.hpp"
 
@@ -12,8 +11,6 @@ public:
         // Single Charachter
         COMMA,
         DOT,
-        PLUS,
-        MINUS,
         COLON,
         STAR,
         SLASH,
@@ -27,13 +24,17 @@ public:
         NEW_LINE,
         END_OF_FILE,
         // One or Two Characters
+        PLUS,
         BANG,
+        LESS,
         EQUAL,
+        MINUS,
+        GREATER,
+        PLUS_EQUAL,
+        MINUS_EQUAL,
         BANG_EQUAL,
         EQUAL_EQUAL,
-        GREATER,
         GREATER_EQUAL,
-        LESS,
         LESS_EQUAL,
         // Literals
         STRING,
@@ -76,6 +77,7 @@ public:
     static Value global_false_constant;
     static std::string global_super_lexeme;
     static std::string global_this_lexeme;
+    // static Token global_plus_equal;
 
 private:
     TokenType m_type;

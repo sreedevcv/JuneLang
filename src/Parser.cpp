@@ -1,8 +1,7 @@
 #include "Parser.hpp"
 
-#include <typeinfo>
-
 #include "ErrorHandler.hpp"
+#include "Expr.hpp"
 
 jl::Parser::Parser(std::vector<Token>& tokens, std::string& file_name)
     : m_tokens(tokens)
@@ -183,7 +182,7 @@ jl::Expr* jl::Parser::primary()
         Value* value = new Value(previous().get_value());
         return new Literal(value);
     }
-    if (match({Token::THIS})) {
+    if (match({ Token::THIS })) {
         return new This(previous());
     }
     if (match({ Token::IDENTIFIER })) {
@@ -194,7 +193,7 @@ jl::Expr* jl::Parser::primary()
         consume(Token::RIGHT_PAR, "Expected ) after expression");
         return new Grouping(expr);
     }
-    if (match({Token::SUPER})) {
+    if (match({ Token::SUPER })) {
         Token& keyword = previous();
         consume(Token::DOT, "Expected '.' after super");
         Token& method = consume(Token::IDENTIFIER, "Expect superclass method name");
@@ -222,6 +221,24 @@ jl::Expr* jl::Parser::assignment()
         }
 
         ErrorHandler::error(m_file_name, "parsing", "assignment", equals.get_line(), "Invalid assignment target, expected a variable", 0);
+    } else if (match({ Token::PLUS_EQUAL })) {
+        Token& plus_equals = previous();
+        Expr* value = or_expr();
+
+        if (dynamic_cast<Variable*>(expr)) {
+            Token& name = static_cast<Variable*>(expr)->m_name;
+            // Don't forget to delete this
+            Token* plus_token = new Token(Token::PLUS, previous().get_lexeme(), previous().get_line());
+            Binary* oper = new Binary(expr, plus_token, value);
+            return new Assign(oper, name);
+        } else if (dynamic_cast<Get*>(expr)) {
+            Get* get_expr = static_cast<Get*>(expr);
+            Token* plus_token = new Token(Token::PLUS, previous().get_lexeme(), previous().get_line());
+            Binary* oper = new Binary(expr, plus_token, value);
+            return new Set(get_expr->m_name, get_expr->m_object, oper);
+        }
+
+        ErrorHandler::error(m_file_name, "parsing", "add assignment", plus_equals.get_line(), "Invalid assignment target, expected a variable", 0);
     }
 
     return expr;
@@ -260,7 +277,7 @@ jl::Expr* jl::Parser::call()
     while (true) {
         if (match({ Token::LEFT_PAR })) {
             expr = finish_call(expr);
-        } else if (match({Token::DOT})) {
+        } else if (match({ Token::DOT })) {
             Token& name = consume(Token::IDENTIFIER, "Expected property name after '.'");
             expr = new Get(name, expr);
         } else {
@@ -309,7 +326,7 @@ jl::Stmt* jl::Parser::statement()
     if (match({ Token::FOR })) {
         return for_statement();
     }
-    if (match({Token::RETURN})) {
+    if (match({ Token::RETURN })) {
         return return_statement();
     }
 
@@ -319,7 +336,7 @@ jl::Stmt* jl::Parser::statement()
 jl::Stmt* jl::Parser::declaration()
 {
     try {
-        if (match({Token::CLASS})) {
+        if (match({ Token::CLASS })) {
             return class_declaration();
         }
         if (match({ Token::FUNC })) {
@@ -447,7 +464,7 @@ jl::Stmt* jl::Parser::function(const char* kind)
             Token& param = consume(Token::IDENTIFIER, "Expected parameter name here");
             parameters.push_back(&param);
 
-        } while (match({Token::COMMA}));
+        } while (match({ Token::COMMA }));
     }
 
     consume(Token::RIGHT_PAR, "Expected ) after function parameters");
@@ -463,7 +480,7 @@ jl::Stmt* jl::Parser::return_statement()
     Expr* expr = nullptr;
 
     if (!check(Token::SEMI_COLON)) {
-        expr = expression();    
+        expr = expression();
     }
 
     consume(Token::SEMI_COLON, "Expected ; after return");
@@ -476,7 +493,7 @@ jl::Stmt* jl::Parser::class_declaration()
     Token& name = consume(Token::IDENTIFIER, "Expected a class name");
 
     Variable* super_class = nullptr;
-    if (match({Token::COLON})) {
+    if (match({ Token::COLON })) {
         consume(Token::IDENTIFIER, "Expected a super class name");
         super_class = new Variable(previous());
     }

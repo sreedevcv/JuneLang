@@ -1,11 +1,10 @@
 #include "Token.hpp"
 
-#include "Expr.hpp"
-
 jl::Value jl::Token::global_true_constant = jl::Value(true);
 jl::Value jl::Token::global_false_constant = jl::Value(false);
 std::string jl::Token::global_super_lexeme = "super";
 std::string jl::Token::global_this_lexeme = "self";
+// jl::Token jl::Token::global_plus_equal = Token(TokenType::PLUS_EQUAL,);
 
 jl::Token::Token(TokenType type, std::string& lexeme, int line)
     : m_type(type)
@@ -15,7 +14,7 @@ jl::Token::Token(TokenType type, std::string& lexeme, int line)
 }
 
 jl::Token::Token(TokenType type, std::string& lexeme, int line, Value value)
-: Token(type, lexeme, line)
+    : Token(type, lexeme, line)
 {
     m_value = value;
 }

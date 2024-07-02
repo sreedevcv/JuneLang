@@ -1,11 +1,11 @@
 #include "Lexer.hpp"
 
-#include <filesystem>
 #include <fstream>
 #include <sstream>
 #include <string>
 
 #include "ErrorHandler.hpp"
+#include "Token.hpp"
 
 jl::Lexer::Lexer(const char* source)
 {
@@ -23,8 +23,6 @@ jl::Lexer::Lexer(std::string& file_path)
         std::exit(1);
     }
 
-    // m_file_size = std::filesystem::file_size(file_path);
-
     std::ostringstream ss;
     ss << file.rdbuf();
     m_source = ss.str();
@@ -39,7 +37,7 @@ void jl::Lexer::scan()
 
     // /* replaced ; with newline hence make sure that even the final statement has a
     // newline to correctly parse */
-    // add_token(Token::NEW_LINE);     
+    // add_token(Token::NEW_LINE);
     add_token(Token::END_OF_FILE);
 }
 
@@ -85,17 +83,10 @@ void jl::Lexer::scan_token()
     case '.':
         add_token(Token::DOT);
         break;
-    case '-':
-        add_token(Token::MINUS);
-        break;
-    case '+':
-        add_token(Token::PLUS);
-        break;
     case '*':
         add_token(Token::STAR);
         break;
     case '\n':
-        // add_token(Token::NEW_LINE);
         m_line++;
         break;
     case ';':
@@ -103,6 +94,14 @@ void jl::Lexer::scan_token()
         break;
     case '!':
         add_token(match('=') ? Token::BANG_EQUAL : Token::BANG);
+        break;
+    case '+':
+        // add_token(Token::PLUS);
+        add_token(match('=') ? Token::PLUS_EQUAL : Token::PLUS);
+        break;
+    case '-':
+        // add_token(Token::MINUS);
+        add_token(match('=') ? Token::MINUS_EQUAL : Token::MINUS);
         break;
     case '=':
         add_token(match('=') ? Token::EQUAL_EQUAL : Token::EQUAL);

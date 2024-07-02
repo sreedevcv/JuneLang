@@ -83,16 +83,6 @@ void jed::EditComponent::handle_tab()
     m_cursor_blink = true;
 }
 
-// void jed::EditComponent::handle_scroll_vert(float offset)
-// {
-//     ScrollableComponent::handle_scroll_vert(offset);
-// }
-
-// void jed::EditComponent::handle_scroll_horz(float offset)
-// {
-//     ScrollableComponent::handle_scroll_horz(offset);
-// }
-
 void jed::EditComponent::handle_mouse_click(MouseButton button)
 {
     int x_dist = Context::get().mouse_x - m_scroll_offset.x - m_x;
