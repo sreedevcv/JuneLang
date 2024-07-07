@@ -63,7 +63,7 @@ public:
 
     virtual ~Assign()
     {
-        delete m_expr;
+        // delete m_expr;
     }
 };
 
@@ -87,8 +87,8 @@ public:
 
     virtual ~Binary() 
     {
-        delete m_left;
-        delete m_right;
+        // delete m_left;
+        // delete m_right;
     }
 };
 
@@ -107,7 +107,7 @@ public:
 
     virtual ~Grouping() 
     {
-        delete m_expr;
+        // delete m_expr;
     }
 };
 
@@ -127,7 +127,7 @@ public:
 
     virtual ~Literal() 
     {
-        delete m_value;
+        // delete m_value;
     }
 };
 
@@ -149,8 +149,8 @@ public:
 
     virtual ~Unary()
     {
-        delete m_expr;
-        delete m_oper;
+        // delete m_expr;
+        // delete m_oper;
     }
 };
 
@@ -191,8 +191,8 @@ public:
 
     virtual ~Logical() 
     {
-        delete m_left;
-        delete m_right;
+        // delete m_left;
+        // delete m_right;
     }
 };
 
@@ -216,11 +216,11 @@ public:
 
     virtual ~Call()
     {
-        delete m_callee;
-        for (auto exp: m_arguments)
-        {
-            delete exp;
-        }
+        // delete m_callee;
+        // for (auto exp: m_arguments)
+        // {
+        //     delete exp;
+        // }
     }
 };
 
@@ -242,7 +242,7 @@ public:
 
     virtual ~Get()
     {
-        delete m_object;
+        // delete m_object;
     }
 };
 
@@ -266,8 +266,8 @@ public:
 
     virtual ~Set()
     {
-        delete m_object;
-        delete m_value;
+        // delete m_object;
+        // delete m_value;
     }
 };
 
