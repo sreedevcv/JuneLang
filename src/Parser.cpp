@@ -125,7 +125,6 @@ jl::Expr* jl::Parser::equality()
     while (match({ Token::BANG_EQUAL, Token::EQUAL_EQUAL })) {
         Token& oper = previous();
         Expr* right = comparison();
-        // expr = new Binary(expr, &oper, right);
         expr = m_arena.allocate<Binary>(expr, &oper, right);
     }
     return expr;
@@ -138,7 +137,6 @@ jl::Expr* jl::Parser::comparison()
     while (match({ Token::GREATER, Token::GREATER_EQUAL, Token::LESS, Token::LESS_EQUAL })) {
         Token& oper = previous();
         Expr* right = term();
-        // expr = new Binary(expr, &oper, right);
         expr = m_arena.allocate<Binary>(expr, &oper, right);
     }
     return expr;
@@ -151,7 +149,6 @@ jl::Expr* jl::Parser::term()
     while (match({ Token::MINUS, Token::PLUS })) {
         Token& oper = previous();
         Expr* right = factor();
-        // expr = new Binary(expr, &oper, right);
         expr = m_arena.allocate<Binary>(expr, &oper, right);
     }
     return expr;
@@ -164,7 +161,6 @@ jl::Expr* jl::Parser::factor()
     while (match({ Token::SLASH, Token::STAR })) {
         Token& oper = previous();
         Expr* right = unary();
-        // expr = new Binary(expr, &oper, right);
         expr = m_arena.allocate<Binary>(expr, &oper, right);
     }
     return expr;
@@ -175,7 +171,6 @@ jl::Expr* jl::Parser::unary()
     if (match({ Token::BANG, Token::MINUS })) {
         Token& oper = previous();
         Expr* right = unary();
-        // return new Unary(&oper, right);
         return m_arena.allocate<Unary>(&oper, right);
     }
 
@@ -185,30 +180,24 @@ jl::Expr* jl::Parser::unary()
 jl::Expr* jl::Parser::primary()
 {
     if (match({ Token::INT, Token::FLOAT, Token::STRING, Token::FALSE, Token::TRUE, Token::NULL_ })) {
-        // Value* value = new Value(previous().get_value());
         Value* value = m_arena.allocate< Value>(previous().get_value());
-        // return new Literal(value);
         return m_arena.allocate<Literal>(value);
     }
     if (match({ Token::THIS })) {
-        // return new This(previous());
         return m_arena.allocate<This>(previous());
     }
     if (match({ Token::IDENTIFIER })) {
-        // return new Variable(previous());
         return m_arena.allocate<Variable>(previous());
     }
     if (match({ Token::LEFT_PAR })) {
         Expr* expr = expression();
         consume(Token::RIGHT_PAR, "Expected ) after expression");
-        // return new Grouping(expr);
         return m_arena.allocate<Grouping>(expr);
     }
     if (match({ Token::SUPER })) {
         Token& keyword = previous();
         consume(Token::DOT, "Expected '.' after super");
         Token& method = consume(Token::IDENTIFIER, "Expect superclass method name");
-        // return new Super(keyword, method);
         return m_arena.allocate<Super>(keyword, method);
     }
 
@@ -226,11 +215,9 @@ jl::Expr* jl::Parser::assignment()
 
         if (dynamic_cast<Variable*>(expr)) {
             Token& name = static_cast<Variable*>(expr)->m_name;
-            // return new Assign(value, name);
             return m_arena.allocate<Assign>(value, name);
         } else if (dynamic_cast<Get*>(expr)) {
             Get* get_expr = static_cast<Get*>(expr);
-            // return new Set(get_expr->m_name, get_expr->m_object, value);
             return m_arena.allocate<Set>(get_expr->m_name, get_expr->m_object, value);
         }
 
@@ -241,20 +228,13 @@ jl::Expr* jl::Parser::assignment()
 
         if (dynamic_cast<Variable*>(expr)) {
             Token& name = static_cast<Variable*>(expr)->m_name;
-            // Don't forget to delete this
-            // Token* plus_token = new Token(Token::PLUS, previous().get_lexeme(), previous().get_line());
             Token* plus_token = m_arena.allocate<Token>(Token::PLUS, previous().get_lexeme(), previous().get_line());
-            // Binary* oper = new Binary(expr, plus_token, value);
             Binary* oper = m_arena.allocate<Binary>(expr, plus_token, value);
-            // return new Assign(oper, name);
             return m_arena.allocate<Assign>(oper, name);
         } else if (dynamic_cast<Get*>(expr)) {
             Get* get_expr = static_cast<Get*>(expr);
-            // Token* plus_token = new Token(Token::PLUS, previous().get_lexeme(), previous().get_line());
             Token* plus_token = m_arena.allocate<Token>(Token::PLUS, previous().get_lexeme(), previous().get_line());
-            // Binary* oper = new Binary(expr, plus_token, value);
             Binary* oper = m_arena.allocate<Binary>(expr, plus_token, value);
-            // return new Set(get_expr->m_name, get_expr->m_object, oper);
             return m_arena.allocate<Set>(get_expr->m_name, get_expr->m_object, oper);
         }
 
@@ -271,7 +251,6 @@ jl::Expr* jl::Parser::or_expr()
     while (match({ Token::OR })) {
         Token& oper = previous();
         Expr* right = and_expr();
-        // expr = new Logical(expr, oper, right);
         expr = m_arena.allocate<Logical>(expr, oper, right);
     }
 
@@ -285,7 +264,6 @@ jl::Expr* jl::Parser::and_expr()
     while (match({ Token::AND })) {
         Token& oper = previous();
         Expr* right = equality();
-        // expr = new Logical(expr, oper, right);
         expr = m_arena.allocate<Logical>(expr, oper, right);
     }
 
@@ -301,7 +279,6 @@ jl::Expr* jl::Parser::call()
             expr = finish_call(expr);
         } else if (match({ Token::DOT })) {
             Token& name = consume(Token::IDENTIFIER, "Expected property name after '.'");
-            // expr = new Get(name, expr);
             expr = m_arena.allocate<Get>(name, expr);
         } else {
             break;
@@ -325,7 +302,6 @@ jl::Expr* jl::Parser::finish_call(Expr* callee)
     }
 
     Token& paren = consume(Token::RIGHT_PAR, "Expected ) after arguments");
-    // return new Call(callee, paren, arguments);
     return m_arena.allocate<Call>(callee, paren, arguments);
 }
 
@@ -339,7 +315,6 @@ jl::Stmt* jl::Parser::statement()
         return print_statement();
     }
     if (match({ Token::LEFT_SQUARE })) {
-        // return new BlockStmt(block());
         return m_arena.allocate<BlockStmt>(block());
     }
     if (match({ Token::IF })) {
@@ -371,7 +346,6 @@ jl::Stmt* jl::Parser::declaration()
             return var_declaration();
         }
         if (match({ Token::SEMI_COLON })) {
-            // return new EmptyStmt();
             return m_arena.allocate<EmptyStmt>();
         }
         return statement();
@@ -385,7 +359,6 @@ jl::Stmt* jl::Parser::print_statement()
 {
     Expr* expr = expression();
     consume(Token::SEMI_COLON, "Expected ; after expression");
-    // return new PrintStmt(expr);
     return m_arena.allocate<PrintStmt>(expr);
 }
 
@@ -393,7 +366,6 @@ jl::Stmt* jl::Parser::expr_statement()
 {
     Expr* expr = expression();
     consume(Token::SEMI_COLON, "Expected ; after expression");
-    // return new ExprStmt(expr);
     return m_arena.allocate<ExprStmt>(expr);
 }
 
@@ -407,7 +379,6 @@ jl::Stmt* jl::Parser::var_declaration()
     }
 
     consume(Token::SEMI_COLON, "Expected ; after variable declaration");
-    // return new VarStmt(name, initializer);
     return m_arena.allocate<VarStmt>(name, initializer);
 }
 
@@ -427,7 +398,6 @@ jl::Stmt* jl::Parser::if_stmt()
         // consume(Token::RIGHT_SQUARE, "Expected ] after statements in if block");
     }
 
-    // return new IfStmt(condition, then_branch, else_branch);
     return m_arena.allocate<IfStmt>(condition, then_branch, else_branch);
 }
 
@@ -436,7 +406,6 @@ jl::Stmt* jl::Parser::while_statement()
     Expr* condition = expression();
     Stmt* body = statement();
 
-    // return new WhileStmt(condition, body);
     return m_arena.allocate<WhileStmt>(condition, body);
 }
 
@@ -466,18 +435,14 @@ jl::Stmt* jl::Parser::for_statement()
     Stmt* body = statement();
 
     if (increment != nullptr) {
-        // body = new BlockStmt({ body, new ExprStmt(increment) });
         body = m_arena.allocate< BlockStmt>((std::vector<Stmt*>){ body, m_arena.allocate< ExprStmt>(increment) });
     }
     if (condition == nullptr) {
-        // condition = new Literal(&Token::global_true_constant);
         condition = m_arena.allocate<Literal>(&Token::global_true_constant);
     }
-    // body = new WhileStmt(condition, body);
     body = m_arena.allocate<WhileStmt>(condition, body);
 
     if (initializer != nullptr) {
-        // body = new BlockStmt({ initializer, body });
         body = m_arena.allocate<BlockStmt>((std::vector<Stmt*>){ initializer, body });
     }
 
@@ -506,7 +471,6 @@ jl::Stmt* jl::Parser::function(const char* kind)
     consume(Token::LEFT_SQUARE, "Expected [ befor function body");
 
     std::vector<Stmt*> body = block();
-    // return new FuncStmt(name, parameters, body);
     return m_arena.allocate<FuncStmt>(name, parameters, body);
 }
 
@@ -521,7 +485,6 @@ jl::Stmt* jl::Parser::return_statement()
 
     consume(Token::SEMI_COLON, "Expected ; after return");
 
-    // return new ReturnStmt(return_token, expr);
     return m_arena.allocate<ReturnStmt>(return_token, expr);
 }
 
@@ -532,7 +495,6 @@ jl::Stmt* jl::Parser::class_declaration()
     Variable* super_class = nullptr;
     if (match({ Token::COLON })) {
         consume(Token::IDENTIFIER, "Expected a super class name");
-        // super_class = new Variable(previous());
         super_class = m_arena.allocate<Variable>(previous());
     }
 
@@ -544,7 +506,6 @@ jl::Stmt* jl::Parser::class_declaration()
     }
 
     consume(Token::RIGHT_SQUARE, "Expected a ] after class body");
-    // return new ClassStmt(name, super_class, methods);
     return m_arena.allocate<ClassStmt>(name, super_class, methods);
 }
 
