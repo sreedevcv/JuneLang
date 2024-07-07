@@ -16,7 +16,7 @@ public:
 
 class FunctionCallable : public Callable {
 public:
-    FunctionCallable(FuncStmt* declaration, std::shared_ptr<Environment>& closure, bool is_initalizer);
+    FunctionCallable(Arena& arena, FuncStmt* declaration, Environment* closure, bool is_initalizer);
     virtual ~FunctionCallable() = default;
 
     virtual Value call(Interpreter* interpreter, std::vector<Value>& arguments) override;
@@ -25,8 +25,9 @@ public:
 
     FunctionCallable* bind(Instance* instance);
 private:
+    Arena& m_arena;
     FuncStmt* m_declaration;
-    std::shared_ptr<Environment> m_closure;
+    Environment* m_closure;
     bool m_is_initializer = false;
 };
 

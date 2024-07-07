@@ -3,17 +3,19 @@
 #include "Expr.hpp"
 #include "Token.hpp"
 #include "Stmt.hpp"
+#include "Arena.hpp"
 
 namespace jl {
 class Parser {
 public:
-    Parser(std::vector<Token>& tokens, std::string& file_name);
+    Parser(Arena& arena, std::vector<Token>& tokens, std::string& file_name);
     ~Parser() = default;
 
     Expr* parse();
     std::vector<Stmt*> parseStatements();
 
 private:
+    Arena& m_arena;
     std::vector<Token> m_tokens;
     std::string m_file_name;
     int m_current = 0;

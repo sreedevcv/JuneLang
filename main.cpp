@@ -16,55 +16,57 @@ int main()
     // jed::FileHandler fh;
     // std::string file="main.cpp";
     // std::cout << fh.open_and_read(file);
-    jed::Editor editor;
-    editor.start();
+    // jed::Editor editor;
+    // editor.start();
 
 
 
 //----------------------------------qqqqqqqqqqqqqqqqqqqqqqqqqqaaaaaaaaaaaaaannnnnnnnnnnnnnnbbbbbbbbbbbbb
 
-    // jl::Lexer lexer(
-    //     R"(
-    //     var a = 10;
-    //     print a;
+    jl::Lexer lexer(
+        R"(
+        var a = 10;
+        print a;
 
-    //     fun temp(x, y)
-    //     [
-    //         for var i=x; i < y; i = i+1;
-    //         [
-    //             print i;
-    //         ]
-    //     ]
+        fun temp(x, y)
+        [
+            for var i=x; i < y; i = i+1;
+            [
+                print i;
+            ]
+        ]
 
-    //     temp(10, 20);
-    // )");
+        temp(10, 20);
+    )");
 
-    // std::string file_name = "test";
-    // lexer.scan();
+    std::string file_name = "test";
+    lexer.scan();
 
-    // if (jl::ErrorHandler::has_error()) {
-    //     return 1;
-    // }
+    jl::Arena arena(1000);
 
-    // auto tokens = lexer.get_tokens();
-    // jl::Parser parser(tokens, file_name);
-    // auto stmts = parser.parseStatements();
+    if (jl::ErrorHandler::has_error()) {
+        return 1;
+    }
 
-    // if (jl::ErrorHandler::has_error()) {
-    //     return 1;
-    // }
+    auto tokens = lexer.get_tokens();
+    jl::Parser parser(arena, tokens, file_name);
+    auto stmts = parser.parseStatements();
 
-    // jl::Interpreter interpreter(file_name);
+    if (jl::ErrorHandler::has_error()) {
+        return 1;
+    }
 
-    // jl::Resolver resolver(interpreter, file_name);
-    // resolver.resolve(stmts);
+    jl::Interpreter interpreter(arena, file_name);
 
-    // if (jl::ErrorHandler::has_error()) {
-    //     return 1;
-    // }
+    jl::Resolver resolver(interpreter, file_name);
+    resolver.resolve(stmts);
 
-    // jl::Value v;
-    // interpreter.interpret(stmts);
+    if (jl::ErrorHandler::has_error()) {
+        return 1;
+    }
+
+    jl::Value v;
+    interpreter.interpret(stmts);
 
     // for (auto stmt: stmts) {
     //     delete stmt;

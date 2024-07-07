@@ -5,13 +5,15 @@
 #include "Callable.hpp"
 #include "ErrorHandler.hpp"
 
-jl::Interpreter::Interpreter(std::string& file_name)
-    : m_file_name(file_name)
+jl::Interpreter::Interpreter(Arena& arena, std::string& file_name)
+    : m_arena(arena)
+    , m_file_name(file_name)
+    , m_internal_arena(2000)
 {
-    m_env = std::make_shared<Environment>(m_file_name);
+    m_env = m_internal_arena.allocate<Environment>(m_file_name);
     m_global_env = m_env;
 
-    ToIntNativeFunction* to_int_native_func = new ToIntNativeFunction();
+    ToIntNativeFunction* to_int_native_func = m_arena.allocate<ToIntNativeFunction>();
     m_global_env->define(to_int_native_func->m_name, static_cast<Callable*>(to_int_native_func));
 }
 
@@ -25,7 +27,7 @@ void jl::Interpreter::interpret(Expr* expr, Value* value)
     try {
         Value context;
         evaluate(expr, &context);
-        
+
         // DELETING VALUE
         // free_value(context);
     } catch (const char* exc) {
@@ -88,12 +90,12 @@ void jl::Interpreter::append_strings(Value& left, Value& right, void* context)
     left_str.append(right_str);
 
     // Return appended strings
-    *static_cast<Value*>(context) = left_str;   
+    *static_cast<Value*>(context) = left_str;
 }
 
-void jl::Interpreter::execute_block(std::vector<Stmt*>& statements, std::shared_ptr<Environment>& new_env)
+void jl::Interpreter::execute_block(std::vector<Stmt*>& statements, Environment* new_env)
 {
-    std::shared_ptr<Environment> previous = m_env;
+    Environment* previous = m_env;
     bool exception_ocurred = false;
 
     try {
@@ -102,7 +104,7 @@ void jl::Interpreter::execute_block(std::vector<Stmt*>& statements, std::shared_
         for (auto stmt : statements) {
             stmt->accept(*this, &value);
         }
-        
+
         // free_value(value);
     } catch (Value value) {
         // This happens during a function return
@@ -164,7 +166,7 @@ void jl::Interpreter::visit_assign_expr(Assign* expr, void* context)
 {
     // free_value(context);
     evaluate(expr->m_expr, context);
-    
+
     Value value = *static_cast<Value*>(context);
     if (m_locals.contains(expr)) {
         m_env->assign_at(expr->m_token, value, m_locals[expr]);
@@ -403,7 +405,7 @@ void jl::Interpreter::visit_super_expr(Super* expr, void* context)
         ErrorHandler::error(m_file_name, "interpreting", "super keyword", expr->m_keyword.get_line(), "Udefined property called on super", 0);
     }
 
-    *static_cast<Value*>(context) =  static_cast<Callable*>(method->bind(instance));
+    *static_cast<Value*>(context) = static_cast<Callable*>(method->bind(instance));
 }
 
 void* jl::Interpreter::get_expr_context()
@@ -442,7 +444,7 @@ void jl::Interpreter::visit_var_stmt(VarStmt* stmt, void* context)
 
 void jl::Interpreter::visit_block_stmt(BlockStmt* stmt, void* context)
 {
-    std::shared_ptr<Environment> new_env = std::make_shared<Environment>(m_env);
+    Environment* new_env = m_internal_arena.allocate<Environment>(m_env);
     execute_block(stmt->m_statements, new_env);
 }
 
@@ -477,7 +479,7 @@ void jl::Interpreter::visit_while_stmt(WhileStmt* stmt, void* context)
 
 void jl::Interpreter::visit_func_stmt(FuncStmt* stmt, void* context)
 {
-    FunctionCallable* function = new FunctionCallable(stmt, m_env, false);
+    FunctionCallable* function = m_arena.allocate<FunctionCallable>(m_internal_arena, stmt, m_env, false);
     m_env->define(stmt->m_name.get_lexeme(), static_cast<Callable*>(function));
     *static_cast<Value*>(context) = '\0';
 }
@@ -506,17 +508,17 @@ void jl::Interpreter::visit_class_stmt(ClassStmt* stmt, void* context)
     m_env->define(stmt->m_name.get_lexeme(), static_cast<Callable*>(nullptr));
 
     if (stmt->m_super_class != nullptr) {
-        m_env = std::make_shared<Environment>(m_env);
+        m_env = m_internal_arena.allocate<Environment>(m_env);
         m_env->define(Token::global_super_lexeme, super_class);
     }
 
     std::map<std::string, FunctionCallable*> methods;
     for (FuncStmt* method : stmt->m_methods) {
-        FunctionCallable* func_callable = new FunctionCallable(method, m_env, method->m_name.get_lexeme() == "init");
+        FunctionCallable* func_callable = m_arena.allocate<FunctionCallable>(m_internal_arena, method, m_env, method->m_name.get_lexeme() == "init");
         methods[method->m_name.get_lexeme()] = func_callable;
     }
 
-    ClassCallable* class_callable = new ClassCallable(stmt->m_name.get_lexeme(), static_cast<ClassCallable*>(std::get<Callable*>(super_class)), methods);
+    ClassCallable* class_callable = m_arena.allocate<ClassCallable>(stmt->m_name.get_lexeme(), static_cast<ClassCallable*>(std::get<Callable*>(super_class)), methods);
 
     if (stmt->m_super_class != nullptr) {
         m_env = m_env->m_enclosing;

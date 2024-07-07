@@ -6,21 +6,22 @@
 #include "Expr.hpp"
 #include "Stmt.hpp"
 #include "Environment.hpp"
+#include "Arena.hpp"
 
 namespace jl {
 
 class Interpreter : public IExprVisitor, public IStmtVisitor {
 public:
-    Interpreter(std::string& file_name);
+    Interpreter(Arena& arena, std::string& file_name);
     ~Interpreter();
 
     void interpret(Expr* expr, Value* value = nullptr);
     void interpret(std::vector<Stmt*>& statements);
     void resolve(Expr* expr, int depth);
-    void execute_block(std::vector<Stmt*>& statements, std::shared_ptr<Environment>& new_env);
+    void execute_block(std::vector<Stmt*>& statements, Environment* new_env);
     std::string stringify(Value& value);
 
-    std::shared_ptr<Environment> m_global_env;
+    Environment* m_global_env;
 
 private:
     virtual void visit_assign_expr(Assign* expr, void* context) override;
@@ -58,10 +59,13 @@ private:
     bool is_equal(Value& left, Value& right);
     Value& look_up_variable(Token& name, Expr* expr);
 
-    std::shared_ptr<Environment> m_env;
+    Arena& m_arena;
+    Arena m_internal_arena;
+    Environment* m_env;
     std::string m_file_name;
     std::map<Expr*, int> m_locals;
 
     friend class ToIntNativeFunction;
+    friend class ClassCallable;
 };
 } // namespace jl

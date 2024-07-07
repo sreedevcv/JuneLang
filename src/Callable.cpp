@@ -7,8 +7,9 @@
 // -----------------------------FunctionCallable-----------------------------------
 // --------------------------------------------------------------------------------
 
-jl::FunctionCallable::FunctionCallable(FuncStmt* declaration, std::shared_ptr<Environment>& closure, bool is_initalizer)
-    : m_declaration(declaration)
+jl::FunctionCallable::FunctionCallable(Arena& arena, FuncStmt* declaration, Environment* closure, bool is_initalizer)
+    : m_arena(arena)
+    , m_declaration(declaration)
     , m_closure(closure)
     , m_is_initializer(is_initalizer)
 {
@@ -16,7 +17,7 @@ jl::FunctionCallable::FunctionCallable(FuncStmt* declaration, std::shared_ptr<En
 
 jl::Value jl::FunctionCallable::call(Interpreter* interpreter, std::vector<Value>& arguments)
 {
-    std::shared_ptr<Environment> env = std::make_shared<Environment>(m_closure);
+    Environment* env = m_arena.allocate<Environment>(m_closure);
 
     for (int i = 0; i < m_declaration->m_params.size(); i++) {
         env->define(m_declaration->m_params[i]->get_lexeme(), arguments[i]);
@@ -36,7 +37,7 @@ jl::Value jl::FunctionCallable::call(Interpreter* interpreter, std::vector<Value
     if (m_is_initializer) {
         return m_closure->get_at(Token::global_this_lexeme, 0);
     }
-    
+
     return '\0';
 }
 
@@ -52,9 +53,9 @@ std::string jl::FunctionCallable::to_string()
 
 jl::FunctionCallable* jl::FunctionCallable::bind(Instance* instance)
 {
-    std::shared_ptr<Environment> env = std::make_shared<Environment>(m_closure);
+    Environment* env = m_arena.allocate<Environment>(m_closure);
     env->define(Token::global_this_lexeme, instance);
-    return new FunctionCallable(m_declaration, env, m_is_initializer);
+    return m_arena.allocate<FunctionCallable>(m_arena, m_declaration, env, m_is_initializer);
 }
 
 // --------------------------------------------------------------------------------
@@ -112,14 +113,14 @@ jl::ClassCallable::ClassCallable(std::string& name, ClassCallable* super_class, 
 
 jl::ClassCallable::~ClassCallable()
 {
-    for (auto& [key, value]: m_methods) {
-        delete value;
-    }
+    // for (auto& [key, value]: m_methods) {
+    //     delete value;
+    // }
 }
 
 jl::Value jl::ClassCallable::call(Interpreter* interpreter, std::vector<Value>& arguments)
 {
-    Instance* instance = new Instance(this);
+    Instance* instance = interpreter->m_internal_arena.allocate<Instance>(this);
     std::string init_name = "init";
     FunctionCallable* initializer = find_method(init_name);
     if (initializer != nullptr) {
@@ -163,13 +164,13 @@ jl::Instance::Instance(ClassCallable* class_callable)
 
 jl::Instance::~Instance()
 {
-    for (auto& [key, value]: m_fields) {
-        if (is_callable(value)) {
-            delete std::get<Callable*>(value);
-        } else if (is_instance(value)) {
-            delete std::get<Instance*>(value);
-        }
-    }
+    // for (auto& [key, value]: m_fields) {
+    //     if (is_callable(value)) {
+    //         delete std::get<Callable*>(value);
+    //     } else if (is_instance(value)) {
+    //         delete std::get<Instance*>(value);
+    //     }
+    // }
 }
 
 jl::Value jl::Instance::get(Token& name)

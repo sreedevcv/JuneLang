@@ -52,7 +52,7 @@ public:
 
     virtual ~ExprStmt()
     {
-        delete m_expr;
+        // delete m_expr;
     }
 };
 
@@ -72,7 +72,7 @@ public:
 
     virtual ~PrintStmt()
     {
-        delete m_expr;
+        // delete m_expr;
     }
 };
 
@@ -94,7 +94,7 @@ public:
 
     virtual ~VarStmt()
     {
-        delete m_initializer;
+        // delete m_initializer;
     }
 };
 
@@ -114,9 +114,9 @@ public:
 
     virtual ~BlockStmt()
     {
-        for (auto stmt : m_statements) {
-            delete stmt;
-        }
+        // for (auto stmt : m_statements) {
+        //     delete stmt;
+        // }
     }
 };
 
@@ -151,9 +151,9 @@ public:
 
     virtual ~IfStmt()
     {
-        delete m_condition;
-        delete m_then_stmt;
-        delete m_else_stmt;
+        // delete m_condition;
+        // delete m_then_stmt;
+        // delete m_else_stmt;
     }
 };
 
@@ -175,8 +175,8 @@ public:
 
     virtual ~WhileStmt()
     {
-        delete m_condition;
-        delete m_body;
+        // delete m_condition;
+        // delete m_body;
     }
 };
 
@@ -200,10 +200,10 @@ public:
 
     virtual ~FuncStmt()
     {
-        for (auto stmt: m_body)
-        {
-            delete stmt;
-        }
+        // for (auto stmt: m_body)
+        // {
+        //     delete stmt;
+        // }
     }
 };
 
@@ -223,10 +223,10 @@ public:
         visitor.visit_return_stmt(this, context);
     }
 
-    virtual ~ReturnStmt()
-    {
-        delete m_expr;
-    }
+    // virtual ~ReturnStmt()
+    // {
+    //     delete m_expr;
+    // }
 };
 
 class ClassStmt : public Stmt {
@@ -244,11 +244,11 @@ public:
 
     virtual ~ClassStmt()
     {
-        delete m_super_class;
-        for (auto method: m_methods)
-        {
-            delete method;
-        }
+        // delete m_super_class;
+        // for (auto method: m_methods)
+        // {
+        //     delete method;
+        // }
     }
 
     inline virtual void accept(IStmtVisitor& visitor, void* context) override

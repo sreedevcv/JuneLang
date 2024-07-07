@@ -3,7 +3,7 @@ project(June VERSION 0.1.0)
 set(CMAKE_CXX_STANDARD 23)
 
 # add_compile_options(-fsanitize=address)
-# add_link_options(-fsanitize=address)
+add_link_options(-fsanitize=address)
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG ${CMAKE_SOURCE_DIR})
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE ${CMAKE_SOURCE_DIR})

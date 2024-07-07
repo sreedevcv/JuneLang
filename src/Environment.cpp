@@ -8,7 +8,7 @@ jl::Environment::Environment(std::string& file_name)
 {
 }
 
-jl::Environment::Environment(std::shared_ptr<Environment>& enclosing)
+jl::Environment::Environment(Environment* enclosing)
     : m_enclosing(enclosing)
     , m_file_name(enclosing->m_file_name)
 {
@@ -16,13 +16,13 @@ jl::Environment::Environment(std::shared_ptr<Environment>& enclosing)
 
 jl::Environment::~Environment()
 {
-    for (auto& [key, value]: m_values) {
-        if (is_callable(value)) {
-            delete std::get<Callable*>(value);
-        } else if (is_instance(value)) {
-            delete std::get<Instance*>(value);
-        }
-    }
+    // for (auto& [key, value]: m_values) {
+    //     if (is_callable(value)) {
+    //         delete std::get<Callable*>(value);
+    //     } else if (is_instance(value)) {
+    //         delete std::get<Instance*>(value);
+    //     }
+    // }
 }
 
 void jl::Environment::define(const std::string& name, const Value& value)
@@ -104,7 +104,7 @@ jl::Environment* jl::Environment::ancestor(int depth)
     Environment* env = this;
 
     for (int i = 0; i < depth; i++) {
-        env = (env->m_enclosing).get();
+        env = (env->m_enclosing);
     }
 
     return env;

@@ -221,6 +221,7 @@ std::string jed::Editor::run_code(std::string& code)
     jl::ErrorHandler::reset();
     jl::ErrorHandler::m_stream.setOutputToStr();
     std::string result = "";
+    jl::Arena arena(1000);
     jl::Lexer lexer(code.c_str());
     std::string file_name = "LIVE";
     lexer.scan();
@@ -229,9 +230,9 @@ std::string jed::Editor::run_code(std::string& code)
         result = jl::ErrorHandler::m_stream.get_string_stream().str();
         return result;
     }
-
+    
     auto tokens = lexer.get_tokens();
-    jl::Parser parser(tokens, file_name);
+    jl::Parser parser(arena, tokens, file_name);
     auto stmts = parser.parseStatements();
 
     if (jl::ErrorHandler::has_error()) {
@@ -239,7 +240,7 @@ std::string jed::Editor::run_code(std::string& code)
         return result;
     }
 
-    jl::Interpreter interpreter(file_name);
+    jl::Interpreter interpreter(arena, file_name);
 
     jl::Resolver resolver(interpreter, file_name);
     resolver.resolve(stmts);
