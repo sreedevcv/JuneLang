@@ -32,6 +32,7 @@ private:
     Expr* and_expr();
     Expr* call();
     Expr* finish_call(Expr* callee);
+    Expr* modify_and_assign(Token::TokenType oper_type, Expr* expr);
 
     Stmt* statement();
     Stmt* declaration();

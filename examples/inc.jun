@@ -10,5 +10,13 @@ class Test [
 
 
 var test = Test();
-test.x += 2;
+test.x += 8;
 print test.x;
+
+
+var num1 = 12;
+num1 += 8;
+num1 -= 5;
+num1 *= 2;
+num1 /= 10;
+print num1;

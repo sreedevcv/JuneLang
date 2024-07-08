@@ -30,6 +30,8 @@ public:
             ptr->~T();
         });
 
+        std::cout << "[" << (long)(m_memory) % 1000  << "] Allocated " << sizeof(T) << " bytes\n";
+
         return ptr;
     }
 

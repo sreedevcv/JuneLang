@@ -180,7 +180,7 @@ jl::Expr* jl::Parser::unary()
 jl::Expr* jl::Parser::primary()
 {
     if (match({ Token::INT, Token::FLOAT, Token::STRING, Token::FALSE, Token::TRUE, Token::NULL_ })) {
-        Value* value = m_arena.allocate< Value>(previous().get_value());
+        Value* value = m_arena.allocate<Value>(previous().get_value());
         return m_arena.allocate<Literal>(value);
     }
     if (match({ Token::THIS })) {
@@ -223,22 +223,13 @@ jl::Expr* jl::Parser::assignment()
 
         ErrorHandler::error(m_file_name, "parsing", "assignment", equals.get_line(), "Invalid assignment target, expected a variable", 0);
     } else if (match({ Token::PLUS_EQUAL })) {
-        Token& plus_equals = previous();
-        Expr* value = or_expr();
-
-        if (dynamic_cast<Variable*>(expr)) {
-            Token& name = static_cast<Variable*>(expr)->m_name;
-            Token* plus_token = m_arena.allocate<Token>(Token::PLUS, previous().get_lexeme(), previous().get_line());
-            Binary* oper = m_arena.allocate<Binary>(expr, plus_token, value);
-            return m_arena.allocate<Assign>(oper, name);
-        } else if (dynamic_cast<Get*>(expr)) {
-            Get* get_expr = static_cast<Get*>(expr);
-            Token* plus_token = m_arena.allocate<Token>(Token::PLUS, previous().get_lexeme(), previous().get_line());
-            Binary* oper = m_arena.allocate<Binary>(expr, plus_token, value);
-            return m_arena.allocate<Set>(get_expr->m_name, get_expr->m_object, oper);
-        }
-
-        ErrorHandler::error(m_file_name, "parsing", "add assignment", plus_equals.get_line(), "Invalid assignment target, expected a variable", 0);
+        return modify_and_assign(Token::PLUS, expr);
+    } else if (match({ Token::MINUS_EQUAL })) {
+        return modify_and_assign(Token::MINUS, expr);
+    } else if (match({ Token::STAR_EQUAL })) {
+        return modify_and_assign(Token::STAR, expr);
+    } else if (match({ Token::SLASH_EQUAL })) {
+        return modify_and_assign(Token::SLASH, expr);
     }
 
     return expr;
@@ -303,6 +294,27 @@ jl::Expr* jl::Parser::finish_call(Expr* callee)
 
     Token& paren = consume(Token::RIGHT_PAR, "Expected ) after arguments");
     return m_arena.allocate<Call>(callee, paren, arguments);
+}
+
+jl::Expr* jl::Parser::modify_and_assign(Token::TokenType oper_type, Expr* expr)
+{
+    Token& oper_equals = previous();
+    Expr* value = or_expr();
+
+    if (dynamic_cast<Variable*>(expr)) {
+        Token& name = static_cast<Variable*>(expr)->m_name;
+        Token* oper_token = m_arena.allocate<Token>(oper_type, previous().get_lexeme(), previous().get_line());
+        Binary* oper = m_arena.allocate<Binary>(expr, oper_token, value);
+        return m_arena.allocate<Assign>(oper, name);
+    } else if (dynamic_cast<Get*>(expr)) {
+        Get* get_expr = static_cast<Get*>(expr);
+        Token* oper_token = m_arena.allocate<Token>(oper_type, previous().get_lexeme(), previous().get_line());
+        Binary* oper = m_arena.allocate<Binary>(expr, oper_token, value);
+        return m_arena.allocate<Set>(get_expr->m_name, get_expr->m_object, oper);
+    }
+
+    ErrorHandler::error(m_file_name, "parsing", "add assignment", oper_equals.get_line(), "Invalid assignment target, expected a variable", 0);
+    return expr;
 }
 
 // --------------------------------------------------------------------------------
@@ -435,7 +447,7 @@ jl::Stmt* jl::Parser::for_statement()
     Stmt* body = statement();
 
     if (increment != nullptr) {
-        body = m_arena.allocate< BlockStmt>((std::vector<Stmt*>){ body, m_arena.allocate< ExprStmt>(increment) });
+        body = m_arena.allocate<BlockStmt>((std::vector<Stmt*>) { body, m_arena.allocate<ExprStmt>(increment) });
     }
     if (condition == nullptr) {
         condition = m_arena.allocate<Literal>(&Token::global_true_constant);
@@ -443,7 +455,7 @@ jl::Stmt* jl::Parser::for_statement()
     body = m_arena.allocate<WhileStmt>(condition, body);
 
     if (initializer != nullptr) {
-        body = m_arena.allocate<BlockStmt>((std::vector<Stmt*>){ initializer, body });
+        body = m_arena.allocate<BlockStmt>((std::vector<Stmt*>) { initializer, body });
     }
 
     return body;

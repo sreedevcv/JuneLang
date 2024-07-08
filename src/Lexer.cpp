@@ -83,9 +83,6 @@ void jl::Lexer::scan_token()
     case '.':
         add_token(Token::DOT);
         break;
-    case '*':
-        add_token(Token::STAR);
-        break;
     case '\n':
         m_line++;
         break;
@@ -96,12 +93,13 @@ void jl::Lexer::scan_token()
         add_token(match('=') ? Token::BANG_EQUAL : Token::BANG);
         break;
     case '+':
-        // add_token(Token::PLUS);
         add_token(match('=') ? Token::PLUS_EQUAL : Token::PLUS);
         break;
     case '-':
-        // add_token(Token::MINUS);
         add_token(match('=') ? Token::MINUS_EQUAL : Token::MINUS);
+        break;
+    case '*':
+        add_token(match('=') ? Token::STAR_EQUAL : Token::STAR);
         break;
     case '=':
         add_token(match('=') ? Token::EQUAL_EQUAL : Token::EQUAL);
@@ -122,6 +120,8 @@ void jl::Lexer::scan_token()
             while (peek() != '\n' && !is_at_end()) {
                 advance();
             }
+        } else if (match('=')) {
+            add_token(Token::SLASH_EQUAL);
         } else {
             add_token(Token::SLASH);
         }

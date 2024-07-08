@@ -221,7 +221,7 @@ std::string jed::Editor::run_code(std::string& code)
     jl::ErrorHandler::reset();
     jl::ErrorHandler::m_stream.setOutputToStr();
     std::string result = "";
-    jl::Arena arena(1000);
+    jl::Arena arena(1000 * 1000);
     jl::Lexer lexer(code.c_str());
     std::string file_name = "LIVE";
     lexer.scan();
@@ -254,12 +254,5 @@ std::string jed::Editor::run_code(std::string& code)
     interpreter.interpret(stmts);
 
     result = jl::ErrorHandler::get_string_stream().str();
-
-    /* Problem when plus_equal operator was added */
-
-    // for (auto stmt : stmts) {
-    //     delete stmt;
-    // }
-
     return result;
 };

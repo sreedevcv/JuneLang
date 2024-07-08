@@ -10,10 +10,11 @@ jl::Arena::Arena(uint32_t size)
 
 jl::Arena::~Arena()
 {
-    for (auto& dtor: m_dtors) {
+    for (auto& dtor : m_dtors) {
         dtor();
     }
     free(m_memory);
+    std::cout << "[" << (long)(m_memory) % 1000 << "] " << m_ptr << " bytes freed" << std::endl;
 }
 
 bool jl::Arena::is_full()

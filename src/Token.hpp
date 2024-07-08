@@ -32,6 +32,8 @@ public:
         GREATER,
         PLUS_EQUAL,
         MINUS_EQUAL,
+        STAR_EQUAL,
+        SLASH_EQUAL,
         BANG_EQUAL,
         EQUAL_EQUAL,
         GREATER_EQUAL,

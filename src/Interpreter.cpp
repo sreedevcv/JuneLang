@@ -8,7 +8,7 @@
 jl::Interpreter::Interpreter(Arena& arena, std::string& file_name)
     : m_arena(arena)
     , m_file_name(file_name)
-    , m_internal_arena(2000)
+    , m_internal_arena(1000 * 1000)
 {
     m_env = m_internal_arena.allocate<Environment>(m_file_name);
     m_global_env = m_env;
@@ -19,7 +19,6 @@ jl::Interpreter::Interpreter(Arena& arena, std::string& file_name)
 
 jl::Interpreter::~Interpreter()
 {
-    // delete m_env;
 }
 
 void jl::Interpreter::interpret(Expr* expr, Value* value)
@@ -27,9 +26,6 @@ void jl::Interpreter::interpret(Expr* expr, Value* value)
     try {
         Value context;
         evaluate(expr, &context);
-
-        // DELETING VALUE
-        // free_value(context);
     } catch (const char* exc) {
         ErrorHandler::m_stream << ErrorHandler::get_error_count() << " Error[s] occured" << std::endl;
     }
@@ -42,7 +38,6 @@ void jl::Interpreter::interpret(std::vector<Stmt*>& statements)
         for (auto stmt : statements) {
             stmt->accept(*this, &value);
         }
-        // free_value(value);
     } catch (const char* exc) {
         ErrorHandler::m_stream << ErrorHandler::get_error_count() << " Error[s] ocuured" << std::endl;
     }
@@ -105,7 +100,6 @@ void jl::Interpreter::execute_block(std::vector<Stmt*>& statements, Environment*
             stmt->accept(*this, &value);
         }
 
-        // free_value(value);
     } catch (Value value) {
         // This happens during a function return
         // Just rethrow the value so that FunctionCallable::call can handle it
@@ -164,7 +158,6 @@ std::string jl::Interpreter::stringify(Value& value)
 
 void jl::Interpreter::visit_assign_expr(Assign* expr, void* context)
 {
-    // free_value(context);
     evaluate(expr->m_expr, context);
 
     Value value = *static_cast<Value*>(context);
@@ -177,7 +170,6 @@ void jl::Interpreter::visit_assign_expr(Assign* expr, void* context)
 
 void jl::Interpreter::visit_binary_expr(Binary* expr, void* context)
 {
-    // free_value(context);
 
     evaluate(expr->m_left, context);
     Value left = *static_cast<Value*>(context);
@@ -264,13 +256,11 @@ void jl::Interpreter::visit_binary_expr(Binary* expr, void* context)
 
 void jl::Interpreter::visit_grouping_expr(Grouping* expr, void* context)
 {
-    // free_value(context);
     evaluate(expr->m_expr, context);
 }
 
 void jl::Interpreter::visit_unary_expr(Unary* expr, void* context)
 {
-    // free_value(context);
     evaluate(expr->m_expr, context);
     Value* right = static_cast<Value*>(context);
 
@@ -299,15 +289,12 @@ void jl::Interpreter::visit_unary_expr(Unary* expr, void* context)
 
 void jl::Interpreter::visit_literal_expr(Literal* expr, void* context)
 {
-    // free_value(context);
     *static_cast<Value*>(context) = *expr->m_value;
 }
 
 // Returns the token value as the context
 void jl::Interpreter::visit_variable_expr(Variable* expr, void* context)
 {
-    // free_value(context);
-    // *static_cast<Value*>(context) = m_env->get(expr->m_name);
     *static_cast<Value*>(context) = look_up_variable(expr->m_name, expr);
 }
 
