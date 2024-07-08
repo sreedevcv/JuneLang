@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.20.0)
 project(June VERSION 0.1.0)
-set(CMAKE_CXX_STANDARD 23)
+set(CMAKE_CXX_STANDARD 20)
 
 # add_compile_options(-fsanitize=address)
 add_link_options(-fsanitize=address)
@@ -17,7 +17,7 @@ include_directories("include")
 option(BUILD_JUNE_EDITOR "Build Editor" OFF)
 option(BUILD_TESTS "Build tests" OFF)
 
-set (BUILD_JUNE_EDITOR OFF)
+set (BUILD_JUNE_EDITOR ON)
 set (BUILD_TESTS OFF)
 
 if (BUILD_TESTS)

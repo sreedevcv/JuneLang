@@ -17,6 +17,8 @@ if (UNIX)
 elseif(WIN32)
     set(GLFW_USE_WAYLAND OFF CACHE BOOL "" FORCE)
 endif()
+
+
 set(GLFW_BUILD_DOCS OFF CACHE BOOL "" FORCE)
 set(GLFW_BUILD_TESTS OFF CACHE BOOL "" FORCE)
 set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
@@ -28,8 +30,10 @@ FetchContent_Declare(
     GIT_REPOSITORY https://github.com/g-truc/glm
     GIT_TAG 33b0eb9fa336ffd8551024b1d2690e418014553b
 )
-set(GLM_BUILD_TESTS OFF)
+
+set(GLM_ENABLE_CXX_20 "Enable C++ 20" ON)
 set(BUILD_SHARED_LIBS OFF)
+
 FetchContent_MakeAvailable(glm)
 
 
@@ -39,6 +43,7 @@ FetchContent_Declare(
     GIT_REPOSITORY https://github.com/freetype/freetype.git
     GIT_TAG 044d142be7b6a93b6940367a1bc5847451ff4775
 )
+set(FT_DISABLE_HARFBUZZ ON)
 FetchContent_MakeAvailable(freetype)
 
 include_directories("src/")

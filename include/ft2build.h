@@ -34,6 +34,9 @@
 #ifndef FT2BUILD_H_
 #define FT2BUILD_H_
 
+#define HAVE_FCNTL_H 1
+#define HAVE_UNISTD_H 1
+
 #include <freetype/config/ftheader.h>
 
 #endif /* FT2BUILD_H_ */
