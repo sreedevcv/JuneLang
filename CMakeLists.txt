@@ -14,8 +14,11 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_MINSIZEREL ${CMAKE_SOURCE_DIR})
 include(FetchContent)
 include_directories("include")
 
-option(BUILD_JUNE_EDITOR "Build Editor" ON)
+option(BUILD_JUNE_EDITOR "Build Editor" OFF)
 option(BUILD_TESTS "Build tests" OFF)
+
+set (BUILD_JUNE_EDITOR OFF)
+set (BUILD_TESTS OFF)
 
 if (BUILD_TESTS)
     enable_testing()

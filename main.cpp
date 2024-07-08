@@ -7,9 +7,9 @@
 #include "Parser.hpp"
 #include "Resolver.hpp"
 
-#include "Editor.hpp"
+// #include "Editor.hpp"
 
-#include "FileHandler.hpp"
+// #include "FileHandler.hpp"
 
 int main()
 {

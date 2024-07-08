@@ -1,7 +1,9 @@
 #pragma once
 
 #include <cstdint>
+#include <functional>
 #include <iostream>
+#include <vector>
 
 namespace jl {
 
@@ -22,9 +24,12 @@ public:
         T* ptr = static_cast<T*>(new_addr);
         // ptr = std::construct_at(ptr, args...);
         ptr = new (ptr) T(std::forward<Args>(args)...);
-
-
         m_ptr += sizeof(T);
+
+        m_dtors.push_back([=]() {
+            ptr->~T();
+        });
+
         return ptr;
     }
 
@@ -34,6 +39,10 @@ private:
     uint32_t m_size;
     uint32_t m_ptr = 0;
     void* m_memory;
+
+    using destructor_t = std::function<void(void)>;
+
+    std::vector<destructor_t> m_dtors;
 };
 
 } // namespace jl

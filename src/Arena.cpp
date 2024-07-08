@@ -10,6 +10,9 @@ jl::Arena::Arena(uint32_t size)
 
 jl::Arena::~Arena()
 {
+    for (auto& dtor: m_dtors) {
+        dtor();
+    }
     free(m_memory);
 }
 
