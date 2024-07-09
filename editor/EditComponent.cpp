@@ -53,7 +53,7 @@ void jed::EditComponent::handle_arrow_up()
 {
     if (m_cursor.line > 0) {
         m_cursor.line -= 1;
-        m_data->bound_cursor_loc(m_cursor);
+        m_data->limit_cursor_loc(m_cursor);
     }
     m_cursor_blink = true;
 }
@@ -64,7 +64,7 @@ void jed::EditComponent::handle_arrow_down()
     if (m_cursor.line >= m_data->get_line_count()) {
         m_cursor.line -= 1;
     }
-    m_data->bound_cursor_loc(m_cursor);
+    m_data->limit_cursor_loc(m_cursor);
     m_cursor_blink = true;
 }
 

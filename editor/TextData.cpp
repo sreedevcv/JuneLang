@@ -109,7 +109,7 @@ int jed::TextData::get_line_count()
     return m_line_count;
 }
 
-void jed::TextData::bound_cursor_loc(Cursor& cursor)
+void jed::TextData::limit_cursor_loc(Cursor& cursor)
 {
     if (cursor.loc > get_line_size(cursor.line)) {
         cursor.loc = get_line_size(cursor.line);
@@ -222,4 +222,9 @@ void jed::TextData::clear()
 
     m_line_count = 0;
     m_data.clear();
+}
+
+char* jed::TextData::line(int index)
+{
+    return m_data[index].data;
 }

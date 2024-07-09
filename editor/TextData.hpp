@@ -21,10 +21,11 @@ public:
     int get_line_size(int line);
     int get_line_count();
     void clear();
-    void bound_cursor_loc(Cursor& cursor);
+    void limit_cursor_loc(Cursor& cursor);
     char peek(Cursor& cursor);
     std::string get_data();
     void append_string(std::string data);
+    char* line(int index);
 
 private:
     struct str {

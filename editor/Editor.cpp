@@ -83,14 +83,15 @@ jed::Editor::Editor()
                 if (!mcomp) {
                     return;
                 }
+                mcomp->focus_file_explorer();
 
-                FileHandler fh;
-                std::string file = "examples/inc.jun";
-                if (fh.open_and_read(file)) {
-                    auto data = fh.get_text_data();
-                    mcomp->set_new_data_source(fh.get_text_data());
-                    mcomp->set_current_file_name(file);
-                }
+                // FileHandler fh;
+                // std::string file = "examples/inc.jun";
+                // if (fh.open_and_read(file)) {
+                //     auto data = fh.get_text_data();
+                //     mcomp->set_new_data_source(fh.get_text_data());
+                //     mcomp->set_current_file_name(file);
+                // }
             }
             if ((mods & GLFW_MOD_CONTROL) && key == GLFW_KEY_APOSTROPHE) {
                 MainComponent* mcomp = dynamic_cast<MainComponent*>(editor->in_focus);
@@ -98,7 +99,7 @@ jed::Editor::Editor()
                     return;
                 }
 
-                mcomp->toggle_output_visibility();
+                mcomp->focus_output();
             }
         }
 

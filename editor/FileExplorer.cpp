@@ -4,36 +4,75 @@ jed::FileExplorer::FileExplorer()
 {
     set_data_source(&m_data);
     update_text_data();
+
+    if (!m_viewer.empty()) {
+        m_curr_index = 0;
+        m_data.line(0)[0] = '*';
+    }
 }
 
 void jed::FileExplorer::handle_enter()
 {
-    m_viewer.set_directory(m_curr_index);
-    update_text_data();
+    if (m_viewer.empty()) {
+        return;
+    }
+
+    DirectoryViewer::Type type = std::get<DirectoryViewer::Type>(m_viewer.get_dirents()[m_curr_index]);
+    if (type == DirectoryViewer::DIR) {
+        m_viewer.set_directory(m_curr_index);
+        update_text_data();
+        m_curr_index = 0;
+        m_data.line(0)[0] = '*';
+    }
+
 }
 
 void jed::FileExplorer::handle_backspace()
 {
     m_viewer.set_parent_directory();
     update_text_data();
+
+    if (m_viewer.empty()) {
+        return;
+    }
+
+    m_curr_index = 0;
+    m_data.line(0)[0] = '*';
 }
 
 void jed::FileExplorer::handle_arrow_up()
 {
+    std::cout << m_curr_index << "\n";
+    if (m_viewer.empty()) {
+        return;
+    }
+
+    m_data.line(m_curr_index)[0] = ' ';
     m_curr_index -= 1;
 
     if (m_curr_index < 0) {
         m_curr_index = 0;
     }
+
+    m_data.line(m_curr_index)[0] = '*';
 }
 
 void jed::FileExplorer::handle_arrow_down()
 {
+    std::cout << m_curr_index << "\n";
+    
+    if (m_viewer.empty()) {
+        return;
+    }
+
+    m_data.line(m_curr_index)[0] = ' ';
     m_curr_index += 1;
 
     if (m_curr_index >= m_viewer.size()) {
         m_curr_index = m_viewer.size() - 1;
     }
+
+    m_data.line(m_curr_index)[0] = '*';
 }
 
 void jed::FileExplorer::update_text_data()
@@ -59,8 +98,7 @@ void jed::FileExplorer::update_text_data()
         }
 
         data.append(std::get<std::string>(dirs));
-        // data.append("\n");
-        // data.replace(0, 14, "~/", 2);
+        data.append("\n");
     }
 
     m_data.append_string(data);

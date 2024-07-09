@@ -4,6 +4,8 @@
 
 void jed::MainComponent::load_component()
 {
+    m_infocus = MAIN;
+
     int main_x = m_gutter_width;
     int main_y = m_top_bar_height;
     int main_width = Context::get().width - main_x;
@@ -39,6 +41,12 @@ void jed::MainComponent::load_component()
     int out_height = Context::get().height - out_y;
     m_output_comp.load(out_width, out_height, out_x, out_y);
     m_output_comp.set_data_source(&m_output_data);
+
+    int explorer_x = Context::get().width * 0.1;
+    int explorer_y = Context::get().height / 4;
+    int explorer_width = Context::get().width * 0.8;
+    int explorer_height = Context::get().height / 2;
+    m_explorer.load(explorer_width, explorer_height, explorer_x, explorer_y);
 }
 
 void jed::MainComponent::draw(float delta)
@@ -46,8 +54,16 @@ void jed::MainComponent::draw(float delta)
     EditComponent::draw(delta);
     m_line_gutter.draw(delta);
     m_top_bar.draw(delta);
-    if (m_show_output_tab) {
+
+    switch (m_infocus) {
+    case EXPLORER:
+        m_explorer.draw(delta);
+        break;
+    case OUTPUT:
         m_output_comp.draw(delta);
+        break;
+    default:
+        break;
     }
 }
 
@@ -59,40 +75,102 @@ void jed::MainComponent::set_new_data_source(TextData& data)
 
 void jed::MainComponent::handle_enter()
 {
-    EditComponent::handle_enter();
-    update_line_data();
+    switch (m_infocus) {
+    case MAIN:
+        EditComponent::handle_enter();
+        update_line_data();
+        break;
+    case EXPLORER:
+        m_explorer.handle_enter();
+        break;
+    default:
+        break;
+    }
 }
 
 void jed::MainComponent::handle_backspace()
 {
-    EditComponent::handle_backspace();
-    update_line_data();
+    switch (m_infocus) {
+    case MAIN:
+        EditComponent::handle_backspace();
+        update_line_data();
+        break;
+    case EXPLORER:
+        m_explorer.handle_backspace();
+        break;
+    default:
+        break;
+    }
+}
+
+void jed::MainComponent::handle_arrow_up()
+{
+    switch (m_infocus) {
+    case MAIN:
+        EditComponent::handle_arrow_up();
+        break;
+    case EXPLORER:
+        m_explorer.handle_arrow_up();
+        break;
+    default:
+        break;
+    }
+}
+
+void jed::MainComponent::handle_arrow_down()
+{
+    switch (m_infocus) {
+    case MAIN:
+        EditComponent::handle_arrow_down();
+        break;
+    case EXPLORER:
+        m_explorer.handle_arrow_down();
+        break;
+    default:
+        break;
+    }
 }
 
 void jed::MainComponent::handle_scroll_vert(float offset)
 {
-    if (!m_show_output_tab) {
+    switch (m_infocus) {
+    case MAIN:
         ScrollableComponent::handle_scroll_vert(offset);
         m_line_gutter.handle_scroll_vert(offset);
-    } else {
+        break;
+    case OUTPUT:
         m_output_comp.handle_scroll_vert(offset);
+        break;
+    case EXPLORER:
+        m_explorer.handle_scroll_vert(offset);
+        break;
+    default:
+        break;
     }
 }
 
 void jed::MainComponent::handle_scroll_horz(float offset)
 {
-    if (!m_show_output_tab) {
+    switch (m_infocus) {
+    case MAIN:
         ScrollableComponent::handle_scroll_horz(offset);
-    } else {
+        break;
+    case OUTPUT:
         m_output_comp.handle_scroll_horz(offset);
+        break;
+    case EXPLORER:
+        m_explorer.handle_scroll_horz(offset);
+        break;
+    default:
+        break;
     }
 }
 
 void jed::MainComponent::set_current_file_name(std::string& file_name)
 {
     m_top_bar_file_name.clear();
-    Cursor cursor = {0, 0};
-    for(char c: file_name) {
+    Cursor cursor = { 0, 0 };
+    for (char c : file_name) {
         m_top_bar_file_name.add_text_to_line(c, cursor);
         cursor.loc += 1;
     }
@@ -108,16 +186,21 @@ void jed::MainComponent::delete_word()
     update_line_data();
 }
 
-void jed::MainComponent::toggle_output_visibility()
+void jed::MainComponent::focus_output()
 {
-    m_show_output_tab = !m_show_output_tab;
+    m_infocus = (m_infocus == OUTPUT) ? MAIN : OUTPUT;
 }
 
 void jed::MainComponent::set_output_contents(std::string& data)
 {
     m_output_data.clear();
     m_output_data.append_string(data);
-    m_show_output_tab = true;
+    m_infocus = OUTPUT;
+}
+
+void jed::MainComponent::focus_file_explorer()
+{
+    m_infocus = (m_infocus == EXPLORER) ? MAIN : EXPLORER;
 }
 
 void jed::MainComponent::update_line_data()

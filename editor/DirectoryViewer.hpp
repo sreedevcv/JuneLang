@@ -20,15 +20,17 @@ public:
     DirectoryViewer();
     ~DirectoryViewer() = default;
 
+    bool empty() const;
     void set_directory(int index);
     void set_parent_directory();
-    const std::vector<entry_t>& get_dirents();
-    int32_t size();
+    const std::vector<entry_t>& get_dirents() const;
+    int32_t size() const;
 
 private:
     std::filesystem::directory_entry m_starting_dir;
     std::filesystem::directory_entry m_curr_dir;
     std::vector<entry_t> m_dirents;
+    bool m_dir_empty = false;
 
     Type get_type(const std::filesystem::directory_entry& direnty) const;
     void update_dirents();

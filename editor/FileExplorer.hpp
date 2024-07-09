@@ -16,7 +16,7 @@ public:
     void handle_backspace() override;
 
 private:
-    uint32_t m_curr_index = 0;
+    int32_t m_curr_index = 0;
     DirectoryViewer m_viewer;
     TextData m_data;
 

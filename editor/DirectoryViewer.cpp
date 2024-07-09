@@ -6,8 +6,12 @@ jed::DirectoryViewer::DirectoryViewer()
     : m_starting_dir(std::filesystem::current_path())
     , m_curr_dir(std::filesystem::current_path())
 {
-    std::cout << "dir: " << m_curr_dir.path().string() << "\n";
     update_dirents();
+}
+
+bool jed::DirectoryViewer::empty() const
+{
+    return m_dir_empty;
 }
 
 void jed::DirectoryViewer::set_directory(int index)
@@ -18,11 +22,12 @@ void jed::DirectoryViewer::set_directory(int index)
 
 void jed::DirectoryViewer::set_parent_directory()
 {
-    m_curr_dir = std::filesystem::directory_entry(m_curr_dir.path().parent_path());
+    auto parent_path = m_curr_dir.path().parent_path();
+    m_curr_dir = std::filesystem::directory_entry(parent_path);
     update_dirents();
 }
 
-const std::vector<jed::DirectoryViewer::entry_t>& jed::DirectoryViewer::get_dirents()
+const std::vector<jed::DirectoryViewer::entry_t>& jed::DirectoryViewer::get_dirents() const
 {
     return m_dirents;
 }
@@ -30,14 +35,16 @@ const std::vector<jed::DirectoryViewer::entry_t>& jed::DirectoryViewer::get_dire
 void jed::DirectoryViewer::update_dirents()
 {
     m_dirents.clear();
-    for (const auto dir : std::filesystem::directory_iterator(m_curr_dir)) {
-        std::cout << "dir: " << dir.path().string() << " " << dir.is_regular_file() << " " << dir.is_directory() << "\n";
+    auto iterator = std::filesystem::directory_iterator(m_curr_dir.path());
+    for (const auto dir : iterator) {
         entry_t entry = { dir.path().string(), get_type(dir) };
         m_dirents.push_back(entry);
     }
+
+    m_dir_empty = m_dirents.empty();
 }
 
-int32_t jed::DirectoryViewer::size()
+int32_t jed::DirectoryViewer::size() const
 {
     return m_dirents.size();
 }
