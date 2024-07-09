@@ -60,7 +60,6 @@ std::string jed::FileExplorer::get_path()
 
 void jed::FileExplorer::handle_arrow_up()
 {
-    std::cout << m_curr_index << "\n";
     if (m_viewer.empty()) {
         return;
     }
@@ -113,9 +112,24 @@ void jed::FileExplorer::update_text_data()
             break;
         }
 
-        data.append(std::get<std::string>(dirs));
+        std::string path = std::get<std::string>(dirs);
+        data.append(file_name(path));
         data.append("\n");
     }
 
     m_data.append_string(data);
+}
+
+const char* jed::FileExplorer::file_name(std::string& full_path)
+{
+    int slash_index = full_path.size() - 1;
+    while (slash_index >= 0) {
+        if (full_path[slash_index] == '/') {
+            break;
+        }
+
+        slash_index -= 1;
+    }
+
+    return full_path.c_str() + slash_index + 1;
 }
