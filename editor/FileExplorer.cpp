@@ -23,6 +23,8 @@ void jed::FileExplorer::handle_enter()
         update_text_data();
         m_curr_index = 0;
         m_data.line(0)[0] = '*';
+    } else {
+        m_just_selected_file = true;
     }
 
 }
@@ -38,6 +40,22 @@ void jed::FileExplorer::handle_backspace()
 
     m_curr_index = 0;
     m_data.line(0)[0] = '*';
+}
+
+bool jed::FileExplorer::has_selected_file()
+{
+    bool ret_value = m_just_selected_file;
+
+    if (m_just_selected_file) {
+        m_just_selected_file = false;
+    }
+
+    return ret_value;
+}
+
+std::string jed::FileExplorer::get_path()
+{
+    return std::get<std::string>(m_viewer.get_dirents()[m_curr_index]);
 }
 
 void jed::FileExplorer::handle_arrow_up()
@@ -58,9 +76,7 @@ void jed::FileExplorer::handle_arrow_up()
 }
 
 void jed::FileExplorer::handle_arrow_down()
-{
-    std::cout << m_curr_index << "\n";
-    
+{    
     if (m_viewer.empty()) {
         return;
     }

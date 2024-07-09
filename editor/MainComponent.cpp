@@ -1,6 +1,7 @@
 #include "MainComponent.hpp"
 
 #include "Context.hpp"
+#include "FileHandler.hpp"
 
 void jed::MainComponent::load_component()
 {
@@ -82,6 +83,17 @@ void jed::MainComponent::handle_enter()
         break;
     case EXPLORER:
         m_explorer.handle_enter();
+
+        if (m_explorer.has_selected_file()) {
+            FileHandler fh;
+            std::string file = m_explorer.get_path();
+
+            if (fh.open_and_read(file)) {
+                auto data = fh.get_text_data();
+                set_new_data_source(data);
+                set_current_file_name(file);
+            }
+        }
         break;
     default:
         break;

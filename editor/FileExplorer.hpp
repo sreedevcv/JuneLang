@@ -15,10 +15,14 @@ public:
     void handle_arrow_down() override;
     void handle_backspace() override;
 
+    bool has_selected_file();
+    std::string get_path();
+
 private:
     int32_t m_curr_index = 0;
     DirectoryViewer m_viewer;
     TextData m_data;
+    bool m_just_selected_file = false;
 
     void update_text_data();
 };

@@ -114,7 +114,7 @@ jed::Editor::Editor()
                 return;
             }
             if ((mods & GLFW_MOD_CONTROL) && key == GLFW_KEY_BACKSPACE) {
-                std::cout << "Ctrl + V pressed" << std::endl;
+                std::cout << "Ctrl + <- pressed" << std::endl;
                 // editor->comp.delete_word();
                 return;
             }
