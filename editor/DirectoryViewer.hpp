@@ -21,6 +21,7 @@ public:
     ~DirectoryViewer() = default;
 
     bool empty() const;
+    std::string path() const;
     void set_directory(int index);
     void set_parent_directory();
     const std::vector<entry_t>& get_dirents() const;

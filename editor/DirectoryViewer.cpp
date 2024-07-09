@@ -14,6 +14,11 @@ bool jed::DirectoryViewer::empty() const
     return m_dir_empty;
 }
 
+std::string jed::DirectoryViewer::path() const
+{
+    return m_curr_dir.path().string();
+}
+
 void jed::DirectoryViewer::set_directory(int index)
 {
     m_curr_dir = std::filesystem::directory_entry(std::get<std::string>(m_dirents[index]));

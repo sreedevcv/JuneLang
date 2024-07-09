@@ -25,7 +25,7 @@ private:
     bool m_just_selected_file = false;
 
     void update_text_data();
-    const char* file_name(std::string& full_path);
+    const char* file_name(const std::string& full_path) const;
 };
 
 } // namespace jed
