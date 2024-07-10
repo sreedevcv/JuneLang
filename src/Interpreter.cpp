@@ -5,10 +5,10 @@
 #include "Callable.hpp"
 #include "ErrorHandler.hpp"
 
-jl::Interpreter::Interpreter(Arena& arena, std::string& file_name)
+jl::Interpreter::Interpreter(Arena& arena, std::string& file_name, int64_t internal_arena_size)
     : m_arena(arena)
     , m_file_name(file_name)
-    , m_internal_arena(1000 * 1000)
+    , m_internal_arena(internal_arena_size)
 {
     m_env = m_internal_arena.allocate<Environment>(m_file_name);
     m_global_env = m_env;

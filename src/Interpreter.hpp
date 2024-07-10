@@ -12,7 +12,7 @@ namespace jl {
 
 class Interpreter : public IExprVisitor, public IStmtVisitor {
 public:
-    Interpreter(Arena& arena, std::string& file_name);
+    Interpreter(Arena& arena, std::string& file_name, int64_t internal_arena_size = 1000*1000);
     ~Interpreter();
 
     void interpret(Expr* expr, Value* value = nullptr);
