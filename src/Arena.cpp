@@ -2,7 +2,7 @@
 
 #include <cstdlib>
 
-jl::Arena::Arena(uint32_t size)
+jl::Arena::Arena(uint64_t size)
     : m_size(size)
 {
     m_memory = malloc(m_size);

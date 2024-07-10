@@ -9,7 +9,7 @@ namespace jl {
 
 class Arena {
 public:
-    Arena(uint32_t size);
+    Arena(uint64_t size);
     ~Arena();
 
     template <typename T, typename... Args>
@@ -30,7 +30,7 @@ public:
             ptr->~T();
         });
 
-        std::cout << "[" << (long)(m_memory) % 1000  << "] Allocated " << sizeof(T) << " bytes\n";
+        // std::cout << "[" << (long)(m_memory) % 1000  << "] Allocated " << sizeof(T) << " bytes\n";
 
         return ptr;
     }
@@ -38,8 +38,8 @@ public:
     bool is_full();
 
 private:
-    uint32_t m_size;
-    uint32_t m_ptr = 0;
+    uint64_t m_size;
+    uint64_t m_ptr = 0;
     void* m_memory;
 
     using destructor_t = std::function<void(void)>;
