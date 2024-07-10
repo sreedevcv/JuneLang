@@ -3,7 +3,7 @@ project(June VERSION 0.1.0)
 set(CMAKE_CXX_STANDARD 20)
 
 # add_compile_options(-fsanitize=address)
-# add_link_options(-fsanitize=address)
+add_link_options(-fsanitize=address)
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG ${CMAKE_SOURCE_DIR})
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE ${CMAKE_SOURCE_DIR})
@@ -17,8 +17,8 @@ include_directories("include")
 option(BUILD_JUNE_EDITOR "Build Editor" OFF)
 option(BUILD_TESTS "Build tests" OFF)
 
-set (BUILD_JUNE_EDITOR ON)
-set (BUILD_TESTS OFF)
+set (BUILD_JUNE_EDITOR OFF)
+set (BUILD_TESTS ON)
 
 if (BUILD_TESTS)
     enable_testing()

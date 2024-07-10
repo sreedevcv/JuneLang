@@ -7,82 +7,69 @@
 #include "Parser.hpp"
 #include "Resolver.hpp"
 
-#include "DirectoryViewer.hpp"
-#include "Editor.hpp"
-#include "FileHandler.hpp"
+// #include "Editor.hpp"
 
 int main()
 {
-    jed::Editor editor;
-    editor.start();
+    // jed::Editor editor;
+    // editor.start();
 
-    // jed::DirectoryViewer dv;
-    // dv.update_dirents();
+    jl::Lexer lexer(
+        R"(
+        // fun fib(n) [
+        //     if n <= 1 return n;
+        //     return fib(n - 2) + fib(n - 1);
+        // ]
 
-    //----------------------------------qqqqqqqqqqqqqqqqqqqqqqqqqqaaaaaaaaaaaaaannnnnnnnnnnnnnnbbbbbbbbbbbbb
+        // for var i = 0; i < 20; i = i + 1; [
+        //     print fib(i);
+        // ]
 
-    // jl::Lexer lexer(
-    //     R"(
-    //     var a = 10;
-    //     print a;
+        class Doughnut [
+            cook() [
+                print "Fry until golden brown.";
+            ]
+        ]
 
-    //     fun temp(x, y)
-    //     [
-    //         for var i=x; i < y; i = i+1;
-    //         [
-    //             print i;
-    //         ]
-    //     ]
+        class BostonCream : Doughnut []
 
-    //     temp(10, 20);
-    // )");
+        BostonCream().cook();
 
-    // std::string file_name = "test";
-    // lexer.scan();
+    )");
 
-    // jl::Arena arena(1000);
+    std::string file_name = "test";
+    lexer.scan();
 
-    // if (jl::ErrorHandler::has_error()) {
-    //     return 1;
-    // }
+    jl::Arena arena(1000 * 1000);
 
-    // auto tokens = lexer.get_tokens();
-    // jl::Parser parser(arena, tokens, file_name);
-    // auto stmts = parser.parseStatements();
+    if (jl::ErrorHandler::has_error()) {
+        return 1;
+    }
 
-    // if (jl::ErrorHandler::has_error()) {
-    //     return 1;
-    // }
+    auto tokens = lexer.get_tokens();
+    jl::Parser parser(arena, tokens, file_name);
+    auto stmts = parser.parseStatements();
 
-    // jl::Interpreter interpreter(arena, file_name);
+    if (jl::ErrorHandler::has_error()) {
+        return 1;
+    }
 
-    // jl::Resolver resolver(interpreter, file_name);
-    // resolver.resolve(stmts);
+    jl::Interpreter interpreter(arena, file_name, 1000*1000);
 
-    // if (jl::ErrorHandler::has_error()) {
-    //     return 1;
-    // }
+    jl::Resolver resolver(interpreter, file_name);
+    resolver.resolve(stmts);
 
-    // jl::Value v;
-    // interpreter.interpret(stmts);
+    if (jl::ErrorHandler::has_error()) {
+        return 1;
+    }
 
-    // for (auto stmt: stmts) {
-    //     delete stmt;
-    // }
+    jl::Value v;
+    interpreter.interpret(stmts);
 
     std::cout << "Ended" << std::endl;
 }
 
 /*
-
-        fun fib(n) [
-            if n <= 1 return n;
-            return fib(n - 2) + fib(n - 1);
-        ]
-
-        for var i = 0; i < 20; i = i + 1; [
-            print fib(i);
-        ]
 
 
         class Thing [
