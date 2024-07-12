@@ -1,10 +1,8 @@
 #pragma once
 
-#include <unordered_map>
-#include <memory>
-
-#include "Expr.hpp"
 #include "Token.hpp"
+
+#include <unordered_map>
 
 namespace jl {
 

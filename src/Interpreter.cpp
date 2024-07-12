@@ -390,6 +390,7 @@ void jl::Interpreter::visit_super_expr(Super* expr, void* context)
 
     if (method == nullptr) {
         ErrorHandler::error(m_file_name, "interpreting", "super keyword", expr->m_keyword.get_line(), "Udefined property called on super", 0);
+        throw "runtime-exception";
     }
 
     *static_cast<Value*>(context) = static_cast<Callable*>(method->bind(instance));
