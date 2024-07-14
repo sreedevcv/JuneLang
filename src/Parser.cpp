@@ -111,26 +111,19 @@ jl::Token& jl::Parser::consume(Token::TokenType type, const char* msg)
 
 jl::Expr* jl::Parser::parse_list()
 {
-    // Token& curr = advance();
     std::vector<Expr*> list;
-    
-    while (!is_at_end() && peek().get_tokentype() != Token::RIGHT_BRACE) {
-        Token& token = peek();
 
-        // if (token.get_tokentype() == Token::LEFT_BRACE) {
-        // if (match({Token::LEFT_BRACE}))
-        //     Expr* list_expr = parse_list();
-        //     list.push_back(list_expr);
-        // } else {
-            Expr* expr = or_expr();
-            list.push_back(expr);
+    while (!is_at_end() && peek().get_tokentype() != Token::RIGHT_BRACE) {
+        Expr* expr = or_expr();
+        list.push_back(expr);
+        if (peek().get_tokentype() != Token::RIGHT_BRACE) {
             consume(Token::COMMA, "Lists hould be comma seperated");
-        // }
+        }
     }
 
     consume(Token::RIGHT_BRACE, "Lists should end with '}'");
 
-    return m_arena.allocate<JList>(list);
+    return m_arena.allocate<JList>(std::move(list));
 }
 
 // --------------------------------------------------------------------------------
@@ -246,6 +239,9 @@ jl::Expr* jl::Parser::assignment()
         } else if (dynamic_cast<Get*>(expr)) {
             Get* get_expr = static_cast<Get*>(expr);
             return m_arena.allocate<Set>(get_expr->m_name, get_expr->m_object, value);
+        } else if (dynamic_cast<IndexGet*>(expr)) {
+            IndexGet* index_get = static_cast<IndexGet*>(expr);
+            return m_arena.allocate<IndexSet>(index_get->m_jlist, index_get->m_index_expr, value, index_get->m_closing_bracket);
         }
 
         ErrorHandler::error(m_file_name, "parsing", "assignment", equals.get_line(), "Invalid assignment target, expected a variable", 0);
@@ -298,6 +294,10 @@ jl::Expr* jl::Parser::call()
         } else if (match({ Token::DOT })) {
             Token& name = consume(Token::IDENTIFIER, "Expected property name after '.'");
             expr = m_arena.allocate<Get>(name, expr);
+        } else if (match({ Token::LEFT_SQUARE })) {
+            Expr* index_expr = or_expr();
+            Token& closing_bracket = consume(Token::RIGHT_SQUARE, "Expected closing ] after indexing");
+            expr = m_arena.allocate<IndexGet>(expr, index_expr, closing_bracket);
         } else {
             break;
         }
@@ -325,6 +325,7 @@ jl::Expr* jl::Parser::finish_call(Expr* callee)
 
 jl::Expr* jl::Parser::modify_and_assign(Token::TokenType oper_type, Expr* expr)
 {
+    // NOTE::Remove duplicate code
     Token& oper_equals = previous();
     Expr* value = or_expr();
 
@@ -338,6 +339,11 @@ jl::Expr* jl::Parser::modify_and_assign(Token::TokenType oper_type, Expr* expr)
         Token* oper_token = m_arena.allocate<Token>(oper_type, previous().get_lexeme(), previous().get_line());
         Binary* oper = m_arena.allocate<Binary>(expr, oper_token, value);
         return m_arena.allocate<Set>(get_expr->m_name, get_expr->m_object, oper);
+    } else if (dynamic_cast<IndexGet*>(expr)) {
+        IndexGet* index_get = static_cast<IndexGet*>(expr);
+        Token* oper_token = m_arena.allocate<Token>(oper_type, previous().get_lexeme(), previous().get_line());
+        Binary* oper = m_arena.allocate<Binary>(expr, oper_token, value);
+        return m_arena.allocate<IndexSet>(index_get->m_jlist, index_get->m_index_expr, oper, index_get->m_closing_bracket);
     }
 
     ErrorHandler::error(m_file_name, "parsing", "add assignment", oper_equals.get_line(), "Invalid assignment target, expected a variable", 0);
@@ -421,20 +427,15 @@ jl::Stmt* jl::Parser::var_declaration()
     return m_arena.allocate<VarStmt>(name, initializer);
 }
 
-// NOTE::Unsure whether wee need a delinter after condition to properly parse
 jl::Stmt* jl::Parser::if_stmt()
 {
     Expr* condition = expression();
-    // consume(Token::LEFT_SQUARE, "Expected [ after condition");
     Stmt* then_branch = statement();
-    // consume(Token::RIGHT_SQUARE, "Expected ] after statements in if block");
 
     Stmt* else_branch = nullptr;
 
     if (match({ Token::ELSE })) {
-        // consume(Token::LEFT_SQUARE, "Expected [ after condition");
         else_branch = statement();
-        // consume(Token::RIGHT_SQUARE, "Expected ] after statements in if block");
     }
 
     return m_arena.allocate<IfStmt>(condition, then_branch, else_branch);

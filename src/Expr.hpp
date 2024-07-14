@@ -22,6 +22,8 @@ class Set;
 class This;
 class Super;
 class JList;
+class IndexGet;
+class IndexSet;
 
 class IExprVisitor {
 public:
@@ -38,6 +40,8 @@ public:
     virtual void visit_this_expr(This* expr, void* context) = 0;
     virtual void visit_super_expr(Super* expr, void* context) = 0;
     virtual void visit_jlist_expr(JList* expr, void* context) = 0;
+    virtual void visit_index_get_expr(IndexGet* expr, void* context) = 0;
+    virtual void visit_index_set_expr(IndexSet* expr, void* context) = 0;
     virtual void* get_expr_context() = 0;
 };
 
@@ -87,7 +91,7 @@ public:
         visitor.visit_binary_expr(this, context);
     }
 
-    virtual ~Binary() 
+    virtual ~Binary()
     {
         // delete m_left;
         // delete m_right;
@@ -107,7 +111,7 @@ public:
         visitor.visit_grouping_expr(this, context);
     }
 
-    virtual ~Grouping() 
+    virtual ~Grouping()
     {
         // delete m_expr;
     }
@@ -127,7 +131,7 @@ public:
         visitor.visit_literal_expr(this, context);
     }
 
-    virtual ~Literal() 
+    virtual ~Literal()
     {
         // delete m_value;
     }
@@ -191,7 +195,7 @@ public:
         visitor.visit_logical_expr(this, context);
     }
 
-    virtual ~Logical() 
+    virtual ~Logical()
     {
         // delete m_left;
         // delete m_right;
@@ -309,26 +313,69 @@ public:
     virtual ~Super() = default;
 };
 
-class JList: public Expr {
+class JList : public Expr {
 public:
+    std::vector<Expr*> m_items;
+
     inline JList(std::vector<Expr*>& items)
-        : m_items(items) {}
+        : m_items(items)
+    {
+    }
     inline JList(std::vector<Expr*>&& items)
-        : m_items(std::move(items)) {}
+        : m_items(std::move(items))
+    {
+    }
 
     inline virtual void accept(IExprVisitor& visitor, void* context)
     {
         visitor.visit_jlist_expr(this, context);
     }
 
-    inline std::vector<Expr*>& get()
+    virtual ~JList() = default;
+};
+
+class IndexGet : public Expr {
+public:
+    Expr* m_jlist;
+    Expr* m_index_expr;
+    Token& m_closing_bracket;
+
+    inline IndexGet(Expr* jlist, Expr* index_expr, Token& closing_bracket)
+        : m_jlist(jlist)
+        , m_index_expr(index_expr)
+        , m_closing_bracket(closing_bracket)
     {
-        return m_items;
     }
 
-    virtual ~JList() = default;
-private:
-    std::vector<Expr*> m_items;
+    inline virtual void accept(IExprVisitor& visitor, void* context)
+    {
+        visitor.visit_index_get_expr(this, context);
+    }
+
+    virtual ~IndexGet() = default;
+};
+
+class IndexSet : public Expr {
+public:
+    Expr* m_jlist;
+    Expr* m_index_expr;
+    Expr* m_value_expr;
+    Token& m_closing_bracket;
+
+    inline IndexSet(Expr* jlist, Expr* index_expr, Expr* value_expr, Token& closing_bracket)
+        : m_jlist(jlist)
+        , m_index_expr(index_expr)
+        , m_value_expr(value_expr)
+        , m_closing_bracket(closing_bracket)
+    {
+    }
+
+    inline virtual void accept(IExprVisitor& visitor, void* context)
+    {
+        visitor.visit_index_set_expr(this, context);
+    }
+
+    virtual ~IndexSet() = default;
 };
 
 //----------------------------------------------------------------------------------------------------
