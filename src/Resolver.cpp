@@ -169,6 +169,11 @@ void jl::Resolver::visit_super_expr(Super* expr, void* context)
     resolve_local(expr, expr->m_keyword);
 }
 
+void jl::Resolver::visit_jlist_expr(JList* expr, void* context)
+{
+
+}
+
 void* jl::Resolver::get_expr_context()
 {
     return nullptr;

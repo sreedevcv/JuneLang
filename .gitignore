@@ -1,6 +1,8 @@
 build/
 .vscode/
 .cache/
+.kdev4/
+JuneLang.kdev4
 tests/scripts/temp.txt
 june.exe
 june.pdb

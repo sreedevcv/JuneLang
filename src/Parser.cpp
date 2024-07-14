@@ -109,6 +109,30 @@ jl::Token& jl::Parser::consume(Token::TokenType type, const char* msg)
     }
 }
 
+jl::Expr* jl::Parser::parse_list()
+{
+    // Token& curr = advance();
+    std::vector<Expr*> list;
+    
+    while (!is_at_end() && peek().get_tokentype() != Token::RIGHT_BRACE) {
+        Token& token = peek();
+
+        // if (token.get_tokentype() == Token::LEFT_BRACE) {
+        // if (match({Token::LEFT_BRACE}))
+        //     Expr* list_expr = parse_list();
+        //     list.push_back(list_expr);
+        // } else {
+            Expr* expr = or_expr();
+            list.push_back(expr);
+            consume(Token::COMMA, "Lists hould be comma seperated");
+        // }
+    }
+
+    consume(Token::RIGHT_BRACE, "Lists should end with '}'");
+
+    return m_arena.allocate<JList>(list);
+}
+
 // --------------------------------------------------------------------------------
 // -------------------------------Expressions--------------------------------------
 // --------------------------------------------------------------------------------
@@ -199,6 +223,9 @@ jl::Expr* jl::Parser::primary()
         consume(Token::DOT, "Expected '.' after super");
         Token& method = consume(Token::IDENTIFIER, "Expect superclass method name");
         return m_arena.allocate<Super>(keyword, method);
+    }
+    if (match({ Token::LEFT_BRACE })) {
+        return parse_list();
     }
 
     ErrorHandler::error(m_file_name, "parsing", "primary expression", peek().get_line(), "Expected a expression here", 0);

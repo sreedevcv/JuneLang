@@ -16,25 +16,7 @@ int main()
 
     jl::Lexer lexer(
         R"(
-        // fun fib(n) [
-        //     if n <= 1 return n;
-        //     return fib(n - 2) + fib(n - 1);
-        // ]
-
-        // for var i = 0; i < 20; i = i + 1; [
-        //     print fib(i);
-        // ]
-
-        class Doughnut [
-            cook() [
-                print "Fry until golden brown.";
-            ]
-        ]
-
-        class BostonCream : Doughnut []
-
-        BostonCream().cook();
-
+        var a = {1, 2, {4, 5,}, 3,};
     )");
 
     std::string file_name = "test";
@@ -54,17 +36,17 @@ int main()
         return 1;
     }
 
-    jl::Interpreter interpreter(arena, file_name, 1000*1000);
-
-    jl::Resolver resolver(interpreter, file_name);
-    resolver.resolve(stmts);
-
-    if (jl::ErrorHandler::has_error()) {
-        return 1;
-    }
-
-    jl::Value v;
-    interpreter.interpret(stmts);
+    // jl::Interpreter interpreter(arena, file_name, 1000*1000);
+    //
+    // jl::Resolver resolver(interpreter, file_name);
+    // resolver.resolve(stmts);
+    //
+    // if (jl::ErrorHandler::has_error()) {
+    //     return 1;
+    // }
+    //
+    // jl::Value v;
+    // interpreter.interpret(stmts);
 
     std::cout << "Ended" << std::endl;
 }

@@ -21,6 +21,7 @@ class Get;
 class Set;
 class This;
 class Super;
+class JList;
 
 class IExprVisitor {
 public:
@@ -36,6 +37,7 @@ public:
     virtual void visit_set_expr(Set* expr, void* context) = 0;
     virtual void visit_this_expr(This* expr, void* context) = 0;
     virtual void visit_super_expr(Super* expr, void* context) = 0;
+    virtual void visit_jlist_expr(JList* expr, void* context) = 0;
     virtual void* get_expr_context() = 0;
 };
 
@@ -305,6 +307,28 @@ public:
     }
 
     virtual ~Super() = default;
+};
+
+class JList: public Expr {
+public:
+    inline JList(std::vector<Expr*>& items)
+        : m_items(items) {}
+    inline JList(std::vector<Expr*>&& items)
+        : m_items(std::move(items)) {}
+
+    inline virtual void accept(IExprVisitor& visitor, void* context)
+    {
+        visitor.visit_jlist_expr(this, context);
+    }
+
+    inline std::vector<Expr*>& get()
+    {
+        return m_items;
+    }
+
+    virtual ~JList() = default;
+private:
+    std::vector<Expr*> m_items;
 };
 
 //----------------------------------------------------------------------------------------------------

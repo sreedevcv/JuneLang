@@ -396,6 +396,10 @@ void jl::Interpreter::visit_super_expr(Super* expr, void* context)
     *static_cast<Value*>(context) = static_cast<Callable*>(method->bind(instance));
 }
 
+void jl::Interpreter::visit_jlist_expr(JList* expr, void* context)
+{
+}
+
 void* jl::Interpreter::get_expr_context()
 {
     return nullptr;

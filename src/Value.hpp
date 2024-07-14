@@ -2,12 +2,14 @@
 
 #include <string>
 #include <variant>
+#include <vector>
 
 // #include "Wrapper.hpp"
 
 namespace jl {
 class Instance;
 class Callable;
+class Expr;
 
 using Value = std::variant<
     int,
@@ -16,7 +18,8 @@ using Value = std::variant<
     std::string,
     char,
     Callable*,
-    Instance*
+    Instance*,
+    std::vector<Expr*>
     >;
 
 } // namespace jl

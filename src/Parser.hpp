@@ -55,5 +55,6 @@ private:
     Token& peek();
     Token& previous();
     Token& consume(Token::TokenType type, const char* msg);
+    Expr* parse_list();
 };
 } // namespace jl
