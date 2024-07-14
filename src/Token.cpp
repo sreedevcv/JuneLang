@@ -82,3 +82,8 @@ bool jl::is_instance(Value& value)
 {
     return value.index() == 6;
 }
+
+bool jl::is_jlist(Value& value)
+{
+    return value.index() == 7;
+}

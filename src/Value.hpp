@@ -16,7 +16,7 @@ using Value = std::variant<
     double,
     bool,
     std::string,
-    char,
+    char,       // Respresents null value
     Callable*,
     Instance*,
     std::vector<Expr*>

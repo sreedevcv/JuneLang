@@ -96,19 +96,5 @@ bool is_null(Value& value);
 bool is_number(Value& value);
 bool is_callable(Value& value);
 bool is_instance(Value& value);
-
-inline void free_value(Value& value)
-{
-    // if (is_callable(value)) {
-    //     delete std::get<Callable*>(value);
-    // } else if (is_instance(value)) {
-    //     delete std::get<Instance*>(value);
-    // }
-}
-
-inline void free_value(void* value)
-{
-    free_value(*static_cast<Value*>(value));
-}
-
+bool is_jlist(Value& value);
 } // namespace jl
