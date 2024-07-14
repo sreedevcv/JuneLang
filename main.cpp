@@ -16,7 +16,11 @@ int main()
 
     jl::Lexer lexer(
         R"(
-        var a = {1, 2, {4, 5,}, 3,};
+        var a = {1, 2, {4, 5}, 3, "dskd"};
+
+        var b = a[2][1] + a[2][0];
+
+        print b;
     )");
 
     std::string file_name = "test";
@@ -36,17 +40,16 @@ int main()
         return 1;
     }
 
-    // jl::Interpreter interpreter(arena, file_name, 1000*1000);
-    //
-    // jl::Resolver resolver(interpreter, file_name);
-    // resolver.resolve(stmts);
-    //
-    // if (jl::ErrorHandler::has_error()) {
-    //     return 1;
-    // }
-    //
-    // jl::Value v;
-    // interpreter.interpret(stmts);
+    jl::Interpreter interpreter(arena, file_name, 1000*1000);
+    
+    jl::Resolver resolver(interpreter, file_name);
+    resolver.resolve(stmts);
+    
+    if (jl::ErrorHandler::has_error()) {
+        return 1;
+    }
+
+    interpreter.interpret(stmts);
 
     std::cout << "Ended" << std::endl;
 }

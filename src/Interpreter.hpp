@@ -3,16 +3,16 @@
 #include <functional>
 #include <map>
 
+#include "Arena.hpp"
+#include "Environment.hpp"
 #include "Expr.hpp"
 #include "Stmt.hpp"
-#include "Environment.hpp"
-#include "Arena.hpp"
 
 namespace jl {
 
 class Interpreter : public IExprVisitor, public IStmtVisitor {
 public:
-    Interpreter(Arena& arena, std::string& file_name, int64_t internal_arena_size = 1000*1000);
+    Interpreter(Arena& arena, std::string& file_name, int64_t internal_arena_size = 1000 * 1000);
     ~Interpreter();
 
     void interpret(Expr* expr, Value* value = nullptr);
@@ -37,6 +37,9 @@ private:
     virtual void visit_this_expr(This* expr, void* context) override;
     virtual void visit_super_expr(Super* expr, void* context) override;
     virtual void visit_jlist_expr(JList* expr, void* context) override;
+    virtual void visit_index_get_expr(IndexGet* expr, void* context);
+    virtual void visit_index_set_expr(IndexSet* expr, void* context);
+
     virtual void* get_expr_context() override;
 
     virtual void visit_print_stmt(PrintStmt* stmt, void* context) override;
@@ -54,8 +57,8 @@ private:
     void evaluate(Expr* expr, void* context);
     bool is_truthy(Value* value);
 
-    template<typename Op>
-    void do_arith_operation(Value& left, Value& right, void *context, Op op);
+    template <typename Op>
+    void do_arith_operation(Value& left, Value& right, void* context, Op op);
     void append_strings(Value& left, Value& right, void* context);
     bool is_equal(Value& left, Value& right);
     Value& look_up_variable(Token& name, Expr* expr);

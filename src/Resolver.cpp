@@ -171,7 +171,22 @@ void jl::Resolver::visit_super_expr(Super* expr, void* context)
 
 void jl::Resolver::visit_jlist_expr(JList* expr, void* context)
 {
+    for (Expr* item : expr->m_items) {
+        resolve(item);
+    }
+}
 
+void jl::Resolver::visit_index_get_expr(IndexGet* expr, void* context)
+{
+    resolve(expr->m_jlist);
+    resolve(expr->m_index_expr);
+}
+
+void jl::Resolver::visit_index_set_expr(IndexSet* expr, void* context)
+{
+    resolve(expr->m_jlist);
+    resolve(expr->m_index_expr);
+    resolve(expr->m_value_expr);
 }
 
 void* jl::Resolver::get_expr_context()
@@ -271,7 +286,7 @@ void jl::Resolver::visit_class_stmt(ClassStmt* stmt, void* context)
     begin_scope();
     m_scopes.back()[Token::global_this_lexeme] = true;
 
-    for (FuncStmt* method: stmt->m_methods) {
+    for (FuncStmt* method : stmt->m_methods) {
         FunctionType declaration = METHOD;
         if (method->m_name.get_lexeme() == "init") {
             declaration = INITIALIZER;

@@ -3,13 +3,12 @@
 #include <map>
 
 #include "Expr.hpp"
-#include "Stmt.hpp"
 #include "Interpreter.hpp"
+#include "Stmt.hpp"
 
-namespace jl
-{
-    
-class Resolver: public IExprVisitor, public IStmtVisitor {
+namespace jl {
+
+class Resolver : public IExprVisitor, public IStmtVisitor {
 public:
     Resolver(Interpreter& interpreter, std::string& file_name);
     ~Resolver() = default;
@@ -42,7 +41,7 @@ private:
     void resolve(Stmt* statement);
     void resolve(Expr* expression);
     void resolve_local(Expr* expr, Token& name);
-    void resolve_function(FuncStmt* stmt, FunctionType function_type);  
+    void resolve_function(FuncStmt* stmt, FunctionType function_type);
     void begin_scope();
     void end_scope();
     void declare(Token& name);
@@ -61,6 +60,9 @@ private:
     virtual void visit_this_expr(This* expr, void* context) override;
     virtual void visit_super_expr(Super* expr, void* context) override;
     virtual void visit_jlist_expr(JList* expr, void* context) override;
+    virtual void visit_index_get_expr(IndexGet* expr, void* context);
+    virtual void visit_index_set_expr(IndexSet* expr, void* context);
+
     virtual void* get_expr_context() override;
 
     virtual void visit_print_stmt(PrintStmt* stmt, void* context) override;
@@ -74,7 +76,6 @@ private:
     virtual void visit_return_stmt(ReturnStmt* stmt, void* context) override;
     virtual void visit_class_stmt(ClassStmt* stmt, void* context) override;
     virtual void* get_stmt_context() override;
-
 };
 
 } // namespace jl
