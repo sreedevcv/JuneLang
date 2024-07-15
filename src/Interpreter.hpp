@@ -13,7 +13,7 @@ namespace jl {
 class Interpreter : public IExprVisitor, public IStmtVisitor {
 public:
     Interpreter(Arena& arena, std::string& file_name, int64_t internal_arena_size = 1000 * 1000);
-    ~Interpreter();
+    virtual ~Interpreter() = default;
 
     void interpret(Expr* expr, Value* value = nullptr);
     void interpret(std::vector<Stmt*>& statements);
@@ -22,6 +22,7 @@ public:
     std::string stringify(Value& value);
 
     Environment* m_global_env;
+    std::string m_file_name;
 
 private:
     virtual void visit_assign_expr(Assign* expr, void* context) override;
@@ -66,10 +67,9 @@ private:
     Arena& m_arena;
     Arena m_internal_arena;
     Environment* m_env;
-    std::string m_file_name;
     std::map<Expr*, int> m_locals;
 
-    friend class ToIntNativeFunction;
     friend class ClassCallable;
+    friend Value append(Interpreter* interpreter, Value& jlist, Value& appending_value);
 };
 } // namespace jl

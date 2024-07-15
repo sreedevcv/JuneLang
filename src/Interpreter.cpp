@@ -4,6 +4,7 @@
 
 #include "Callable.hpp"
 #include "ErrorHandler.hpp"
+#include "NativeFunctions.hpp"
 
 jl::Interpreter::Interpreter(Arena& arena, std::string& file_name, int64_t internal_arena_size)
     : m_arena(arena)
@@ -14,11 +15,13 @@ jl::Interpreter::Interpreter(Arena& arena, std::string& file_name, int64_t inter
     m_global_env = m_env;
 
     ToIntNativeFunction* to_int_native_func = m_arena.allocate<ToIntNativeFunction>();
+    ToStrNativeFunction* to_str_native_func = m_arena.allocate<ToStrNativeFunction>();
+    GetLenNativeFunction* get_len_native_func = m_arena.allocate<GetLenNativeFunction>();
+    AppendNativeFunction* append_native_func = m_arena.allocate<AppendNativeFunction>();
     m_global_env->define(to_int_native_func->m_name, static_cast<Callable*>(to_int_native_func));
-}
-
-jl::Interpreter::~Interpreter()
-{
+    m_global_env->define(to_str_native_func->m_name, static_cast<Callable*>(to_str_native_func));
+    m_global_env->define(get_len_native_func->m_name, static_cast<Callable*>(get_len_native_func));
+    m_global_env->define(append_native_func->m_name, static_cast<Callable*>(append_native_func));
 }
 
 void jl::Interpreter::interpret(Expr* expr, Value* value)
@@ -151,7 +154,7 @@ std::string jl::Interpreter::stringify(Value& value)
         return std::get<Callable*>(value)->to_string();
     } else if (is_jlist(value)) {
         std::string list = "[";
-        for (auto expr: *std::get<std::vector<Expr*>*>(value)) {
+        for (auto expr : *std::get<std::vector<Expr*>*>(value)) {
             if (dynamic_cast<Literal*>(expr)) {
                 list.append(stringify(*static_cast<Literal*>(expr)->m_value));
             } else {
@@ -413,9 +416,9 @@ void jl::Interpreter::visit_super_expr(Super* expr, void* context)
 void jl::Interpreter::visit_jlist_expr(JList* expr, void* context)
 {
     // Evaluate all the elements in jlist
-    for (auto& item: expr->m_items) {
+    for (auto& item : expr->m_items) {
         if (dynamic_cast<Literal*>(item)) {
-            continue;   // No need to evaluate in case it is already a Literal
+            continue; // No need to evaluate in case it is already a Literal
         }
         Value* value = m_internal_arena.allocate<Value>();
         evaluate(item, value);
@@ -479,7 +482,7 @@ void jl::Interpreter::visit_index_set_expr(IndexSet* expr, void* context)
 
     Value* overwriting_value = m_internal_arena.allocate<Value>();
     evaluate(expr->m_value_expr, overwriting_value);
-    jlist->at(index) = m_internal_arena.allocate<Literal>(overwriting_value);        
+    jlist->at(index) = m_internal_arena.allocate<Literal>(overwriting_value);
 }
 
 void* jl::Interpreter::get_expr_context()

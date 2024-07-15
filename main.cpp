@@ -16,23 +16,35 @@ int main()
 
     jl::Lexer lexer(
         R"(
-        var a = {3, 5, 1, 2, 6, 9, 8, 2+2, 7};
+        // var a = {3, 5, 1, 2, 6, 9, 8, 2+2, 7};
 
-        fun bubbleSort(list, size) [
-            for (var i = 0; i < size - 1; i += 1) [
-                for (var j = 0; j < size - i - 1; j += 1) [
-                    if (list[j] > list[j + 1]) [
-                        var temp = list[j];
-                        list[j] = list[j + 1];
-                        list[j + 1] = temp;
-                    ]
-                ]
-            ]
-        ]
+        // fun bubbleSort(list, size) [
+        //     for (var i = 0; i < size - 1; i += 1) [
+        //         for (var j = 0; j < size - i - 1; j += 1) [
+        //             if (list[j] > list[j + 1]) [
+        //                 var temp = list[j];
+        //                 list[j] = list[j + 1];
+        //                 list[j + 1] = temp;
+        //             ]
+        //         ]
+        //     ]
+        // ]
 
-        bubbleSort(a, 9);
+        // bubbleSort(a, 9);
 
+        // print a;
+
+        // var b = {};
+        // print b;
+
+        // print len(a);
+        var b = 11;
+        var a = {};
+        append(a, b);
         print a;
+        print b;
+        print len(a);
+
     )");
 
     std::string file_name = "test";
