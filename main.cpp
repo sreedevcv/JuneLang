@@ -16,19 +16,26 @@ int main()
 
     jl::Lexer lexer(
         R"(
-        var a = {1, 2, {4, 5}, 3, "dskd"};
+        var a = {3, 5, 1, 2, 6, 9, 8, 4, 7};
 
-        a[0] = a[2][1] + a[2][0];
-
-        // if (1+2 == 3) [
-        //     print "hai";
-        // ]
-
-        for (var i = 0; i < 5; i+=1) [
-            if (i != 2) [
-                print a[i];   
-            ]         
+        fun bubbleSort(list, size) [
+            for (var i = 0; i < size - 1; i += 1) [
+                for (var j = 0; j < size - i - 1; j += 1) [
+                    if (list[j] > list[j + 1]) [
+                        var temp = list[j];
+                        list[j] = list[j + 1];
+                        list[j + 1] = temp;
+                    ]
+                ]
+            ]
         ]
+
+        bubbleSort(a, 9);
+
+        for (var i = 0; i < 9; i += 1) [
+            print a[i];
+        ]
+
     )");
 
     std::string file_name = "test";

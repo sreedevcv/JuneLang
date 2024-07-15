@@ -398,6 +398,16 @@ void jl::Interpreter::visit_super_expr(Super* expr, void* context)
 
 void jl::Interpreter::visit_jlist_expr(JList* expr, void* context)
 {
+    // Evaluate all the elements in jlist
+    for (auto& item: expr->m_items) {
+        if (dynamic_cast<Literal*>(item)) {
+            continue;   // No need to evaluate in case it is already a Literal
+        }
+        Value* value = m_internal_arena.allocate<Value>();
+        evaluate(item, value);
+        item = m_internal_arena.allocate<Literal>(value);
+    }
+
     Value* value = m_internal_arena.allocate<Value>();
     *value = &expr->m_items;
     *static_cast<Value*>(context) = *value;
