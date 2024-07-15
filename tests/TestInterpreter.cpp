@@ -341,6 +341,56 @@ TEST_CASE("Interpreter Calling correct method when using super", "[Interpreter]"
     test_string_with_no_error(source, 3000);
 }
 
+TEST_CASE("Interpreter List: Finding max element", "[Interpreter]")
+{
+    const char* source = R"(
+        var a = {3, 5, 1, 2, 6, 9, 8, 4, 7};
+
+        fun findMax(list) [
+            var max = -1;
+
+            for (var i = 0; i < 9; i+=1) [
+                if (list[i] > max) [
+                    max = list[i];
+                ]
+            ]
+
+            return max;
+        ]
+
+        print findMax(a);
+    )";
+
+    test_string_with_no_error(source, 2000);
+}
+
+TEST_CASE("Interpreter", "[Interpreter]")
+{
+    const char* source = R"(
+        var a = {3, 5, 1, 2, 6, 9, 8, 4, 7};
+
+        fun bubbleSort(list, size) [
+            for (var i = 0; i < size - 1; i += 1) [
+                for (var j = 0; j < size - i - 1; j += 1) [
+                    if (list[j] > list[j + 1]) [
+                        var temp = list[j];
+                        list[j] = list[j + 1];
+                        list[j + 1] = temp;
+                    ]
+                ]
+            ]
+        ]
+
+        bubbleSort(a, 9);
+
+        for (var i = 0; i < 9; i += 1) [
+            print a[i];
+        ]
+    )";
+
+    test_string_with_no_error(source);
+}
+
 // TEST_CASE("Interpreter", "[Interpreter]")
 // {
 //     const char* source = R"(
