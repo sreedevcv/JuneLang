@@ -16,7 +16,7 @@ int main()
 
     jl::Lexer lexer(
         R"(
-        var a = {3, 5, 1, 2, 6, 9, 8, 4, 7};
+        var a = {3, 5, 1, 2, 6, 9, 8, 2+2, 7};
 
         fun bubbleSort(list, size) [
             for (var i = 0; i < size - 1; i += 1) [
@@ -32,10 +32,7 @@ int main()
 
         bubbleSort(a, 9);
 
-        for (var i = 0; i < 9; i += 1) [
-            print a[i];
-        ]
-
+        print a;
     )");
 
     std::string file_name = "test";

@@ -147,9 +147,23 @@ std::string jl::Interpreter::stringify(Value& value)
         return std::get<std::string>(value);
     } else if (is_instance(value)) {
         return std::get<Instance*>(value)->to_string();
-    } else {
+    } else if (is_callable(value)) {
         return std::get<Callable*>(value)->to_string();
+    } else if (is_jlist(value)) {
+        std::string list = "[";
+        for (auto expr: *std::get<std::vector<Expr*>*>(value)) {
+            if (dynamic_cast<Literal*>(expr)) {
+                list.append(stringify(*static_cast<Literal*>(expr)->m_value));
+            } else {
+                list.append("`expr`");
+            }
+            list.append(", ");
+        }
+        list.append("]");
+        return list;
     }
+
+    return "`null`";
 }
 
 // --------------------------------------------------------------------------------
