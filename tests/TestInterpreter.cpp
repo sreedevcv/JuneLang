@@ -94,11 +94,11 @@ TEST_CASE("Interpreter Recursive Function", "[Interpreter]")
 {
     const char* source = R"(
         fun fib(n) [
-            if n <= 1 return n;
+            if (n <= 1) return n;
             return fib(n - 2) + fib(n - 1);
         ]
 
-        for var i = 0; i < 18; i = i + 1; [
+        for (var i = 0; i < 18; i += 1) [
             print fib(i);
         ]
     )";

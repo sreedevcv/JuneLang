@@ -221,7 +221,7 @@ jl::Expr* jl::Parser::primary()
         return parse_list();
     }
 
-    ErrorHandler::error(m_file_name, "parsing", "primary expression", peek().get_line(), "Expected a expression here", 0);
+    ErrorHandler::error(m_file_name, "parsing", "primary expression", peek().get_line(), std::string("Expected a expression here ").append(" but found ").append(peek().get_lexeme()).c_str(), 0);
     throw "parse-exception";
 }
 
@@ -356,11 +356,11 @@ jl::Expr* jl::Parser::modify_and_assign(Token::TokenType oper_type, Expr* expr)
 
 jl::Stmt* jl::Parser::statement()
 {
-    if (match({ Token::PRINT })) {
-        return print_statement();
-    }
     if (match({ Token::LEFT_SQUARE })) {
         return m_arena.allocate<BlockStmt>(block());
+    }
+    if (match({ Token::PRINT })) {
+        return print_statement();
     }
     if (match({ Token::IF })) {
         return if_stmt();
@@ -429,7 +429,9 @@ jl::Stmt* jl::Parser::var_declaration()
 
 jl::Stmt* jl::Parser::if_stmt()
 {
+    consume(Token::LEFT_PAR, "Expected ( after if keyword");
     Expr* condition = expression();
+    consume(Token::RIGHT_PAR, "Expected ) after onditions in a if block");
     Stmt* then_branch = statement();
 
     Stmt* else_branch = nullptr;
@@ -443,7 +445,9 @@ jl::Stmt* jl::Parser::if_stmt()
 
 jl::Stmt* jl::Parser::while_statement()
 {
+    consume(Token::LEFT_PAR, "Expected ( after while keyword");
     Expr* condition = expression();
+    consume(Token::RIGHT_PAR, "Expected ) after onditions in a while block");
     Stmt* body = statement();
 
     return m_arena.allocate<WhileStmt>(condition, body);
@@ -451,6 +455,7 @@ jl::Stmt* jl::Parser::while_statement()
 
 jl::Stmt* jl::Parser::for_statement()
 {
+    consume(Token::LEFT_PAR, "Expected ( after for keyword");
     Stmt* initializer;
     if (match({ Token::SEMI_COLON })) {
         initializer = nullptr;
@@ -470,7 +475,7 @@ jl::Stmt* jl::Parser::for_statement()
     if (!check(Token::SEMI_COLON)) {
         increment = expression();
     }
-    consume(Token::SEMI_COLON, "Expected ; after all loop clauses");
+    consume(Token::RIGHT_PAR, "Expected ) after all loop clauses");
 
     Stmt* body = statement();
 
