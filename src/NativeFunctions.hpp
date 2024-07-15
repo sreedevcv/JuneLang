@@ -13,7 +13,7 @@ public:
     virtual int arity() override;
     virtual std::string to_string() override;
 
-    std::string m_name = "<int>";
+    std::string m_name = "int";
 };
 
 class ToStrNativeFunction : public Callable {
