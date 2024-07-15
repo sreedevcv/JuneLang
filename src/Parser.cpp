@@ -414,7 +414,7 @@ jl::Stmt* jl::Parser::expr_statement()
     return m_arena.allocate<ExprStmt>(expr);
 }
 
-jl::Stmt* jl::Parser::var_declaration()
+jl::Stmt* jl::Parser::var_declaration(bool for_each)
 {
     Token& name = consume(Token::IDENTIFIER, "Expected a variable name");
     Expr* initializer = nullptr;
@@ -422,8 +422,14 @@ jl::Stmt* jl::Parser::var_declaration()
     if (match({ Token::EQUAL })) {
         initializer = expression();
     }
-
-    consume(Token::SEMI_COLON, "Expected ; after variable declaration");
+    if (for_each) {
+        if (!match({Token::COLON, Token::SEMI_COLON})) {
+            ErrorHandler::error(m_file_name, "parsing", "for each loop", name.get_line(), "Varible declaration should be followed `:` or `;` in a for each loop", 0);
+        }
+        // consume(Token::COLON, "Expected : after variable declaration in for each loop");
+    } else {
+        consume(Token::SEMI_COLON, "Expected ; after variable declaration");
+    }
     return m_arena.allocate<VarStmt>(name, initializer);
 }
 
@@ -453,45 +459,102 @@ jl::Stmt* jl::Parser::while_statement()
     return m_arena.allocate<WhileStmt>(condition, body);
 }
 
+// jl::Stmt* jl::Parser::for_statement()
+// {
+//     consume(Token::LEFT_PAR, "Expected ( after for keyword");
+//     Stmt* initializer;
+//     if (match({ Token::SEMI_COLON })) {
+//         initializer = nullptr;
+//     } else if (match({ Token::VAR })) {
+//         initializer = var_declaration();
+//     } else {
+//         initializer = expr_statement();
+//     }
+
+//     Expr* condition = nullptr;
+//     if (!check(Token::SEMI_COLON)) {
+//         condition = expression();
+//     }
+//     consume(Token::SEMI_COLON, "Expected ; after loop condition");
+
+//     Expr* increment = nullptr;
+//     if (!check(Token::SEMI_COLON)) {
+//         increment = expression();
+//     }
+//     consume(Token::RIGHT_PAR, "Expected ) after all loop clauses");
+
+//     Stmt* body = statement();
+
+//     if (increment != nullptr) {
+//         body = m_arena.allocate<BlockStmt>((std::vector<Stmt*>) { body, m_arena.allocate<ExprStmt>(increment) });
+//     }
+//     if (condition == nullptr) {
+//         condition = m_arena.allocate<Literal>(&Token::global_true_constant);
+//     }
+//     body = m_arena.allocate<WhileStmt>(condition, body);
+
+//     if (initializer != nullptr) {
+//         body = m_arena.allocate<BlockStmt>((std::vector<Stmt*>) { initializer, body });
+//     }
+
+//     return body;
+// }
+
 jl::Stmt* jl::Parser::for_statement()
 {
     consume(Token::LEFT_PAR, "Expected ( after for keyword");
     Stmt* initializer;
+    bool declared_var = false;
+
     if (match({ Token::SEMI_COLON })) {
         initializer = nullptr;
     } else if (match({ Token::VAR })) {
-        initializer = var_declaration();
+        initializer = var_declaration(true);
+        declared_var = true;
     } else {
         initializer = expr_statement();
     }
 
-    Expr* condition = nullptr;
-    if (!check(Token::SEMI_COLON)) {
-        condition = expression();
-    }
-    consume(Token::SEMI_COLON, "Expected ; after loop condition");
+    // For each loop
+    if (previous().get_tokentype() == Token::COLON) {
+        if (!declared_var) {
+            ErrorHandler::error(m_file_name, "parsing", "for each loop", previous().get_line(), "Varible declaration should precede `:` in a for each loop", 0);
+        }
+        // Use call() for now, change to maybe or_expr if errors occur
+        Expr* list_expr = call();
+        consume(Token::RIGHT_PAR, "Expected ) after all loop clauses");
+        Stmt* body = statement();
+        return m_arena.allocate<ForEachStmt>(static_cast<VarStmt*>(initializer), list_expr, body);
 
-    Expr* increment = nullptr;
-    if (!check(Token::SEMI_COLON)) {
-        increment = expression();
-    }
-    consume(Token::RIGHT_PAR, "Expected ) after all loop clauses");
+    } else { // Normal For loop
+        Expr* condition = nullptr;
+        if (!check(Token::SEMI_COLON)) {
+            condition = expression();
+        }
+        consume(Token::SEMI_COLON, "Expected ; after loop condition");
 
-    Stmt* body = statement();
+        Expr* increment = nullptr;
+        if (!check(Token::SEMI_COLON)) {
+            increment = expression();
+        }
+        consume(Token::RIGHT_PAR, "Expected ) after all loop clauses");
 
-    if (increment != nullptr) {
-        body = m_arena.allocate<BlockStmt>((std::vector<Stmt*>) { body, m_arena.allocate<ExprStmt>(increment) });
-    }
-    if (condition == nullptr) {
-        condition = m_arena.allocate<Literal>(&Token::global_true_constant);
-    }
-    body = m_arena.allocate<WhileStmt>(condition, body);
+        Stmt* body = statement();
 
-    if (initializer != nullptr) {
-        body = m_arena.allocate<BlockStmt>((std::vector<Stmt*>) { initializer, body });
-    }
+        if (increment != nullptr) {
+            body = m_arena.allocate<BlockStmt>((std::vector<Stmt*>) { body, m_arena.allocate<ExprStmt>(increment) });
+        }
+        if (condition == nullptr) {
+            condition = m_arena.allocate<Literal>(&Token::global_true_constant);
+        }
+        body = m_arena.allocate<WhileStmt>(condition, body);
 
-    return body;
+        if (initializer != nullptr) {
+            body = m_arena.allocate<BlockStmt>((std::vector<Stmt*>) { initializer, body });
+        }
+
+        return body;
+    }
 }
 
 jl::Stmt* jl::Parser::function(const char* kind)

@@ -604,6 +604,29 @@ void jl::Interpreter::visit_class_stmt(ClassStmt* stmt, void* context)
     m_env->assign(stmt->m_name, (static_cast<Callable*>(class_callable)));
 }
 
+void jl::Interpreter::visit_for_each_stmt(ForEachStmt* stmt, void* context)
+{
+    Value value;
+    m_env = m_internal_arena.allocate<Environment>(m_env);      // Create a new env for decalring looping variable
+    stmt->m_var_declaration->accept(*this, &value);
+    evaluate(stmt->m_list_expr, &value);
+
+    if (!is_jlist(value)) {
+        ErrorHandler::error(m_file_name, "interpreting", "for each", stmt->m_var_declaration->m_name.get_line(), "For each loops need a list to iterate", 0);
+        throw "runtime-exception";
+    }
+
+    for (Expr* item: *std::get<std::vector<Expr*>*>(value)) {
+        Value list_value;
+        evaluate(item, &list_value);
+        m_env->assign(stmt->m_var_declaration->m_name, list_value);
+
+        stmt->m_body->accept(*this, context);
+    }
+
+    m_env = m_env->m_enclosing;
+}
+
 void* jl::Interpreter::get_stmt_context()
 {
     return nullptr;

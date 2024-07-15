@@ -16,35 +16,22 @@ int main()
 
     jl::Lexer lexer(
         R"(
-        // var a = {3, 5, 1, 2, 6, 9, 8, 2+2, 7};
+        fun get() [
+            return {"332", "100"};
+        ]
 
-        // fun bubbleSort(list, size) [
-        //     for (var i = 0; i < size - 1; i += 1) [
-        //         for (var j = 0; j < size - i - 1; j += 1) [
-        //             if (list[j] > list[j + 1]) [
-        //                 var temp = list[j];
-        //                 list[j] = list[j + 1];
-        //                 list[j + 1] = temp;
-        //             ]
-        //         ]
-        //     ]
-        // ]
+        var list = {3, 5, 1, 2, 6, {30, -5, {100}}, 9, 8, 4, 7};
 
-        // bubbleSort(a, 9);
+        for (var a: list) [
+            print a;
+            a = 5;
+        ]
 
-        // print a;
-
-        // var b = {};
-        // print b;
-
-        // print len(a);
-        var b = 11;
-        var a = {};
-        append(a, b);
-        print a;
-        print b;
-        print len(a);
-
+        var sum = 0;
+        for (var a: get()) [
+            sum += int(a);
+        ]
+        print "Sum of " + str(get()) + " is " + str(sum);
     )");
 
     std::string file_name = "test";

@@ -38,7 +38,7 @@ private:
     Stmt* declaration();
     Stmt* print_statement();
     Stmt* expr_statement();
-    Stmt* var_declaration();
+    Stmt* var_declaration(bool for_each=false);
     Stmt* if_stmt();
     Stmt* while_statement();
     Stmt* for_statement();

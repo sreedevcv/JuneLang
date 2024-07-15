@@ -72,7 +72,7 @@ void test_string_with_error(const char* source, ErrorLoc errorLoc, int arena_siz
         return;
     }
 
-    jl::Interpreter interpreter(arena, file_name);
+    jl::Interpreter interpreter(arena, file_name, 2000*1000);
     jl::Resolver resolver(interpreter, file_name);
     resolver.resolve(stmts);
     has_error = jl::ErrorHandler::has_error();
@@ -310,7 +310,7 @@ TEST_CASE("Interpreter Simple inheritance with usage of super", "[Interpreter]")
 
     )";
 
-    test_string_with_no_error(source);
+    test_string_with_no_error(source, 2000);
 }
 
 TEST_CASE("Interpreter Calling correct method when using super", "[Interpreter]")
@@ -364,7 +364,7 @@ TEST_CASE("Interpreter List: Finding max element", "[Interpreter]")
     test_string_with_no_error(source, 2000);
 }
 
-TEST_CASE("Interpreter", "[Interpreter]")
+TEST_CASE("Interpreter Bubble sort", "[Interpreter]")
 {
     const char* source = R"(
         var a = {3, 5, 1, 2, 6, 9, 8, 4, 7};
@@ -388,7 +388,7 @@ TEST_CASE("Interpreter", "[Interpreter]")
         ]
     )";
 
-    test_string_with_no_error(source);
+    test_string_with_no_error(source, 11000);
 }
 
 // TEST_CASE("Interpreter", "[Interpreter]")

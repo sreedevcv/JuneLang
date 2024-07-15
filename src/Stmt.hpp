@@ -14,6 +14,7 @@ class WhileStmt;
 class FuncStmt;
 class ReturnStmt;
 class ClassStmt;
+class ForEachStmt;
 
 class IStmtVisitor {
 public:
@@ -27,6 +28,7 @@ public:
     virtual void visit_func_stmt(FuncStmt* stmt, void* context) = 0;
     virtual void visit_return_stmt(ReturnStmt* stmt, void* context) = 0;
     virtual void visit_class_stmt(ClassStmt* stmt, void* context) = 0;
+    virtual void visit_for_each_stmt(ForEachStmt* stmt, void* context) = 0;
     virtual void* get_stmt_context() = 0;
 };
 
@@ -183,7 +185,7 @@ public:
 class FuncStmt : public Stmt {
 public:
     Token& m_name;
-    std::vector<Token*> m_params;   // Should i delete these??
+    std::vector<Token*> m_params; // Should i delete these??
     std::vector<Stmt*> m_body;
 
     inline FuncStmt(Token& name, std::vector<Token*>& params, std::vector<Stmt*>& body)
@@ -254,6 +256,26 @@ public:
     inline virtual void accept(IStmtVisitor& visitor, void* context) override
     {
         visitor.visit_class_stmt(this, context);
+    }
+};
+
+class ForEachStmt : public Stmt {
+public:
+    VarStmt* m_var_declaration;
+    Expr* m_list_expr;
+    Stmt* m_body;
+
+    inline ForEachStmt(VarStmt* var_declaration, Expr* list_expr, Stmt* body)
+        : m_var_declaration(var_declaration)
+        , m_list_expr(list_expr)
+        , m_body(body)
+    {
+    }
+    virtual ~ForEachStmt() = default;
+
+    inline virtual void accept(IStmtVisitor& visitor, void* context)
+    {
+        visitor.visit_for_each_stmt(this, context);
     }
 };
 

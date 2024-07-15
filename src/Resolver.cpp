@@ -302,6 +302,15 @@ void jl::Resolver::visit_class_stmt(ClassStmt* stmt, void* context)
     m_current_class_type = enclosing_class;
 }
 
+void jl::Resolver::visit_for_each_stmt(ForEachStmt* stmt, void* context)
+{
+    begin_scope();
+    resolve(stmt->m_var_declaration);
+    resolve(stmt->m_list_expr);
+    resolve(stmt->m_body);
+    end_scope();
+}
+
 void* jl::Resolver::get_stmt_context()
 {
     return nullptr;
