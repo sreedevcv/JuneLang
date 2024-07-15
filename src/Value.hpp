@@ -19,7 +19,7 @@ using Value = std::variant<
     char,       // Respresents null value
     Callable*,
     Instance*,
-    std::vector<Expr*>
+    std::vector<Expr*>*
     >;
 
 } // namespace jl
