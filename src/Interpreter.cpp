@@ -399,23 +399,24 @@ void jl::Interpreter::visit_super_expr(Super* expr, void* context)
 void jl::Interpreter::visit_jlist_expr(JList* expr, void* context)
 {
     Value* value = m_internal_arena.allocate<Value>();
-    *value = expr->m_items;
+    *value = &expr->m_items;
     *static_cast<Value*>(context) = *value;
 }
 
 void jl::Interpreter::visit_index_get_expr(IndexGet* expr, void* context)
 {
-    Value* value = static_cast<Value*>(context);
-    evaluate(expr->m_jlist, value);
+    Value* list_value = static_cast<Value*>(context);
+    evaluate(expr->m_jlist, list_value);
 
-    if (is_jlist(*value)) {
-        auto jlist = std::move(std::get<std::vector<Expr*>>(*value));
-        evaluate(expr->m_index_expr, value);
+    if (is_jlist(*list_value)) {
+        auto jlist = std::move(std::get<std::vector<Expr*>*>(*list_value));
+        Value index_value;
+        evaluate(expr->m_index_expr, &index_value);
 
-        if (is_int(*value)) {
+        if (is_int(index_value)) {
             Value result;
-            int index = std::get<int>(*value);
-            evaluate(jlist[index], &result);
+            int index = std::get<int>(index_value);
+            evaluate(jlist->at(index), &result);
             *static_cast<Value*>(context) = result;
         } else {
             ErrorHandler::error(m_file_name, "interpreting", "get index expression", expr->m_closing_bracket.get_line(), "Attempted to get index using a non-int value", 0);
@@ -429,6 +430,32 @@ void jl::Interpreter::visit_index_get_expr(IndexGet* expr, void* context)
 
 void jl::Interpreter::visit_index_set_expr(IndexSet* expr, void* context)
 {
+    Value* list_value = static_cast<Value*>(context);
+    evaluate(expr->m_jlist, list_value);
+
+    if (!is_jlist(*list_value)) {
+        ErrorHandler::error(m_file_name, "interpreting", "set index expression", expr->m_closing_bracket.get_line(), "Attempted to set index for a value that is not a list", 0);
+        throw "runtime-exception";
+    }
+
+    Value index_value;
+    evaluate(expr->m_index_expr, &index_value);
+
+    if (!is_int(index_value)) {
+        ErrorHandler::error(m_file_name, "interpreting", "set index expression", expr->m_closing_bracket.get_line(), "Attempted to set index using a non-int value", 0);
+        throw "runtime-exception";
+    }
+
+    auto jlist = std::get<std::vector<Expr*>*>(*list_value);
+    int index = std::get<int>(index_value);
+
+    // Do we need to evaluate whatever is currently existing at the index??
+    // Value set_result;
+    // evaluate(jlist[index], &set_result);
+
+    Value* overwriting_value = m_internal_arena.allocate<Value>();
+    evaluate(expr->m_value_expr, overwriting_value);
+    jlist->at(index) = m_internal_arena.allocate<Literal>(overwriting_value);        
 }
 
 void* jl::Interpreter::get_expr_context()

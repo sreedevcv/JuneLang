@@ -18,9 +18,17 @@ int main()
         R"(
         var a = {1, 2, {4, 5}, 3, "dskd"};
 
-        var b = a[2][1] + a[2][0];
+        a[0] = a[2][1] + a[2][0];
 
-        print b;
+        // if (1+2 == 3) [
+        //     print "hai";
+        // ]
+
+        for (var i = 0; i < 5; i+=1) [
+            if (i != 2) [
+                print a[i];   
+            ]         
+        ]
     )");
 
     std::string file_name = "test";
