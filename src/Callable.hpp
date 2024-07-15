@@ -5,7 +5,6 @@
 
 namespace jl {
 
-
 class Callable {
 public:
     virtual Value call(Interpreter* interpreter, std::vector<Value>& arguments) = 0;
@@ -24,6 +23,7 @@ public:
     virtual std::string to_string() override;
 
     FunctionCallable* bind(Instance* instance);
+
 private:
     Arena& m_arena;
     FuncStmt* m_declaration;
@@ -31,7 +31,7 @@ private:
     bool m_is_initializer = false;
 };
 
-class ClassCallable: public Callable {
+class ClassCallable : public Callable {
 public:
     ClassCallable(std::string& name, ClassCallable* super_class, std::map<std::string, FunctionCallable*>& methods);
     virtual ~ClassCallable();
@@ -56,21 +56,10 @@ public:
     Value get(Token& name);
     void set(Token& name, Value& value);
     std::string to_string();
+
 private:
     ClassCallable* m_class;
     std::map<std::string, Value> m_fields;
-};
-
-class ToIntNativeFunction : public Callable {
-public:
-    ToIntNativeFunction() = default;
-    virtual ~ToIntNativeFunction() = default;
-
-    virtual Value call(Interpreter* interpreter, std::vector<Value>& arguments) override;
-    virtual int arity() override;
-    virtual std::string to_string() override;
-
-    std::string m_name = "int";
 };
 
 } // namespace jl
