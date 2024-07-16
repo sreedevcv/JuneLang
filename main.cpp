@@ -9,32 +9,78 @@
 
 // #include "Editor.hpp"
 
-int main()
+int main(int argc, char const *argv[])
 {
     // jed::Editor editor;
     // editor.start();
 
-    jl::Lexer lexer(
+    // jl::Lexer lexer(
         R"(
-        fun get() [
-            return {"332", "100"};
+        class Elist [
+            init() [
+                self.list = {};
+            ]
+
+            push(ele) [
+                push_back(self.list, ele);
+            ]
+
+            push_list(list) [
+                for (var ele: list) [
+                    push_back(self.list, ele);
+                ]
+            ]
+
+            get(index) [
+                return self.list[index];
+            ]
+
+            set(index, ele) [
+                self.list[index] = ele;
+            ]
+
+            contains(ele) [
+                for (var item: self.list) [
+                    if (ele == item) [
+                        return true;
+                    ]
+                ]
+                return false;
+            ]
+
+            remove(ele) [
+        for (var i = 0; i < len(self.list); i += 1) [
+            if (self.list[i] == ele) [
+                for (var j = i + 1; j < len(self.list) - 1; j += 1) [
+                    self.list[j - 1] = self.list[j];
+                ]
+                pop_back(self.list);
+            ]
         ]
+    ]
+        ]    
 
-        var list = {3, 5, 1, 2, 6, {30, -5, {100}}, 9, 8, 4, 7};
+        var l1 = {1, 2, 3};
+        var l2 = {5, 6, 7, 8};
+        var elist = Elist();
 
-        for (var a: list) [
-            print a;
-            a = 5;
-        ]
+        elist.push_list(l1);
+        elist.push(4);
+        elist.push_list(l2);
+        elist.pop();
+        print elist.list;
 
-        var sum = 0;
-        for (var a: get()) [
-            sum += int(a);
-        ]
-        print "Sum of " + str(get()) + " is " + str(sum);
-    )");
+        print elist.contains(4);
+        print elist.contains(-10);
+    )";
+    
+    std::string file_name = "examples/EList.jun";
 
-    std::string file_name = "test";
+    if  (argc == 2) {
+        file_name = argv[1];
+    }
+
+    jl::Lexer lexer(file_name);
     lexer.scan();
 
     jl::Arena arena(1000 * 1000);
@@ -61,8 +107,6 @@ int main()
     }
 
     interpreter.interpret(stmts);
-
-    std::cout << "Ended" << std::endl;
 }
 
 /*

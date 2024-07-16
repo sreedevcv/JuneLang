@@ -18,10 +18,12 @@ jl::Interpreter::Interpreter(Arena& arena, std::string& file_name, int64_t inter
     ToStrNativeFunction* to_str_native_func = m_arena.allocate<ToStrNativeFunction>();
     GetLenNativeFunction* get_len_native_func = m_arena.allocate<GetLenNativeFunction>();
     AppendNativeFunction* append_native_func = m_arena.allocate<AppendNativeFunction>();
+    RemoveLastNativeFunction* remove_last_native_func = m_arena.allocate<RemoveLastNativeFunction>();
     m_global_env->define(to_int_native_func->m_name, static_cast<Callable*>(to_int_native_func));
     m_global_env->define(to_str_native_func->m_name, static_cast<Callable*>(to_str_native_func));
     m_global_env->define(get_len_native_func->m_name, static_cast<Callable*>(get_len_native_func));
     m_global_env->define(append_native_func->m_name, static_cast<Callable*>(append_native_func));
+    m_global_env->define(remove_last_native_func->m_name, static_cast<Callable*>(remove_last_native_func));
 }
 
 void jl::Interpreter::interpret(Expr* expr, Value* value)
@@ -426,7 +428,12 @@ void jl::Interpreter::visit_jlist_expr(JList* expr, void* context)
     }
 
     Value* value = m_internal_arena.allocate<Value>();
-    *value = &expr->m_items;
+
+    // Create a new array so that a new JList is created everytime the node is interpreted
+    // Otherwise JLists created as members of classes will always point to the same one 
+    // See::examples/EList.jun
+    std::vector<Expr*>* items_copy = m_internal_arena.allocate<std::vector<Expr*>>(expr->m_items);
+    *value = items_copy;
     *static_cast<Value*>(context) = *value;
 }
 
@@ -607,7 +614,7 @@ void jl::Interpreter::visit_class_stmt(ClassStmt* stmt, void* context)
 void jl::Interpreter::visit_for_each_stmt(ForEachStmt* stmt, void* context)
 {
     Value value;
-    m_env = m_internal_arena.allocate<Environment>(m_env);      // Create a new env for decalring looping variable
+    m_env = m_internal_arena.allocate<Environment>(m_env); // Create a new env for decalring looping variable
     stmt->m_var_declaration->accept(*this, &value);
     evaluate(stmt->m_list_expr, &value);
 
@@ -616,7 +623,7 @@ void jl::Interpreter::visit_for_each_stmt(ForEachStmt* stmt, void* context)
         throw "runtime-exception";
     }
 
-    for (Expr* item: *std::get<std::vector<Expr*>*>(value)) {
+    for (Expr* item : *std::get<std::vector<Expr*>*>(value)) {
         Value list_value;
         evaluate(item, &list_value);
         m_env->assign(stmt->m_var_declaration->m_name, list_value);
