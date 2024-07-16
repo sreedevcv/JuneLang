@@ -73,9 +73,20 @@ jl::Value jl::append(Interpreter* interpreter, Value& jlist, Value& appending_va
 {
     if (is_jlist(jlist)) {
         auto list = std::get<std::vector<Expr*>*>(jlist);
-        Value* v = interpreter->m_internal_arena.allocate<Value>(std::move(appending_value));      // Wastefull copying
+        Value* v = interpreter->m_internal_arena.allocate<Value>(std::move(appending_value)); // Wastefull copying
         list->push_back(interpreter->m_internal_arena.allocate<Literal>(v));
-        // interpreter.ev
+        return list;
+    } else {
+        ErrorHandler::error(interpreter->m_file_name, "interpreting", "native function len()", 0, "Attempted to use append() on a non-list", 0);
+        return 0;
+    }
+}
+
+jl::Value jl::remove_last(Interpreter* interpreter, Value& jlist)
+{
+    if (is_jlist(jlist)) {
+        auto list = std::get<std::vector<Expr*>*>(jlist);
+        list->pop_back();
         return list;
     } else {
         ErrorHandler::error(interpreter->m_file_name, "interpreting", "native function len()", 0, "Attempted to use append() on a non-list", 0);

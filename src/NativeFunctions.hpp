@@ -50,8 +50,10 @@ public:
 
 Value get_len(std::string& file_name, Value& jlist);
 Value append(Interpreter* interpreter, Value& jlist, Value& appending_value);
+Value remove_last(Interpreter* interpreter, Value& jlist);
 
 NATIVE_FUCTION(GetLen, len, get_len, 1, interpreter->m_file_name, arguments[0]);
-NATIVE_FUCTION(Append, append, append, 2, interpreter, arguments[0], arguments[1]);
+NATIVE_FUCTION(Append, push_back, append, 2, interpreter, arguments[0], arguments[1]);
+NATIVE_FUCTION(RemoveLast, pop_back, remove_last, 1, interpreter, arguments[0]);
 
 } // namespace jl

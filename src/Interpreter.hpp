@@ -72,5 +72,6 @@ private:
 
     friend class ClassCallable;
     friend Value append(Interpreter* interpreter, Value& jlist, Value& appending_value);
+    friend Value remove_last(Interpreter* interpreter, Value& jlist);
 };
 } // namespace jl
