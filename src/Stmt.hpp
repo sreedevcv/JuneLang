@@ -18,23 +18,22 @@ class ForEachStmt;
 
 class IStmtVisitor {
 public:
-    virtual void visit_print_stmt(PrintStmt* stmt, void* context) = 0;
-    virtual void visit_expr_stmt(ExprStmt* stmt, void* context) = 0;
-    virtual void visit_var_stmt(VarStmt* stmt, void* context) = 0;
-    virtual void visit_block_stmt(BlockStmt* stmt, void* context) = 0;
-    virtual void visit_empty_stmt(EmptyStmt* stmt, void* context) = 0;
-    virtual void visit_if_stmt(IfStmt* stmt, void* context) = 0;
-    virtual void visit_while_stmt(WhileStmt* stmt, void* context) = 0;
-    virtual void visit_func_stmt(FuncStmt* stmt, void* context) = 0;
-    virtual void visit_return_stmt(ReturnStmt* stmt, void* context) = 0;
-    virtual void visit_class_stmt(ClassStmt* stmt, void* context) = 0;
-    virtual void visit_for_each_stmt(ForEachStmt* stmt, void* context) = 0;
-    virtual void* get_stmt_context() = 0;
+    virtual std::any visit_print_stmt(PrintStmt* stmt) = 0;
+    virtual std::any visit_expr_stmt(ExprStmt* stmt) = 0;
+    virtual std::any visit_var_stmt(VarStmt* stmt) = 0;
+    virtual std::any visit_block_stmt(BlockStmt* stmt) = 0;
+    virtual std::any visit_empty_stmt(EmptyStmt* stmt) = 0;
+    virtual std::any visit_if_stmt(IfStmt* stmt) = 0;
+    virtual std::any visit_while_stmt(WhileStmt* stmt) = 0;
+    virtual std::any visit_func_stmt(FuncStmt* stmt) = 0;
+    virtual std::any visit_return_stmt(ReturnStmt* stmt) = 0;
+    virtual std::any visit_class_stmt(ClassStmt* stmt) = 0;
+    virtual std::any visit_for_each_stmt(ForEachStmt* stmt) = 0;
 };
 
 class Stmt {
 public:
-    virtual void accept(IStmtVisitor& visitor, void* context) = 0;
+    virtual std::any accept(IStmtVisitor& visitor) = 0;
     virtual ~Stmt() = default;
 };
 
@@ -47,9 +46,9 @@ public:
     {
     }
 
-    inline virtual void accept(IStmtVisitor& visitor, void* context) override
+    inline virtual std::any accept(IStmtVisitor& visitor) override
     {
-        visitor.visit_expr_stmt(this, context);
+        return visitor.visit_expr_stmt(this);
     }
 
     virtual ~ExprStmt()
@@ -67,9 +66,9 @@ public:
     {
     }
 
-    inline virtual void accept(IStmtVisitor& visitor, void* context) override
+    inline virtual std::any accept(IStmtVisitor& visitor) override
     {
-        visitor.visit_print_stmt(this, context);
+        return visitor.visit_print_stmt(this);
     }
 
     virtual ~PrintStmt()
@@ -89,9 +88,9 @@ public:
     {
     }
 
-    inline virtual void accept(IStmtVisitor& visitor, void* context) override
+    inline virtual std::any accept(IStmtVisitor& visitor) override
     {
-        visitor.visit_var_stmt(this, context);
+        return visitor.visit_var_stmt(this);
     }
 
     virtual ~VarStmt()
@@ -109,9 +108,9 @@ public:
     {
     }
 
-    inline virtual void accept(IStmtVisitor& visitor, void* context) override
+    inline virtual std::any accept(IStmtVisitor& visitor) override
     {
-        visitor.visit_block_stmt(this, context);
+        return visitor.visit_block_stmt(this);
     }
 
     virtual ~BlockStmt()
@@ -127,9 +126,9 @@ public:
     EmptyStmt() = default;
     virtual ~EmptyStmt() = default;
 
-    inline virtual void accept(IStmtVisitor& visitor, void* context) override
+    inline virtual std::any accept(IStmtVisitor& visitor) override
     {
-        visitor.visit_empty_stmt(this, context);
+        return visitor.visit_empty_stmt(this);
     }
 };
 
@@ -146,9 +145,9 @@ public:
     {
     }
 
-    inline virtual void accept(IStmtVisitor& visitor, void* context) override
+    inline virtual std::any accept(IStmtVisitor& visitor) override
     {
-        visitor.visit_if_stmt(this, context);
+        return visitor.visit_if_stmt(this);
     }
 
     virtual ~IfStmt()
@@ -170,9 +169,9 @@ public:
     {
     }
 
-    inline virtual void accept(IStmtVisitor& visitor, void* context) override
+    inline virtual std::any accept(IStmtVisitor& visitor) override
     {
-        visitor.visit_while_stmt(this, context);
+        return visitor.visit_while_stmt(this);
     }
 
     virtual ~WhileStmt()
@@ -195,9 +194,9 @@ public:
     {
     }
 
-    inline virtual void accept(IStmtVisitor& visitor, void* context) override
+    inline virtual std::any accept(IStmtVisitor& visitor) override
     {
-        visitor.visit_func_stmt(this, context);
+        return visitor.visit_func_stmt(this);
     }
 
     virtual ~FuncStmt()
@@ -220,9 +219,9 @@ public:
     {
     }
 
-    inline virtual void accept(IStmtVisitor& visitor, void* context) override
+    inline virtual std::any accept(IStmtVisitor& visitor) override
     {
-        visitor.visit_return_stmt(this, context);
+        return visitor.visit_return_stmt(this);
     }
 
     // virtual ~ReturnStmt()
@@ -253,9 +252,9 @@ public:
         // }
     }
 
-    inline virtual void accept(IStmtVisitor& visitor, void* context) override
+    inline virtual std::any accept(IStmtVisitor& visitor) override
     {
-        visitor.visit_class_stmt(this, context);
+        return visitor.visit_class_stmt(this);
     }
 };
 
@@ -273,9 +272,9 @@ public:
     }
     virtual ~ForEachStmt() = default;
 
-    inline virtual void accept(IStmtVisitor& visitor, void* context)
+    inline virtual std::any accept(IStmtVisitor& visitor)
     {
-        visitor.visit_for_each_stmt(this, context);
+        return visitor.visit_for_each_stmt(this);
     }
 };
 

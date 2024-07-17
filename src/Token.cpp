@@ -33,7 +33,7 @@ std::string& jl::Token::get_lexeme()
     return m_lexeme;
 }
 
-const jl::Value jl::Token::get_value() const
+jl::Value jl::Token::get_value() const
 {
     return m_value;
 }

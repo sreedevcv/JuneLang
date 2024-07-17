@@ -25,43 +25,40 @@ public:
     std::string m_file_name;
 
 private:
-    virtual void visit_assign_expr(Assign* expr, void* context) override;
-    virtual void visit_binary_expr(Binary* expr, void* context) override;
-    virtual void visit_grouping_expr(Grouping* expr, void* context) override;
-    virtual void visit_unary_expr(Unary* expr, void* context) override;
-    virtual void visit_literal_expr(Literal* expr, void* context) override;
-    virtual void visit_variable_expr(Variable* expr, void* context) override;
-    virtual void visit_logical_expr(Logical* expr, void* context) override;
-    virtual void visit_call_expr(Call* expr, void* context) override;
-    virtual void visit_get_expr(Get* expr, void* context) override;
-    virtual void visit_set_expr(Set* expr, void* context) override;
-    virtual void visit_this_expr(This* expr, void* context) override;
-    virtual void visit_super_expr(Super* expr, void* context) override;
-    virtual void visit_jlist_expr(JList* expr, void* context) override;
-    virtual void visit_index_get_expr(IndexGet* expr, void* context);
-    virtual void visit_index_set_expr(IndexSet* expr, void* context);
+    virtual std::any visit_assign_expr(Assign* expr) override;
+    virtual std::any visit_binary_expr(Binary* expr) override;
+    virtual std::any visit_grouping_expr(Grouping* expr) override;
+    virtual std::any visit_unary_expr(Unary* expr) override;
+    virtual std::any visit_literal_expr(Literal* expr) override;
+    virtual std::any visit_variable_expr(Variable* expr) override;
+    virtual std::any visit_logical_expr(Logical* expr) override;
+    virtual std::any visit_call_expr(Call* expr) override;
+    virtual std::any visit_get_expr(Get* expr) override;
+    virtual std::any visit_set_expr(Set* expr) override;
+    virtual std::any visit_this_expr(This* expr) override;
+    virtual std::any visit_super_expr(Super* expr) override;
+    virtual std::any visit_jlist_expr(JList* expr) override;
+    virtual std::any visit_index_get_expr(IndexGet* expr) override;
+    virtual std::any visit_index_set_expr(IndexSet* expr) override;
 
-    virtual void* get_expr_context() override;
+    virtual std::any visit_print_stmt(PrintStmt* stmt) override;
+    virtual std::any visit_expr_stmt(ExprStmt* stmt) override;
+    virtual std::any visit_var_stmt(VarStmt* stmt) override;
+    virtual std::any visit_block_stmt(BlockStmt* stmt) override;
+    virtual std::any visit_empty_stmt(EmptyStmt* stmt) override;
+    virtual std::any visit_if_stmt(IfStmt* stmt) override;
+    virtual std::any visit_while_stmt(WhileStmt* stmt) override;
+    virtual std::any visit_func_stmt(FuncStmt* stmt) override;
+    virtual std::any visit_return_stmt(ReturnStmt* stmt) override;
+    virtual std::any visit_class_stmt(ClassStmt* stmt) override;
+    virtual std::any visit_for_each_stmt(ForEachStmt* stmt) override;
 
-    virtual void visit_print_stmt(PrintStmt* stmt, void* context) override;
-    virtual void visit_expr_stmt(ExprStmt* stmt, void* context) override;
-    virtual void visit_var_stmt(VarStmt* stmt, void* context) override;
-    virtual void visit_block_stmt(BlockStmt* stmt, void* context) override;
-    virtual void visit_empty_stmt(EmptyStmt* stmt, void* context) override;
-    virtual void visit_if_stmt(IfStmt* stmt, void* context) override;
-    virtual void visit_while_stmt(WhileStmt* stmt, void* context) override;
-    virtual void visit_func_stmt(FuncStmt* stmt, void* context) override;
-    virtual void visit_return_stmt(ReturnStmt* stmt, void* context) override;
-    virtual void visit_class_stmt(ClassStmt* stmt, void* context) override;
-    virtual void visit_for_each_stmt(ForEachStmt* stmt, void* context) override;
-    virtual void* get_stmt_context() override;
-
-    void evaluate(Expr* expr, void* context);
-    bool is_truthy(Value* value);
+    std::any evaluate(Expr* expr);
+    bool is_truthy(Value& value);
 
     template <typename Op>
-    void do_arith_operation(Value& left, Value& right, void* context, Op op);
-    void append_strings(Value& left, Value& right, void* context);
+    std::any do_arith_operation(Value& left, Value& right, Op op);
+    std::any append_strings(Value& left, Value& right);
     bool is_equal(Value& left, Value& right);
     Value& look_up_variable(Token& name, Expr* expr);
 

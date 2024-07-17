@@ -11,12 +11,21 @@ class Instance;
 class Callable;
 class Expr;
 
+class JNullType {
+public:
+    inline bool operator==(const JNullType other) const
+    {
+        return true;
+    }
+};
+
+
 using Value = std::variant<
     int,
     double,
     bool,
     std::string,
-    char,       // Respresents null value
+    JNullType,       // Respresents null value
     Callable*,
     Instance*,
     std::vector<Expr*>*

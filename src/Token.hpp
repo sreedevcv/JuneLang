@@ -72,7 +72,7 @@ public:
 
     TokenType get_tokentype() const;
     std::string& get_lexeme();
-    const Value get_value() const;
+    Value get_value() const;
     int get_line() const;
 
     static Value global_true_constant;

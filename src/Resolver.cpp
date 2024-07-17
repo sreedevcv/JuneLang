@@ -17,12 +17,12 @@ void jl::Resolver::resolve(std::vector<Stmt*>& statements)
 
 void jl::Resolver::resolve(Stmt* statement)
 {
-    statement->accept(*this, nullptr);
+    statement->accept(*this);
 }
 
 void jl::Resolver::resolve(Expr* expression)
 {
-    expression->accept(*this, nullptr);
+    expression->accept(*this);
 }
 
 void jl::Resolver::resolve_local(Expr* expr, Token& name)
@@ -90,76 +90,87 @@ void jl::Resolver::define(Token& name)
 // -------------------------------Expressions--------------------------------------
 // --------------------------------------------------------------------------------
 
-void jl::Resolver::visit_assign_expr(Assign* expr, void* context)
+std::any jl::Resolver::visit_assign_expr(Assign* expr)
 {
     resolve(expr->m_expr);
     resolve_local(expr, expr->m_token);
+    return nullptr;
 }
 
-void jl::Resolver::visit_binary_expr(Binary* expr, void* context)
+std::any jl::Resolver::visit_binary_expr(Binary* expr)
 {
     resolve(expr->m_left);
     resolve(expr->m_right);
+    return nullptr;
 }
 
-void jl::Resolver::visit_grouping_expr(Grouping* expr, void* context)
+std::any jl::Resolver::visit_grouping_expr(Grouping* expr)
 {
     resolve(expr->m_expr);
+    return nullptr;
 }
 
-void jl::Resolver::visit_unary_expr(Unary* expr, void* context)
+std::any jl::Resolver::visit_unary_expr(Unary* expr)
 {
     resolve(expr->m_expr);
+    return nullptr;
 }
 
-void jl::Resolver::visit_literal_expr(Literal* expr, void* context)
+std::any jl::Resolver::visit_literal_expr(Literal* expr)
 {
+    return nullptr;
 }
 
-void jl::Resolver::visit_variable_expr(Variable* expr, void* context)
+std::any jl::Resolver::visit_variable_expr(Variable* expr)
 {
     if (!m_scopes.empty() && m_scopes.back().contains(expr->m_name.get_lexeme()) && m_scopes.back().at(expr->m_name.get_lexeme()) == false) {
         ErrorHandler::error(m_file_name, "resolving", "variable expression", expr->m_name.get_line(), "Can't read local variable in its own initializer", 0);
     }
 
     resolve_local(expr, expr->m_name);
+    return nullptr;
 }
 
-void jl::Resolver::visit_logical_expr(Logical* expr, void* context)
+std::any jl::Resolver::visit_logical_expr(Logical* expr)
 {
     resolve(expr->m_left);
     resolve(expr->m_right);
+    return nullptr;
 }
 
-void jl::Resolver::visit_call_expr(Call* expr, void* context)
+std::any jl::Resolver::visit_call_expr(Call* expr)
 {
     resolve(expr->m_callee);
 
     for (Expr* arg : expr->m_arguments) {
         resolve(arg);
     }
+    return nullptr;
 }
 
-void jl::Resolver::visit_get_expr(Get* expr, void* context)
+std::any jl::Resolver::visit_get_expr(Get* expr)
 {
     resolve(expr->m_object);
+    return nullptr;
 }
 
-void jl::Resolver::visit_set_expr(Set* expr, void* context)
+std::any jl::Resolver::visit_set_expr(Set* expr)
 {
     resolve(expr->m_object);
     resolve(expr->m_value);
+    return nullptr;
 }
 
-void jl::Resolver::visit_this_expr(This* expr, void* context)
+std::any jl::Resolver::visit_this_expr(This* expr)
 {
     if (m_current_class_type == ClassType::NONE) {
         ErrorHandler::error(m_file_name, "resolving", "self keyword", expr->m_keyword.get_line(), "Cannot use 'self' outside a class", 0);
     }
     resolve_local(expr, expr->m_keyword);
+    return nullptr;
 }
 
-void jl::Resolver::visit_super_expr(Super* expr, void* context)
+std::any jl::Resolver::visit_super_expr(Super* expr)
 {
     if (m_current_class_type == ClassType::NONE) {
         ErrorHandler::error(m_file_name, "resolving", "super", expr->m_keyword.get_line(), "Super keyword should be used within a class", 0);
@@ -167,30 +178,29 @@ void jl::Resolver::visit_super_expr(Super* expr, void* context)
         ErrorHandler::error(m_file_name, "resolving", "super", expr->m_keyword.get_line(), "Super keyword should be used within a sub-class", 0);
     }
     resolve_local(expr, expr->m_keyword);
+    return nullptr;
 }
 
-void jl::Resolver::visit_jlist_expr(JList* expr, void* context)
+std::any jl::Resolver::visit_jlist_expr(JList* expr)
 {
     for (Expr* item : expr->m_items) {
         resolve(item);
     }
+    return nullptr;
 }
 
-void jl::Resolver::visit_index_get_expr(IndexGet* expr, void* context)
+std::any jl::Resolver::visit_index_get_expr(IndexGet* expr)
 {
     resolve(expr->m_jlist);
     resolve(expr->m_index_expr);
+    return nullptr;
 }
 
-void jl::Resolver::visit_index_set_expr(IndexSet* expr, void* context)
+std::any jl::Resolver::visit_index_set_expr(IndexSet* expr)
 {
     resolve(expr->m_jlist);
     resolve(expr->m_index_expr);
     resolve(expr->m_value_expr);
-}
-
-void* jl::Resolver::get_expr_context()
-{
     return nullptr;
 }
 
@@ -198,60 +208,68 @@ void* jl::Resolver::get_expr_context()
 // -------------------------------Statements---------------------------------------
 // --------------------------------------------------------------------------------
 
-void jl::Resolver::visit_print_stmt(PrintStmt* stmt, void* context)
+std::any jl::Resolver::visit_print_stmt(PrintStmt* stmt)
 {
     resolve(stmt->m_expr);
+    return nullptr;
 }
 
-void jl::Resolver::visit_expr_stmt(ExprStmt* stmt, void* context)
+std::any jl::Resolver::visit_expr_stmt(ExprStmt* stmt)
 {
     resolve(stmt->m_expr);
+    return nullptr;
 }
 
-void jl::Resolver::visit_var_stmt(VarStmt* stmt, void* context)
+std::any jl::Resolver::visit_var_stmt(VarStmt* stmt)
 {
     declare(stmt->m_name);
     if (stmt->m_initializer != nullptr) {
         resolve(stmt->m_initializer);
     }
     define(stmt->m_name);
+    return nullptr;
 }
 
-void jl::Resolver::visit_block_stmt(BlockStmt* stmt, void* context)
+std::any jl::Resolver::visit_block_stmt(BlockStmt* stmt)
 {
     begin_scope();
     resolve(stmt->m_statements);
     end_scope();
+    return nullptr;
 }
 
-void jl::Resolver::visit_empty_stmt(EmptyStmt* stmt, void* context)
+std::any jl::Resolver::visit_empty_stmt(EmptyStmt* stmt)
 {
+    return nullptr;
 }
 
-void jl::Resolver::visit_if_stmt(IfStmt* stmt, void* context)
+std::any jl::Resolver::visit_if_stmt(IfStmt* stmt)
 {
     resolve(stmt->m_condition);
     resolve(stmt->m_then_stmt);
     if (stmt->m_else_stmt != nullptr) {
         resolve(stmt->m_else_stmt);
     }
+    return nullptr;
 }
 
-void jl::Resolver::visit_while_stmt(WhileStmt* stmt, void* context)
+std::any jl::Resolver::visit_while_stmt(WhileStmt* stmt)
 {
     resolve(stmt->m_condition);
     resolve(stmt->m_body);
+    return nullptr;
 }
 
-void jl::Resolver::visit_func_stmt(FuncStmt* stmt, void* context)
+std::any jl::Resolver::visit_func_stmt(FuncStmt* stmt)
 {
     declare(stmt->m_name);
     define(stmt->m_name);
 
     resolve_function(stmt, FUNCTION);
+    return nullptr;
 }
 
-void jl::Resolver::visit_return_stmt(ReturnStmt* stmt, void* context)
+std::any jl::Resolver::visit_return_stmt(ReturnStmt* stmt)
 {
     if (m_current_function_type == NONE) {
         ErrorHandler::error(m_file_name, "resolving", "return statement", stmt->m_keyword.get_line(), "Return statement should be inside a function", 0);
@@ -262,9 +280,10 @@ void jl::Resolver::visit_return_stmt(ReturnStmt* stmt, void* context)
         }
         resolve(stmt->m_expr);
     }
+    return nullptr;
 }
 
-void jl::Resolver::visit_class_stmt(ClassStmt* stmt, void* context)
+std::any jl::Resolver::visit_class_stmt(ClassStmt* stmt)
 {
     ClassType enclosing_class = m_current_class_type;
     m_current_class_type = ClassType::CLASS;
@@ -300,18 +319,15 @@ void jl::Resolver::visit_class_stmt(ClassStmt* stmt, void* context)
         end_scope();
     }
     m_current_class_type = enclosing_class;
+    return nullptr;
 }
 
-void jl::Resolver::visit_for_each_stmt(ForEachStmt* stmt, void* context)
+std::any jl::Resolver::visit_for_each_stmt(ForEachStmt* stmt)
 {
     begin_scope();
     resolve(stmt->m_var_declaration);
     resolve(stmt->m_list_expr);
     resolve(stmt->m_body);
     end_scope();
-}
-
-void* jl::Resolver::get_stmt_context()
-{
     return nullptr;
 }

@@ -14,73 +14,32 @@ int main(int argc, char const *argv[])
     // jed::Editor editor;
     // editor.start();
 
-    // jl::Lexer lexer(
+    jl::Lexer lexer(
         R"(
-        class Elist [
-            init() [
-                self.list = {};
-            ]
+        var a = {3, 5, 1, 2, 6, 9, 8, 4, 7};
 
-            push(ele) [
-                push_back(self.list, ele);
-            ]
+        fun findMax(list) [
+            var max = -1;
 
-            push_list(list) [
-                for (var ele: list) [
-                    push_back(self.list, ele);
+            for (var i = 0; i < 9; i+=1) [
+                if (list[i] > max) [
+                    max = list[i];
                 ]
             ]
 
-            get(index) [
-                return self.list[index];
-            ]
-
-            set(index, ele) [
-                self.list[index] = ele;
-            ]
-
-            contains(ele) [
-                for (var item: self.list) [
-                    if (ele == item) [
-                        return true;
-                    ]
-                ]
-                return false;
-            ]
-
-            remove(ele) [
-        for (var i = 0; i < len(self.list); i += 1) [
-            if (self.list[i] == ele) [
-                for (var j = i + 1; j < len(self.list) - 1; j += 1) [
-                    self.list[j - 1] = self.list[j];
-                ]
-                pop_back(self.list);
-            ]
+            return max;
         ]
-    ]
-        ]    
 
-        var l1 = {1, 2, 3};
-        var l2 = {5, 6, 7, 8};
-        var elist = Elist();
-
-        elist.push_list(l1);
-        elist.push(4);
-        elist.push_list(l2);
-        elist.pop();
-        print elist.list;
-
-        print elist.contains(4);
-        print elist.contains(-10);
-    )";
+        print findMax(a);
+    )");
     
     std::string file_name = "examples/EList.jun";
 
-    if  (argc == 2) {
-        file_name = argv[1];
-    }
+    // if  (argc == 2) {
+    //     file_name = argv[1];
+    // }
 
-    jl::Lexer lexer(file_name);
+    // jl::Lexer lexer(file_name);
     lexer.scan();
 
     jl::Arena arena(1000 * 1000);
