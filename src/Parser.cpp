@@ -163,7 +163,7 @@ jl::Expr* jl::Parser::term()
 {
     Expr* expr = factor();
 
-    while (match({ Token::MINUS, Token::PLUS })) {
+    while (match({ Token::MINUS, Token::PLUS, Token::PERCENT })) {
         Token& oper = previous();
         Expr* right = factor();
         expr = m_arena.allocate<Binary>(expr, &oper, right);
@@ -254,6 +254,8 @@ jl::Expr* jl::Parser::assignment()
         return modify_and_assign(Token::STAR, expr);
     } else if (match({ Token::SLASH_EQUAL })) {
         return modify_and_assign(Token::SLASH, expr);
+    } else if (match({ Token::PERCENT_EQUAL })) {
+        return modify_and_assign(Token::PERCENT, expr);
     }
 
     return expr;

@@ -225,6 +225,13 @@ std::any jl::Interpreter::visit_binary_expr(Binary* expr)
     case Token::LESS_EQUAL:
         return do_arith_operation(left_value, right_value, std::less_equal<>(), line);
         break;
+    case Token::PERCENT:
+        if (!is_int(left_value) || !is_int(right_value)) {
+            ErrorHandler::error(m_file_name, "interpreting", "binary expression", line, "Left and right operands must be a int to use `%`", 0);
+            throw "runtime-error";
+        }
+        return Value(std::get<int>(left_value) % std::get<int>(right_value));
+        break;
     case Token::EQUAL_EQUAL:
         return Value(is_equal(left_value, right_value));
         break;

@@ -14,32 +14,29 @@ int main(int argc, char const *argv[])
     // jed::Editor editor;
     // editor.start();
 
-    jl::Lexer lexer(
-        R"(
-        var a = {3, 5, 1, 2, 6, 9, 8, 4, 7};
+    // jl::Lexer lexer(
+    //     R"(
+    //     var a = {3, 5, 1, 2, 6, 9, 8, 4, 7};
 
-        fun findMax(list) [
-            var max = -1;
+    //     fun findMod(list) [
 
-            for (var i = 0; i < 9; i+=1) [
-                if (list[i] > max) [
-                    max = list[i];
-                ]
-            ]
+    //         for (var i = 0; i < 9; i+=1) [
+    //             var temp = list[i] % (i + 1);
+    //             print str(list[i]) + " % " + str(i + 1) + " is " + str(temp);
+    //         ]
 
-            return max;
-        ]
+    //     ]
 
-        print findMax(a);
-    )");
+    //     findMod(a);
+    // )");
     
     std::string file_name = "examples/EList.jun";
 
-    // if  (argc == 2) {
-    //     file_name = argv[1];
-    // }
+    if  (argc == 2) {
+        file_name = argv[1];
+    }
 
-    // jl::Lexer lexer(file_name);
+    jl::Lexer lexer(file_name);
     lexer.scan();
 
     jl::Arena arena(1000 * 1000);

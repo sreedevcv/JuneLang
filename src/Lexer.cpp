@@ -110,6 +110,9 @@ void jl::Lexer::scan_token()
     case '>':
         add_token(match('=') ? Token::GREATER_EQUAL : Token::GREATER);
         break;
+    case '%':
+        add_token(match('=') ? Token::PERCENT_EQUAL : Token::PERCENT);
+        break;
     case ' ':
     case '\t':
     case '\r':

@@ -30,6 +30,7 @@ public:
         EQUAL,
         MINUS,
         GREATER,
+        PERCENT,
         PLUS_EQUAL,
         MINUS_EQUAL,
         STAR_EQUAL,
@@ -38,6 +39,7 @@ public:
         EQUAL_EQUAL,
         GREATER_EQUAL,
         LESS_EQUAL,
+        PERCENT_EQUAL,
         // Literals
         STRING,
         FLOAT,

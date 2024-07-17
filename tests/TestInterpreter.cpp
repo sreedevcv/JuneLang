@@ -391,6 +391,25 @@ TEST_CASE("Interpreter Bubble sort", "[Interpreter]")
     test_string_with_no_error(source, 11000);
 }
 
+TEST_CASE("Interpreter Finding Mod of a list of numbers with their indices", "[Interpreter]")
+{
+    const char* source = R"(
+        var a = {3, 5, 1, 2, 6, 9, 8, 4, 7};
+
+        fun findMod(list) [
+            for (var i = 0; i < 9; i+=1) [
+                var temp = list[i] % (i + 1);
+                print str(list[i]) + " % " + str(i + 1) + " is " + str(temp);
+            ]
+
+        ]
+
+        findMod(a);
+    )";
+
+    test_string_with_no_error(source, 4000);
+}
+
 // TEST_CASE("Interpreter", "[Interpreter]")
 // {
 //     const char* source = R"(
