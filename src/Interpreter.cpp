@@ -66,8 +66,13 @@ bool jl::Interpreter::is_truthy(Value& value)
 }
 
 template <typename Op>
-jl::Value jl::Interpreter::do_arith_operation(Value& left, Value& right, Op op)
+jl::Value jl::Interpreter::do_arith_operation(Value& left, Value& right, Op op, int line)
 {
+    if (!is_number(left) || !is_number(right)) {
+        ErrorHandler::error(m_file_name, "interpreting", "binary expression", line, "Left and right operands must be a number", 0);
+        throw "runtime-error";
+    }
+
     if (is_float(left) || is_float(right)) {
         double a = is_float(left) ? std::get<double>(left) : std::get<int>(left);
         double b = is_float(right) ? std::get<double>(right) : std::get<int>(right);
@@ -177,7 +182,6 @@ std::any jl::Interpreter::visit_assign_expr(Assign* expr)
 {
     Value value = evaluate(expr->m_expr);
 
-    // Value value = *static_cast<Value*>(context);
     if (m_locals.contains(expr)) {
         m_env->assign_at(expr->m_token, value, m_locals[expr]);
     } else {
@@ -187,78 +191,39 @@ std::any jl::Interpreter::visit_assign_expr(Assign* expr)
     return value;
 }
 
-// Refactor this to make it more concise
 std::any jl::Interpreter::visit_binary_expr(Binary* expr)
 {
     Value left_value = evaluate(expr->m_left);
     Value right_value = evaluate(expr->m_right);
+    int line = expr->m_oper->get_line();
 
     switch (expr->m_oper->get_tokentype()) {
     case Token::MINUS:
-        if (is_number(left_value) && is_number(right_value)) {
-            return do_arith_operation(left_value, right_value, std::minus<>());
-        } else {
-            ErrorHandler::error(m_file_name, "interpreting", "binary expression", expr->m_oper->get_line(), "Left and right operands must be a number", 0);
-            throw "runtime-error";
-        }
+        return do_arith_operation(left_value, right_value, std::minus<>(), line);
         break;
     case Token::STAR:
-        if (is_number(left_value) && is_number(right_value)) {
-            return do_arith_operation(left_value, right_value, std::multiplies<>());
-        } else {
-            ErrorHandler::error(m_file_name, "interpreting", "binary expression", expr->m_oper->get_line(), "Left and right operands must be a number", 0);
-            throw "runtime-error";
-        }
+        return do_arith_operation(left_value, right_value, std::multiplies<>(), line);
         break;
     case Token::SLASH:
-        if (is_number(left_value) && is_number(right_value)) {
-            return do_arith_operation(left_value, right_value, std::divides<>());
-        } else {
-            ErrorHandler::error(m_file_name, "interpreting", "binary expression", expr->m_oper->get_line(), "Left and right operands must be a number", 0);
-            throw "runtime-error";
-        }
+        return do_arith_operation(left_value, right_value, std::divides<>(), line);
         break;
     case Token::PLUS:
-        if (is_number(left_value) && is_number(right_value)) {
-            return do_arith_operation(left_value, right_value, std::plus<>());
-        } else if (is_string(left_value) && is_string(right_value)) {
+        if (is_string(left_value) && is_string(right_value)) {
             return append_strings(left_value, right_value);
-        } else {
-            ErrorHandler::error(m_file_name, "interpreting", "binary expression", expr->m_oper->get_line(), "Left and right operands must be a number", 0);
-            throw "runtime-error";
         }
+        return do_arith_operation(left_value, right_value, std::plus<>(), line);
         break;
     case Token::GREATER:
-        if (is_number(left_value) && is_number(right_value)) {
-            return do_arith_operation(left_value, right_value, std::greater<>());
-        } else {
-            ErrorHandler::error(m_file_name, "interpreting", "binary expression", expr->m_oper->get_line(), "Left and right operands must be a number", 0);
-            throw "runtime-error";
-        }
+        return do_arith_operation(left_value, right_value, std::greater<>(), line);
         break;
     case Token::LESS:
-        if (is_number(left_value) && is_number(right_value)) {
-            return do_arith_operation(left_value, right_value, std::less<>());
-        } else {
-            ErrorHandler::error(m_file_name, "interpreting", "binary expression", expr->m_oper->get_line(), "Left and right operands must be a number", 0);
-            throw "runtime-error";
-        }
+        return do_arith_operation(left_value, right_value, std::less<>(), line);
         break;
     case Token::GREATER_EQUAL:
-        if (is_number(left_value) && is_number(right_value)) {
-            return do_arith_operation(left_value, right_value, std::greater_equal<>());
-        } else {
-            ErrorHandler::error(m_file_name, "interpreting", "binary expression", expr->m_oper->get_line(), "Left and right operands must be a number", 0);
-            throw "runtime-error";
-        }
+        return do_arith_operation(left_value, right_value, std::greater_equal<>(), line);
         break;
     case Token::LESS_EQUAL:
-        if (is_number(left_value) && is_number(right_value)) {
-            return do_arith_operation(left_value, right_value, std::less_equal<>());
-        } else {
-            ErrorHandler::error(m_file_name, "interpreting", "binary expression", expr->m_oper->get_line(), "Left and right operands must be a number", 0);
-            throw "runtime-error";
-        }
+        return do_arith_operation(left_value, right_value, std::less_equal<>(), line);
         break;
     case Token::EQUAL_EQUAL:
         return Value(is_equal(left_value, right_value));
@@ -310,7 +275,6 @@ std::any jl::Interpreter::visit_literal_expr(Literal* expr)
     return expr->m_value;
 }
 
-// Returns the token value as the context
 std::any jl::Interpreter::visit_variable_expr(Variable* expr)
 {
     return look_up_variable(expr->m_name, expr);
@@ -324,18 +288,17 @@ std::any jl::Interpreter::visit_logical_expr(Logical* expr)
 
     if (expr->m_oper.get_tokentype() == Token::OR) {
         if (truth) {
-            // return whatever is in context since first OR is truthy
+            // return left since first OR is truthy
             return left;
         }
     } else {
         if (!truth) {
-            // return whatever is in context since first AND is falsey
+            // return left since first AND is falsey
             return left;
         }
     }
 
     return evaluate(expr->m_right);
-    // Return whatever is evaluated inside right expr`
 }
 
 std::any jl::Interpreter::visit_call_expr(Call* expr)
@@ -345,7 +308,6 @@ std::any jl::Interpreter::visit_call_expr(Call* expr)
     std::vector<Value> arguments(expr->m_arguments.size());
 
     for (int i = 0; i < expr->m_arguments.size(); i++) {
-        // evaluate(expr->m_arguments[i], &arguments[i]);
         arguments[i] = evaluate(expr->m_arguments[i]);
     }
 
@@ -471,10 +433,6 @@ std::any jl::Interpreter::visit_index_set_expr(IndexSet* expr)
     auto jlist = std::get<std::vector<Expr*>*>(list_value);
     int index = std::get<int>(index_value);
 
-    // Do we need to evaluate whatever is currently existing at the index??
-    // Value set_result;
-    // evaluate(jlist[index], &set_result);
-
     Value overwriting_value = evaluate(expr->m_value_expr);
     jlist->at(index) = m_internal_arena.allocate<Literal>(overwriting_value);
     return overwriting_value;
@@ -488,36 +446,36 @@ std::any jl::Interpreter::visit_print_stmt(PrintStmt* stmt)
 {
     Value value = evaluate(stmt->m_expr);
     ErrorHandler::m_stream << stringify(value) << std::endl;
-    return Value(JNullType{});
+    return Value(JNullType {});
 }
 
 std::any jl::Interpreter::visit_expr_stmt(ExprStmt* stmt)
 {
     evaluate(stmt->m_expr);
-    return Value(JNullType{});
+    return Value(JNullType {});
 }
 
 std::any jl::Interpreter::visit_var_stmt(VarStmt* stmt)
 {
-    Value value = JNullType{};
+    Value value = JNullType {};
     if (stmt->m_initializer != nullptr) {
         value = evaluate(stmt->m_initializer);
     }
 
     m_env->define(stmt->m_name.get_lexeme(), value);
-    return Value(JNullType{});
+    return Value(JNullType {});
 }
 
 std::any jl::Interpreter::visit_block_stmt(BlockStmt* stmt)
 {
     Environment* new_env = m_internal_arena.allocate<Environment>(m_env);
     execute_block(stmt->m_statements, new_env);
-    return Value(JNullType{});
+    return Value(JNullType {});
 }
 
 std::any jl::Interpreter::visit_empty_stmt(EmptyStmt* stmt)
 {
-    return Value(JNullType{});
+    return Value(JNullType {});
 }
 
 std::any jl::Interpreter::visit_if_stmt(IfStmt* stmt)
@@ -529,7 +487,7 @@ std::any jl::Interpreter::visit_if_stmt(IfStmt* stmt)
         stmt->m_else_stmt->accept(*this);
     }
 
-    return Value(JNullType{});
+    return Value(JNullType {});
 }
 
 std::any jl::Interpreter::visit_while_stmt(WhileStmt* stmt)
@@ -540,7 +498,7 @@ std::any jl::Interpreter::visit_while_stmt(WhileStmt* stmt)
         value = evaluate(stmt->m_condition);
     }
 
-    return Value(JNullType{});
+    return Value(JNullType {});
 }
 
 std::any jl::Interpreter::visit_func_stmt(FuncStmt* stmt)
@@ -548,12 +506,12 @@ std::any jl::Interpreter::visit_func_stmt(FuncStmt* stmt)
     FunctionCallable* function = m_arena.allocate<FunctionCallable>(m_internal_arena, stmt, m_env, false);
     m_env->define(stmt->m_name.get_lexeme(), static_cast<Callable*>(function));
 
-    return Value(JNullType{});
+    return Value(JNullType {});
 }
 
 std::any jl::Interpreter::visit_return_stmt(ReturnStmt* stmt)
 {
-    Value value(JNullType{});
+    Value value(JNullType {});
     if (stmt->m_expr != nullptr) {
         value = evaluate(stmt->m_expr);
     }
@@ -593,7 +551,7 @@ std::any jl::Interpreter::visit_class_stmt(ClassStmt* stmt)
 
     m_env->assign(stmt->m_name, (static_cast<Callable*>(class_callable)));
 
-    return Value(JNullType{});
+    return Value(JNullType {});
 }
 
 std::any jl::Interpreter::visit_for_each_stmt(ForEachStmt* stmt)
@@ -616,5 +574,5 @@ std::any jl::Interpreter::visit_for_each_stmt(ForEachStmt* stmt)
 
     m_env = m_env->m_enclosing;
 
-    return Value(JNullType{});
+    return Value(JNullType {});
 }

@@ -57,7 +57,7 @@ private:
     bool is_truthy(Value& value);
 
     template <typename Op>
-    Value do_arith_operation(Value& left, Value& right, Op op);
+    Value do_arith_operation(Value& left, Value& right, Op op, int line);
     Value append_strings(Value& left, Value& right);
     bool is_equal(Value& left, Value& right);
     Value& look_up_variable(Token& name, Expr* expr);
