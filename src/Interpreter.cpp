@@ -52,9 +52,9 @@ void jl::Interpreter::resolve(Expr* expr, int depth)
     m_locals[expr] = depth;
 }
 
-std::any jl::Interpreter::evaluate(Expr* expr)
+jl::Value jl::Interpreter::evaluate(Expr* expr)
 {
-    return expr->accept(*this);
+    return std::any_cast<Value>(expr->accept(*this));
 }
 
 bool jl::Interpreter::is_truthy(Value& value)
@@ -66,7 +66,7 @@ bool jl::Interpreter::is_truthy(Value& value)
 }
 
 template <typename Op>
-std::any jl::Interpreter::do_arith_operation(Value& left, Value& right, Op op)
+jl::Value jl::Interpreter::do_arith_operation(Value& left, Value& right, Op op)
 {
     if (is_float(left) || is_float(right)) {
         double a = is_float(left) ? std::get<double>(left) : std::get<int>(left);
@@ -81,14 +81,14 @@ std::any jl::Interpreter::do_arith_operation(Value& left, Value& right, Op op)
     }
 }
 
-std::any jl::Interpreter::append_strings(Value& left, Value& right)
+jl::Value jl::Interpreter::append_strings(Value& left, Value& right)
 {
     std::string left_str = std::get<std::string>(left);
     std::string& right_str = std::get<std::string>(right);
     left_str.append(right_str);
 
     // Return appended strings
-    return Value(left_str);
+    return left_str;
 }
 
 void jl::Interpreter::execute_block(std::vector<Stmt*>& statements, Environment* new_env)
@@ -175,7 +175,7 @@ std::string jl::Interpreter::stringify(Value& value)
 
 std::any jl::Interpreter::visit_assign_expr(Assign* expr)
 {
-    Value value = std::any_cast<Value>(evaluate(expr->m_expr));
+    Value value = evaluate(expr->m_expr);
 
     // Value value = *static_cast<Value*>(context);
     if (m_locals.contains(expr)) {
@@ -190,11 +190,8 @@ std::any jl::Interpreter::visit_assign_expr(Assign* expr)
 // Refactor this to make it more concise
 std::any jl::Interpreter::visit_binary_expr(Binary* expr)
 {
-
-    std::any left = evaluate(expr->m_left);
-    std::any right = evaluate(expr->m_right);
-    Value left_value = std::any_cast<Value>(left);
-    Value right_value = std::any_cast<Value>(right);
+    Value left_value = evaluate(expr->m_left);
+    Value right_value = evaluate(expr->m_right);
 
     switch (expr->m_oper->get_tokentype()) {
     case Token::MINUS:
@@ -283,8 +280,7 @@ std::any jl::Interpreter::visit_grouping_expr(Grouping* expr)
 
 std::any jl::Interpreter::visit_unary_expr(Unary* expr)
 {
-    std::any right = evaluate(expr->m_expr);
-    Value right_value = std::any_cast<Value>(right);
+    Value right_value = evaluate(expr->m_expr);
 
     switch (expr->m_oper->get_tokentype()) {
     case Token::MINUS:
@@ -323,7 +319,7 @@ std::any jl::Interpreter::visit_variable_expr(Variable* expr)
 std::any jl::Interpreter::visit_logical_expr(Logical* expr)
 {
     // Value value;
-    Value left = std::any_cast<Value>(evaluate(expr->m_left));
+    Value left = evaluate(expr->m_left);
     bool truth = is_truthy(left);
 
     if (expr->m_oper.get_tokentype() == Token::OR) {
@@ -338,20 +334,19 @@ std::any jl::Interpreter::visit_logical_expr(Logical* expr)
         }
     }
 
-    return std::any_cast<Value>(evaluate(expr->m_right));
+    return evaluate(expr->m_right);
     // Return whatever is evaluated inside right expr`
 }
 
 std::any jl::Interpreter::visit_call_expr(Call* expr)
 {
-    std::any callee = evaluate(expr->m_callee);
-    Value value = std::any_cast<Value>(callee);
+    Value value = evaluate(expr->m_callee);
 
     std::vector<Value> arguments(expr->m_arguments.size());
 
     for (int i = 0; i < expr->m_arguments.size(); i++) {
         // evaluate(expr->m_arguments[i], &arguments[i]);
-        arguments[i] = std::any_cast<Value>(evaluate(expr->m_arguments[i]));
+        arguments[i] = evaluate(expr->m_arguments[i]);
     }
 
     if (!is_callable(value)) {
@@ -371,8 +366,7 @@ std::any jl::Interpreter::visit_call_expr(Call* expr)
 
 std::any jl::Interpreter::visit_get_expr(Get* expr)
 {
-    std::any eval = evaluate(expr->m_object);
-    Value value = std::any_cast<Value>(eval);
+    Value value = evaluate(expr->m_object);
 
     if (is_instance(value)) {
         Value field = std::get<Instance*>(value)->get(expr->m_name);
@@ -385,8 +379,7 @@ std::any jl::Interpreter::visit_get_expr(Get* expr)
 
 std::any jl::Interpreter::visit_set_expr(Set* expr)
 {
-    std::any object = evaluate(expr->m_object);
-    Value value = std::any_cast<Value>(object);
+    Value value = evaluate(expr->m_object);
 
     if (!is_instance(value)) {
         ErrorHandler::error(m_file_name, "interpreting", "set expression", expr->m_name.get_line(), "Attempted to set fields to a non-instance value", 0);
@@ -426,7 +419,7 @@ std::any jl::Interpreter::visit_jlist_expr(JList* expr)
         if (dynamic_cast<Literal*>(item)) {
             continue; // No need to evaluate in case it is already a Literal
         }
-        Value value = std::any_cast<Value>(evaluate(item));
+        Value value = evaluate(item);
         item = m_internal_arena.allocate<Literal>(value);
     }
 
@@ -439,15 +432,15 @@ std::any jl::Interpreter::visit_jlist_expr(JList* expr)
 
 std::any jl::Interpreter::visit_index_get_expr(IndexGet* expr)
 {
-    Value list_value = std::any_cast<Value>(evaluate(expr->m_jlist));
+    Value list_value = evaluate(expr->m_jlist);
 
     if (is_jlist(list_value)) {
         auto jlist = std::move(std::get<std::vector<Expr*>*>(list_value));
-        Value index_value = std::any_cast<Value>(evaluate(expr->m_index_expr));
+        Value index_value = evaluate(expr->m_index_expr);
 
         if (is_int(index_value)) {
             int index = std::get<int>(index_value);
-            Value result = std::any_cast<Value>(evaluate(jlist->at(index)));
+            Value result = evaluate(jlist->at(index));
             return result;
         } else {
             ErrorHandler::error(m_file_name, "interpreting", "get index expression", expr->m_closing_bracket.get_line(), "Attempted to get index using a non-int value", 0);
@@ -461,14 +454,14 @@ std::any jl::Interpreter::visit_index_get_expr(IndexGet* expr)
 
 std::any jl::Interpreter::visit_index_set_expr(IndexSet* expr)
 {
-    Value list_value = std::any_cast<Value>(evaluate(expr->m_jlist));
+    Value list_value = evaluate(expr->m_jlist);
 
     if (!is_jlist(list_value)) {
         ErrorHandler::error(m_file_name, "interpreting", "set index expression", expr->m_closing_bracket.get_line(), "Attempted to set index for a value that is not a list", 0);
         throw "runtime-exception";
     }
 
-    Value index_value = std::any_cast<Value>(evaluate(expr->m_index_expr));
+    Value index_value = evaluate(expr->m_index_expr);
 
     if (!is_int(index_value)) {
         ErrorHandler::error(m_file_name, "interpreting", "set index expression", expr->m_closing_bracket.get_line(), "Attempted to set index using a non-int value", 0);
@@ -482,7 +475,7 @@ std::any jl::Interpreter::visit_index_set_expr(IndexSet* expr)
     // Value set_result;
     // evaluate(jlist[index], &set_result);
 
-    Value overwriting_value = std::any_cast<Value>(evaluate(expr->m_value_expr));
+    Value overwriting_value = evaluate(expr->m_value_expr);
     jlist->at(index) = m_internal_arena.allocate<Literal>(overwriting_value);
     return overwriting_value;
 }
@@ -493,25 +486,22 @@ std::any jl::Interpreter::visit_index_set_expr(IndexSet* expr)
 
 std::any jl::Interpreter::visit_print_stmt(PrintStmt* stmt)
 {
-    Value value = std::any_cast<Value>(evaluate(stmt->m_expr));
+    Value value = evaluate(stmt->m_expr);
     ErrorHandler::m_stream << stringify(value) << std::endl;
     return Value(JNullType{});
 }
 
 std::any jl::Interpreter::visit_expr_stmt(ExprStmt* stmt)
 {
-    // Evaluate and discard the context value
     evaluate(stmt->m_expr);
     return Value(JNullType{});
 }
 
 std::any jl::Interpreter::visit_var_stmt(VarStmt* stmt)
 {
-    // Set value as null
-    // Value value = '\0';
     Value value = JNullType{};
     if (stmt->m_initializer != nullptr) {
-        value = std::any_cast<Value>(evaluate(stmt->m_initializer));
+        value = evaluate(stmt->m_initializer);
     }
 
     m_env->define(stmt->m_name.get_lexeme(), value);
@@ -532,7 +522,7 @@ std::any jl::Interpreter::visit_empty_stmt(EmptyStmt* stmt)
 
 std::any jl::Interpreter::visit_if_stmt(IfStmt* stmt)
 {
-    Value value = std::any_cast<Value>(evaluate(stmt->m_condition));
+    Value value = evaluate(stmt->m_condition);
     if (is_truthy(value)) {
         stmt->m_then_stmt->accept(*this);
     } else if (stmt->m_else_stmt != nullptr) {
@@ -544,10 +534,10 @@ std::any jl::Interpreter::visit_if_stmt(IfStmt* stmt)
 
 std::any jl::Interpreter::visit_while_stmt(WhileStmt* stmt)
 {
-    Value value = std::any_cast<Value>(evaluate(stmt->m_condition));
+    Value value = evaluate(stmt->m_condition);
     while (is_truthy(value)) {
         stmt->m_body->accept(*this);
-        value = std::any_cast<Value>(evaluate(stmt->m_condition));
+        value = evaluate(stmt->m_condition);
     }
 
     return Value(JNullType{});
@@ -565,7 +555,7 @@ std::any jl::Interpreter::visit_return_stmt(ReturnStmt* stmt)
 {
     Value value(JNullType{});
     if (stmt->m_expr != nullptr) {
-        value = std::any_cast<Value>(evaluate(stmt->m_expr));
+        value = evaluate(stmt->m_expr);
     }
 
     throw value;
@@ -575,7 +565,7 @@ std::any jl::Interpreter::visit_class_stmt(ClassStmt* stmt)
 {
     Value super_class = static_cast<Callable*>(nullptr);
     if (stmt->m_super_class != nullptr) {
-        super_class = std::any_cast<Value>(evaluate(stmt->m_super_class));
+        super_class = evaluate(stmt->m_super_class);
         if (!(is_callable(super_class) && dynamic_cast<ClassCallable*>(std::get<Callable*>(super_class)))) {
             ErrorHandler::error(m_file_name, "interpreting", "class definition", stmt->m_name.get_line(), "Super class must be a class", 0);
             throw "runtime-exception";
@@ -610,7 +600,7 @@ std::any jl::Interpreter::visit_for_each_stmt(ForEachStmt* stmt)
 {
     m_env = m_internal_arena.allocate<Environment>(m_env); // Create a new env for decalring looping variable
     stmt->m_var_declaration->accept(*this);
-    Value value = std::any_cast<Value>(evaluate(stmt->m_list_expr));
+    Value value = evaluate(stmt->m_list_expr);
 
     if (!is_jlist(value)) {
         ErrorHandler::error(m_file_name, "interpreting", "for each", stmt->m_var_declaration->m_name.get_line(), "For each loops need a list to iterate", 0);
@@ -618,7 +608,7 @@ std::any jl::Interpreter::visit_for_each_stmt(ForEachStmt* stmt)
     }
 
     for (Expr* item : *std::get<std::vector<Expr*>*>(value)) {
-        Value list_value = std::any_cast<Value>(evaluate(item));
+        Value list_value = evaluate(item);
         m_env->assign(stmt->m_var_declaration->m_name, list_value);
 
         stmt->m_body->accept(*this);
