@@ -14,16 +14,18 @@ jl::Interpreter::Interpreter(Arena& arena, std::string& file_name, int64_t inter
     m_env = m_internal_arena.allocate<Environment>(m_file_name);
     m_global_env = m_env;
 
-    ToIntNativeFunction* to_int_native_func = m_arena.allocate<ToIntNativeFunction>();
-    ToStrNativeFunction* to_str_native_func = m_arena.allocate<ToStrNativeFunction>();
-    GetLenNativeFunction* get_len_native_func = m_arena.allocate<GetLenNativeFunction>();
-    AppendNativeFunction* append_native_func = m_arena.allocate<AppendNativeFunction>();
-    RemoveLastNativeFunction* remove_last_native_func = m_arena.allocate<RemoveLastNativeFunction>();
+    auto to_int_native_func = m_arena.allocate<ToIntNativeFunction>();
+    auto to_str_native_func = m_arena.allocate<ToStrNativeFunction>();
+    auto get_len_native_func = m_arena.allocate<GetLenNativeFunction>();
+    auto append_native_func = m_arena.allocate<AppendNativeFunction>();
+    auto remove_last_native_func = m_arena.allocate<RemoveLastNativeFunction>();
+    auto clear_list_native_func = m_arena.allocate<ClearListNativeFunction>();
     m_global_env->define(to_int_native_func->m_name, static_cast<Callable*>(to_int_native_func));
     m_global_env->define(to_str_native_func->m_name, static_cast<Callable*>(to_str_native_func));
     m_global_env->define(get_len_native_func->m_name, static_cast<Callable*>(get_len_native_func));
     m_global_env->define(append_native_func->m_name, static_cast<Callable*>(append_native_func));
     m_global_env->define(remove_last_native_func->m_name, static_cast<Callable*>(remove_last_native_func));
+    m_global_env->define(clear_list_native_func->m_name, static_cast<Callable*>(clear_list_native_func));
 }
 
 void jl::Interpreter::interpret(Expr* expr, Value* value)

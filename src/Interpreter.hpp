@@ -68,7 +68,7 @@ private:
     std::map<Expr*, int> m_locals;
 
     friend class ClassCallable;
-    friend Value append(Interpreter* interpreter, Value& jlist, Value& appending_value);
-    friend Value remove_last(Interpreter* interpreter, Value& jlist);
+    friend Value jlist_push_back(Interpreter* interpreter, Value& jlist, Value& appending_value);
+    friend Value jlist_pop_back(Interpreter* interpreter, Value& jlist);
 };
 } // namespace jl
