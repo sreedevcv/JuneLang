@@ -1,7 +1,7 @@
 // Extended list
 
 
-class Elist [
+class List [
     init() [
         self.list = {};
     ]
@@ -26,6 +26,10 @@ class Elist [
 
     size() [
         return len(self.list);
+    ]
+
+    clear() [
+        return clear(self.list);
     ]
 
     contains(ele) [
@@ -54,7 +58,7 @@ class Elist [
     ]
 
     map(callback) [
-        var new_list = Elist();
+        var new_list = List();
 
         for (var item: self.list) [
             new_list.push(callback(item));
@@ -64,7 +68,7 @@ class Elist [
     ]
 
     filter(callback) [
-        var new_list = Elist();
+        var new_list = List();
 
         for (var item: self.list) [
             if (callback(item)) [
@@ -76,16 +80,16 @@ class Elist [
     ]
 ]
 
-var l1 = {1, 2, 3};
-var l2 = {5, 6, 7, 8};
-var elist = Elist();
+//var l1 = {1, 2, 3};
+//var l2 = {5, 6, 7, 8};
+//var elist = List();
 
-elist.push_list(l1);
-elist.push(4);
-elist.push_list(l2);
-elist.pop();
+//elist.push_list(l1);
+//elist.push(4);
+//elist.push_list(l2);
+//elist.pop();
 
-print elist.list;
+//print elist.list;
 
 //print "Contains 4 " + str(elist.contains(4));
 //print "Contains -10 " + str(elist.contains(-10));
@@ -107,5 +111,20 @@ fun add_one(item) [
     return item + 1;
 ]
 
-var mapped_list = elist.map(add_one).filter(is_even).map(double);
-print mapped_list.list;
+//var mapped_list = elist.map(add_one).filter(is_even).map(double);
+//mapped_list.clear();
+
+
+fun generate(size) [
+    var list = List();
+    
+    for (var i = 0; i < size; i += 1) [
+        list.push(i + 1);
+    ]
+
+    return list;
+]
+
+var large_list = generate(10000).map(add_one).filter(is_even).map(double).map(add_one).size();
+
+print large_list;

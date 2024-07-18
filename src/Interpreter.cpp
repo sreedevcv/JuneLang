@@ -31,7 +31,6 @@ jl::Interpreter::Interpreter(Arena& arena, std::string& file_name, int64_t inter
 void jl::Interpreter::interpret(Expr* expr, Value* value)
 {
     try {
-        Value context;
         evaluate(expr);
     } catch (const char* exc) {
         ErrorHandler::m_stream << ErrorHandler::get_error_count() << " Error[s] occured" << std::endl;
@@ -201,49 +200,37 @@ std::any jl::Interpreter::visit_binary_expr(Binary* expr)
 
     switch (expr->m_oper->get_tokentype()) {
     case Token::MINUS:
-        return do_arith_operation(left_value, right_value, std::minus<>(), line);
-        break;
+        return do_arith_operation(left_value, right_value, std::minus<>{}, line);
     case Token::STAR:
-        return do_arith_operation(left_value, right_value, std::multiplies<>(), line);
-        break;
+        return do_arith_operation(left_value, right_value, std::multiplies<>{}, line);
     case Token::SLASH:
-        return do_arith_operation(left_value, right_value, std::divides<>(), line);
-        break;
+        return do_arith_operation(left_value, right_value, std::divides<>{}, line);
     case Token::PLUS:
         if (is_string(left_value) && is_string(right_value)) {
             return append_strings(left_value, right_value);
         }
-        return do_arith_operation(left_value, right_value, std::plus<>(), line);
-        break;
+        return do_arith_operation(left_value, right_value, std::plus<>{}, line);
     case Token::GREATER:
-        return do_arith_operation(left_value, right_value, std::greater<>(), line);
-        break;
+        return do_arith_operation(left_value, right_value, std::greater<>{}, line);
     case Token::LESS:
-        return do_arith_operation(left_value, right_value, std::less<>(), line);
-        break;
+        return do_arith_operation(left_value, right_value, std::less<>{}, line);
     case Token::GREATER_EQUAL:
-        return do_arith_operation(left_value, right_value, std::greater_equal<>(), line);
-        break;
+        return do_arith_operation(left_value, right_value, std::greater_equal<>{}, line);
     case Token::LESS_EQUAL:
-        return do_arith_operation(left_value, right_value, std::less_equal<>(), line);
-        break;
+        return do_arith_operation(left_value, right_value, std::less_equal<>{}, line);
     case Token::PERCENT:
         if (!is_int(left_value) || !is_int(right_value)) {
             ErrorHandler::error(m_file_name, "interpreting", "binary expression", line, "Left and right operands must be a int to use `%`", 0);
             throw "runtime-error";
         }
         return Value(std::get<int>(left_value) % std::get<int>(right_value));
-        break;
     case Token::EQUAL_EQUAL:
         return Value(is_equal(left_value, right_value));
-        break;
     case Token::BANG_EQUAL:
         return Value(!is_equal(left_value, right_value));
-        break;
     default:
         std::cout << "Unimplemented Operator in visit_binary_expr()\n";
         throw "runtime-error";
-        break;
     }
 }
 
