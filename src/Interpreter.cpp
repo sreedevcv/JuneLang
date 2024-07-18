@@ -494,7 +494,7 @@ std::any jl::Interpreter::visit_while_stmt(WhileStmt* stmt)
         // Exceptions thrown by breaks are handled here
         try {
             stmt->m_body->accept(*this);
-        } catch (JNullType null_type) {
+        } catch (BreakThrow break_throw) {
             break;
         }
         value = evaluate(stmt->m_condition);
@@ -574,7 +574,7 @@ std::any jl::Interpreter::visit_for_each_stmt(ForEachStmt* stmt)
         // Handling breaks
         try {
             stmt->m_body->accept(*this);
-        } catch (JNullType null_type) {
+        } catch (BreakThrow break_throw) {
             break;
         }
     }
@@ -586,5 +586,5 @@ std::any jl::Interpreter::visit_for_each_stmt(ForEachStmt* stmt)
 
 std::any jl::Interpreter::visit_break_stmt(BreakStmt* stmt)
 {
-    throw JNullType {};
+    throw BreakThrow {};
 }

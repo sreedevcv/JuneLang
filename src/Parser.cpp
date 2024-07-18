@@ -431,7 +431,7 @@ jl::Stmt* jl::Parser::var_declaration(bool for_each)
     }
     if (for_each) {
         if (!match({Token::COLON, Token::SEMI_COLON})) {
-            ErrorHandler::error(m_file_name, "parsing", "for each loop", name.get_line(), "Varible declaration should be followed `:` or `;` in a for each loop", 0);
+            ErrorHandler::error(m_file_name, "parsing", "for each loop", name.get_line(), "Varible declaration should be followed `:` or `;` in a for loop", 0);
         }
         // consume(Token::COLON, "Expected : after variable declaration in for each loop");
     } else {

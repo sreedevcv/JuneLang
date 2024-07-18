@@ -33,19 +33,6 @@ int main(int argc, char const *argv[])
             ]
         ]
 
-        fun test() [
-            break;
-        ]
-
-        break;
-
-        class Test [
-            init() [
-                break;
-            ]
-        ]
-
-
         while (true) [
             break;
         ]

@@ -67,6 +67,7 @@ private:
     Arena m_internal_arena;
     Environment* m_env;
     std::map<Expr*, int> m_locals;
+    struct BreakThrow { };
 
     friend class ClassCallable;
     friend Value jlist_push_back(Interpreter* interpreter, Value& jlist, Value& appending_value);
