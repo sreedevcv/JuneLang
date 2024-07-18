@@ -66,6 +66,7 @@ public:
         NULL_,
         THIS,
         SUPER,
+        BREAK,
     };
 
     Token(TokenType type, std::string& lexeme, int line);

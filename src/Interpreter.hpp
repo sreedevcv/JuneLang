@@ -52,6 +52,7 @@ private:
     virtual std::any visit_return_stmt(ReturnStmt* stmt) override;
     virtual std::any visit_class_stmt(ClassStmt* stmt) override;
     virtual std::any visit_for_each_stmt(ForEachStmt* stmt) override;
+    virtual std::any visit_break_stmt(BreakStmt* stmt) override;
 
     Value evaluate(Expr* expr);
     bool is_truthy(Value& value);

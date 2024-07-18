@@ -15,6 +15,7 @@ class FuncStmt;
 class ReturnStmt;
 class ClassStmt;
 class ForEachStmt;
+class BreakStmt;
 
 class IStmtVisitor {
 public:
@@ -29,6 +30,7 @@ public:
     virtual std::any visit_return_stmt(ReturnStmt* stmt) = 0;
     virtual std::any visit_class_stmt(ClassStmt* stmt) = 0;
     virtual std::any visit_for_each_stmt(ForEachStmt* stmt) = 0;
+    virtual std::any visit_break_stmt(BreakStmt* stmt) = 0;
 };
 
 class Stmt {
@@ -275,6 +277,23 @@ public:
     inline virtual std::any accept(IStmtVisitor& visitor)
     {
         return visitor.visit_for_each_stmt(this);
+    }
+};
+
+class BreakStmt : public Stmt {
+public:
+    Token& m_break_token;
+
+    inline BreakStmt(Token& break_token)
+        : m_break_token(break_token)
+    {
+    }
+
+    virtual ~BreakStmt() = default;
+
+    inline virtual std::any accept(IStmtVisitor& visitor)
+    {
+        return visitor.visit_break_stmt(this);
     }
 };
 

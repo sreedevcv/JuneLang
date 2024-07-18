@@ -116,6 +116,7 @@ void jl::Interpreter::execute_block(std::vector<Stmt*>& statements, Environment*
         m_env = previous;
         throw;
     } catch (const char* msg) {
+        // An error occurred
         exception_ocurred = true;
         m_env = previous;
     }
@@ -200,24 +201,24 @@ std::any jl::Interpreter::visit_binary_expr(Binary* expr)
 
     switch (expr->m_oper->get_tokentype()) {
     case Token::MINUS:
-        return do_arith_operation(left_value, right_value, std::minus<>{}, line);
+        return do_arith_operation(left_value, right_value, std::minus<> {}, line);
     case Token::STAR:
-        return do_arith_operation(left_value, right_value, std::multiplies<>{}, line);
+        return do_arith_operation(left_value, right_value, std::multiplies<> {}, line);
     case Token::SLASH:
-        return do_arith_operation(left_value, right_value, std::divides<>{}, line);
+        return do_arith_operation(left_value, right_value, std::divides<> {}, line);
     case Token::PLUS:
         if (is_string(left_value) && is_string(right_value)) {
             return append_strings(left_value, right_value);
         }
-        return do_arith_operation(left_value, right_value, std::plus<>{}, line);
+        return do_arith_operation(left_value, right_value, std::plus<> {}, line);
     case Token::GREATER:
-        return do_arith_operation(left_value, right_value, std::greater<>{}, line);
+        return do_arith_operation(left_value, right_value, std::greater<> {}, line);
     case Token::LESS:
-        return do_arith_operation(left_value, right_value, std::less<>{}, line);
+        return do_arith_operation(left_value, right_value, std::less<> {}, line);
     case Token::GREATER_EQUAL:
-        return do_arith_operation(left_value, right_value, std::greater_equal<>{}, line);
+        return do_arith_operation(left_value, right_value, std::greater_equal<> {}, line);
     case Token::LESS_EQUAL:
-        return do_arith_operation(left_value, right_value, std::less_equal<>{}, line);
+        return do_arith_operation(left_value, right_value, std::less_equal<> {}, line);
     case Token::PERCENT:
         if (!is_int(left_value) || !is_int(right_value)) {
             ErrorHandler::error(m_file_name, "interpreting", "binary expression", line, "Left and right operands must be a int to use `%`", 0);
@@ -490,7 +491,12 @@ std::any jl::Interpreter::visit_while_stmt(WhileStmt* stmt)
 {
     Value value = evaluate(stmt->m_condition);
     while (is_truthy(value)) {
-        stmt->m_body->accept(*this);
+        // Exceptions thrown by breaks are handled here
+        try {
+            stmt->m_body->accept(*this);
+        } catch (JNullType null_type) {
+            break;
+        }
         value = evaluate(stmt->m_condition);
     }
 
@@ -565,10 +571,20 @@ std::any jl::Interpreter::visit_for_each_stmt(ForEachStmt* stmt)
         Value list_value = evaluate(item);
         m_env->assign(stmt->m_var_declaration->m_name, list_value);
 
-        stmt->m_body->accept(*this);
+        // Handling breaks
+        try {
+            stmt->m_body->accept(*this);
+        } catch (JNullType null_type) {
+            break;
+        }
     }
 
     m_env = m_env->m_enclosing;
 
     return Value(JNullType {});
+}
+
+std::any jl::Interpreter::visit_break_stmt(BreakStmt* stmt)
+{
+    throw JNullType {};
 }

@@ -15,8 +15,7 @@ public:
 
     void resolve(std::vector<Stmt*>& statements);
 
-    // NOTE::Change this to a enum class for uniformity
-    enum FunctionType {
+    enum class FunctionType {
         NONE,
         FUNCTION,
         INITIALIZER,
@@ -29,14 +28,20 @@ public:
         SUBCLASS,
     };
 
+    enum class LoopType {
+        NONE,
+        LOOP,
+    };
+
 private:
     using Scope = std::map<std::string, bool>;
 
     Interpreter& m_interpreter;
     std::vector<Scope> m_scopes;
     std::string& m_file_name;
-    FunctionType m_current_function_type = NONE;
+    FunctionType m_current_function_type = FunctionType::NONE;
     ClassType m_current_class_type = ClassType::NONE;
+    LoopType m_current_loop_type = LoopType::NONE;
 
     void resolve(Stmt* statement);
     void resolve(Expr* expression);
@@ -75,6 +80,7 @@ private:
     virtual std::any visit_return_stmt(ReturnStmt* stmt) override;
     virtual std::any visit_class_stmt(ClassStmt* stmt) override;
     virtual std::any visit_for_each_stmt(ForEachStmt* stmt) override;
+    virtual std::any visit_break_stmt(BreakStmt* stmt) override;
 };
 
 } // namespace jl

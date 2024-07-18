@@ -255,8 +255,14 @@ std::any jl::Resolver::visit_if_stmt(IfStmt* stmt)
 
 std::any jl::Resolver::visit_while_stmt(WhileStmt* stmt)
 {
+    LoopType enclosing_loop_type = m_current_loop_type;
+
     resolve(stmt->m_condition);
-    resolve(stmt->m_body);
+
+    m_current_loop_type = LoopType::LOOP;
+        resolve(stmt->m_body);
+    m_current_loop_type = enclosing_loop_type;
+
     return nullptr;
 }
 
@@ -265,17 +271,17 @@ std::any jl::Resolver::visit_func_stmt(FuncStmt* stmt)
     declare(stmt->m_name);
     define(stmt->m_name);
 
-    resolve_function(stmt, FUNCTION);
+    resolve_function(stmt, FunctionType::FUNCTION);
     return nullptr;
 }
 
 std::any jl::Resolver::visit_return_stmt(ReturnStmt* stmt)
 {
-    if (m_current_function_type == NONE) {
+    if (m_current_function_type == FunctionType::NONE) {
         ErrorHandler::error(m_file_name, "resolving", "return statement", stmt->m_keyword.get_line(), "Return statement should be inside a function", 0);
     }
     if (stmt->m_expr != nullptr) {
-        if (m_current_function_type == INITIALIZER) {
+        if (m_current_function_type == FunctionType::INITIALIZER) {
             ErrorHandler::error(m_file_name, "resolving", "return", stmt->m_keyword.get_line(), "Can't return a value from an initializer", 0);
         }
         resolve(stmt->m_expr);
@@ -306,9 +312,9 @@ std::any jl::Resolver::visit_class_stmt(ClassStmt* stmt)
     m_scopes.back()[Token::global_this_lexeme] = true;
 
     for (FuncStmt* method : stmt->m_methods) {
-        FunctionType declaration = METHOD;
+        FunctionType declaration = FunctionType::METHOD;
         if (method->m_name.get_lexeme() == "init") {
-            declaration = INITIALIZER;
+            declaration = FunctionType::INITIALIZER;
         }
         resolve_function(method, declaration);
     }
@@ -323,11 +329,25 @@ std::any jl::Resolver::visit_class_stmt(ClassStmt* stmt)
 }
 
 std::any jl::Resolver::visit_for_each_stmt(ForEachStmt* stmt)
-{
+{   
+    LoopType enclosing_loop_type = m_current_loop_type;
+
     begin_scope();
     resolve(stmt->m_var_declaration);
     resolve(stmt->m_list_expr);
-    resolve(stmt->m_body);
+
+    m_current_loop_type = LoopType::LOOP;
+        resolve(stmt->m_body);
+    m_current_loop_type = enclosing_loop_type;
+
     end_scope();
+    return nullptr;
+}
+
+std::any jl::Resolver::visit_break_stmt(BreakStmt* stmt)
+{
+    if (m_current_loop_type == LoopType::NONE) {
+        ErrorHandler::error(m_file_name, "resolving", "break statement", stmt->m_break_token.get_line(), "Break statement should be inside a loop", 0);
+    }
     return nullptr;
 }

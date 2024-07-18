@@ -49,6 +49,7 @@ void jl::Parser::synchronize()
         case Token::WHILE:
         case Token::PRINT:
         case Token::RETURN:
+        case Token::BREAK:
             return;
         default:
             break;
@@ -377,6 +378,9 @@ jl::Stmt* jl::Parser::statement()
     if (match({ Token::RETURN })) {
         return return_statement();
     }
+    if (match({Token::BREAK})) {
+        return break_statement();
+    }
 
     return expr_statement();
 }
@@ -618,6 +622,14 @@ jl::Stmt* jl::Parser::class_declaration()
 
     consume(Token::RIGHT_SQUARE, "Expected a ] after class body");
     return m_arena.allocate<ClassStmt>(name, super_class, methods);
+}
+
+jl::Stmt* jl::Parser::break_statement()
+{
+    Token& break_token = previous();
+
+    consume(Token::SEMI_COLON, "Expected ; after break");
+    return m_arena.allocate<BreakStmt>(break_token);
 }
 
 std::vector<jl::Stmt*> jl::Parser::block()

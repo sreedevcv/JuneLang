@@ -55,7 +55,6 @@ private:
         { "end", Token::END },
         { "true", Token::TRUE },
         { "false", Token::FALSE },
-        { "return", Token::RETURN },
         { "var", Token::VAR },
         { "null", Token::NULL_ },
         { "print", Token::PRINT },
@@ -64,6 +63,7 @@ private:
         { "class", Token::CLASS },
         { "self", Token::THIS },
         { "super", Token::SUPER },
+        { "break", Token::BREAK },
     };
 };
 } // namespace jl

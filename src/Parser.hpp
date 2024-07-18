@@ -45,6 +45,7 @@ private:
     Stmt* function(const char* kind);
     Stmt* return_statement();
     Stmt* class_declaration();
+    Stmt* break_statement();
     std::vector<Stmt*> block();
 
     void synchronize();

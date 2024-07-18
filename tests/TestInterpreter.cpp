@@ -410,6 +410,48 @@ TEST_CASE("Interpreter Finding Mod of a list of numbers with their indices", "[I
     test_string_with_no_error(source, 4000);
 }
 
+TEST_CASE("Interpreter Using break", "[Interpreter]")
+{
+    const char* source = R"(
+        var a = {3, 5, 1, 2};
+
+        for (var item: a) [
+            if (item <= 1) [
+                print "BREAKING";
+                break;
+            ]
+        ]
+
+        for (var i = 0; i < 9; i+=1) [
+            print i;
+
+            if (i == 5) [
+                break;
+            ]
+        ]
+
+        while (true) [
+            break;
+        ]
+
+        for (var i = 0; i < 10; i+=1) [
+            var line = "";
+
+            for (var j = 0; j < 10; j+=1) [
+                if (j > i) [
+                    break;
+                ]
+                line += str(j) + " ";
+            ]
+
+            print line;
+        ]
+
+    )";
+
+    test_string_with_no_error(source, 4000);
+}
+
 // TEST_CASE("Interpreter", "[Interpreter]")
 // {
 //     const char* source = R"(
@@ -507,6 +549,19 @@ TEST_CASE("Interpreter Use of super at top level", "[Interpreter]")
     test_string_with_error(source, RESOLVER);
 }
 
+TEST_CASE("Interpreter Break Statements outside loops", "[Interpreter]")
+{
+    const char* source = R"(
+        break;
+
+        fun test() [
+            break;
+        ]
+    )";
+
+    test_string_with_error(source, RESOLVER);
+}
+
 // TEST_CASE("Interpreter", "[Interpreter]")
 // {
 //     const char* source = R"(
@@ -514,6 +569,3 @@ TEST_CASE("Interpreter Use of super at top level", "[Interpreter]")
 
 //     test_string_with_error(source, RESOLVER);
 // }
-
-        
-

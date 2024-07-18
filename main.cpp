@@ -14,29 +14,64 @@ int main(int argc, char const *argv[])
     // jed::Editor editor;
     // editor.start();
 
-    // jl::Lexer lexer(
-    //     R"(
-    //     var a = {3, 5, 1, 2, 6, 9, 8, 4, 7};
+    jl::Lexer lexer(
+        R"(
+        var a = {3, 5, 1, 2};
 
-    //     fun findMod(list) [
+        for (var item: a) [
+            if (item <= 1) [
+                print "BREAKING";
+                break;
+            ]
+        ]
 
-    //         for (var i = 0; i < 9; i+=1) [
-    //             var temp = list[i] % (i + 1);
-    //             print str(list[i]) + " % " + str(i + 1) + " is " + str(temp);
-    //         ]
+        for (var i = 0; i < 9; i+=1) [
+            print i;
 
-    //     ]
+            if (i == 5) [
+                break;
+            ]
+        ]
 
-    //     findMod(a);
-    // )");
+        fun test() [
+            break;
+        ]
+
+        break;
+
+        class Test [
+            init() [
+                break;
+            ]
+        ]
+
+
+        while (true) [
+            break;
+        ]
+
+        for (var i = 0; i < 10; i+=1) [
+            var line = "";
+
+            for (var j = 0; j < 10; j+=1) [
+                if (j > i) [
+                    break;
+                ]
+                line += str(j) + " ";
+            ]
+
+            print line;
+        ]
+
+    )");
     
     std::string file_name = "examples/EList.jun";
 
-    if  (argc == 2) {
-        file_name = argv[1];
-    }
+    // if  (argc == 2) {
+    //     file_name = argv[1];
+    // }
 
-    jl::Lexer lexer(file_name);
+    // jl::Lexer lexer(file_name);
     lexer.scan();
 
     jl::Arena arena(1000 * 1000);
@@ -53,7 +88,7 @@ int main(int argc, char const *argv[])
         return 1;
     }
 
-    jl::Interpreter interpreter(arena, file_name, 1000*1000);
+    jl::Interpreter interpreter(arena, file_name, 1000*1000*10*5);
     
     jl::Resolver resolver(interpreter, file_name);
     resolver.resolve(stmts);
@@ -64,42 +99,3 @@ int main(int argc, char const *argv[])
 
     interpreter.interpret(stmts);
 }
-
-/*
-
-
-        class Thing [
-            getCallback() [
-                fun localFunction() [
-                    print self;
-                ]
-
-                return localFunction;
-            ]
-        ]
-
-        var callback = Thing().getCallback();
-        callback();
-
-
-                class Egotist [
-            speak() [
-                print self;
-            ]
-        ]
-
-        var method = Egotist().speak;
-        method();
-
-        class Cake [
-            taste() [
-                var adjective = "delicious";
-                print "The " + self.flavor + " cake is " + adjective + "!";
-            ]
-        ]
-
-        var cake = Cake();
-        cake.flavor = "German chocolate";
-        cake.taste();
-
-*/
