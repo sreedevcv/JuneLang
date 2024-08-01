@@ -59,7 +59,7 @@ void jl::Parser::synchronize()
     }
 }
 
-bool jl::Parser::match(std::vector<Token::TokenType>&& types)
+bool jl::Parser::match(std::initializer_list<Token::TokenType>&& types)
 {
     for (const auto type : types) {
         if (check(type)) {
@@ -378,7 +378,7 @@ jl::Stmt* jl::Parser::statement()
     if (match({ Token::RETURN })) {
         return return_statement();
     }
-    if (match({Token::BREAK})) {
+    if (match({ Token::BREAK })) {
         return break_statement();
     }
 
@@ -430,7 +430,7 @@ jl::Stmt* jl::Parser::var_declaration(bool for_each)
         initializer = expression();
     }
     if (for_each) {
-        if (!match({Token::COLON, Token::SEMI_COLON})) {
+        if (!match({ Token::COLON, Token::SEMI_COLON })) {
             ErrorHandler::error(m_file_name, "parsing", "for each loop", name.get_line(), "Varible declaration should be followed `:` or `;` in a for loop", 0);
         }
         // consume(Token::COLON, "Expected : after variable declaration in for each loop");

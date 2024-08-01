@@ -1,9 +1,10 @@
 #pragma once
 
-#include "Expr.hpp"
-#include "Token.hpp"
-#include "Stmt.hpp"
 #include "Arena.hpp"
+#include "Expr.hpp"
+#include "Stmt.hpp"
+#include "Token.hpp"
+#include <initializer_list>
 
 namespace jl {
 class Parser {
@@ -38,7 +39,7 @@ private:
     Stmt* declaration();
     Stmt* print_statement();
     Stmt* expr_statement();
-    Stmt* var_declaration(bool for_each=false);
+    Stmt* var_declaration(bool for_each = false);
     Stmt* if_stmt();
     Stmt* while_statement();
     Stmt* for_statement();
@@ -49,7 +50,7 @@ private:
     std::vector<Stmt*> block();
 
     void synchronize();
-    bool match(std::vector<Token::TokenType>&& types);
+    bool match(std::initializer_list<Token::TokenType>&& types);
     bool check(Token::TokenType type);
     bool is_at_end();
     Token& advance();
