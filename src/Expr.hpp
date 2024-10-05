@@ -1,9 +1,7 @@
 #pragma once
 
-#include <iostream>
-#include <string>
-#include <vector>
 #include <any>
+#include <vector>
 
 #include "Token.hpp"
 #include "Value.hpp"
@@ -45,7 +43,7 @@ public:
     virtual std::any visit_index_set_expr(IndexSet* expr) = 0;
 };
 
-class Expr {
+class Expr : public Ref {
 public:
     virtual std::any accept(IExprVisitor& visitor) = 0;
     virtual ~Expr() = default;
@@ -119,9 +117,9 @@ public:
 
 class Literal : public Expr {
 public:
-    Value m_value;
+    JlValue m_value;
 
-    inline Literal(Value& value)
+    inline Literal(JlValue& value)
         : m_value(value)
     {
     }

@@ -47,13 +47,13 @@ TEST_CASE("Lexer Scan 2", "[Lexer]")
 
         switch (scanned_tokens[i].get_tokentype()) {
         case Token::STRING:
-            REQUIRE(std::get<std::string>(scanned_tokens[i].get_value()) == "hello+==");
+            REQUIRE(std::get<std::string>(scanned_tokens[i].get_value().get()) == "hello+==");
             break;
         case Token::INT:
-            REQUIRE(std::get<int>(scanned_tokens[i].get_value()) == 123);
+            REQUIRE(std::get<int>(scanned_tokens[i].get_value().get()) == 123);
             break;
         case Token::FLOAT:
-            REQUIRE(std::get<double>(scanned_tokens[i].get_value()) == std::stod("434.534"));
+            REQUIRE(std::get<double>(scanned_tokens[i].get_value().get()) == std::stod("434.534"));
             break;
         default:
             break;

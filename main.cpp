@@ -1,7 +1,4 @@
-#include <iostream>
-
 #include "ErrorHandler.hpp"
-#include "Expr.hpp"
 #include "Interpreter.hpp"
 #include "Lexer.hpp"
 #include "Parser.hpp"
@@ -16,40 +13,23 @@ int main(int argc, char const *argv[])
 
     jl::Lexer lexer(
         R"(
-        var a = {3, 5, 1, 2};
+        var a = {3, 5, 1, 2, 26, 9, 8, 4, 7};
 
-        for (var item: a) [
-            if (item <= 1) [
-                print "BREAKING";
-                break;
-            ]
-        ]
+        fun findMax(list) [
+            var max = -1;
 
-        for (var i = 0; i < 9; i+=1) [
-            print i;
-
-            if (i == 5) [
-                break;
-            ]
-        ]
-
-        while (true) [
-            break;
-        ]
-
-        for (var i = 0; i < 10; i+=1) [
-            var line = "";
-
-            for (var j = 0; j < 10; j+=1) [
-                if (j > i) [
-                    break;
+            for (var i = 0; i < 9; i+=1) [
+                if (list[i] > max) [
+                    max = list[i];
                 ]
-                line += str(j) + " ";
             ]
 
-            print line;
+            return max;
         ]
 
+        print findMax(a);
+
+        print("Done");
     )");
     
     std::string file_name = "examples/EList.jun";
@@ -85,4 +65,42 @@ int main(int argc, char const *argv[])
     }
 
     interpreter.interpret(stmts);
+    return 0;
 }
+
+/*
+        var a = {3, 5, 1, 2};
+
+        for (var item: a) [
+            if (item <= 1) [
+                print "BREAKING";
+                break;
+            ]
+        ]
+
+        for (var i = 0; i < 9; i+=1) [
+            print i;
+
+            if (i == 5) [
+                break;
+            ]
+        ]
+
+        while (true) [
+            break;
+        ]
+
+        for (var i = 0; i < 10; i+=1) [
+            var line = "";
+
+            for (var j = 0; j < 10; j+=1) [
+                if (j > i) [
+                    break;
+                ]
+                line += str(j) + " ";
+            ]
+
+            print line;
+        ]
+
+*/

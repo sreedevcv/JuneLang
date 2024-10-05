@@ -15,7 +15,7 @@ jl::FunctionCallable::FunctionCallable(Arena& arena, FuncStmt* declaration, Envi
 {
 }
 
-jl::Value jl::FunctionCallable::call(Interpreter* interpreter, std::vector<Value>& arguments)
+jl::JlValue jl::FunctionCallable::call(Interpreter* interpreter, std::vector<JlValue>& arguments)
 {
     Environment* env = m_arena.allocate<Environment>(m_closure);
 
@@ -25,7 +25,7 @@ jl::Value jl::FunctionCallable::call(Interpreter* interpreter, std::vector<Value
 
     try {
         interpreter->execute_block(m_declaration->m_body, env);
-    } catch (Value value) {
+    } catch (JlValue value) {
         if (m_is_initializer) {
             return m_closure->get_at(Token::global_this_lexeme, 0);
         }
@@ -38,7 +38,7 @@ jl::Value jl::FunctionCallable::call(Interpreter* interpreter, std::vector<Value
         return m_closure->get_at(Token::global_this_lexeme, 0);
     }
 
-    return '\0';
+    return JlValue('\0');
 }
 
 int jl::FunctionCallable::arity()
@@ -54,10 +54,9 @@ std::string jl::FunctionCallable::to_string()
 jl::FunctionCallable* jl::FunctionCallable::bind(Instance* instance)
 {
     Environment* env = m_arena.allocate<Environment>(m_closure);
-    env->define(Token::global_this_lexeme, instance);
+    env->define(Token::global_this_lexeme, JlValue(instance));
     return m_arena.allocate<FunctionCallable>(m_arena, m_declaration, env, m_is_initializer);
 }
-
 
 // --------------------------------------------------------------------------------
 // -------------------------------ClassCallable------------------------------------
@@ -77,7 +76,7 @@ jl::ClassCallable::~ClassCallable()
     // }
 }
 
-jl::Value jl::ClassCallable::call(Interpreter* interpreter, std::vector<Value>& arguments)
+jl::JlValue jl::ClassCallable::call(Interpreter* interpreter, std::vector<JlValue>& arguments)
 {
     Instance* instance = interpreter->m_internal_arena.allocate<Instance>(this);
     std::string init_name = "init";
@@ -85,7 +84,7 @@ jl::Value jl::ClassCallable::call(Interpreter* interpreter, std::vector<Value>& 
     if (initializer != nullptr) {
         initializer->bind(instance)->call(interpreter, arguments);
     }
-    return instance;
+    return JlValue(instance);
 }
 
 int jl::ClassCallable::arity()
@@ -132,7 +131,7 @@ jl::Instance::~Instance()
     // }
 }
 
-jl::Value jl::Instance::get(Token& name)
+jl::JlValue jl::Instance::get(Token& name)
 {
     if (m_fields.contains(name.get_lexeme())) {
         return m_fields[name.get_lexeme()];
@@ -141,7 +140,7 @@ jl::Value jl::Instance::get(Token& name)
     FunctionCallable* method = m_class->find_method(name.get_lexeme());
     if (method != nullptr) {
         Callable* method_instance = method->bind(this);
-        return method_instance;
+        return JlValue(method_instance);
     }
 
     std::string fname = "unknown";
@@ -149,7 +148,7 @@ jl::Value jl::Instance::get(Token& name)
     throw "runtime-exception";
 }
 
-void jl::Instance::set(Token& name, Value& value)
+void jl::Instance::set(Token& name, JlValue& value)
 {
     m_fields[name.get_lexeme()] = value;
 }

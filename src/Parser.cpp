@@ -198,8 +198,8 @@ jl::Expr* jl::Parser::unary()
 jl::Expr* jl::Parser::primary()
 {
     if (match({ Token::INT, Token::FLOAT, Token::STRING, Token::FALSE, Token::TRUE, Token::NULL_ })) {
-        // Value* value = m_arena.allocate<Value>(previous().get_value());
-        Value value = previous().get_value();
+        // JlValue* value = m_arena.allocate<JlValue>(previous().get_value());
+        JlValue value = previous().get_value();
         return m_arena.allocate<Literal>(value);
     }
     if (match({ Token::THIS })) {

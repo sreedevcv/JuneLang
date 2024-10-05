@@ -28,13 +28,13 @@ void test_string_with_no_error(const char* source, int arena_size = 1000)
     auto stmts = parser.parseStatements();
     REQUIRE(jl::ErrorHandler::has_error() == false);
 
-    jl::Interpreter interpreter(arena, file_name);
+    jl::Interpreter interpreter(arena, file_name, 2000*2000);
     jl::Resolver resolver(interpreter, file_name);
     resolver.resolve(stmts);
 
     REQUIRE(jl::ErrorHandler::has_error() == false);
 
-    jl::Value v;
+    jl::JlValue v;
     interpreter.interpret(stmts);
     REQUIRE(jl::ErrorHandler::has_error() == false);
 }
@@ -83,7 +83,7 @@ void test_string_with_error(const char* source, ErrorLoc errorLoc, int arena_siz
         return;
     }
 
-    jl::Value v;
+    jl::JlValue v;
     interpreter.interpret(stmts);
     has_error = jl::ErrorHandler::has_error();
     test_passed = (errorLoc != INTERPRETER) ? has_error == false : has_error == true;
@@ -126,7 +126,7 @@ TEST_CASE("Interpreter returning callback from function", "[Interpreter]")
 
     )";
 
-    test_string_with_no_error(source);
+    test_string_with_no_error(source, 3000);
 }
 
 TEST_CASE("Interpreter Binding", "[Interpreter]")
@@ -174,7 +174,7 @@ TEST_CASE("Interpreter Using return statement", "[Interpreter]")
         count(1);
     )";
 
-    test_string_with_no_error(source);
+    test_string_with_no_error(source, 2000);
 }
 
 TEST_CASE("Interpreter returning callback from class with self", "[Interpreter]")
@@ -194,7 +194,7 @@ TEST_CASE("Interpreter returning callback from class with self", "[Interpreter]"
         callback();
     )";
 
-    test_string_with_no_error(source);
+    test_string_with_no_error(source, 2000);
 }
 
 TEST_CASE("Interpreter returning self object", "[Interpreter]")
@@ -361,7 +361,7 @@ TEST_CASE("Interpreter List: Finding max element", "[Interpreter]")
         print findMax(a);
     )";
 
-    test_string_with_no_error(source, 2000);
+    test_string_with_no_error(source, 3000);
 }
 
 TEST_CASE("Interpreter Bubble sort", "[Interpreter]")
@@ -449,7 +449,7 @@ TEST_CASE("Interpreter Using break", "[Interpreter]")
 
     )";
 
-    test_string_with_no_error(source, 4000);
+    test_string_with_no_error(source, 5000);
 }
 
 // TEST_CASE("Interpreter", "[Interpreter]")

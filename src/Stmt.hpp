@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Expr.hpp"
+#include "Ref.hpp"
 
 namespace jl {
 
@@ -33,7 +34,7 @@ public:
     virtual std::any visit_break_stmt(BreakStmt* stmt) = 0;
 };
 
-class Stmt {
+class Stmt : public Ref {
 public:
     virtual std::any accept(IStmtVisitor& visitor) = 0;
     virtual ~Stmt() = default;

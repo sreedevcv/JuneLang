@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Ref.hpp"
 #include <string>
 #include <variant>
 #include <vector>
@@ -19,16 +20,26 @@ public:
     }
 };
 
+class JlValue : public Ref {
+public:
+    using Value
+        = std::variant<
+            int,
+            double,
+            bool,
+            std::string,
+            JNullType, // Respresents null value
+            Callable*,
+            Instance*,
+            std::vector<Expr*>*>;
 
-using Value = std::variant<
-    int,
-    double,
-    bool,
-    std::string,
-    JNullType,       // Respresents null value
-    Callable*,
-    Instance*,
-    std::vector<Expr*>*
-    >;
+    Value value;
+
+    JlValue() = default;
+    JlValue(const Value& value);
+    JlValue(const Value&& value);
+    size_t index() const;
+    Value& get();
+};
 
 } // namespace jl

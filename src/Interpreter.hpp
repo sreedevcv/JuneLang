@@ -1,6 +1,5 @@
 #pragma once
 
-#include <functional>
 #include <map>
 
 #include "Arena.hpp"
@@ -12,14 +11,14 @@ namespace jl {
 
 class Interpreter : public IExprVisitor, public IStmtVisitor {
 public:
-    Interpreter(Arena& arena, std::string& file_name, int64_t internal_arena_size = 1000 * 1000);
+    Interpreter(Arena& arena, std::string& file_name, int64_t internal_arena_size = 1000 * 2000);
     virtual ~Interpreter() = default;
 
-    void interpret(Expr* expr, Value* value = nullptr);
+    void interpret(Expr* expr, JlValue* value = nullptr);
     void interpret(std::vector<Stmt*>& statements);
     void resolve(Expr* expr, int depth);
     void execute_block(std::vector<Stmt*>& statements, Environment* new_env);
-    std::string stringify(Value& value);
+    std::string stringify(JlValue& value);
 
     Environment* m_global_env;
     std::string m_file_name;
@@ -54,14 +53,14 @@ private:
     virtual std::any visit_for_each_stmt(ForEachStmt* stmt) override;
     virtual std::any visit_break_stmt(BreakStmt* stmt) override;
 
-    Value evaluate(Expr* expr);
-    bool is_truthy(Value& value);
+    JlValue evaluate(Expr* expr);
+    bool is_truthy(JlValue& value);
 
     template <typename Op>
-    Value do_arith_operation(Value& left, Value& right, Op op, int line);
-    Value append_strings(Value& left, Value& right);
-    bool is_equal(Value& left, Value& right);
-    Value& look_up_variable(Token& name, Expr* expr);
+    JlValue do_arith_operation(JlValue& left, JlValue& right, Op op, int line);
+    JlValue append_strings(JlValue& left, JlValue& right);
+    bool is_equal(JlValue& left, JlValue& right);
+    JlValue& look_up_variable(Token& name, Expr* expr);
 
     Arena& m_arena;
     Arena m_internal_arena;
@@ -70,7 +69,7 @@ private:
     struct BreakThrow { };
 
     friend class ClassCallable;
-    friend Value jlist_push_back(Interpreter* interpreter, Value& jlist, Value& appending_value);
-    friend Value jlist_pop_back(Interpreter* interpreter, Value& jlist);
+    friend JlValue jlist_push_back(Interpreter* interpreter, JlValue& jlist, JlValue& appending_value);
+    friend JlValue jlist_pop_back(Interpreter* interpreter, JlValue& jlist);
 };
 } // namespace jl

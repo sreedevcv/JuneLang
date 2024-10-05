@@ -6,6 +6,7 @@
 
 #include "ErrorHandler.hpp"
 #include "Token.hpp"
+#include "Value.hpp"
 
 jl::Lexer::Lexer(const char* source)
 {
@@ -156,10 +157,10 @@ void jl::Lexer::add_token(Token::TokenType type)
     m_tokens.push_back(Token(type, lexeme, m_line));
 }
 
-void jl::Lexer::add_token(Token::TokenType type, Value value)
+void jl::Lexer::add_token(Token::TokenType type, JlValue value)
 {
     std::string lexeme = m_source.substr(m_start, m_current - m_start);
-    m_tokens.push_back(Token(type, lexeme, m_line, value));
+    m_tokens.push_back(Token(type, lexeme, m_line, JlValue(value)));
 }
 
 bool jl::Lexer::match(char expected)
@@ -198,7 +199,7 @@ void jl::Lexer::scan_string()
 
     advance(); // Read the ending '"'
     std::string value = m_source.substr(m_start + 1, (m_current - 1) - (m_start + 1));
-    add_token(Token::STRING, value);
+    add_token(Token::STRING, JlValue(value));
 }
 
 bool jl::Lexer::is_digit(char c)
@@ -228,9 +229,9 @@ void jl::Lexer::scan_number()
     }
 
     if (is_float) {
-        add_token(Token::FLOAT, std::stod(m_source.substr(m_start, m_current - m_start)));
+        add_token(Token::FLOAT, JlValue(std::stod(m_source.substr(m_start, m_current - m_start))));
     } else {
-        add_token(Token::INT, std::stoi(m_source.substr(m_start, m_current - m_start)));
+        add_token(Token::INT, JlValue(std::stoi(m_source.substr(m_start, m_current - m_start))));
     }
 }
 
@@ -263,11 +264,11 @@ void jl::Lexer::scan_identifier()
 
     if (m_reserved_words.contains(lexeme)) {
         if (lexeme == "true") {
-            add_token(Token::TRUE, true);
+            add_token(Token::TRUE, JlValue(true));
         } else if (lexeme == "false") {
-            add_token(Token::FALSE, false);
+            add_token(Token::FALSE, JlValue(false));
         } else if (lexeme == "null") {
-            add_token(Token::NULL_, '\0');
+            add_token(Token::NULL_, JlValue('\0'));
         } else {
             add_token(m_reserved_words[lexeme]);
         }
