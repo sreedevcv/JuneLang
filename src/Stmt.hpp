@@ -227,10 +227,10 @@ public:
         return visitor.visit_return_stmt(this);
     }
 
-    // virtual ~ReturnStmt()
-    // {
+    virtual ~ReturnStmt()
+    {
     //     delete m_expr;
-    // }
+    }
 };
 
 class ClassStmt : public Stmt {

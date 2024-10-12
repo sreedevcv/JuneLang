@@ -36,6 +36,8 @@ public:
     Value value;
 
     JlValue() = default;
+    virtual ~JlValue() = default;
+    
     JlValue(const Value& value);
     JlValue(const Value&& value);
     size_t index() const;

@@ -20,14 +20,9 @@ public:
     MemoryPool();
     ~MemoryPool() = default;
 
-    template <CanBeRef T, typename... Args>
-    T* allocate(Args&&... args)
-    {
-        T* obj = new T(std::forward(args...));
-        obj->next = head->next;
-        head->next = obj;
-        return obj;
-    }
+protected:
+    Ref m_dummy_ref;
+    Ref* m_head { nullptr };
 
     void mark(Expr* epxr);
     void mark(Stmt* stmt);
@@ -36,9 +31,6 @@ public:
     void mark(Environment* env);
 
 private:
-    Ref dummy_ref;
-    Ref* head { nullptr };
-
     virtual std::any visit_assign_expr(Assign* expr) override;
     virtual std::any visit_binary_expr(Binary* expr) override;
     virtual std::any visit_grouping_expr(Grouping* expr) override;

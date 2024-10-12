@@ -4,8 +4,10 @@ namespace jl {
 
 class Ref {
 public:
-    Ref* next { nullptr };
-    bool marked { false };
+    Ref* m_next { nullptr };
+    bool m_marked { false };
+
+    virtual ~Ref() = default;
 };
 
 }

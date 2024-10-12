@@ -11,8 +11,10 @@ jl::Interpreter::Interpreter(Arena& arena, std::string& file_name, int64_t inter
     : m_arena(arena)
     , m_file_name(file_name)
     , m_internal_arena(internal_arena_size)
+    , m_gc(m_global_env, m_env)
 {
-    m_env = m_internal_arena.allocate<Environment>(m_file_name);
+    // m_env = m_internal_arena.allocate<Environment>(m_file_name);
+    m_env = m_gc.allocate<Environment>(m_file_name);
     m_global_env = m_env;
 
     auto to_int_native_func = m_arena.allocate<ToIntNativeFunction>();
@@ -380,13 +382,16 @@ std::any jl::Interpreter::visit_jlist_expr(JList* expr)
             continue; // No need to evaluate in case it is already a Literal
         }
         JlValue value = evaluate(item);
-        item = m_internal_arena.allocate<Literal>(value);
+        // item = m_internal_arena.allocate<Literal>(value);
+        item = m_gc.allocate<Literal>(value);
     }
 
     // Create a new array so that a new JList is created everytime the node is interpreted
     // Otherwise JLists created as members of classes will always point to the same one
     // See::examples/EList.jun
+    // NEWNOTE::This will leak!!!!
     std::vector<Expr*>* items_copy = m_internal_arena.allocate<std::vector<Expr*>>(expr->m_items);
+    // std::vector<Expr*>* items_copy = m_gc.allocate<std::vector<Expr*>>(expr->m_items);
     return JlValue(items_copy);
 }
 
@@ -432,7 +437,8 @@ std::any jl::Interpreter::visit_index_set_expr(IndexSet* expr)
     int index = std::get<int>(index_value.get());
 
     JlValue overwriting_value = evaluate(expr->m_value_expr);
-    jlist->at(index) = m_internal_arena.allocate<Literal>(overwriting_value);
+    // jlist->at(index) = m_internal_arena.allocate<Literal>(overwriting_value);
+    jlist->at(index) = m_gc.allocate<Literal>(overwriting_value);
     return overwriting_value;
 }
 
@@ -466,7 +472,8 @@ std::any jl::Interpreter::visit_var_stmt(VarStmt* stmt)
 
 std::any jl::Interpreter::visit_block_stmt(BlockStmt* stmt)
 {
-    Environment* new_env = m_internal_arena.allocate<Environment>(m_env);
+    // Environment* new_env = m_internal_arena.allocate<Environment>(m_env);
+    Environment* new_env = m_gc.allocate<Environment>(m_env);
     execute_block(stmt->m_statements, new_env);
     return JlValue(JNullType {});
 }
@@ -506,7 +513,8 @@ std::any jl::Interpreter::visit_while_stmt(WhileStmt* stmt)
 
 std::any jl::Interpreter::visit_func_stmt(FuncStmt* stmt)
 {
-    FunctionCallable* function = m_arena.allocate<FunctionCallable>(m_internal_arena, stmt, m_env, false);
+    // FunctionCallable* function = m_arena.allocate<FunctionCallable>(m_internal_arena, stmt, m_env, false);
+    FunctionCallable* function = m_gc.allocate<FunctionCallable>(m_gc, stmt, m_env, false);
     m_env->define(stmt->m_name.get_lexeme(), JlValue(static_cast<Callable*>(function)));
 
     return JlValue(JNullType {});
@@ -536,13 +544,15 @@ std::any jl::Interpreter::visit_class_stmt(ClassStmt* stmt)
     m_env->define(stmt->m_name.get_lexeme(), JlValue(static_cast<Callable*>(nullptr)));
 
     if (stmt->m_super_class != nullptr) {
-        m_env = m_internal_arena.allocate<Environment>(m_env);
+        // m_env = m_internal_arena.allocate<Environment>(m_env);
+        m_env = m_gc.allocate<Environment>(m_env);
         m_env->define(Token::global_super_lexeme, super_class);
     }
 
     std::map<std::string, FunctionCallable*> methods;
     for (FuncStmt* method : stmt->m_methods) {
-        FunctionCallable* func_callable = m_arena.allocate<FunctionCallable>(m_internal_arena, method, m_env, method->m_name.get_lexeme() == "init");
+        // FunctionCallable* func_callable = m_arena.allocate<FunctionCallable>(m_internal_arena, method, m_env, method->m_name.get_lexeme() == "init");
+        FunctionCallable* func_callable = m_arena.allocate<FunctionCallable>(m_gc, method, m_env, method->m_name.get_lexeme() == "init");
         methods[method->m_name.get_lexeme()] = func_callable;
     }
 
@@ -559,7 +569,8 @@ std::any jl::Interpreter::visit_class_stmt(ClassStmt* stmt)
 
 std::any jl::Interpreter::visit_for_each_stmt(ForEachStmt* stmt)
 {
-    m_env = m_internal_arena.allocate<Environment>(m_env); // Create a new env for decalring looping variable
+    // m_env = m_internal_arena.allocate<Environment>(m_env); // Create a new env for decalring looping variable
+    m_env = m_gc.allocate<Environment>(m_env); // Create a new env for decalring looping variable
     stmt->m_var_declaration->accept(*this);
     JlValue value = evaluate(stmt->m_list_expr);
 

@@ -5,7 +5,9 @@
 #include "Arena.hpp"
 #include "Environment.hpp"
 #include "Expr.hpp"
+#include "GarbageCollector.hpp"
 #include "Stmt.hpp"
+#include "MemoryPool.hpp"
 
 namespace jl {
 
@@ -65,6 +67,7 @@ private:
     Arena& m_arena;
     Arena m_internal_arena;
     Environment* m_env;
+    GarbageCollector m_gc;
     std::map<Expr*, int> m_locals;
     struct BreakThrow { };
 

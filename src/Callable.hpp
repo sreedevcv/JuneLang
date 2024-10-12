@@ -1,5 +1,6 @@
 #pragma once
 
+#include "GarbageCollector.hpp"
 #include "Interpreter.hpp"
 #include "Ref.hpp"
 #include "Value.hpp"
@@ -13,12 +14,12 @@ public:
     virtual JlValue call(Interpreter* interpreter, std::vector<JlValue>& arguments) = 0;
     virtual int arity() = 0;
     virtual std::string to_string() = 0;
-    ~Callable() = default;
+    virtual ~Callable() = default;
 };
 
 class FunctionCallable : public Callable {
 public:
-    FunctionCallable(Arena& arena, FuncStmt* declaration, Environment* closure, bool is_initalizer);
+    FunctionCallable(GarbageCollector& gc, FuncStmt* declaration, Environment* closure, bool is_initalizer);
     virtual ~FunctionCallable() = default;
 
     virtual JlValue call(Interpreter* interpreter, std::vector<JlValue>& arguments) override;
@@ -28,7 +29,7 @@ public:
     FunctionCallable* bind(Instance* instance);
 
 private:
-    Arena& m_arena;
+    GarbageCollector& m_gc;
     FuncStmt* m_declaration;
     Environment* m_closure;
     bool m_is_initializer = false;
@@ -58,7 +59,7 @@ private:
 class Instance : public Ref {
 public:
     Instance(ClassCallable* class_callable);
-    ~Instance();
+    virtual ~Instance();
 
     JlValue get(Token& name);
     void set(Token& name, JlValue& value);

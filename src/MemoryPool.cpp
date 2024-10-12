@@ -7,36 +7,36 @@
 
 jl::MemoryPool::MemoryPool()
 {
-    head = &dummy_ref;
+    m_head = &m_dummy_ref;
 }
 
 void jl::MemoryPool::mark(Expr* expr)
 {
-    if (expr->marked) {
+    if (expr->m_marked) {
         return;
     }
 
-    expr->marked = true;
+    expr->m_marked = true;
     expr->accept(*this);
 }
 
 void jl::MemoryPool::mark(Stmt* stmt)
 {
-    if (stmt->marked) {
+    if (stmt == nullptr || stmt->m_marked) {
         return;
     }
 
-    stmt->marked = true;
+    stmt->m_marked = true;
     stmt->accept(*this);
 }
 
 void jl::MemoryPool::mark(JlValue* value)
 {
-    if (value->marked) {
+    if (value->m_marked) {
         return;
     }
 
-    value->marked = true;
+    value->m_marked = true;
 
     // Handle cases for contained refs
     if (is_jlist(*value)) {
@@ -58,16 +58,16 @@ void jl::MemoryPool::mark(JlValue* value)
 
 void jl::MemoryPool::mark(Callable* callable)
 {
-    if (callable->marked) {
+    if (callable->m_marked) {
         return;
     }
 
-    callable->marked = true;
+    callable->m_marked = true;
 
     if (dynamic_cast<FunctionCallable*>(callable)) {
         auto fcallable = static_cast<FunctionCallable*>(callable);
         mark(fcallable->m_declaration);
-        // TODO::Should i mark m_closure??
+        mark(fcallable->m_closure); // TODO::Should i mark m_closure??
     } else if (dynamic_cast<ClassCallable*>(callable)) {
         auto ccallable = static_cast<ClassCallable*>(callable);
 
@@ -83,11 +83,11 @@ void jl::MemoryPool::mark(Callable* callable)
 
 void jl::MemoryPool::mark(Environment* env)
 {
-    if (env->marked) {
+    if (env == nullptr || env->m_marked) {
         return;
     }
 
-    env->marked = true;
+    env->m_marked = true;
     for (auto& [key, value] : env->m_values) {
         mark(&value);
     }

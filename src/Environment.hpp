@@ -13,7 +13,7 @@ class Environment : public Ref {
 public:
     Environment(std::string& file_name);
     Environment(Environment* enclosing);
-    ~Environment();
+    virtual ~Environment();
 
     /* Stores a copy of variable name and value in map if
         they dont already exists otherwise throws an exception */

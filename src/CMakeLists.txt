@@ -12,5 +12,6 @@ add_library(JuneInterpreter
     NativeFunctions.cpp
     Value.cpp
     MemoryPool.cpp
+    GarbageCollector.cpp
 )
 target_include_directories(JuneInterpreter PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})

@@ -7,8 +7,8 @@
 // -----------------------------FunctionCallable-----------------------------------
 // --------------------------------------------------------------------------------
 
-jl::FunctionCallable::FunctionCallable(Arena& arena, FuncStmt* declaration, Environment* closure, bool is_initalizer)
-    : m_arena(arena)
+jl::FunctionCallable::FunctionCallable(GarbageCollector& arena, FuncStmt* declaration, Environment* closure, bool is_initalizer)
+    : m_gc(arena)
     , m_declaration(declaration)
     , m_closure(closure)
     , m_is_initializer(is_initalizer)
@@ -17,7 +17,7 @@ jl::FunctionCallable::FunctionCallable(Arena& arena, FuncStmt* declaration, Envi
 
 jl::JlValue jl::FunctionCallable::call(Interpreter* interpreter, std::vector<JlValue>& arguments)
 {
-    Environment* env = m_arena.allocate<Environment>(m_closure);
+    Environment* env = m_gc.allocate<Environment>(m_closure);
 
     for (int i = 0; i < m_declaration->m_params.size(); i++) {
         env->define(m_declaration->m_params[i]->get_lexeme(), arguments[i]);
@@ -53,9 +53,9 @@ std::string jl::FunctionCallable::to_string()
 
 jl::FunctionCallable* jl::FunctionCallable::bind(Instance* instance)
 {
-    Environment* env = m_arena.allocate<Environment>(m_closure);
+    Environment* env = m_gc.allocate<Environment>(m_closure);
     env->define(Token::global_this_lexeme, JlValue(instance));
-    return m_arena.allocate<FunctionCallable>(m_arena, m_declaration, env, m_is_initializer);
+    return m_gc.allocate<FunctionCallable>(m_gc, m_declaration, env, m_is_initializer);
 }
 
 // --------------------------------------------------------------------------------
@@ -78,7 +78,7 @@ jl::ClassCallable::~ClassCallable()
 
 jl::JlValue jl::ClassCallable::call(Interpreter* interpreter, std::vector<JlValue>& arguments)
 {
-    Instance* instance = interpreter->m_internal_arena.allocate<Instance>(this);
+    Instance* instance = interpreter->m_gc.allocate<Instance>(this);
     std::string init_name = "init";
     FunctionCallable* initializer = find_method(init_name);
     if (initializer != nullptr) {
