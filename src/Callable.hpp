@@ -1,11 +1,14 @@
 #pragma once
 
 #include "Interpreter.hpp"
+#include "Ref.hpp"
 #include "Value.hpp"
 
 namespace jl {
 
-class Callable {
+class MemoryPool;
+
+class Callable : public Ref {
 public:
     virtual JlValue call(Interpreter* interpreter, std::vector<JlValue>& arguments) = 0;
     virtual int arity() = 0;
@@ -29,6 +32,8 @@ private:
     FuncStmt* m_declaration;
     Environment* m_closure;
     bool m_is_initializer = false;
+
+    friend class MemoryPool;
 };
 
 class ClassCallable : public Callable {
@@ -46,9 +51,11 @@ private:
     std::string m_name;
     std::map<std::string, FunctionCallable*> m_methods;
     ClassCallable* m_super_class;
+
+    friend class MemoryPool;
 };
 
-class Instance {
+class Instance : public Ref {
 public:
     Instance(ClassCallable* class_callable);
     ~Instance();
@@ -60,6 +67,8 @@ public:
 private:
     ClassCallable* m_class;
     std::map<std::string, JlValue> m_fields;
+
+    friend class MemoryPool;
 };
 
 } // namespace jl

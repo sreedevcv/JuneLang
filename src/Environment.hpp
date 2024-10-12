@@ -1,12 +1,15 @@
 #pragma once
 
+#include "Ref.hpp"
 #include "Token.hpp"
 
 #include <unordered_map>
 
 namespace jl {
 
-class Environment {
+class MemoryPool;
+
+class Environment : public Ref {
 public:
     Environment(std::string& file_name);
     Environment(Environment* enclosing);
@@ -30,6 +33,8 @@ public:
 private:
     std::unordered_map<std::string, JlValue> m_values;
     std::string& m_file_name;
+
+    friend class MemoryPool;
 };
 
 } // namespace jl
