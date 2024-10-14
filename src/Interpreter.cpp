@@ -11,11 +11,12 @@ jl::Interpreter::Interpreter(Arena& arena, std::string& file_name, int64_t inter
     : m_arena(arena)
     , m_file_name(file_name)
     , m_internal_arena(internal_arena_size)
-    , m_gc(m_global_env, m_env)
+    , m_gc(m_global_env, m_env, m_env_stack)
 {
     // m_env = m_internal_arena.allocate<Environment>(m_file_name);
     m_env = m_gc.allocate<Environment>(m_file_name);
     m_global_env = m_env;
+    m_env_stack.push_back(m_global_env);
 
     auto to_int_native_func = m_arena.allocate<ToIntNativeFunction>();
     auto to_str_native_func = m_arena.allocate<ToStrNativeFunction>();
@@ -29,6 +30,10 @@ jl::Interpreter::Interpreter(Arena& arena, std::string& file_name, int64_t inter
     m_global_env->define(append_native_func->m_name, JlValue(static_cast<Callable*>(append_native_func)));
     m_global_env->define(remove_last_native_func->m_name, JlValue(static_cast<Callable*>(remove_last_native_func)));
     m_global_env->define(clear_list_native_func->m_name, JlValue(static_cast<Callable*>(clear_list_native_func)));
+}
+
+jl::Interpreter::~Interpreter()
+{
 }
 
 void jl::Interpreter::interpret(Expr* expr, JlValue* value)
@@ -103,6 +108,7 @@ jl::JlValue jl::Interpreter::append_strings(JlValue& left, JlValue& right)
 void jl::Interpreter::execute_block(std::vector<Stmt*>& statements, Environment* new_env)
 {
     Environment* previous = m_env;
+    m_env_stack.push_back(new_env);
     bool exception_ocurred = false;
 
     try {
@@ -117,15 +123,18 @@ void jl::Interpreter::execute_block(std::vector<Stmt*>& statements, Environment*
         // Just rethrow the value so that FunctionCallable::call can handle it
         exception_ocurred = true;
         m_env = previous;
+        m_env_stack.pop_back();
         throw;
     } catch (const char* msg) {
         // An error occurred
         exception_ocurred = true;
         m_env = previous;
+        m_env_stack.pop_back();
     }
 
     if (!exception_ocurred) {
         m_env = previous;
+        m_env_stack.pop_back();
     }
 }
 
@@ -389,7 +398,7 @@ std::any jl::Interpreter::visit_jlist_expr(JList* expr)
     // Create a new array so that a new JList is created everytime the node is interpreted
     // Otherwise JLists created as members of classes will always point to the same one
     // See::examples/EList.jun
-    // NEWNOTE::This will leak!!!!
+    // NOTE::This will leak!!!!
     std::vector<Expr*>* items_copy = m_internal_arena.allocate<std::vector<Expr*>>(expr->m_items);
     // std::vector<Expr*>* items_copy = m_gc.allocate<std::vector<Expr*>>(expr->m_items);
     return JlValue(items_copy);
@@ -514,7 +523,7 @@ std::any jl::Interpreter::visit_while_stmt(WhileStmt* stmt)
 std::any jl::Interpreter::visit_func_stmt(FuncStmt* stmt)
 {
     // FunctionCallable* function = m_arena.allocate<FunctionCallable>(m_internal_arena, stmt, m_env, false);
-    FunctionCallable* function = m_gc.allocate<FunctionCallable>(m_gc, stmt, m_env, false);
+    FunctionCallable* function = m_gc.allocate<FunctionCallable>(this, m_env, stmt, false);
     m_env->define(stmt->m_name.get_lexeme(), JlValue(static_cast<Callable*>(function)));
 
     return JlValue(JNullType {});
@@ -544,15 +553,14 @@ std::any jl::Interpreter::visit_class_stmt(ClassStmt* stmt)
     m_env->define(stmt->m_name.get_lexeme(), JlValue(static_cast<Callable*>(nullptr)));
 
     if (stmt->m_super_class != nullptr) {
-        // m_env = m_internal_arena.allocate<Environment>(m_env);
         m_env = m_gc.allocate<Environment>(m_env);
+        m_env_stack.push_back(m_env);
         m_env->define(Token::global_super_lexeme, super_class);
     }
 
     std::map<std::string, FunctionCallable*> methods;
     for (FuncStmt* method : stmt->m_methods) {
-        // FunctionCallable* func_callable = m_arena.allocate<FunctionCallable>(m_internal_arena, method, m_env, method->m_name.get_lexeme() == "init");
-        FunctionCallable* func_callable = m_arena.allocate<FunctionCallable>(m_gc, method, m_env, method->m_name.get_lexeme() == "init");
+        FunctionCallable* func_callable = m_gc.allocate<FunctionCallable>(this, m_env, method, method->m_name.get_lexeme() == "init");
         methods[method->m_name.get_lexeme()] = func_callable;
     }
 
@@ -560,6 +568,7 @@ std::any jl::Interpreter::visit_class_stmt(ClassStmt* stmt)
 
     if (stmt->m_super_class != nullptr) {
         m_env = m_env->m_enclosing;
+        m_env_stack.pop_back();
     }
 
     m_env->assign(stmt->m_name, JlValue(static_cast<Callable*>(class_callable)));
@@ -569,8 +578,8 @@ std::any jl::Interpreter::visit_class_stmt(ClassStmt* stmt)
 
 std::any jl::Interpreter::visit_for_each_stmt(ForEachStmt* stmt)
 {
-    // m_env = m_internal_arena.allocate<Environment>(m_env); // Create a new env for decalring looping variable
     m_env = m_gc.allocate<Environment>(m_env); // Create a new env for decalring looping variable
+    m_env_stack.push_back(m_env);
     stmt->m_var_declaration->accept(*this);
     JlValue value = evaluate(stmt->m_list_expr);
 
@@ -587,11 +596,13 @@ std::any jl::Interpreter::visit_for_each_stmt(ForEachStmt* stmt)
         try {
             stmt->m_body->accept(*this);
         } catch (BreakThrow break_throw) {
+            // NOTE::Should i revert the env back???
             break;
         }
     }
 
     m_env = m_env->m_enclosing;
+    m_env_stack.pop_back();
 
     return JlValue(JNullType {});
 }

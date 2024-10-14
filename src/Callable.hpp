@@ -1,13 +1,15 @@
 #pragma once
 
-#include "GarbageCollector.hpp"
+#include "Environment.hpp"
 #include "Interpreter.hpp"
 #include "Ref.hpp"
 #include "Value.hpp"
+#include "Stmt.hpp"
 
 namespace jl {
 
 class MemoryPool;
+class Interpreter;
 
 class Callable : public Ref {
 public:
@@ -19,7 +21,7 @@ public:
 
 class FunctionCallable : public Callable {
 public:
-    FunctionCallable(GarbageCollector& gc, FuncStmt* declaration, Environment* closure, bool is_initalizer);
+    FunctionCallable(Interpreter* interpreter, Environment* closure, FuncStmt* declaration, bool is_initalizer);
     virtual ~FunctionCallable() = default;
 
     virtual JlValue call(Interpreter* interpreter, std::vector<JlValue>& arguments) override;
@@ -29,9 +31,9 @@ public:
     FunctionCallable* bind(Instance* instance);
 
 private:
-    GarbageCollector& m_gc;
-    FuncStmt* m_declaration;
+    Interpreter* m_interpreter;
     Environment* m_closure;
+    FuncStmt* m_declaration;
     bool m_is_initializer = false;
 
     friend class MemoryPool;

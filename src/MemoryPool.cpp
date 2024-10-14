@@ -8,6 +8,7 @@
 jl::MemoryPool::MemoryPool()
 {
     m_head = &m_dummy_ref;
+    m_head->m_next = nullptr;
 }
 
 void jl::MemoryPool::mark(Expr* expr)
@@ -67,7 +68,7 @@ void jl::MemoryPool::mark(Callable* callable)
     if (dynamic_cast<FunctionCallable*>(callable)) {
         auto fcallable = static_cast<FunctionCallable*>(callable);
         mark(fcallable->m_declaration);
-        mark(fcallable->m_closure); // TODO::Should i mark m_closure??
+        mark(fcallable->m_closure); // Delete all the variable defined for the callable
     } else if (dynamic_cast<ClassCallable*>(callable)) {
         auto ccallable = static_cast<ClassCallable*>(callable);
 

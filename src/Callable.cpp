@@ -1,4 +1,5 @@
 #include "Callable.hpp"
+#include "Environment.hpp"
 #include "Value.hpp"
 
 #include "ErrorHandler.hpp"
@@ -7,17 +8,18 @@
 // -----------------------------FunctionCallable-----------------------------------
 // --------------------------------------------------------------------------------
 
-jl::FunctionCallable::FunctionCallable(GarbageCollector& arena, FuncStmt* declaration, Environment* closure, bool is_initalizer)
-    : m_gc(arena)
-    , m_declaration(declaration)
+jl::FunctionCallable::FunctionCallable(Interpreter* interpreter, Environment* closure, FuncStmt* declaration, bool is_initalizer)
+    : m_interpreter(interpreter)
     , m_closure(closure)
+    , m_declaration(declaration)
     , m_is_initializer(is_initalizer)
 {
 }
 
 jl::JlValue jl::FunctionCallable::call(Interpreter* interpreter, std::vector<JlValue>& arguments)
 {
-    Environment* env = m_gc.allocate<Environment>(m_closure);
+    // TODO::Do I actually need this environment to persist???
+    Environment* env = m_interpreter->m_gc.allocate<Environment>(m_closure);
 
     for (int i = 0; i < m_declaration->m_params.size(); i++) {
         env->define(m_declaration->m_params[i]->get_lexeme(), arguments[i]);
@@ -32,8 +34,6 @@ jl::JlValue jl::FunctionCallable::call(Interpreter* interpreter, std::vector<JlV
         return value;
     }
 
-    // // To prevent the env from deleting the enclosing environment (which might still be needed) when it goes out of scope
-    // env->m_enclosing = nullptr;
     if (m_is_initializer) {
         return m_closure->get_at(Token::global_this_lexeme, 0);
     }
@@ -53,9 +53,10 @@ std::string jl::FunctionCallable::to_string()
 
 jl::FunctionCallable* jl::FunctionCallable::bind(Instance* instance)
 {
-    Environment* env = m_gc.allocate<Environment>(m_closure);
+    // This env will be cleaned up by the FunctionCallable
+    Environment* env = m_interpreter->m_gc.allocate<Environment>(m_closure);
     env->define(Token::global_this_lexeme, JlValue(instance));
-    return m_gc.allocate<FunctionCallable>(m_gc, m_declaration, env, m_is_initializer);
+    return m_interpreter->m_gc.allocate<FunctionCallable>(m_interpreter, env, m_declaration, m_is_initializer);
 }
 
 // --------------------------------------------------------------------------------
@@ -71,9 +72,6 @@ jl::ClassCallable::ClassCallable(std::string& name, ClassCallable* super_class, 
 
 jl::ClassCallable::~ClassCallable()
 {
-    // for (auto& [key, value]: m_methods) {
-    //     delete value;
-    // }
 }
 
 jl::JlValue jl::ClassCallable::call(Interpreter* interpreter, std::vector<JlValue>& arguments)

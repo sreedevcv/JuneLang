@@ -13,23 +13,20 @@ int main(int argc, char const *argv[])
 
     jl::Lexer lexer(
         R"(
-        var a = {3, 5, 1, 2, 26, 9, 8, 4, 7};
+        fun makeCounter() [
+            var i = 0;
 
-        fun findMax(list) [
-            var max = -1;
-
-            for (var i = 0; i < 9; i+=1) [
-                if (list[i] > max) [
-                    max = list[i];
-                ]
+            fun count() [
+                i = i + 1;
+                print i;
             ]
 
-            return max;
+            return count;
         ]
 
-        print findMax(a);
-
-        print("Done");
+        var counter = makeCounter();
+        counter(); // "1".
+        counter(); // "2".
     )");
     
     std::string file_name = "examples/EList.jun";

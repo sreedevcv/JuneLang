@@ -1,20 +1,23 @@
 #pragma once
 
 #include <map>
+#include <stack>
+#include <vector>
 
 #include "Arena.hpp"
+#include "Callable.hpp"
 #include "Environment.hpp"
 #include "Expr.hpp"
 #include "GarbageCollector.hpp"
-#include "Stmt.hpp"
 #include "MemoryPool.hpp"
+#include "Stmt.hpp"
 
 namespace jl {
 
 class Interpreter : public IExprVisitor, public IStmtVisitor {
 public:
     Interpreter(Arena& arena, std::string& file_name, int64_t internal_arena_size = 1000 * 2000);
-    virtual ~Interpreter() = default;
+    virtual ~Interpreter();
 
     void interpret(Expr* expr, JlValue* value = nullptr);
     void interpret(std::vector<Stmt*>& statements);
@@ -22,7 +25,7 @@ public:
     void execute_block(std::vector<Stmt*>& statements, Environment* new_env);
     std::string stringify(JlValue& value);
 
-    Environment* m_global_env;
+    Environment* m_global_env { nullptr };
     std::string m_file_name;
 
 private:
@@ -66,12 +69,14 @@ private:
 
     Arena& m_arena;
     Arena m_internal_arena;
-    Environment* m_env;
+    Environment* m_env { nullptr };
+    std::vector<Environment*> m_env_stack;
     GarbageCollector m_gc;
     std::map<Expr*, int> m_locals;
     struct BreakThrow { };
 
     friend class ClassCallable;
+    friend class FunctionCallable;
     friend JlValue jlist_push_back(Interpreter* interpreter, JlValue& jlist, JlValue& appending_value);
     friend JlValue jlist_pop_back(Interpreter* interpreter, JlValue& jlist);
 };

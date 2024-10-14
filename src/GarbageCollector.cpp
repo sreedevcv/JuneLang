@@ -1,7 +1,9 @@
 #include "GarbageCollector.hpp"
-#include <iostream>
+#include "Environment.hpp"
 
-jl::GarbageCollector::GarbageCollector(EnvRef global, EnvRef curr)
+#include <print>
+
+jl::GarbageCollector::GarbageCollector(EnvRef global, EnvRef curr, std::vector<Environment*> env_stack)
     : m_global { global }
     , m_curr { curr }
 {
@@ -10,26 +12,33 @@ jl::GarbageCollector::GarbageCollector(EnvRef global, EnvRef curr)
 void jl::GarbageCollector::collect()
 {
     auto ptr = m_head->m_next;
+    auto prev = m_head;
 
     while (ptr) {
         if (ptr->m_marked) {
             ptr->m_marked = false;
+            prev = ptr;
             ptr = ptr->m_next;
         } else {
             auto to_be_deleted = ptr;
+            prev->m_next = ptr->m_next;
             ptr = ptr->m_next;
-            
-            if (to_be_deleted == nullptr) {
-                std::cout << "Already null!!!" << std::endl;
-            }
             delete to_be_deleted;
+
+#ifdef NDEBUG
+            delete_count += 1;
+#endif
         }
     }
 }
 
 jl::GarbageCollector::~GarbageCollector()
 {
-    mark(m_global);
-    mark(m_curr);
     collect();
+    collect();
+
+#ifdef NDEBUG
+    std::println("Total allocations  : {}", alloc_count);
+    std::println("Total deallocations: {}", delete_count);
+#endif
 }
