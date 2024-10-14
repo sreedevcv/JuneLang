@@ -6,6 +6,7 @@
 jl::GarbageCollector::GarbageCollector(EnvRef global, EnvRef curr, std::vector<Environment*> env_stack)
     : m_global { global }
     , m_curr { curr }
+    , m_arena {1000}
 {
 }
 
@@ -23,10 +24,11 @@ void jl::GarbageCollector::collect()
             auto to_be_deleted = ptr;
             prev->m_next = ptr->m_next;
             ptr = ptr->m_next;
-            delete to_be_deleted;
 
 #ifdef NDEBUG
             delete_count += 1;
+#elif MEM_DEBUG
+            delete to_be_deleted;
 #endif
         }
     }

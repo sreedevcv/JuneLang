@@ -37,7 +37,7 @@ public:
 
     bool is_full();
 
-private:
+protected:
     uint64_t m_size;
     uint64_t m_ptr = 0;
     void* m_memory;

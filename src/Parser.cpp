@@ -549,7 +549,7 @@ jl::Stmt* jl::Parser::for_statement()
         Stmt* body = statement();
 
         if (increment != nullptr) {
-            body = m_arena.allocate<BlockStmt>((std::vector<Stmt*>) { body, m_arena.allocate<ExprStmt>(increment) });
+            body = m_arena.allocate<BlockStmt>(std::vector<Stmt*> { body, m_arena.allocate<ExprStmt>(increment) });
         }
         if (condition == nullptr) {
             condition = m_arena.allocate<Literal>(Token::global_true_constant);
@@ -557,7 +557,7 @@ jl::Stmt* jl::Parser::for_statement()
         body = m_arena.allocate<WhileStmt>(condition, body);
 
         if (initializer != nullptr) {
-            body = m_arena.allocate<BlockStmt>((std::vector<Stmt*>) { initializer, body });
+            body = m_arena.allocate<BlockStmt>(std::vector<Stmt*> { initializer, body });
         }
 
         return body;
