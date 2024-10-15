@@ -200,7 +200,7 @@ jl::Expr* jl::Parser::primary()
     if (match({ Token::INT, Token::FLOAT, Token::STRING, Token::FALSE, Token::TRUE, Token::NULL_ })) {
         // JlValue* value = m_arena.allocate<JlValue>(previous().get_value());
         JlValue value = previous().get_value();
-        return m_arena.allocate<Literal>(value);
+        return m_arena.allocate<Literal>(m_arena.allocate<JlValue>(value));
     }
     if (match({ Token::THIS })) {
         return m_arena.allocate<This>(previous());
@@ -552,7 +552,7 @@ jl::Stmt* jl::Parser::for_statement()
             body = m_arena.allocate<BlockStmt>(std::vector<Stmt*> { body, m_arena.allocate<ExprStmt>(increment) });
         }
         if (condition == nullptr) {
-            condition = m_arena.allocate<Literal>(Token::global_true_constant);
+            condition = m_arena.allocate<Literal>(&Token::global_true_constant);
         }
         body = m_arena.allocate<WhileStmt>(condition, body);
 

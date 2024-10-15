@@ -23,7 +23,7 @@ public:
     void interpret(std::vector<Stmt*>& statements);
     void resolve(Expr* expr, int depth);
     void execute_block(std::vector<Stmt*>& statements, Environment* new_env);
-    std::string stringify(JlValue& value);
+    std::string stringify(JlValue* value);
 
     Environment* m_global_env { nullptr };
     std::string m_file_name;
@@ -58,14 +58,14 @@ private:
     virtual std::any visit_for_each_stmt(ForEachStmt* stmt) override;
     virtual std::any visit_break_stmt(BreakStmt* stmt) override;
 
-    JlValue evaluate(Expr* expr);
-    bool is_truthy(JlValue& value);
+    JlValue* evaluate(Expr* expr);
+    bool is_truthy(JlValue* value);
 
     template <typename Op>
-    JlValue do_arith_operation(JlValue& left, JlValue& right, Op op, int line);
-    JlValue append_strings(JlValue& left, JlValue& right);
-    bool is_equal(JlValue& left, JlValue& right);
-    JlValue& look_up_variable(Token& name, Expr* expr);
+    JlValue* do_arith_operation(JlValue* left, JlValue* right, Op op, int line);
+    JlValue* append_strings(JlValue* left, JlValue* right);
+    bool is_equal(JlValue* left, JlValue* right);
+    JlValue* look_up_variable(Token& name, Expr* expr);
 
     Arena& m_arena;
     Arena m_internal_arena;
@@ -77,7 +77,13 @@ private:
 
     friend class ClassCallable;
     friend class FunctionCallable;
-    friend JlValue jlist_push_back(Interpreter* interpreter, JlValue& jlist, JlValue& appending_value);
-    friend JlValue jlist_pop_back(Interpreter* interpreter, JlValue& jlist);
+    friend class Instance;
+    friend class ToStrNativeFunction;
+    friend class ToIntNativeFunction;
+
+    friend JlValue* jlist_clear(Interpreter* interpreter, JlValue* jlist);
+    friend JlValue* jlist_get_len(Interpreter* interpreter, std::string& file_name, JlValue* jlist);
+    friend JlValue* jlist_push_back(Interpreter* interpreter, JlValue* jlist, JlValue* appending_value);
+    friend JlValue* jlist_pop_back(Interpreter* interpreter, JlValue* jlist);
 };
 } // namespace jl

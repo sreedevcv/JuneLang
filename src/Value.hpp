@@ -33,15 +33,16 @@ public:
             Instance*,
             std::vector<Expr*>*>;
 
-    Value value;
+    Value m_value;
 
     JlValue() = default;
     virtual ~JlValue() = default;
     
     JlValue(const Value& value);
     JlValue(const Value&& value);
+    JlValue(Value* value);
     size_t index() const;
-    Value& get();
+    Value get();
 };
 
 } // namespace jl

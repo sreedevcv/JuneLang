@@ -91,13 +91,13 @@ private:
     JlValue m_value;
 };
 
-bool is_int(JlValue& value);
-bool is_float(JlValue& value);
-bool is_bool(JlValue& value);
-bool is_string(JlValue& value);
-bool is_null(JlValue& value);
-bool is_number(JlValue& value);
-bool is_callable(JlValue& value);
-bool is_instance(JlValue& value);
-bool is_jlist(JlValue& value);
+bool is_int(JlValue* value);
+bool is_float(JlValue* value);
+bool is_bool(JlValue* value);
+bool is_string(JlValue* value);
+bool is_null(JlValue* value);
+bool is_number(JlValue* value);
+bool is_callable(JlValue* value);
+bool is_instance(JlValue* value);
+bool is_jlist(JlValue* value);
 } // namespace jl

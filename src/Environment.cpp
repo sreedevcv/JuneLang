@@ -25,7 +25,7 @@ jl::Environment::~Environment()
     // }
 }
 
-void jl::Environment::define(const std::string& name, const JlValue& value)
+void jl::Environment::define(const std::string& name, JlValue* value)
 {
     if (!m_values.contains(name)) {
         m_values[name] = value;
@@ -35,7 +35,7 @@ void jl::Environment::define(const std::string& name, const JlValue& value)
     }
 }
 
-jl::JlValue& jl::Environment::get(Token& token)
+jl::JlValue* jl::Environment::get(Token& token)
 {
     if (m_values.contains(token.get_lexeme())) {
         return m_values[token.get_lexeme()];
@@ -50,19 +50,19 @@ jl::JlValue& jl::Environment::get(Token& token)
     throw "exception";
 }
 
-jl::JlValue& jl::Environment::get_at(Token& name, int depth)
+jl::JlValue* jl::Environment::get_at(Token& name, int depth)
 {
     Environment* env = ancestor(depth);
     return env->m_values[name.get_lexeme()];
 }
 
-jl::JlValue& jl::Environment::get_at(std::string& name, int depth)
+jl::JlValue* jl::Environment::get_at(std::string& name, int depth)
 {
     Environment* env = ancestor(depth);
     return env->m_values[name];
 }
 
-void jl::Environment::assign(Token& token, JlValue& value)
+void jl::Environment::assign(Token& token, JlValue* value)
 {
     if (m_values.contains(token.get_lexeme())) {
         m_values[token.get_lexeme()] = value;
@@ -78,23 +78,7 @@ void jl::Environment::assign(Token& token, JlValue& value)
     throw "exception";
 }
 
-void jl::Environment::assign(Token& token, JlValue&& value)
-{
-    if (m_values.contains(token.get_lexeme())) {
-        m_values[token.get_lexeme()] = std::move(value);
-        return;
-    }
-
-    if (m_enclosing != nullptr) {
-        m_enclosing->assign(token, std::move(value));
-        return;
-    }
-
-    ErrorHandler::error(m_file_name, token.get_line(), "Udefined variable");
-    throw "exception";
-}
-
-void jl::Environment::assign_at(Token& token, JlValue& value, int depth)
+void jl::Environment::assign_at(Token& token, JlValue* value, int depth)
 {
     ancestor(depth)->m_values[token.get_lexeme()] = value;
 }

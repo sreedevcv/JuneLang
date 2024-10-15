@@ -24,12 +24,20 @@ jl::Interpreter::Interpreter(Arena& arena, std::string& file_name, int64_t inter
     auto append_native_func = m_arena.allocate<AppendNativeFunction>();
     auto remove_last_native_func = m_arena.allocate<RemoveLastNativeFunction>();
     auto clear_list_native_func = m_arena.allocate<ClearListNativeFunction>();
-    m_global_env->define(to_int_native_func->m_name, JlValue(static_cast<Callable*>(to_int_native_func)));
-    m_global_env->define(to_str_native_func->m_name, JlValue(static_cast<Callable*>(to_str_native_func)));
-    m_global_env->define(get_len_native_func->m_name, JlValue(static_cast<Callable*>(get_len_native_func)));
-    m_global_env->define(append_native_func->m_name, JlValue(static_cast<Callable*>(append_native_func)));
-    m_global_env->define(remove_last_native_func->m_name, JlValue(static_cast<Callable*>(remove_last_native_func)));
-    m_global_env->define(clear_list_native_func->m_name, JlValue(static_cast<Callable*>(clear_list_native_func)));
+
+    auto to_int_native_func_val = m_gc.allocate<JlValue>(static_cast<Callable*>(to_int_native_func));
+    auto to_str_native_func_val = m_gc.allocate<JlValue>(static_cast<Callable*>(to_str_native_func));
+    auto get_len_native_func_val = m_gc.allocate<JlValue>(static_cast<Callable*>(get_len_native_func));
+    auto append_native_func_val = m_gc.allocate<JlValue>(static_cast<Callable*>(append_native_func));
+    auto remove_last_native_func_val = m_gc.allocate<JlValue>(static_cast<Callable*>(remove_last_native_func));
+    auto clear_list_native_func_val = m_gc.allocate<JlValue>(static_cast<Callable*>(clear_list_native_func));
+    
+    m_global_env->define(to_int_native_func->m_name, to_int_native_func_val);
+    m_global_env->define(to_str_native_func->m_name, to_str_native_func_val);
+    m_global_env->define(get_len_native_func->m_name, get_len_native_func_val);
+    m_global_env->define(append_native_func->m_name, append_native_func_val);
+    m_global_env->define(remove_last_native_func->m_name, remove_last_native_func_val);
+    m_global_env->define(clear_list_native_func->m_name, clear_list_native_func_val);
 }
 
 jl::Interpreter::~Interpreter()
@@ -61,21 +69,21 @@ void jl::Interpreter::resolve(Expr* expr, int depth)
     m_locals[expr] = depth;
 }
 
-jl::JlValue jl::Interpreter::evaluate(Expr* expr)
+jl::JlValue* jl::Interpreter::evaluate(Expr* expr)
 {
-    return std::any_cast<JlValue>(expr->accept(*this));
+    return std::any_cast<JlValue*>(expr->accept(*this));
 }
 
-bool jl::Interpreter::is_truthy(JlValue& value)
+bool jl::Interpreter::is_truthy(JlValue* value)
 {
-    if (is_null(value) || (is_bool(value) && std::get<bool>(value.get()) == false)) {
+    if (is_null(value) || (is_bool(value) && std::get<bool>(value->get()) == false)) {
         return false;
     }
     return true;
 }
 
 template <typename Op>
-jl::JlValue jl::Interpreter::do_arith_operation(JlValue& left, JlValue& right, Op op, int line)
+jl::JlValue* jl::Interpreter::do_arith_operation(JlValue* left, JlValue* right, Op op, int line)
 {
     if (!is_number(left) || !is_number(right)) {
         ErrorHandler::error(m_file_name, "interpreting", "binary expression", line, "Left and right operands must be a number", 0);
@@ -83,26 +91,26 @@ jl::JlValue jl::Interpreter::do_arith_operation(JlValue& left, JlValue& right, O
     }
 
     if (is_float(left) || is_float(right)) {
-        double a = is_float(left) ? std::get<double>(left.get()) : std::get<int>(left.get());
-        double b = is_float(right) ? std::get<double>(right.get()) : std::get<int>(right.get());
-        left.get() = op(a, b);
+        double a = is_float(left) ? std::get<double>(left->get()) : std::get<int>(left->get());
+        double b = is_float(right) ? std::get<double>(right->get()) : std::get<int>(right->get());
+        left->get() = op(a, b);
         return left;
     } else {
-        int a = std::get<int>(left.get());
-        int b = std::get<int>(right.get());
-        left.get() = op(a, b);
+        int a = std::get<int>(left->get());
+        int b = std::get<int>(right->get());
+        left->get() = op(a, b);
         return left;
     }
 }
 
-jl::JlValue jl::Interpreter::append_strings(JlValue& left, JlValue& right)
+jl::JlValue* jl::Interpreter::append_strings(JlValue* left, JlValue* right)
 {
-    std::string left_str = std::get<std::string>(left.get());
-    std::string& right_str = std::get<std::string>(right.get());
+    std::string left_str = std::get<std::string>(left->get());
+    std::string& right_str = std::get<std::string>(right->get());
     left_str.append(right_str);
 
     // Return appended strings
-    return JlValue(left_str);
+    return m_gc.allocate<JlValue>(left_str);
 }
 
 void jl::Interpreter::execute_block(std::vector<Stmt*>& statements, Environment* new_env)
@@ -113,12 +121,11 @@ void jl::Interpreter::execute_block(std::vector<Stmt*>& statements, Environment*
 
     try {
         m_env = new_env;
-        JlValue value;
         for (auto stmt : statements) {
             stmt->accept(*this);
         }
 
-    } catch (JlValue value) {
+    } catch (JlValue* value) {
         // This happens during a function return
         // Just rethrow the value so that FunctionCallable::call can handle it
         exception_ocurred = true;
@@ -138,15 +145,15 @@ void jl::Interpreter::execute_block(std::vector<Stmt*>& statements, Environment*
     }
 }
 
-bool jl::Interpreter::is_equal(JlValue& left, JlValue& right)
+bool jl::Interpreter::is_equal(JlValue* left, JlValue* right)
 {
-    if (left.index() != right.index()) {
+    if (left->index() != right->index()) {
         return false;
     }
-    return left.get() == right.get();
+    return left->get() == right->get();
 }
 
-jl::JlValue& jl::Interpreter::look_up_variable(Token& name, Expr* expr)
+jl::JlValue* jl::Interpreter::look_up_variable(Token& name, Expr* expr)
 {
     if (m_locals.contains(expr)) {
         return m_env->get_at(name, m_locals[expr]);
@@ -155,27 +162,27 @@ jl::JlValue& jl::Interpreter::look_up_variable(Token& name, Expr* expr)
     }
 }
 
-std::string jl::Interpreter::stringify(JlValue& value)
+std::string jl::Interpreter::stringify(JlValue* value)
 {
     if (is_null(value)) {
         return "null";
     } else if (is_bool(value)) {
-        return std::get<bool>(value.get()) ? "true" : "false";
+        return std::get<bool>(value->get()) ? "true" : "false";
     } else if (is_int(value)) {
-        return std::to_string(std::get<int>(value.get()));
+        return std::to_string(std::get<int>(value->get()));
     } else if (is_float(value)) {
-        return std::to_string(std::get<double>(value.get()));
+        return std::to_string(std::get<double>(value->get()));
     } else if (is_string(value)) {
-        return std::get<std::string>(value.get());
+        return std::get<std::string>(value->get());
     } else if (is_instance(value)) {
-        return std::get<Instance*>(value.get())->to_string();
+        return std::get<Instance*>(value->get())->to_string();
     } else if (is_callable(value)) {
-        return std::get<Callable*>(value.get())->to_string();
+        return std::get<Callable*>(value->get())->to_string();
     } else if (is_jlist(value)) {
         std::string list = "[";
-        for (auto expr : *std::get<std::vector<Expr*>*>(value.get())) {
+        for (auto expr : *std::get<std::vector<Expr*>*>(value->get())) {
             if (dynamic_cast<Literal*>(expr)) {
-                list.append(stringify(static_cast<Literal*>(expr)->m_value));
+                list.append(stringify(static_cast<Literal*>(expr)->m_value));  //NOTE::Problem to pass address og no-gc allocated Jlvalue here??
             } else {
                 list.append("`expr`");
             }
@@ -194,7 +201,7 @@ std::string jl::Interpreter::stringify(JlValue& value)
 
 std::any jl::Interpreter::visit_assign_expr(Assign* expr)
 {
-    JlValue value = evaluate(expr->m_expr);
+    JlValue* value = evaluate(expr->m_expr);
 
     if (m_locals.contains(expr)) {
         m_env->assign_at(expr->m_token, value, m_locals[expr]);
@@ -207,8 +214,8 @@ std::any jl::Interpreter::visit_assign_expr(Assign* expr)
 
 std::any jl::Interpreter::visit_binary_expr(Binary* expr)
 {
-    JlValue left_value = evaluate(expr->m_left);
-    JlValue right_value = evaluate(expr->m_right);
+    JlValue* left_value = evaluate(expr->m_left);
+    JlValue* right_value = evaluate(expr->m_right);
     int line = expr->m_oper->get_line();
 
     switch (expr->m_oper->get_tokentype()) {
@@ -236,7 +243,7 @@ std::any jl::Interpreter::visit_binary_expr(Binary* expr)
             ErrorHandler::error(m_file_name, "interpreting", "binary expression", line, "Left and right operands must be a int to use `%`", 0);
             throw "runtime-error";
         }
-        return JlValue(std::get<int>(left_value.get()) % std::get<int>(right_value.get()));
+        return JlValue(std::get<int>(left_value->get()) % std::get<int>(right_value->get()));
     case Token::EQUAL_EQUAL:
         return JlValue(is_equal(left_value, right_value));
     case Token::BANG_EQUAL:
@@ -254,15 +261,15 @@ std::any jl::Interpreter::visit_grouping_expr(Grouping* expr)
 
 std::any jl::Interpreter::visit_unary_expr(Unary* expr)
 {
-    JlValue right_value = evaluate(expr->m_expr);
+    JlValue* right_value = evaluate(expr->m_expr);
 
     switch (expr->m_oper->get_tokentype()) {
     case Token::MINUS:
         if (is_number(right_value)) {
             if (is_int(right_value)) {
-                return JlValue(-1 * std::get<int>(right_value.get()));
+                return m_gc.allocate<JlValue>(-1 * std::get<int>(right_value->get()));
             } else {
-                return JlValue(-1.0 * std::get<double>(right_value.get()));
+                return m_gc.allocate<JlValue>(-1.0 * std::get<double>(right_value->get()));
             }
         } else {
             ErrorHandler::error(m_file_name, "interpreting", "unary expression", expr->m_oper->get_line(), "Operand must be a number", 0);
@@ -270,13 +277,13 @@ std::any jl::Interpreter::visit_unary_expr(Unary* expr)
         }
         break;
     case Token::BANG:
-        return JlValue(!is_truthy(right_value));
+        return m_gc.allocate<JlValue>(!is_truthy(right_value));
         break;
     default:
         break;
     }
 
-    return JlValue(JNullType {});
+    return m_gc.allocate<JlValue>(JNullType {});
 }
 
 std::any jl::Interpreter::visit_literal_expr(Literal* expr)
@@ -292,7 +299,7 @@ std::any jl::Interpreter::visit_variable_expr(Variable* expr)
 std::any jl::Interpreter::visit_logical_expr(Logical* expr)
 {
     // JlValue value;
-    JlValue left = evaluate(expr->m_left);
+    JlValue* left = evaluate(expr->m_left);
     bool truth = is_truthy(left);
 
     if (expr->m_oper.get_tokentype() == Token::OR) {
@@ -312,9 +319,9 @@ std::any jl::Interpreter::visit_logical_expr(Logical* expr)
 
 std::any jl::Interpreter::visit_call_expr(Call* expr)
 {
-    JlValue value = evaluate(expr->m_callee);
+    JlValue* value = evaluate(expr->m_callee);
 
-    std::vector<JlValue> arguments(expr->m_arguments.size());
+    std::vector<JlValue*> arguments(expr->m_arguments.size());
 
     for (int i = 0; i < expr->m_arguments.size(); i++) {
         arguments[i] = evaluate(expr->m_arguments[i]);
@@ -325,22 +332,22 @@ std::any jl::Interpreter::visit_call_expr(Call* expr)
         throw "exception";
     }
 
-    Callable* function = std::get<Callable*>(value.get());
+    Callable* function = std::get<Callable*>(value->get());
     if (arguments.size() != function->arity()) {
         ErrorHandler::error(m_file_name, "interpreting", "function call", expr->m_paren.get_line(), "Arity of function call and its declararion do not match", 0);
         throw "exception";
     }
 
-    JlValue return_value = function->call(this, arguments);
+    JlValue* return_value = function->call(this, arguments);
     return return_value;
 }
 
 std::any jl::Interpreter::visit_get_expr(Get* expr)
 {
-    JlValue value = evaluate(expr->m_object);
+    JlValue* value = evaluate(expr->m_object);
 
     if (is_instance(value)) {
-        JlValue field = std::get<Instance*>(value.get())->get(expr->m_name);
+        JlValue* field = m_gc.allocate<JlValue>(std::get<Instance*>(value->get())->get(expr->m_name, this));
         return field;
     } else {
         ErrorHandler::error(m_file_name, "interpreting", "get expression", expr->m_name.get_line(), "Attempted to get fields from a non-instance value", 0);
@@ -350,15 +357,15 @@ std::any jl::Interpreter::visit_get_expr(Get* expr)
 
 std::any jl::Interpreter::visit_set_expr(Set* expr)
 {
-    JlValue value = evaluate(expr->m_object);
+    JlValue* value = evaluate(expr->m_object);
 
     if (!is_instance(value)) {
         ErrorHandler::error(m_file_name, "interpreting", "set expression", expr->m_name.get_line(), "Attempted to set fields to a non-instance value", 0);
         throw "runtime-exception";
     }
 
-    JlValue setting_value = std::any_cast<JlValue>(evaluate(expr->m_value));
-    std::get<Instance*>(value.get())->set(expr->m_name, setting_value);
+    JlValue* setting_value = evaluate(expr->m_value);
+    std::get<Instance*>(value->get())->set(expr->m_name, setting_value);
     return setting_value;
 }
 
@@ -370,9 +377,9 @@ std::any jl::Interpreter::visit_this_expr(This* expr)
 std::any jl::Interpreter::visit_super_expr(Super* expr)
 {
     int distance = m_locals[expr];
-    ClassCallable* super_class = static_cast<ClassCallable*>(std::get<Callable*>(m_env->get_at(Token::global_super_lexeme, distance).get()));
-    JlValue instance_value = m_env->get_at(Token::global_this_lexeme, distance - 1);
-    Instance* instance = std::get<Instance*>(instance_value.get());
+    ClassCallable* super_class = static_cast<ClassCallable*>(std::get<Callable*>(m_env->get_at(Token::global_super_lexeme, distance)->get()));
+    JlValue* instance_value = m_env->get_at(Token::global_this_lexeme, distance - 1);
+    Instance* instance = std::get<Instance*>(instance_value->get());
     FunctionCallable* method = super_class->find_method(expr->m_method.get_lexeme());
 
     if (method == nullptr) {
@@ -380,7 +387,7 @@ std::any jl::Interpreter::visit_super_expr(Super* expr)
         throw "runtime-exception";
     }
 
-    return JlValue(static_cast<Callable*>(method->bind(instance)));
+    return m_gc.allocate<JlValue>(static_cast<Callable*>(method->bind(instance)));
 }
 
 std::any jl::Interpreter::visit_jlist_expr(JList* expr)
@@ -390,8 +397,7 @@ std::any jl::Interpreter::visit_jlist_expr(JList* expr)
         if (dynamic_cast<Literal*>(item)) {
             continue; // No need to evaluate in case it is already a Literal
         }
-        JlValue value = evaluate(item);
-        // item = m_internal_arena.allocate<Literal>(value);
+        JlValue* value = evaluate(item);
         item = m_gc.allocate<Literal>(value);
     }
 
@@ -401,20 +407,20 @@ std::any jl::Interpreter::visit_jlist_expr(JList* expr)
     // NOTE::This will leak!!!!
     std::vector<Expr*>* items_copy = m_internal_arena.allocate<std::vector<Expr*>>(expr->m_items);
     // std::vector<Expr*>* items_copy = m_gc.allocate<std::vector<Expr*>>(expr->m_items);
-    return JlValue(items_copy);
+    return new JlValue(items_copy); // NOTE::Also leaks!!!
 }
 
 std::any jl::Interpreter::visit_index_get_expr(IndexGet* expr)
 {
-    JlValue list_value = evaluate(expr->m_jlist);
+    JlValue* list_value = evaluate(expr->m_jlist);
 
     if (is_jlist(list_value)) {
-        auto jlist = std::move(std::get<std::vector<Expr*>*>(list_value.get()));
-        JlValue index_value = evaluate(expr->m_index_expr);
+        auto jlist = std::move(std::get<std::vector<Expr*>*>(list_value->get()));
+        JlValue* index_value = evaluate(expr->m_index_expr);
 
         if (is_int(index_value)) {
-            int index = std::get<int>(index_value.get());
-            JlValue result = evaluate(jlist->at(index));
+            int index = std::get<int>(index_value->get());
+            JlValue* result = evaluate(jlist->at(index));
             return result;
         } else {
             ErrorHandler::error(m_file_name, "interpreting", "get index expression", expr->m_closing_bracket.get_line(), "Attempted to get index using a non-int value", 0);
@@ -428,25 +434,24 @@ std::any jl::Interpreter::visit_index_get_expr(IndexGet* expr)
 
 std::any jl::Interpreter::visit_index_set_expr(IndexSet* expr)
 {
-    JlValue list_value = evaluate(expr->m_jlist);
+    JlValue* list_value = evaluate(expr->m_jlist);
 
     if (!is_jlist(list_value)) {
         ErrorHandler::error(m_file_name, "interpreting", "set index expression", expr->m_closing_bracket.get_line(), "Attempted to set index for a value that is not a list", 0);
         throw "runtime-exception";
     }
 
-    JlValue index_value = evaluate(expr->m_index_expr);
+    JlValue* index_value = evaluate(expr->m_index_expr);
 
     if (!is_int(index_value)) {
         ErrorHandler::error(m_file_name, "interpreting", "set index expression", expr->m_closing_bracket.get_line(), "Attempted to set index using a non-int value", 0);
         throw "runtime-exception";
     }
 
-    auto jlist = std::get<std::vector<Expr*>*>(list_value.get());
-    int index = std::get<int>(index_value.get());
+    auto jlist = std::get<std::vector<Expr*>*>(list_value->get());
+    int index = std::get<int>(index_value->get());
 
-    JlValue overwriting_value = evaluate(expr->m_value_expr);
-    // jlist->at(index) = m_internal_arena.allocate<Literal>(overwriting_value);
+    JlValue* overwriting_value = evaluate(expr->m_value_expr);
     jlist->at(index) = m_gc.allocate<Literal>(overwriting_value);
     return overwriting_value;
 }
@@ -457,56 +462,55 @@ std::any jl::Interpreter::visit_index_set_expr(IndexSet* expr)
 
 std::any jl::Interpreter::visit_print_stmt(PrintStmt* stmt)
 {
-    JlValue value = evaluate(stmt->m_expr);
+    JlValue* value = evaluate(stmt->m_expr);
     ErrorHandler::m_stream << stringify(value) << std::endl;
-    return JlValue(JNullType {});
+    return m_gc.allocate<JlValue>(JNullType{});
 }
 
 std::any jl::Interpreter::visit_expr_stmt(ExprStmt* stmt)
 {
     evaluate(stmt->m_expr);
-    return JlValue(JNullType {});
+    return m_gc.allocate<JlValue>(JNullType{});
 }
 
 std::any jl::Interpreter::visit_var_stmt(VarStmt* stmt)
 {
-    JlValue value { JNullType {} };
+    JlValue* value = m_gc.allocate<JlValue>(JNullType {});
     if (stmt->m_initializer != nullptr) {
         value = evaluate(stmt->m_initializer);
     }
 
     m_env->define(stmt->m_name.get_lexeme(), value);
-    return JlValue(JNullType {});
+    return m_gc.allocate<JlValue>(JNullType{});
 }
 
 std::any jl::Interpreter::visit_block_stmt(BlockStmt* stmt)
 {
-    // Environment* new_env = m_internal_arena.allocate<Environment>(m_env);
     Environment* new_env = m_gc.allocate<Environment>(m_env);
     execute_block(stmt->m_statements, new_env);
-    return JlValue(JNullType {});
+    return m_gc.allocate<JlValue>(JNullType {});
 }
 
 std::any jl::Interpreter::visit_empty_stmt(EmptyStmt* stmt)
 {
-    return JlValue(JNullType {});
+    return m_gc.allocate<JlValue>(JNullType {});
 }
 
 std::any jl::Interpreter::visit_if_stmt(IfStmt* stmt)
 {
-    JlValue value = evaluate(stmt->m_condition);
+    JlValue* value = evaluate(stmt->m_condition);
     if (is_truthy(value)) {
         stmt->m_then_stmt->accept(*this);
     } else if (stmt->m_else_stmt != nullptr) {
         stmt->m_else_stmt->accept(*this);
     }
 
-    return JlValue(JNullType {});
+    return m_gc.allocate<JlValue>(JNullType {});
 }
 
 std::any jl::Interpreter::visit_while_stmt(WhileStmt* stmt)
 {
-    JlValue value = evaluate(stmt->m_condition);
+    JlValue* value = evaluate(stmt->m_condition);
     while (is_truthy(value)) {
         // Exceptions thrown by breaks are handled here
         try {
@@ -517,21 +521,20 @@ std::any jl::Interpreter::visit_while_stmt(WhileStmt* stmt)
         value = evaluate(stmt->m_condition);
     }
 
-    return JlValue(JNullType {});
+    return m_gc.allocate<JlValue>(JNullType {});
 }
 
 std::any jl::Interpreter::visit_func_stmt(FuncStmt* stmt)
 {
-    // FunctionCallable* function = m_arena.allocate<FunctionCallable>(m_internal_arena, stmt, m_env, false);
     FunctionCallable* function = m_gc.allocate<FunctionCallable>(this, m_env, stmt, false);
-    m_env->define(stmt->m_name.get_lexeme(), JlValue(static_cast<Callable*>(function)));
+    m_env->define(stmt->m_name.get_lexeme(), m_gc.allocate<JlValue>(static_cast<Callable*>(function)));
 
-    return JlValue(JNullType {});
+    return m_gc.allocate<JlValue>(JNullType {});
 }
 
 std::any jl::Interpreter::visit_return_stmt(ReturnStmt* stmt)
 {
-    JlValue value(JNullType {});
+    JlValue* value = m_gc.allocate<JlValue>(JNullType{});
     if (stmt->m_expr != nullptr) {
         value = evaluate(stmt->m_expr);
     }
@@ -541,16 +544,16 @@ std::any jl::Interpreter::visit_return_stmt(ReturnStmt* stmt)
 
 std::any jl::Interpreter::visit_class_stmt(ClassStmt* stmt)
 {
-    JlValue super_class = JlValue(static_cast<Callable*>(nullptr));
+    JlValue* super_class = m_gc.allocate<JlValue>(static_cast<Callable*>(nullptr));
     if (stmt->m_super_class != nullptr) {
         super_class = evaluate(stmt->m_super_class);
-        if (!(is_callable(super_class) && dynamic_cast<ClassCallable*>(std::get<Callable*>(super_class.get())))) {
+        if (!(is_callable(super_class) && dynamic_cast<ClassCallable*>(std::get<Callable*>(super_class->get())))) {
             ErrorHandler::error(m_file_name, "interpreting", "class definition", stmt->m_name.get_line(), "Super class must be a class", 0);
             throw "runtime-exception";
         }
     }
 
-    m_env->define(stmt->m_name.get_lexeme(), JlValue(static_cast<Callable*>(nullptr)));
+    m_env->define(stmt->m_name.get_lexeme(), m_gc.allocate<JlValue>(static_cast<Callable*>(nullptr)));
 
     if (stmt->m_super_class != nullptr) {
         m_env = m_gc.allocate<Environment>(m_env);
@@ -564,16 +567,16 @@ std::any jl::Interpreter::visit_class_stmt(ClassStmt* stmt)
         methods[method->m_name.get_lexeme()] = func_callable;
     }
 
-    ClassCallable* class_callable = m_arena.allocate<ClassCallable>(stmt->m_name.get_lexeme(), static_cast<ClassCallable*>(std::get<Callable*>(super_class.get())), methods);
+    ClassCallable* class_callable = m_gc.allocate<ClassCallable>(stmt->m_name.get_lexeme(), static_cast<ClassCallable*>(std::get<Callable*>(super_class->get())), methods);
 
     if (stmt->m_super_class != nullptr) {
         m_env = m_env->m_enclosing;
         m_env_stack.pop_back();
     }
 
-    m_env->assign(stmt->m_name, JlValue(static_cast<Callable*>(class_callable)));
+    m_env->assign(stmt->m_name, m_gc.allocate<JlValue>(static_cast<Callable*>(class_callable)));
 
-    return JlValue(JNullType {});
+    return m_gc.allocate<JlValue>(JNullType {});
 }
 
 std::any jl::Interpreter::visit_for_each_stmt(ForEachStmt* stmt)
@@ -581,15 +584,15 @@ std::any jl::Interpreter::visit_for_each_stmt(ForEachStmt* stmt)
     m_env = m_gc.allocate<Environment>(m_env); // Create a new env for decalring looping variable
     m_env_stack.push_back(m_env);
     stmt->m_var_declaration->accept(*this);
-    JlValue value = evaluate(stmt->m_list_expr);
+    JlValue* value = evaluate(stmt->m_list_expr);
 
     if (!is_jlist(value)) {
         ErrorHandler::error(m_file_name, "interpreting", "for each", stmt->m_var_declaration->m_name.get_line(), "For each loops need a list to iterate", 0);
         throw "runtime-exception";
     }
 
-    for (Expr* item : *std::get<std::vector<Expr*>*>(value.get())) {
-        JlValue list_value = evaluate(item);
+    for (Expr* item : *std::get<std::vector<Expr*>*>(value->get())) {
+        JlValue* list_value = evaluate(item);
         m_env->assign(stmt->m_var_declaration->m_name, list_value);
 
         // Handling breaks
@@ -604,7 +607,7 @@ std::any jl::Interpreter::visit_for_each_stmt(ForEachStmt* stmt)
     m_env = m_env->m_enclosing;
     m_env_stack.pop_back();
 
-    return JlValue(JNullType {});
+    return m_gc.allocate<JlValue>(JNullType {});
 }
 
 std::any jl::Interpreter::visit_break_stmt(BreakStmt* stmt)

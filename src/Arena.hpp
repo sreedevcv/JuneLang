@@ -22,15 +22,12 @@ public:
 
         void* new_addr = static_cast<void*>(static_cast<char*>(m_memory) + m_ptr);
         T* ptr = static_cast<T*>(new_addr);
-        // ptr = std::construct_at(ptr, args...);
         ptr = new (ptr) T(std::forward<Args>(args)...);
         m_ptr += sizeof(T);
 
         m_dtors.push_back([=]() {
             ptr->~T();
         });
-
-        // std::cout << "[" << (long)(m_memory) % 1000  << "] Allocated " << sizeof(T) << " bytes\n";
 
         return ptr;
     }

@@ -2,21 +2,26 @@
 #include <utility>
 
 jl::JlValue::JlValue(const Value& val)
-    : value(val)
+    : m_value(val)
 {
 }
 
 size_t jl::JlValue::index() const
 {
-    return value.index();
+    return m_value.index();
 }
 
-jl::JlValue::Value& jl::JlValue::get()
+jl::JlValue::Value* jl::JlValue::get()
 {
-    return value;
+    return m_value;
 }
 
 jl::JlValue::JlValue(const Value&& val)
 {
-    value = std::move(val);
+    m_value = std::move(val);
+}
+
+jl::JlValue::JlValue(Value* value)
+    : m_value(*value)
+{
 }

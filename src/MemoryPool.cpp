@@ -39,20 +39,19 @@ void jl::MemoryPool::mark(JlValue* value)
 
     value->m_marked = true;
 
-    // Handle cases for contained refs
-    if (is_jlist(*value)) {
+    if (is_jlist(value)) {
         for (auto e : *std::get<std::vector<Expr*>*>(value->get())) {
             mark(e);
         }
-    } else if (is_callable(*value)) {
+    } else if (is_callable(value)) {
         auto callable = std::get<Callable*>(value->get());
         mark(callable);
-    } else if (is_instance(*value)) {
+    } else if (is_instance(value)) {
         auto instance = std::get<Instance*>(value->get());
         mark(instance->m_class);
 
         for (auto& [key, value] : instance->m_fields) {
-            mark(&value);
+            mark(value);
         }
     }
 }
@@ -90,7 +89,7 @@ void jl::MemoryPool::mark(Environment* env)
 
     env->m_marked = true;
     for (auto& [key, value] : env->m_values) {
-        mark(&value);
+        mark(value);
     }
 
     if (env->m_enclosing != nullptr) {
@@ -125,7 +124,7 @@ std::any jl::MemoryPool::visit_unary_expr(Unary* expr)
 
 std::any jl::MemoryPool::visit_literal_expr(Literal* expr)
 {
-    mark(&expr->m_value);
+    mark(expr->m_value);
     return nullptr;
 }
 
