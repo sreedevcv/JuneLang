@@ -198,9 +198,9 @@ jl::Expr* jl::Parser::unary()
 jl::Expr* jl::Parser::primary()
 {
     if (match({ Token::INT, Token::FLOAT, Token::STRING, Token::FALSE, Token::TRUE, Token::NULL_ })) {
-        // JlValue* value = m_arena.allocate<JlValue>(previous().get_value());
-        JlValue value = previous().get_value();
-        return m_arena.allocate<Literal>(m_arena.allocate<JlValue>(value));
+        JlValue* value = previous().get_value();
+        //return m_arena.allocate<Literal>(m_arena.allocate<JlValue>(value));
+        return m_arena.allocate<Literal>(value); // Should copy or just take a reference(now using reference)
     }
     if (match({ Token::THIS })) {
         return m_arena.allocate<This>(previous());

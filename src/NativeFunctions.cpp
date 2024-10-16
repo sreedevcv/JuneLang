@@ -5,7 +5,7 @@
 
 jl::JlValue* jl::ToStrNativeFunction::call(Interpreter* interpreter, std::vector<JlValue*>& arguments)
 {
-    return interpreter->m_gc.allocate<JlValue>(interpreter->stringify(arguments[0]));
+    return interpreter->m_gc.allocate<JlStr>(interpreter->stringify(arguments[0]));
 }
 
 int jl::ToStrNativeFunction::arity()
@@ -27,22 +27,22 @@ jl::JlValue* jl::ToIntNativeFunction::call(Interpreter* interpreter, std::vector
 {
     JlValue* not_int = arguments[0];
 
-    if (is_int(not_int)) {
+    if (is::_int(not_int)) {
         return not_int;
-    } else if (is_float(not_int)) {
-        int retval = static_cast<int>(std::get<double>(not_int->get()));
-        return interpreter->m_gc.allocate<JlValue>(retval);
+    } else if (is::_float(not_int)) {
+        int retval = static_cast<int>(jl::vget<double>(not_int));
+        return interpreter->m_gc.allocate<JlInt>(retval);
     }
-    else if (is_bool(not_int)) {
-        return std::get<bool>(not_int->get()) ? interpreter->m_gc.allocate<JlValue>(1) : interpreter->m_gc.allocate<JlValue>(0);
+    else if (is::_bool(not_int)) {
+        return jl::vget<bool>(not_int) ? interpreter->m_gc.allocate<JlInt>(1) : interpreter->m_gc.allocate<JlInt>(0);
     }
-    else if (is_null(not_int)) {
-        return interpreter->m_gc.allocate<JlValue>(0);
+    else if (is::_null(not_int)) {
+        return interpreter->m_gc.allocate<JlInt>(0);
     }
-    else if (is_string(not_int)) {
+    else if (is::_str(not_int)) {
         try {
-            int num = std::stoi(std::get<std::string>(not_int->get()));
-            return interpreter->m_gc.allocate<JlValue>(num);
+            int num = std::stoi(jl::vget<std::string>(not_int));
+            return interpreter->m_gc.allocate<JlInt>(num);
         } catch (...) {
             ErrorHandler::error(interpreter->m_file_name, "interpreting", "native function int()", 0, "Conversion cannot be performed on an invalid string", 0);
             throw "runtime-error";
@@ -66,22 +66,22 @@ std::string jl::ToIntNativeFunction::to_string()
 
 jl::JlValue* jl::jlist_get_len(Interpreter* interpreter, std::string& file_name, JlValue* jlist)
 {
-    if (is_jlist(jlist)) {
-        int size = static_cast<int>(std::get<std::vector<Expr*>*>(jlist->get())->size());
-        return interpreter->m_gc.allocate<JlValue>(size);
+    if (is::_list(jlist)) {
+        int size = static_cast<int>(jl::vget<std::vector<Expr*>*>(jlist)->size());
+        return interpreter->m_gc.allocate<JlInt>(size);
     }
     else {
         ErrorHandler::error(file_name, "interpreting", "native function len()", 0, "Attempted to use len() on a non-list", 0);
-        return interpreter->m_gc.allocate<JlValue>(-1);
+        return interpreter->m_gc.allocate<JlInt>(-1);
     }
 }
 
 jl::JlValue* jl::jlist_push_back(Interpreter* interpreter, JlValue* jlist, JlValue* appending_value)
 {
-    if (is_jlist(jlist)) {
-        auto list = std::get<std::vector<Expr*>*>(jlist->get());
+    if (is::_list(jlist)) {
+        auto list = jl::vget<std::vector<Expr*>*>(jlist);
         list->push_back(interpreter->m_gc.allocate<Literal>(appending_value));
-        return interpreter->m_gc.allocate<JlValue>(JNullType{});
+        return interpreter->m_gc.allocate<JlNull>();
     } else {
         ErrorHandler::error(interpreter->m_file_name, "interpreting", "native function len()", 0, "Attempted to use push_back() on a non-list", 0);
         throw "runtime-error";
@@ -90,10 +90,10 @@ jl::JlValue* jl::jlist_push_back(Interpreter* interpreter, JlValue* jlist, JlVal
 
 jl::JlValue* jl::jlist_pop_back(Interpreter* interpreter, JlValue* jlist)
 {
-    if (is_jlist(jlist)) {
-        auto list = std::get<std::vector<Expr*>*>(jlist->get());
+    if (is::_list(jlist)) {
+        auto list = jl::vget<std::vector<Expr*>*>(jlist);
         list->pop_back();
-        return interpreter->m_gc.allocate<JlValue>(JNullType{});
+        return interpreter->m_gc.allocate<JlNull>();
     } else {
         ErrorHandler::error(interpreter->m_file_name, "interpreting", "native function len()", 0, "Attempted to use pop_back() on a non-list", 0);
         throw "runtime-error";
@@ -102,10 +102,10 @@ jl::JlValue* jl::jlist_pop_back(Interpreter* interpreter, JlValue* jlist)
 
 jl::JlValue* jl::jlist_clear(Interpreter* interpreter, JlValue* jlist)
 {
-    if (is_jlist(jlist)) {
-        auto list = std::get<std::vector<Expr*>*>(jlist->get());
+    if (is::_list(jlist)) {
+        auto list = jl::vget<std::vector<Expr*>*>(jlist);
         list->clear();
-        return interpreter->m_gc.allocate<JlValue>(JNullType{});
+        return interpreter->m_gc.allocate<JlNull>();
     } else {
         ErrorHandler::error(interpreter->m_file_name, "interpreting", "native function len()", 0, "Attempted to use clear() on a non-list", 0);
         throw "runtime-error";

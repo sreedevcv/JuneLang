@@ -12,7 +12,7 @@ class GarbageCollector : public MemoryPool {
 public:
     using EnvRef = Environment*&;
 
-    GarbageCollector(EnvRef global, EnvRef curr, std::vector<Environment*> env_stack);
+    GarbageCollector(EnvRef global, EnvRef curr);
     ~GarbageCollector();
 
     template <CanBeRef T, typename... Args>
@@ -23,32 +23,29 @@ public:
         mark(m_global);
         mark(m_curr);
 
-        for (auto env : m_env_stack) {
-            mark(env);
-        }
-
 #ifdef MEM_DEBUG
         m_arena.print_memory_layout();
 #endif 
 
         collect();
 
+
 #ifdef MEM_DEBUG
         T* obj = m_arena.allocate<T, Args...>(std::forward<Args>(args)...);
 #else
         T* obj = new T(std::forward<Args>(args)...);
-        std::println("Allocated {} bytes", sizeof(T));
+        //std::println("Allocated {} bytes", sizeof(T));
 #endif
         obj->m_next = m_head->m_next;
         m_head->m_next = obj;
         obj->m_gc = true;
+        m_curr->m_refs.insert(obj);
         return obj;
     }
 
 private:
     EnvRef m_global;
     EnvRef m_curr;
-    std::vector<Environment*> m_env_stack;
 
     int alloc_count { 0 };
 #ifdef MEM_DEBUG

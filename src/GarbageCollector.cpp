@@ -1,9 +1,11 @@
 #include "GarbageCollector.hpp"
 #include "Environment.hpp"
 
+#include "Callable.hpp"
+
 #include <print>
 
-jl::GarbageCollector::GarbageCollector(EnvRef global, EnvRef curr, std::vector<Environment*> env_stack)
+jl::GarbageCollector::GarbageCollector(EnvRef global, EnvRef curr)
     : m_global { global }
     , m_curr { curr }
 #ifdef MEM_DEBUG
@@ -31,17 +33,17 @@ void jl::GarbageCollector::collect()
             delete_count += 1;
             to_be_deleted->in_use = false;
 #else
-            std::printf("deleted %p\n", to_be_deleted);
+            /*std::printf("deleted %p\n", to_be_deleted);
+            if (dynamic_cast<Callable*>(to_be_deleted)) {
+                std::println("{}", static_cast<Callable*>(to_be_deleted)->to_string());
+            }*/
+
             delete to_be_deleted;
 #endif
         }
     }
 
-    // Make all non-gc allocated vars in envs as not-marked
-
-    for (auto e : m_env_stack) {
-        //for (auto& [key, val]: e->)
-    }
+    m_global->m_marked = false;
 }
 
 jl::GarbageCollector::~GarbageCollector()

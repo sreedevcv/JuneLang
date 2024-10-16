@@ -67,6 +67,7 @@ private:
     bool is_equal(JlValue* left, JlValue* right);
     JlValue* look_up_variable(Token& name, Expr* expr);
 
+    Environment m_dummy_env;
     Arena& m_arena;
     Arena m_internal_arena;
     Environment* m_env { nullptr };

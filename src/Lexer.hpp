@@ -36,7 +36,7 @@ private:
     char peek_next();
 
     void add_token(Token::TokenType type);
-    void add_token(Token::TokenType type, JlValue value);
+    void add_token(Token::TokenType type, JlValue* value);
     void scan_token();
     void scan_string();
     void scan_number();

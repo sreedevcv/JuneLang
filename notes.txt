@@ -1,0 +1,8 @@
+Change JList to make it more efficient
+	- Make it contain a variant that first holds a vector of Expr* during initiaization
+		and then switches to a vector of JValue*'s.
+
+Token class should own the memory of JValue's 
+
+Change the dynamic_casts in void jl::MemoryPool::mark(Ref* ref) to something similar
+	to the type_id enum used in JlValue
