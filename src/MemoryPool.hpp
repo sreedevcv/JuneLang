@@ -28,6 +28,7 @@ protected:
     void mark(Expr* epxr);
     void mark(Stmt* stmt);
     void mark(JlValue* value);
+    void mark(Instance* inst);
     void mark(Callable* callable);
     void mark(Environment* env);
 

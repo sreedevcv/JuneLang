@@ -13,18 +13,21 @@ int main(int argc, char const *argv[])
 
     jl::Lexer lexer(
         R"(
-        fun fib(n) [
-            if (n <= 1) return n;
-            //var a = fib(n - 2);
-            //var b = fib(n - 1);
-            //return a + b;
-            return fib(n - 2) + fib(n - 1);
+        class Thing [
+            getCallback() [
+                fun localFunction() [
+                    print self;
+                ]
+
+                return localFunction;
+            ]
         ]
-       
-         for (var i = 0; i < 10; i += 1) [
-            print fib(i);
-         ]
-    )");
+
+        var callback = Thing().getCallback();
+        callback();
+    
+        )"
+    );
     
     std::string file_name = "examples/EList.jun";
 

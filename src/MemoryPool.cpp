@@ -1,4 +1,5 @@
 #include "MemoryPool.hpp"
+
 #include "Callable.hpp"
 #include "Environment.hpp"
 #include "Expr.hpp"
@@ -65,11 +66,7 @@ void jl::MemoryPool::mark(JlValue* value)
     case JlValue::OBJ:
     {
         auto instance = jl::vget<Instance*>(value);
-        mark(instance->m_class);
-
-        for (auto& [key, value] : instance->m_fields) {
-            mark(value);
-        }
+        mark(instance);
     }
         break;
 
@@ -81,6 +78,20 @@ void jl::MemoryPool::mark(JlValue* value)
 
     case JlValue::JNULL:
         break;
+    }
+}
+
+void jl::MemoryPool::mark(Instance* inst)
+{
+    if (inst == nullptr || inst->m_marked) {
+        return;
+    }
+
+    inst->m_marked = true;
+    mark(inst->m_class);
+
+    for (auto& [key, value] : inst->m_fields) {
+        mark(value);
     }
 }
 
@@ -142,7 +153,10 @@ void jl::MemoryPool::mark(Ref* ref)
     }
     else if (dynamic_cast<Callable*>(ref)) {
         mark(static_cast<Callable*>(ref));
-    } 
+    }
+    else if (dynamic_cast<Instance*>(ref)) {
+        mark(static_cast<Instance*>(ref));
+    }
     else if (dynamic_cast<Environment*>(ref)) {
         mark(static_cast<Environment*>(ref));
     }
