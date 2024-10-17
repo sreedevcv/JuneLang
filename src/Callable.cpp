@@ -38,7 +38,7 @@ jl::JlValue* jl::FunctionCallable::call(Interpreter* interpreter, std::vector<Jl
         return m_closure->get_at(Token::global_this_lexeme, 0);
     }
 
-    return interpreter->m_gc.allocate<JlValue>(JNullType{});
+    return interpreter->m_gc.allocate<JlNull>();
 }
 
 int jl::FunctionCallable::arity()
@@ -55,7 +55,7 @@ jl::FunctionCallable* jl::FunctionCallable::bind(Instance* instance)
 {
     // This env will be cleaned up by the FunctionCallable
     Environment* env = m_interpreter->m_gc.allocate<Environment>(m_closure);
-    env->define(Token::global_this_lexeme, m_interpreter->m_gc.allocate<JlValue>(instance));
+    env->define(Token::global_this_lexeme, m_interpreter->m_gc.allocate<JlObj>(instance));
     return m_interpreter->m_gc.allocate<FunctionCallable>(m_interpreter, env, m_declaration, m_is_initializer);
 }
 
@@ -82,7 +82,7 @@ jl::JlValue* jl::ClassCallable::call(Interpreter* interpreter, std::vector<JlVal
     if (initializer != nullptr) {
         initializer->bind(instance)->call(interpreter, arguments);
     }
-    return interpreter->m_gc.allocate<JlValue>(instance);
+    return interpreter->m_gc.allocate<JlObj>(instance);
 }
 
 int jl::ClassCallable::arity()
@@ -138,7 +138,7 @@ jl::JlValue* jl::Instance::get(Token& name, Interpreter *interpreter)
     FunctionCallable* method = m_class->find_method(name.get_lexeme());
     if (method != nullptr) {
         Callable* method_instance = method->bind(this);
-        return interpreter->m_gc.allocate<JlValue>(method_instance);
+        return interpreter->m_gc.allocate<JlCallable>(method_instance);
     }
 
     std::string fname = "unknown";

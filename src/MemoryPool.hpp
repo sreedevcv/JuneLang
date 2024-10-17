@@ -24,9 +24,11 @@ protected:
     Ref m_dummy_ref;
     Ref* m_head { nullptr };
 
+    void mark(Ref* ref);
     void mark(Expr* epxr);
     void mark(Stmt* stmt);
     void mark(JlValue* value);
+    void mark(Instance* inst);
     void mark(Callable* callable);
     void mark(Environment* env);
 

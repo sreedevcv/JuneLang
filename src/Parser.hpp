@@ -1,6 +1,5 @@
 #pragma once
 
-#include "Arena.hpp"
 #include "Expr.hpp"
 #include "Stmt.hpp"
 #include "Token.hpp"
@@ -9,15 +8,15 @@
 namespace jl {
 class Parser {
 public:
-    Parser(Arena& arena, std::vector<Token>& tokens, std::string& file_name);
-    ~Parser() = default;
+    Parser(std::vector<Token>& tokens, std::string& file_name);
+    ~Parser();
 
     Expr* parse();
     std::vector<Stmt*> parseStatements();
 
 private:
-    Arena& m_arena;
     std::vector<Token> m_tokens;
+    std::vector<Ref*> m_allocated_refs;
     std::string m_file_name;
     int m_current = 0;
 

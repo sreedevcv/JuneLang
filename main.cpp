@@ -13,21 +13,27 @@ int main(int argc, char const *argv[])
 
     jl::Lexer lexer(
         R"(
-        fun makeCounter() [
-            var i = 0;
+        var a = {3, 5, 1, 2, 6, 9, 8, 4, 7};
 
-            fun count() [
-                i = i + 1;
-                print i;
+        fun bubbleSort(list, size) [
+            for (var i = 0; i < size - 1; i += 1) [
+                for (var j = 0; j < size - i - 1; j += 1) [
+                    if (list[j] > list[j + 1]) [
+                        var temp = list[j];
+                        list[j] = list[j + 1];
+                        list[j + 1] = temp;
+                    ]
+                ]
             ]
-
-            return count;
         ]
 
-        var counter = makeCounter();
-        counter(); // "1".
-        counter(); // "2".
-    )");
+        bubbleSort(a, 9);
+
+        for (var i = 0; i < 9; i += 1) [
+            print a[i];
+        ]
+        )"
+    );
     
     std::string file_name = "examples/EList.jun";
 
@@ -45,14 +51,14 @@ int main(int argc, char const *argv[])
     }
 
     auto tokens = lexer.get_tokens();
-    jl::Parser parser(arena, tokens, file_name);
+    jl::Parser parser(tokens, file_name);
     auto stmts = parser.parseStatements();
 
     if (jl::ErrorHandler::has_error()) {
         return 1;
     }
 
-    jl::Interpreter interpreter(arena, file_name, 1000*1000*10*5);
+    jl::Interpreter interpreter(file_name);
     
     jl::Resolver resolver(interpreter, file_name);
     resolver.resolve(stmts);

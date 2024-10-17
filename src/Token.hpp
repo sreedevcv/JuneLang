@@ -5,7 +5,7 @@
 #include "Value.hpp"
 
 namespace jl {
-class Token {
+class Token : public Ref {
 public:
     enum TokenType {
         // Single Charachter
@@ -70,16 +70,16 @@ public:
     };
 
     Token(TokenType type, std::string& lexeme, int line);
-    Token(TokenType type, std::string& lexeme, int line, JlValue value);
+    Token(TokenType type, std::string& lexeme, int line, JlValue* value);
     ~Token();
 
     TokenType get_tokentype() const;
     std::string& get_lexeme();
-    JlValue get_value() const;
+    JlValue* get_value() const;
     int get_line() const;
 
-    static JlValue global_true_constant;
-    static JlValue global_false_constant;
+    static JlBool global_true_constant;
+    static JlBool global_false_constant;
     static std::string global_super_lexeme;
     static std::string global_this_lexeme;
     // static Token global_plus_equal;
@@ -88,16 +88,16 @@ private:
     TokenType m_type;
     std::string m_lexeme;
     int m_line;
-    JlValue m_value;
+    JlValue* m_value;
 };
 
-bool is_int(JlValue* value);
-bool is_float(JlValue* value);
-bool is_bool(JlValue* value);
-bool is_string(JlValue* value);
-bool is_null(JlValue* value);
-bool is_number(JlValue* value);
-bool is_callable(JlValue* value);
-bool is_instance(JlValue* value);
-bool is_jlist(JlValue* value);
+// bool is_int(JlValue* value);
+// bool is_float(JlValue* value);
+// bool is_bool(JlValue* value);
+// bool is_string(JlValue* value);
+// bool is_null(JlValue* value);
+// bool is_number(JlValue* value);
+// bool is_callable(JlValue* value);
+// bool is_instance(JlValue* value);
+// bool is_jlist(JlValue* value);
 } // namespace jl

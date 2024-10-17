@@ -2,6 +2,7 @@ build/
 .vscode/
 .cache/
 .kdev4/
+.vs/
 JuneLang.kdev4
 tests/scripts/temp.txt
 june.exe

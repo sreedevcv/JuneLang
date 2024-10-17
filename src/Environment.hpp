@@ -4,6 +4,8 @@
 #include "Token.hpp"
 
 #include <unordered_map>
+//#include <unordered_set>
+#include <unordered_set>
 
 namespace jl {
 
@@ -33,6 +35,7 @@ public:
 private:
     std::unordered_map<std::string, JlValue*> m_values;
     std::string& m_file_name;
+    std::unordered_set<Ref*> m_refs;
 
     friend class MemoryPool;
     friend class GarbageCollector;

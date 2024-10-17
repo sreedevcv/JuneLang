@@ -1,8 +1,11 @@
 #include "MemoryPool.hpp"
+
 #include "Callable.hpp"
 #include "Environment.hpp"
 #include "Expr.hpp"
 #include "Token.hpp"
+
+#include <print>
 #include <vector>
 
 jl::MemoryPool::MemoryPool()
@@ -13,7 +16,7 @@ jl::MemoryPool::MemoryPool()
 
 void jl::MemoryPool::mark(Expr* expr)
 {
-    if (expr->m_marked) {
+    if (expr == nullptr || expr->m_marked) {
         return;
     }
 
@@ -33,32 +36,68 @@ void jl::MemoryPool::mark(Stmt* stmt)
 
 void jl::MemoryPool::mark(JlValue* value)
 {
-    if (value->m_marked) {
+    if (value == nullptr || value->m_marked) {
         return;
     }
 
     value->m_marked = true;
 
-    if (is_jlist(value)) {
-        for (auto e : *std::get<std::vector<Expr*>*>(value->get())) {
+    switch (value->m_type) {
+    case JlValue::NONE:
+        std::println("Fatal error!!");
+        exit(2);
+        break;
+    case JlValue::INT:
+        break;
+    case JlValue::FLOAT:
+        break;
+    case JlValue::BOOL:
+        break; 
+    case JlValue::STR:
+        break;
+
+    case JlValue::CALL:
+    {
+        auto callable = jl::vget<Callable*>(value);
+        mark(callable);
+    }
+        break;
+
+    case JlValue::OBJ:
+    {
+        auto instance = jl::vget<Instance*>(value);
+        mark(instance);
+    }
+        break;
+
+    case JlValue::LIST:
+        for (auto e : jl::vget<std::vector<Expr*>&>(value)) {
             mark(e);
         }
-    } else if (is_callable(value)) {
-        auto callable = std::get<Callable*>(value->get());
-        mark(callable);
-    } else if (is_instance(value)) {
-        auto instance = std::get<Instance*>(value->get());
-        mark(instance->m_class);
+        break;
 
-        for (auto& [key, value] : instance->m_fields) {
-            mark(value);
-        }
+    case JlValue::JNULL:
+        break;
+    }
+}
+
+void jl::MemoryPool::mark(Instance* inst)
+{
+    if (inst == nullptr || inst->m_marked) {
+        return;
+    }
+
+    inst->m_marked = true;
+    mark(inst->m_class);
+
+    for (auto& [key, value] : inst->m_fields) {
+        mark(value);
     }
 }
 
 void jl::MemoryPool::mark(Callable* callable)
 {
-    if (callable->m_marked) {
+    if (callable == nullptr || callable->m_marked) {
         return;
     }
 
@@ -88,12 +127,42 @@ void jl::MemoryPool::mark(Environment* env)
     }
 
     env->m_marked = true;
+    for (auto e : env->m_refs) {
+        mark(e);
+    }
+
     for (auto& [key, value] : env->m_values) {
         mark(value);
     }
 
     if (env->m_enclosing != nullptr) {
         mark(env->m_enclosing);
+    }
+}
+
+void jl::MemoryPool::mark(Ref* ref)
+{
+    if (dynamic_cast<Expr*>(ref)) {
+        mark(static_cast<Expr*>(ref));
+    }
+    else if (dynamic_cast<Stmt*>(ref)) {
+        mark(static_cast<Stmt*>(ref));
+    }
+    else if (dynamic_cast<JlValue*>(ref)) {
+        mark(static_cast<JlValue*>(ref));
+    }
+    else if (dynamic_cast<Callable*>(ref)) {
+        mark(static_cast<Callable*>(ref));
+    }
+    else if (dynamic_cast<Instance*>(ref)) {
+        mark(static_cast<Instance*>(ref));
+    }
+    else if (dynamic_cast<Environment*>(ref)) {
+        mark(static_cast<Environment*>(ref));
+    }
+    else {
+        std::println("Fatal error in `void jl::MemoryPool::mark(Ref* ref)`");
+        std::exit(3);
     }
 }
 

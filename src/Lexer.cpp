@@ -29,6 +29,13 @@ jl::Lexer::Lexer(std::string& file_path)
     m_source = ss.str();
 }
 
+jl::Lexer::~Lexer()
+{
+    for (auto ref: m_allocated_refs) {
+        delete ref;
+    }
+}
+
 void jl::Lexer::scan()
 {
     while (!is_at_end()) {
@@ -36,9 +43,6 @@ void jl::Lexer::scan()
         scan_token();
     }
 
-    // /* replaced ; with newline hence make sure that even the final statement has a
-    // newline to correctly parse */
-    // add_token(Token::NEW_LINE);
     add_token(Token::END_OF_FILE);
 }
 
@@ -157,10 +161,10 @@ void jl::Lexer::add_token(Token::TokenType type)
     m_tokens.push_back(Token(type, lexeme, m_line));
 }
 
-void jl::Lexer::add_token(Token::TokenType type, JlValue value)
+void jl::Lexer::add_token(Token::TokenType type, JlValue* value)
 {
     std::string lexeme = m_source.substr(m_start, m_current - m_start);
-    m_tokens.push_back(Token(type, lexeme, m_line, JlValue(value)));
+    m_tokens.push_back(Token(type, lexeme, m_line, value));
 }
 
 bool jl::Lexer::match(char expected)
@@ -199,7 +203,9 @@ void jl::Lexer::scan_string()
 
     advance(); // Read the ending '"'
     std::string value = m_source.substr(m_start + 1, (m_current - 1) - (m_start + 1));
-    add_token(Token::STRING, JlValue(value));
+    JlValue* str = new JlStr(value);
+    m_allocated_refs.push_back(str);
+    add_token(Token::STRING, str);
 }
 
 bool jl::Lexer::is_digit(char c)
@@ -228,11 +234,15 @@ void jl::Lexer::scan_number()
         }
     }
 
+    JlValue* val;
     if (is_float) {
-        add_token(Token::FLOAT, JlValue(std::stod(m_source.substr(m_start, m_current - m_start))));
+        val = new JlFloat(std::stod(m_source.substr(m_start, m_current - m_start)));
+        add_token(Token::FLOAT, val);
     } else {
-        add_token(Token::INT, JlValue(std::stoi(m_source.substr(m_start, m_current - m_start))));
+        val = new JlInt(std::stoi(m_source.substr(m_start, m_current - m_start)));
+        add_token(Token::INT, val);
     }
+    m_allocated_refs.push_back(val);
 }
 
 char jl::Lexer::peek_next()
@@ -261,14 +271,21 @@ void jl::Lexer::scan_identifier()
     }
 
     std::string lexeme = m_source.substr(m_start, m_current - m_start);
+    JlValue* val;
 
     if (m_reserved_words.contains(lexeme)) {
         if (lexeme == "true") {
-            add_token(Token::TRUE, JlValue(true));
+            val = new JlBool(true);
+            add_token(Token::TRUE, val);
+            m_allocated_refs.push_back(val);
         } else if (lexeme == "false") {
-            add_token(Token::FALSE, JlValue(false));
+            val = new JlBool(false);
+            add_token(Token::FALSE, val);
+            m_allocated_refs.push_back(val);
         } else if (lexeme == "null") {
-            add_token(Token::NULL_, JlValue('\0'));
+            val = new JlNull();
+            add_token(Token::NULL_, val);
+            m_allocated_refs.push_back(val);
         } else {
             add_token(m_reserved_words[lexeme]);
         }
