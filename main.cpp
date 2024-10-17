@@ -13,19 +13,20 @@ int main(int argc, char const *argv[])
 
     jl::Lexer lexer(
         R"(
-        class Thing [
-            getCallback() [
-                fun localFunction() [
-                    print self;
-                ]
-
-                return localFunction;
+        class Doughnut [
+            cook() [
+                print "Fry until golden brown.";
             ]
         ]
 
-        var callback = Thing().getCallback();
-        callback();
-    
+        class BostonCream : Doughnut [
+            cook() [
+                super.cook();
+                print "Pipe full of custard and coat with chocolate.";
+            ]
+        ]
+
+        BostonCream().cook();
         )"
     );
     

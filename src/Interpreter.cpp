@@ -122,7 +122,7 @@ jl::JlValue* jl::Interpreter::append_strings(JlValue* left, JlValue* right)
     left_str.append(right_str);
 
     // Return appended strings
-    return m_gc.allocate<JlStr>(left_str);
+    return m_gc.allocate<JlStr>(left_str)->to();
 }
 
 void jl::Interpreter::execute_block(std::vector<Stmt*>& statements, Environment* new_env)
@@ -255,7 +255,7 @@ std::any jl::Interpreter::visit_binary_expr(Binary* expr)
             ErrorHandler::error(m_file_name, "interpreting", "binary expression", line, "Left and right operands must be a int to use `%`", 0);
             throw "runtime-error";
         }
-        return m_gc.allocate<JlInt>(jl::vget<int>(left_value) % jl::vget<int>(right_value));
+        return m_gc.allocate<JlInt>(jl::vget<int>(left_value) % jl::vget<int>(right_value))->to();
     case Token::EQUAL_EQUAL:
         return m_gc.allocate<JlBool>(is_equal(left_value, right_value))->to();
     case Token::BANG_EQUAL:
@@ -279,9 +279,9 @@ std::any jl::Interpreter::visit_unary_expr(Unary* expr)
     case Token::MINUS:
         if (is::_number(right_value)) {
             if (is::_int(right_value)) {
-                return m_gc.allocate<JlInt>(-1 * jl::vget<int>(right_value));
+                return m_gc.allocate<JlInt>(-1 * jl::vget<int>(right_value))->to();
             } else {
-                return m_gc.allocate<JlFloat>(-1.0 * jl::vget<double>(right_value));
+                return m_gc.allocate<JlFloat>(-1.0 * jl::vget<double>(right_value))->to();
             }
         } else {
             ErrorHandler::error(m_file_name, "interpreting", "unary expression", expr->m_oper->get_line(), "Operand must be a number", 0);
@@ -399,7 +399,8 @@ std::any jl::Interpreter::visit_super_expr(Super* expr)
         throw "runtime-exception";
     }
 
-    return m_gc.allocate<JlCallable>(static_cast<Callable*>(method->bind(instance)));
+    JlValue* callable = m_gc.allocate<JlCallable>(static_cast<Callable*>(method->bind(instance)));
+    return callable;
 }
 
 std::any jl::Interpreter::visit_jlist_expr(JList* expr)
@@ -476,13 +477,13 @@ std::any jl::Interpreter::visit_print_stmt(PrintStmt* stmt)
 {
     JlValue* value = evaluate(stmt->m_expr);
     ErrorHandler::m_stream << stringify(value) << std::endl;
-    return m_gc.allocate<JlNull>();
+    return m_gc.allocate<JlNull>()->to();
 }
 
 std::any jl::Interpreter::visit_expr_stmt(ExprStmt* stmt)
 {
     evaluate(stmt->m_expr);
-    return m_gc.allocate<JlNull>();
+    return m_gc.allocate<JlNull>()->to();
 }
 
 std::any jl::Interpreter::visit_var_stmt(VarStmt* stmt)
@@ -493,19 +494,19 @@ std::any jl::Interpreter::visit_var_stmt(VarStmt* stmt)
     }
 
     m_env->define(stmt->m_name.get_lexeme(), value);
-    return m_gc.allocate<JlNull>();
+    return m_gc.allocate<JlNull>()->to();
 }
 
 std::any jl::Interpreter::visit_block_stmt(BlockStmt* stmt)
 {
     Environment* new_env = m_gc.allocate<Environment>(m_env);
     execute_block(stmt->m_statements, new_env);
-    return m_gc.allocate<JlNull>();
+    return m_gc.allocate<JlNull>()->to();
 }
 
 std::any jl::Interpreter::visit_empty_stmt(EmptyStmt* stmt)
 {
-    return m_gc.allocate<JlNull>();
+    return m_gc.allocate<JlNull>()->to();
 }
 
 std::any jl::Interpreter::visit_if_stmt(IfStmt* stmt)
@@ -518,7 +519,7 @@ std::any jl::Interpreter::visit_if_stmt(IfStmt* stmt)
         stmt->m_else_stmt->accept(*this);
     }
 
-    return m_gc.allocate<JlNull>();;
+    return m_gc.allocate<JlNull>()->to();
 }
 
 std::any jl::Interpreter::visit_while_stmt(WhileStmt* stmt)
@@ -535,7 +536,7 @@ std::any jl::Interpreter::visit_while_stmt(WhileStmt* stmt)
         value = evaluate(stmt->m_condition);
     }
 
-    return m_gc.allocate<JlNull>();;
+    return m_gc.allocate<JlNull>()->to();
 }
 
 std::any jl::Interpreter::visit_func_stmt(FuncStmt* stmt)
@@ -545,7 +546,7 @@ std::any jl::Interpreter::visit_func_stmt(FuncStmt* stmt)
     FunctionCallable* function = m_gc.allocate<FunctionCallable>(this, m_env, stmt, false);
     callable->m_val = function;
 
-    return m_gc.allocate<JlNull>();
+    return m_gc.allocate<JlNull>()->to();
 }
 
 std::any jl::Interpreter::visit_return_stmt(ReturnStmt* stmt)
@@ -592,7 +593,7 @@ std::any jl::Interpreter::visit_class_stmt(ClassStmt* stmt)
 
     m_env->assign(stmt->m_name, m_gc.allocate<JlCallable>(static_cast<Callable*>(class_callable)));
 
-    return m_gc.allocate<JlNull>();
+    return m_gc.allocate<JlNull>()->to();
 }
 
 std::any jl::Interpreter::visit_for_each_stmt(ForEachStmt* stmt)
@@ -623,7 +624,7 @@ std::any jl::Interpreter::visit_for_each_stmt(ForEachStmt* stmt)
     m_env = m_env->m_enclosing;
     m_env_stack.pop_back();
 
-    return m_gc.allocate<JlNull>();
+    return m_gc.allocate<JlNull>()->to();
 }
 
 std::any jl::Interpreter::visit_break_stmt(BreakStmt* stmt)
