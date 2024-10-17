@@ -29,6 +29,7 @@ struct JlValue : public Ref {
     } Type;
 
     Type m_type = NONE;
+    virtual JlValue* to();
 };
 
 struct JlInt : public JlValue {

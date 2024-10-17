@@ -161,3 +161,8 @@ bool jl::is::_exact_same(JlValue* ref1, JlValue* ref2)
         break;
     }
 }
+
+jl::JlValue* jl::JlValue::to()
+{
+    return static_cast<JlValue*>(this);
+}

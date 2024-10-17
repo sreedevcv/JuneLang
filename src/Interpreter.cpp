@@ -71,7 +71,9 @@ void jl::Interpreter::resolve(Expr* expr, int depth)
 
 jl::JlValue* jl::Interpreter::evaluate(Expr* expr)
 {
-    return std::any_cast<JlValue*>(expr->accept(*this));
+    auto ret = expr->accept(*this);
+    return std::any_cast<JlValue*>(ret);
+    //return std::any_cast<JlValue*>(expr->accept(*this));
 }
 
 bool jl::Interpreter::is_truthy(JlValue* value)
@@ -95,17 +97,17 @@ jl::JlValue* jl::Interpreter::do_arith_operation(JlValue* left, JlValue* right, 
         double b = is::_float(right) ? jl::vget<double>(right) : jl::vget<int>(right);
 
         if (is_logical) {
-            return m_gc.allocate<JlBool>(op(a, b));
+            return m_gc.allocate<JlBool>(op(a, b))->to();
         }
         else {
-            return m_gc.allocate<JlFloat>(op(a, b));
+            return m_gc.allocate<JlFloat>(op(a, b))->to();
         }
     } else {
         int a = jl::vget<int>(left);
         int b = jl::vget<int>(right);
 
         if (is_logical) {
-            return m_gc.allocate<JlBool>(op(a, b));
+            return m_gc.allocate<JlBool>(op(a, b))->to();
         }
         else {
             return m_gc.allocate<JlInt>(op(a, b));
@@ -157,7 +159,7 @@ void jl::Interpreter::execute_block(std::vector<Stmt*>& statements, Environment*
 
 bool jl::Interpreter::is_equal(JlValue* left, JlValue* right)
 {
-    if (is::_same(left, right)) {
+    if (!is::_same(left, right)) {
         return false;
     }
     return is::_exact_same(left, right);
@@ -255,9 +257,9 @@ std::any jl::Interpreter::visit_binary_expr(Binary* expr)
         }
         return m_gc.allocate<JlInt>(jl::vget<int>(left_value) % jl::vget<int>(right_value));
     case Token::EQUAL_EQUAL:
-        return m_gc.allocate<JlBool>(is_equal(left_value, right_value));
+        return m_gc.allocate<JlBool>(is_equal(left_value, right_value))->to();
     case Token::BANG_EQUAL:
-        return m_gc.allocate<JlBool>(!is_equal(left_value, right_value));
+        return m_gc.allocate<JlBool>(!is_equal(left_value, right_value))->to();
     default:
         std::cout << "Unimplemented Operator in visit_binary_expr()\n";
         throw "runtime-error";
