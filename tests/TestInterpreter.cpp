@@ -1,18 +1,14 @@
 #include <catch2/catch_test_macros.hpp>
 
-#include <iostream>
 #include <string>
-#include <vector>
 
-#include "Arena.hpp"
 #include "ErrorHandler.hpp"
 #include "Interpreter.hpp"
 #include "Lexer.hpp"
 #include "Parser.hpp"
 #include "Resolver.hpp"
-#include "Token.hpp"
 
-void test_string_with_no_error(const char* source, int arena_size = 1000)
+void test_string_with_no_error(const char* source)
 {
     jl::Lexer lexer(source);
     jl::ErrorHandler::clear_errors();
@@ -23,12 +19,11 @@ void test_string_with_no_error(const char* source, int arena_size = 1000)
     REQUIRE(jl::ErrorHandler::has_error() == false);
     auto tokens = lexer.get_tokens();
 
-    jl::Arena arena(arena_size);
-    jl::Parser parser(arena, tokens, file_name);
+    jl::Parser parser(tokens, file_name);
     auto stmts = parser.parseStatements();
     REQUIRE(jl::ErrorHandler::has_error() == false);
 
-    jl::Interpreter interpreter(arena, file_name, 2000*2000);
+    jl::Interpreter interpreter(file_name);
     jl::Resolver resolver(interpreter, file_name);
     resolver.resolve(stmts);
 
@@ -46,7 +41,7 @@ enum ErrorLoc {
     INTERPRETER,
 };
 
-void test_string_with_error(const char* source, ErrorLoc errorLoc, int arena_size = 1000)
+void test_string_with_error(const char* source, ErrorLoc errorLoc)
 {
     jl::Lexer lexer(source);
     jl::ErrorHandler::clear_errors();
@@ -62,8 +57,7 @@ void test_string_with_error(const char* source, ErrorLoc errorLoc, int arena_siz
         return;
     }
 
-    jl::Arena arena(arena_size);
-    jl::Parser parser(arena, tokens, file_name);
+    jl::Parser parser(tokens, file_name);
     auto stmts = parser.parseStatements();
     has_error = jl::ErrorHandler::has_error();
     test_passed = (errorLoc != PARSER) ? has_error == false : has_error == true;
@@ -72,7 +66,7 @@ void test_string_with_error(const char* source, ErrorLoc errorLoc, int arena_siz
         return;
     }
 
-    jl::Interpreter interpreter(arena, file_name, 2000*1000);
+    jl::Interpreter interpreter(file_name);
     jl::Resolver resolver(interpreter, file_name);
     resolver.resolve(stmts);
     has_error = jl::ErrorHandler::has_error();
@@ -103,7 +97,7 @@ TEST_CASE("Interpreter Recursive Function", "[Interpreter]")
         ]
     )";
 
-    test_string_with_no_error(source, 1000 * 1000 * 1000);
+    test_string_with_no_error(source);
 }
 
 TEST_CASE("Interpreter returning callback from function", "[Interpreter]")
@@ -126,7 +120,7 @@ TEST_CASE("Interpreter returning callback from function", "[Interpreter]")
 
     )";
 
-    test_string_with_no_error(source, 3000);
+    test_string_with_no_error(source);
 }
 
 TEST_CASE("Interpreter Binding", "[Interpreter]")
@@ -174,7 +168,7 @@ TEST_CASE("Interpreter Using return statement", "[Interpreter]")
         count(1);
     )";
 
-    test_string_with_no_error(source, 2000);
+    test_string_with_no_error(source);
 }
 
 TEST_CASE("Interpreter returning callback from class with self", "[Interpreter]")
@@ -194,7 +188,7 @@ TEST_CASE("Interpreter returning callback from class with self", "[Interpreter]"
         callback();
     )";
 
-    test_string_with_no_error(source, 2000);
+    test_string_with_no_error(source);
 }
 
 TEST_CASE("Interpreter returning self object", "[Interpreter]")
@@ -210,7 +204,7 @@ TEST_CASE("Interpreter returning self object", "[Interpreter]")
         method();
     )";
 
-    test_string_with_no_error(source, 2000);
+    test_string_with_no_error(source);
 }
 
 TEST_CASE("Interpreter using self", "[Interpreter]")
@@ -228,7 +222,7 @@ TEST_CASE("Interpreter using self", "[Interpreter]")
         cake.taste();
     )";
 
-    test_string_with_no_error(source, 3000);
+    test_string_with_no_error(source);
 }
 
 TEST_CASE("Interpreter returning bound method", "[Interpreter]")
@@ -250,9 +244,8 @@ TEST_CASE("Interpreter returning bound method", "[Interpreter]")
         bill.sayName();
     )";
 
-    test_string_with_no_error(source, 1000 * 1000);
+    test_string_with_no_error(source);
 }
-
 
 TEST_CASE("Interpreter Using init() outside a class", "[Interpreter]")
 {
@@ -271,7 +264,6 @@ TEST_CASE("Interpreter Using init() outside a class", "[Interpreter]")
 
     test_string_with_no_error(source);
 }
-
 
 TEST_CASE("Interpreter Simple inheritance", "[Interpreter]")
 {
@@ -310,7 +302,7 @@ TEST_CASE("Interpreter Simple inheritance with usage of super", "[Interpreter]")
 
     )";
 
-    test_string_with_no_error(source, 2000);
+    test_string_with_no_error(source);
 }
 
 TEST_CASE("Interpreter Calling correct method when using super", "[Interpreter]")
@@ -338,7 +330,7 @@ TEST_CASE("Interpreter Calling correct method when using super", "[Interpreter]"
         C().test();
     )";
 
-    test_string_with_no_error(source, 3000);
+    test_string_with_no_error(source);
 }
 
 TEST_CASE("Interpreter List: Finding max element", "[Interpreter]")
@@ -361,7 +353,7 @@ TEST_CASE("Interpreter List: Finding max element", "[Interpreter]")
         print findMax(a);
     )";
 
-    test_string_with_no_error(source, 3000);
+    test_string_with_no_error(source);
 }
 
 TEST_CASE("Interpreter Bubble sort", "[Interpreter]")
@@ -388,7 +380,7 @@ TEST_CASE("Interpreter Bubble sort", "[Interpreter]")
         ]
     )";
 
-    test_string_with_no_error(source, 11000);
+    test_string_with_no_error(source);
 }
 
 TEST_CASE("Interpreter Finding Mod of a list of numbers with their indices", "[Interpreter]")
@@ -407,7 +399,7 @@ TEST_CASE("Interpreter Finding Mod of a list of numbers with their indices", "[I
         findMod(a);
     )";
 
-    test_string_with_no_error(source, 4000);
+    test_string_with_no_error(source);
 }
 
 TEST_CASE("Interpreter Using break", "[Interpreter]")
@@ -449,7 +441,7 @@ TEST_CASE("Interpreter Using break", "[Interpreter]")
 
     )";
 
-    test_string_with_no_error(source, 5000);
+    test_string_with_no_error(source);
 }
 
 // TEST_CASE("Interpreter", "[Interpreter]")

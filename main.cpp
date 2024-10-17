@@ -51,14 +51,14 @@ int main(int argc, char const *argv[])
     }
 
     auto tokens = lexer.get_tokens();
-    jl::Parser parser(arena, tokens, file_name);
+    jl::Parser parser(tokens, file_name);
     auto stmts = parser.parseStatements();
 
     if (jl::ErrorHandler::has_error()) {
         return 1;
     }
 
-    jl::Interpreter interpreter(arena, file_name, 1000*1000*10*5);
+    jl::Interpreter interpreter(file_name);
     
     jl::Resolver resolver(interpreter, file_name);
     resolver.resolve(stmts);

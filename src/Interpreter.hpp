@@ -16,7 +16,7 @@ namespace jl {
 
 class Interpreter : public IExprVisitor, public IStmtVisitor {
 public:
-    Interpreter(Arena& arena, std::string& file_name, int64_t internal_arena_size = 1000 * 2000);
+    Interpreter(std::string& file_name);
     virtual ~Interpreter();
 
     void interpret(Expr* expr, JlValue* value = nullptr);
@@ -68,10 +68,9 @@ private:
     JlValue* look_up_variable(Token& name, Expr* expr);
 
     Environment m_dummy_env;
-    Arena& m_arena;
-    Arena m_internal_arena;
     Environment* m_env { nullptr };
     std::vector<Environment*> m_env_stack;
+    std::vector<Ref*> m_allocated_refs;
     GarbageCollector m_gc;
     std::map<Expr*, int> m_locals;
     struct BreakThrow { };

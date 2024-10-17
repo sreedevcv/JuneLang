@@ -7,24 +7,28 @@
 #include "NativeFunctions.hpp"
 #include "Value.hpp"
 
-jl::Interpreter::Interpreter(Arena& arena, std::string& file_name, int64_t internal_arena_size)
-    : m_arena(arena)
-    , m_file_name(file_name)
-    , m_internal_arena(internal_arena_size)
+jl::Interpreter::Interpreter(std::string& file_name)
+    : m_file_name(file_name)
     , m_gc(m_global_env, m_env, m_env_stack)
     , m_dummy_env(file_name)
 {
-    //m_env = m_gc.allocate<Environment>(m_file_name);
     m_env = &m_dummy_env;
     m_global_env = m_env;
     m_env_stack.push_back(m_global_env);
 
-    auto to_int_native_func = m_arena.allocate<ToIntNativeFunction>();
-    auto to_str_native_func = m_arena.allocate<ToStrNativeFunction>();
-    auto get_len_native_func = m_arena.allocate<GetLenNativeFunction>();
-    auto append_native_func = m_arena.allocate<AppendNativeFunction>();
-    auto remove_last_native_func = m_arena.allocate<RemoveLastNativeFunction>();
-    auto clear_list_native_func = m_arena.allocate<ClearListNativeFunction>();
+    auto to_int_native_func = new ToIntNativeFunction();
+    auto to_str_native_func = new ToStrNativeFunction();
+    auto get_len_native_func = new GetLenNativeFunction();
+    auto append_native_func = new AppendNativeFunction();
+    auto remove_last_native_func = new RemoveLastNativeFunction();
+    auto clear_list_native_func = new ClearListNativeFunction();
+
+    m_allocated_refs.push_back(to_int_native_func);
+    m_allocated_refs.push_back(to_str_native_func);
+    m_allocated_refs.push_back(get_len_native_func);
+    m_allocated_refs.push_back(append_native_func);
+    m_allocated_refs.push_back(remove_last_native_func);
+    m_allocated_refs.push_back(clear_list_native_func);
 
     auto to_int_native_func_val = m_gc.allocate<JlCallable>(static_cast<Callable*>(to_int_native_func));
     m_global_env->define(to_int_native_func->m_name, to_int_native_func_val);
@@ -42,6 +46,9 @@ jl::Interpreter::Interpreter(Arena& arena, std::string& file_name, int64_t inter
 
 jl::Interpreter::~Interpreter()
 {
+    for (auto ref: m_allocated_refs) {
+        delete ref;
+    }
 }
 
 void jl::Interpreter::interpret(Expr* expr, JlValue* value)
