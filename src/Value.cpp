@@ -64,7 +64,7 @@ jl::JlObj::JlObj(Instance* val)
     m_type = OBJ;
 }
 
-jl::JlList::JlList(std::vector<Expr*>* val)
+jl::JlList::JlList(std::vector<Expr*>& val)
     : m_val(val)
 {
     m_type = LIST;

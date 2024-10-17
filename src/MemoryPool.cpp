@@ -71,7 +71,7 @@ void jl::MemoryPool::mark(JlValue* value)
         break;
 
     case JlValue::LIST:
-        for (auto e : *jl::vget<std::vector<Expr*>*>(value)) {
+        for (auto e : jl::vget<std::vector<Expr*>&>(value)) {
             mark(e);
         }
         break;

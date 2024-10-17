@@ -69,8 +69,8 @@ struct JlObj : public JlValue {
 };
 
 struct JlList : public JlValue {
-    std::vector<Expr*>* m_val;
-    JlList(std::vector<Expr*>* val);
+    std::vector<Expr*> m_val;
+    JlList(std::vector<Expr*>& val);
     virtual ~JlList() = default;
 };
 
@@ -186,7 +186,7 @@ inline Instance* vget(JlValue* ref)
 }
 
 template<>
-inline std::vector<Expr*>* vget(JlValue* ref)
+inline std::vector<Expr*>& vget(JlValue* ref)
 {
     if (dynamic_cast<JlList*>(ref)) {
         return static_cast<JlList*>(ref)->m_val;

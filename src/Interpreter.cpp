@@ -192,7 +192,7 @@ std::string jl::Interpreter::stringify(JlValue* value)
         return jl::vget<Callable*>(value)->to_string();
     } else if (is::_list(value)) {
         std::string list = "[";
-        for (auto expr : *jl::vget<std::vector<Expr*>*>(value)) {
+        for (auto expr : jl::vget<std::vector<Expr*>&>(value)) {
             if (dynamic_cast<Literal*>(expr)) {
                 list.append(stringify(static_cast<Literal*>(expr)->m_value));  //NOTE::Problem to pass address og no-gc allocated Jlvalue here??
             } else {
@@ -407,9 +407,10 @@ std::any jl::Interpreter::visit_jlist_expr(JList* expr)
 {
     // Evaluate all the elements in jlist
     for (auto& item : expr->m_items) {
-        if (dynamic_cast<Literal*>(item)) {
-            continue; // No need to evaluate in case it is already a Literal
-        }
+        // NOTE::Not sure precalculating is the right wau
+        //if (dynamic_cast<Literal*>(item)) {
+        //    continue; // No need to evaluate in case it is already a Literal
+        //}
         JlValue* value = evaluate(item);
         item = m_gc.allocate<Literal>(value);
     }
@@ -418,9 +419,9 @@ std::any jl::Interpreter::visit_jlist_expr(JList* expr)
     // Otherwise JLists created as members of classes will always point to the same one
     // See::examples/EList.jun
     // NOTE::This will leak!!!!
-    std::vector<Expr*>* items_copy = m_internal_arena.allocate<std::vector<Expr*>>(expr->m_items);
-    // std::vector<Expr*>* items_copy = m_gc.allocate<std::vector<Expr*>>(expr->m_items);
-    return new JlList(items_copy); // NOTE::Also leaks!!!
+    //std::vector<Expr*>* items_copy = m_internal_arena.allocate<std::vector<Expr*>>(expr->m_items);
+    JlValue* items_copy = m_gc.allocate<JlList>(expr->m_items); // Copies the vecotr
+    return items_copy; // NOTE::Also leaks!!!
 }
 
 std::any jl::Interpreter::visit_index_get_expr(IndexGet* expr)
@@ -428,12 +429,12 @@ std::any jl::Interpreter::visit_index_get_expr(IndexGet* expr)
     JlValue* list_value = evaluate(expr->m_jlist);
 
     if (is::_list(list_value)) {
-        auto jlist = std::move(jl::vget<std::vector<Expr*>*>(list_value));
+        auto& jlist = jl::vget<std::vector<Expr*>&>(list_value);
         JlValue* index_value = evaluate(expr->m_index_expr);
 
         if (is::_int(index_value)) {
             int index = jl::vget<int>(index_value);
-            JlValue* result = evaluate(jlist->at(index));
+            JlValue* result = evaluate(jlist.at(index));
             return result;
         } else {
             ErrorHandler::error(m_file_name, "interpreting", "get index expression", expr->m_closing_bracket.get_line(), "Attempted to get index using a non-int value", 0);
@@ -461,11 +462,11 @@ std::any jl::Interpreter::visit_index_set_expr(IndexSet* expr)
         throw "runtime-exception";
     }
 
-    auto jlist = jl::vget<std::vector<Expr*>*>(list_value);
+    auto& jlist = jl::vget<std::vector<Expr*>&>(list_value);
     int index = jl::vget<int>(index_value);
 
     JlValue* overwriting_value = evaluate(expr->m_value_expr);
-    jlist->at(index) = m_gc.allocate<Literal>(overwriting_value);
+    jlist.at(index) = m_gc.allocate<Literal>(overwriting_value);
     return overwriting_value;
 }
 
@@ -608,7 +609,7 @@ std::any jl::Interpreter::visit_for_each_stmt(ForEachStmt* stmt)
         throw "runtime-exception";
     }
 
-    for (Expr* item : *jl::vget<std::vector<Expr*>*>(value)) {
+    for (Expr* item : jl::vget<std::vector<Expr*>&>(value)) {
         JlValue* list_value = evaluate(item);
         m_env->assign(stmt->m_var_declaration->m_name, list_value);
 
