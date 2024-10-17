@@ -11,13 +11,14 @@ class Lexer {
 public:
     Lexer(const char* source);
     Lexer(std::string& file_path);
-    ~Lexer() = default;
+    ~Lexer();
     void scan();
     std::vector<Token> get_tokens();
 
 private:
     std::string m_file_path;
     std::vector<Token> m_tokens;
+    std::vector<JlValue*> m_allocated_refs;
     std::string m_source;
 
     int m_line = 1;
