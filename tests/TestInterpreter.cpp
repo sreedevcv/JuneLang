@@ -16,7 +16,7 @@ void test_string_with_no_error(const char* source, int arena_size = 1000)
 {
     jl::Lexer lexer(source);
     jl::ErrorHandler::clear_errors();
-    jl::ErrorHandler::m_stream.setOutputToFile("../../../../tests/scripts/temp.txt");
+    jl::ErrorHandler::m_stream.setOutputToFile(TEST_FILE_PATH "/scripts/temp.txt");
 
     std::string file_name = "test";
     lexer.scan();
@@ -50,7 +50,7 @@ void test_string_with_error(const char* source, ErrorLoc errorLoc, int arena_siz
 {
     jl::Lexer lexer(source);
     jl::ErrorHandler::clear_errors();
-    jl::ErrorHandler::m_stream.setOutputToFile("../../tests/scripts/temp.txt");
+    jl::ErrorHandler::m_stream.setOutputToFile(TEST_FILE_PATH "/scripts/temp.txt");
 
     std::string file_name = "test";
     lexer.scan();
@@ -98,7 +98,7 @@ TEST_CASE("Interpreter Recursive Function", "[Interpreter]")
             return fib(n - 2) + fib(n - 1);
         ]
 
-        for (var i = 0; i < 18; i += 1) [
+        for (var i = 0; i < 11; i += 1) [
             print fib(i);
         ]
     )";

@@ -11,7 +11,7 @@ TEST_CASE("Lexer Scan 1", "[Lexer]")
 {
     using namespace jl;
 
-    std::string path = "../../../../tests/scripts/lexer_test_1.jun";
+    std::string path = TEST_FILE_PATH "/scripts/lexer_test_1.jun";
     Lexer lexer(path);
     lexer.scan();
     std::vector<Token> scanned_tokens = lexer.get_tokens();
@@ -28,7 +28,7 @@ TEST_CASE("Lexer Scan 2", "[Lexer]")
 {
     using namespace jl;
 
-    std::string path = "../../../../tests/scripts/lexer_test_2.jun";
+    std::string path = TEST_FILE_PATH "scripts/lexer_test_2.jun";
     Lexer lexer(path);
     lexer.scan();
     std::vector<Token> scanned_tokens = lexer.get_tokens();
@@ -65,7 +65,7 @@ TEST_CASE("Lexer Keyword Scan", "[Lexer]")
 {
     using namespace jl;
 
-    std::string path = "../../../../tests/scripts/lexer_test_3.jun";
+    std::string path = TEST_FILE_PATH "/scripts/lexer_test_3.jun";
     Lexer lexer(path);
     lexer.scan();
     std::vector<Token> scanned_tokens = lexer.get_tokens();
