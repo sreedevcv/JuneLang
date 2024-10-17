@@ -82,22 +82,6 @@ void jl::MemoryPool::mark(JlValue* value)
     case JlValue::JNULL:
         break;
     }
-
-    //if (is::_list(value)) {
-    //    for (auto e : *jl::vget<std::vector<Expr*>*>(value)) {
-    //        mark(e);
-    //    }
-    //} else if (is::_callable(value)) {
-    //    auto callable = jl::vget<Callable*>(value);
-    //    mark(callable);
-    //} else if (is::_obj(value)) {
-    //    auto instance = jl::vget<Instance*>(value);
-    //    mark(instance->m_class);
-
-    //    for (auto& [key, value] : instance->m_fields) {
-    //        mark(value);
-    //    }
-    //}
 }
 
 void jl::MemoryPool::mark(Callable* callable)
@@ -132,9 +116,9 @@ void jl::MemoryPool::mark(Environment* env)
     }
 
     env->m_marked = true;
-    //for (auto e : env->m_refs) {
-    //    mark(e);
-    //}
+    for (auto e : env->m_refs) {
+        mark(e);
+    }
 
     for (auto& [key, value] : env->m_values) {
         mark(value);

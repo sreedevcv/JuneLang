@@ -11,7 +11,7 @@ jl::Interpreter::Interpreter(Arena& arena, std::string& file_name, int64_t inter
     : m_arena(arena)
     , m_file_name(file_name)
     , m_internal_arena(internal_arena_size)
-    , m_gc(m_global_env, m_env)
+    , m_gc(m_global_env, m_env, m_env_stack)
     , m_dummy_env(file_name)
 {
     //m_env = m_gc.allocate<Environment>(m_file_name);
@@ -27,17 +27,16 @@ jl::Interpreter::Interpreter(Arena& arena, std::string& file_name, int64_t inter
     auto clear_list_native_func = m_arena.allocate<ClearListNativeFunction>();
 
     auto to_int_native_func_val = m_gc.allocate<JlCallable>(static_cast<Callable*>(to_int_native_func));
-    auto to_str_native_func_val = m_gc.allocate<JlCallable>(static_cast<Callable*>(to_str_native_func));
-    auto get_len_native_func_val = m_gc.allocate<JlCallable>(static_cast<Callable*>(get_len_native_func));
-    auto append_native_func_val = m_gc.allocate<JlCallable>(static_cast<Callable*>(append_native_func));
-    auto remove_last_native_func_val = m_gc.allocate<JlCallable>(static_cast<Callable*>(remove_last_native_func));
-    auto clear_list_native_func_val = m_gc.allocate<JlCallable>(static_cast<Callable*>(clear_list_native_func));
-    
     m_global_env->define(to_int_native_func->m_name, to_int_native_func_val);
+    auto to_str_native_func_val = m_gc.allocate<JlCallable>(static_cast<Callable*>(to_str_native_func));
     m_global_env->define(to_str_native_func->m_name, to_str_native_func_val);
+    auto get_len_native_func_val = m_gc.allocate<JlCallable>(static_cast<Callable*>(get_len_native_func));
     m_global_env->define(get_len_native_func->m_name, get_len_native_func_val);
+    auto append_native_func_val = m_gc.allocate<JlCallable>(static_cast<Callable*>(append_native_func));
     m_global_env->define(append_native_func->m_name, append_native_func_val);
+    auto remove_last_native_func_val = m_gc.allocate<JlCallable>(static_cast<Callable*>(remove_last_native_func));
     m_global_env->define(remove_last_native_func->m_name, remove_last_native_func_val);
+    auto clear_list_native_func_val = m_gc.allocate<JlCallable>(static_cast<Callable*>(clear_list_native_func));
     m_global_env->define(clear_list_native_func->m_name, clear_list_native_func_val);
 }
 
@@ -84,7 +83,7 @@ bool jl::Interpreter::is_truthy(JlValue* value)
 }
 
 template <typename Op>
-jl::JlValue* jl::Interpreter::do_arith_operation(JlValue* left, JlValue* right, Op op, int line)
+jl::JlValue* jl::Interpreter::do_arith_operation(JlValue* left, JlValue* right, Op op, int line, bool is_logical)
 {
     if (!is::_number(left) || !is::_number(right)) {
         ErrorHandler::error(m_file_name, "interpreting", "binary expression", line, "Left and right operands must be a number", 0);
@@ -94,18 +93,23 @@ jl::JlValue* jl::Interpreter::do_arith_operation(JlValue* left, JlValue* right, 
     if (is::_float(left) || is::_float(right)) {
         double a = is::_float(left) ? jl::vget<double>(left) : jl::vget<int>(left);
         double b = is::_float(right) ? jl::vget<double>(right) : jl::vget<int>(right);
-        if (is::_float(left)) {
-            static_cast<JlFloat*>(left)->m_val = op(a, b);
+
+        if (is_logical) {
+            return m_gc.allocate<JlBool>(op(a, b));
         }
         else {
-            static_cast<JlInt*>(left)->m_val = op(a, b);
+            return m_gc.allocate<JlFloat>(op(a, b));
         }
-        return left;
     } else {
         int a = jl::vget<int>(left);
         int b = jl::vget<int>(right);
-        static_cast<JlInt*>(left)->m_val = op(a, b);
-        return left;
+
+        if (is_logical) {
+            return m_gc.allocate<JlBool>(op(a, b));
+        }
+        else {
+            return m_gc.allocate<JlInt>(op(a, b));
+        }
     }
 }
 
@@ -237,13 +241,13 @@ std::any jl::Interpreter::visit_binary_expr(Binary* expr)
         }
         return do_arith_operation(left_value, right_value, std::plus<> {}, line);
     case Token::GREATER:
-        return do_arith_operation(left_value, right_value, std::greater<> {}, line);
+        return do_arith_operation(left_value, right_value, std::greater<> {}, line, true);
     case Token::LESS:
-        return do_arith_operation(left_value, right_value, std::less<> {}, line);
+        return do_arith_operation(left_value, right_value, std::less<> {}, line, true);
     case Token::GREATER_EQUAL:
-        return do_arith_operation(left_value, right_value, std::greater_equal<> {}, line);
+        return do_arith_operation(left_value, right_value, std::greater_equal<> {}, line, true);
     case Token::LESS_EQUAL:
-        return do_arith_operation(left_value, right_value, std::less_equal<> {}, line);
+        return do_arith_operation(left_value, right_value, std::less_equal<> {}, line, true);
     case Token::PERCENT:
         if (!is::_int(left_value) || !is::_int(right_value)) {
             ErrorHandler::error(m_file_name, "interpreting", "binary expression", line, "Left and right operands must be a int to use `%`", 0);

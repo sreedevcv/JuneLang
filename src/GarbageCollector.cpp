@@ -5,9 +5,10 @@
 
 #include <print>
 
-jl::GarbageCollector::GarbageCollector(EnvRef global, EnvRef curr)
+jl::GarbageCollector::GarbageCollector(EnvRef global, EnvRef curr, std::vector<Environment*>& env_stack)
     : m_global { global }
     , m_curr { curr }
+    , m_env_stack(env_stack)
 #ifdef MEM_DEBUG
     , m_arena {1000}
 #endif
@@ -33,10 +34,13 @@ void jl::GarbageCollector::collect()
             delete_count += 1;
             to_be_deleted->in_use = false;
 #else
-            /*std::printf("deleted %p\n", to_be_deleted);
-            if (dynamic_cast<Callable*>(to_be_deleted)) {
-                std::println("{}", static_cast<Callable*>(to_be_deleted)->to_string());
-            }*/
+            //std::printf("deleted %p\n", to_be_deleted);
+            //if (!dynamic_cast<JlValue*>(to_be_deleted)) {
+            //    std::println("not value");
+            //}
+            //if (dynamic_cast<JlValue*>(to_be_deleted) && static_cast<JlValue*>(to_be_deleted)->m_type == JlValue::INT) {
+            //    std::println("Type: {}", (int)(static_cast<JlInt*>(to_be_deleted)->m_type));
+            //}
 
             delete to_be_deleted;
 #endif

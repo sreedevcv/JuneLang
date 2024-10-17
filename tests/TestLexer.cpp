@@ -11,7 +11,7 @@ TEST_CASE("Lexer Scan 1", "[Lexer]")
 {
     using namespace jl;
 
-    std::string path = "../../tests/scripts/lexer_test_1.jun";
+    std::string path = "../../../../tests/scripts/lexer_test_1.jun";
     Lexer lexer(path);
     lexer.scan();
     std::vector<Token> scanned_tokens = lexer.get_tokens();
@@ -28,7 +28,7 @@ TEST_CASE("Lexer Scan 2", "[Lexer]")
 {
     using namespace jl;
 
-    std::string path = "../../tests/scripts/lexer_test_2.jun";
+    std::string path = "../../../../tests/scripts/lexer_test_2.jun";
     Lexer lexer(path);
     lexer.scan();
     std::vector<Token> scanned_tokens = lexer.get_tokens();
@@ -47,13 +47,13 @@ TEST_CASE("Lexer Scan 2", "[Lexer]")
 
         switch (scanned_tokens[i].get_tokentype()) {
         case Token::STRING:
-            REQUIRE(std::get<std::string>(scanned_tokens[i].get_value().get()) == "hello+==");
+            REQUIRE(jl::vget<std::string>(scanned_tokens[i].get_value()) == "hello+==");
             break;
         case Token::INT:
-            REQUIRE(std::get<int>(scanned_tokens[i].get_value().get()) == 123);
+            REQUIRE(jl::vget<int>(scanned_tokens[i].get_value()) == 123);
             break;
         case Token::FLOAT:
-            REQUIRE(std::get<double>(scanned_tokens[i].get_value().get()) == std::stod("434.534"));
+            REQUIRE(jl::vget<double>(scanned_tokens[i].get_value()) == std::stod("434.534"));
             break;
         default:
             break;
@@ -65,7 +65,7 @@ TEST_CASE("Lexer Keyword Scan", "[Lexer]")
 {
     using namespace jl;
 
-    std::string path = "../../tests/scripts/lexer_test_3.jun";
+    std::string path = "../../../../tests/scripts/lexer_test_3.jun";
     Lexer lexer(path);
     lexer.scan();
     std::vector<Token> scanned_tokens = lexer.get_tokens();

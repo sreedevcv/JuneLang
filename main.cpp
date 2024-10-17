@@ -13,20 +13,17 @@ int main(int argc, char const *argv[])
 
     jl::Lexer lexer(
         R"(
-        fun makeCounter() [
-            var i = 0;
-
-            fun count() [
-                i = i + 1;
-                print i;
-            ]
-
-            return count;
+        fun fib(n) [
+            if (n <= 1) return n;
+            //var a = fib(n - 2);
+            //var b = fib(n - 1);
+            //return a + b;
+            return fib(n - 2) + fib(n - 1);
         ]
-
-        var counter = makeCounter();
-        counter(); // "1".
-        counter(); // "2".
+       
+         for (var i = 0; i < 10; i += 1) [
+            print fib(i);
+         ]
     )");
     
     std::string file_name = "examples/EList.jun";

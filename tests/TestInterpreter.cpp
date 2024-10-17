@@ -16,7 +16,7 @@ void test_string_with_no_error(const char* source, int arena_size = 1000)
 {
     jl::Lexer lexer(source);
     jl::ErrorHandler::clear_errors();
-    jl::ErrorHandler::m_stream.setOutputToFile("../../tests/scripts/temp.txt");
+    jl::ErrorHandler::m_stream.setOutputToFile("../../../../tests/scripts/temp.txt");
 
     std::string file_name = "test";
     lexer.scan();

@@ -62,7 +62,7 @@ private:
     bool is_truthy(JlValue* value);
 
     template <typename Op>
-    JlValue* do_arith_operation(JlValue* left, JlValue* right, Op op, int line);
+    JlValue* do_arith_operation(JlValue* left, JlValue* right, Op op, int line, bool is_logical=false);
     JlValue* append_strings(JlValue* left, JlValue* right);
     bool is_equal(JlValue* left, JlValue* right);
     JlValue* look_up_variable(Token& name, Expr* expr);
