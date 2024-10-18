@@ -12,7 +12,7 @@ void jed::Component::load(int width, int height, int x, int y)
     m_rect = Rectangle(width, height, x, Context::get().height - height - y, m_bg_color);
     m_rect.load();
     m_renderer = TextRender(m_width, m_height, x, m_y, m_font);
-    m_shader.create_shader_using_files("res/shaders/text.vert", "res/shaders/text.frag");
+    m_shader.create_shader_using_files(RES_PATH "/shaders/text.vert", RES_PATH "/shaders/text.frag");
     m_shader.compile();
 }
 

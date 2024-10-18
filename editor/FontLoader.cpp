@@ -5,7 +5,7 @@
 jed::FontLoader jed::FontLoader::font_loader = jed::FontLoader();
 
 std::map<const char*, jed::Font*> jed::FontLoader::m_font_map = {
-    { "res/fonts/CascadiaMono.ttf", nullptr }
+    { RES_PATH "/fonts/CascadiaMono.ttf", nullptr }
 };
 
 jed::FontLoader* jed::FontLoader::get()

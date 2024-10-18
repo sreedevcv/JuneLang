@@ -164,7 +164,7 @@ jed::Editor::Editor()
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-    m_shader.create_shader_using_files("res/shaders/text.vert", "res/shaders/text.frag");
+    m_shader.create_shader_using_files(RES_PATH "/shaders/text.vert", RES_PATH "/shaders/text.frag");
     m_shader.compile();
     FontLoader::load_fonts();
 }
@@ -222,7 +222,6 @@ std::string jed::Editor::run_code(std::string& code)
     jl::ErrorHandler::reset();
     jl::ErrorHandler::m_stream.setOutputToStr();
     std::string result = "";
-    jl::Arena arena(1000 * 1000);
     jl::Lexer lexer(code.c_str());
     std::string file_name = "LIVE";
     lexer.scan();
@@ -233,7 +232,7 @@ std::string jed::Editor::run_code(std::string& code)
     }
     
     auto tokens = lexer.get_tokens();
-    jl::Parser parser(arena, tokens, file_name);
+    jl::Parser parser(tokens, file_name);
     auto stmts = parser.parseStatements();
 
     if (jl::ErrorHandler::has_error()) {
@@ -241,7 +240,7 @@ std::string jed::Editor::run_code(std::string& code)
         return result;
     }
 
-    jl::Interpreter interpreter(arena, file_name);
+    jl::Interpreter interpreter(file_name);
 
     jl::Resolver resolver(interpreter, file_name);
     resolver.resolve(stmts);
@@ -251,7 +250,6 @@ std::string jed::Editor::run_code(std::string& code)
         return result;
     }
 
-    jl::Value v;
     interpreter.interpret(stmts);
 
     result = jl::ErrorHandler::get_string_stream().str();

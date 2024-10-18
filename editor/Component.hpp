@@ -49,7 +49,7 @@ protected:
     int m_y;
     float m_scale = 1.0f;
 
-    Font*& m_font = FontLoader::get()->font("res/fonts/CascadiaMono.ttf");
+    Font*& m_font = FontLoader::get()->font(RES_PATH "/fonts/CascadiaMono.ttf");
     Shader m_shader;
     Rectangle m_rect;
     TextRender m_renderer = TextRender(100, 100, 100, 100, m_font);

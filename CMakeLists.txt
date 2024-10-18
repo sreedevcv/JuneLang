@@ -6,11 +6,8 @@ add_link_options(-fsanitize=address)
 
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
-add_definitions(-DTEST_FILE_PATH="${CMAKE_SOURCE_DIR}/tests/")
-# set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG ${CMAKE_SOURCE_DIR})
-# set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE ${CMAKE_SOURCE_DIR})
-# set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELWITHDEBINFO ${CMAKE_SOURCE_DIR})
-# set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_MINSIZEREL ${CMAKE_SOURCE_DIR})
+add_definitions(-DTEST_FILE_PATH="${CMAKE_SOURCE_DIR}/tests")
+add_definitions(-DRES_PATH="${CMAKE_SOURCE_DIR}/res")
 
 include(FetchContent)
 include_directories("include")
@@ -18,8 +15,8 @@ include_directories("include")
 option(BUILD_JUNE_EDITOR "Build Editor" OFF)
 option(BUILD_TESTS "Build tests" OFF)
 
-set (BUILD_JUNE_EDITOR OFF)
-set (BUILD_TESTS ON)
+set (BUILD_JUNE_EDITOR ON)
+set (BUILD_TESTS OFF)
 
 if (BUILD_TESTS)
     enable_testing()

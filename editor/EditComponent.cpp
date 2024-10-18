@@ -92,6 +92,10 @@ void jed::EditComponent::handle_mouse_click(MouseButton button)
 
     int line_count = m_data->get_line_count();
 
+    if (line_index < 0) {
+        return;
+    }
+
     /* Restrict line */
     if (line_index < line_count) {
         m_cursor.line = line_index;
