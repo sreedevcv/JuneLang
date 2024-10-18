@@ -214,6 +214,14 @@ jed::TextData::str jed::TextData::make_new_str()
 
 void jed::TextData::clear()
 {
+    /* NOTE::Fix to prevent segfault when opening a file without having entered
+     * interacted with the editor. Otherwise the call to first call to clear() will
+     * try to index into an emput m_data vector.
+     */
+    if (m_data.size() == 0) {
+        return;
+    }
+
     for (int i = 0; i < m_line_count; i++) {
         free(m_data[i].data);
         m_data[i].capacity = 0;

@@ -67,7 +67,7 @@ std::string jl::ToIntNativeFunction::to_string()
 jl::JlValue* jl::jlist_get_len(Interpreter* interpreter, std::string& file_name, JlValue* jlist)
 {
     if (is::_list(jlist)) {
-        int size = static_cast<int>(jl::vget<std::vector<Expr*>*>(jlist)->size());
+        int size = static_cast<int>(jl::vget<std::vector<Expr*>&>(jlist).size());
         return interpreter->m_gc.allocate<JlInt>(size);
     }
     else {
@@ -79,8 +79,8 @@ jl::JlValue* jl::jlist_get_len(Interpreter* interpreter, std::string& file_name,
 jl::JlValue* jl::jlist_push_back(Interpreter* interpreter, JlValue* jlist, JlValue* appending_value)
 {
     if (is::_list(jlist)) {
-        auto list = jl::vget<std::vector<Expr*>*>(jlist);
-        list->push_back(interpreter->m_gc.allocate<Literal>(appending_value));
+        auto& list = jl::vget<std::vector<Expr*>&>(jlist);
+        list.push_back(interpreter->m_gc.allocate<Literal>(appending_value));
         return interpreter->m_gc.allocate<JlNull>();
     } else {
         ErrorHandler::error(interpreter->m_file_name, "interpreting", "native function len()", 0, "Attempted to use push_back() on a non-list", 0);
@@ -91,8 +91,8 @@ jl::JlValue* jl::jlist_push_back(Interpreter* interpreter, JlValue* jlist, JlVal
 jl::JlValue* jl::jlist_pop_back(Interpreter* interpreter, JlValue* jlist)
 {
     if (is::_list(jlist)) {
-        auto list = jl::vget<std::vector<Expr*>*>(jlist);
-        list->pop_back();
+        auto& list = jl::vget<std::vector<Expr*>&>(jlist);
+        list.pop_back();
         return interpreter->m_gc.allocate<JlNull>();
     } else {
         ErrorHandler::error(interpreter->m_file_name, "interpreting", "native function len()", 0, "Attempted to use pop_back() on a non-list", 0);
@@ -103,8 +103,8 @@ jl::JlValue* jl::jlist_pop_back(Interpreter* interpreter, JlValue* jlist)
 jl::JlValue* jl::jlist_clear(Interpreter* interpreter, JlValue* jlist)
 {
     if (is::_list(jlist)) {
-        auto list = jl::vget<std::vector<Expr*>*>(jlist);
-        list->clear();
+        auto& list = jl::vget<std::vector<Expr*>&>(jlist);
+        list.clear();
         return interpreter->m_gc.allocate<JlNull>();
     } else {
         ErrorHandler::error(interpreter->m_file_name, "interpreting", "native function len()", 0, "Attempted to use clear() on a non-list", 0);
