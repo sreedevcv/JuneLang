@@ -28,7 +28,7 @@ TEST_CASE("Lexer Scan 2", "[Lexer]")
 {
     using namespace jl;
 
-    std::string path = TEST_FILE_PATH "scripts/lexer_test_2.jun";
+    std::string path = TEST_FILE_PATH "/scripts/lexer_test_2.jun";
     Lexer lexer(path);
     lexer.scan();
     std::vector<Token> scanned_tokens = lexer.get_tokens();

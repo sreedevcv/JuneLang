@@ -9,10 +9,15 @@ add_library(JuneInterpreter
     Callable.cpp
     Resolver.cpp
     StreamHandler.cpp
-    Arena.cpp
+    memory/Arena.cpp
     NativeFunctions.cpp
-    MemoryPool.cpp
-    GarbageCollector.cpp
-    DebugArena.cpp
+    memory/MemoryPool.cpp
+    memory/GarbageCollector.cpp
+    memory/DebugArena.cpp
 )
-target_include_directories(JuneInterpreter PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+
+target_include_directories(JuneInterpreter 
+    PUBLIC 
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    memory
+)

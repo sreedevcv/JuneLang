@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.20.0)
 project(June VERSION 0.1.0)
 set(CMAKE_CXX_STANDARD 23)
 
-add_link_options(-fsanitize=address)
+# add_link_options(-fsanitize=address)
 
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
@@ -12,11 +12,11 @@ add_definitions(-DRES_PATH="${CMAKE_SOURCE_DIR}/res")
 include(FetchContent)
 include_directories("include")
 
-option(BUILD_JUNE_EDITOR "Build Editor" OFF)
-option(BUILD_TESTS "Build tests" OFF)
+option(BUILD_JUNE_EDITOR "Build Editor")
+option(BUILD_TESTS "Build tests")
 
 set (BUILD_JUNE_EDITOR ON)
-set (BUILD_TESTS OFF)
+set (BUILD_TESTS ON)
 
 if (BUILD_TESTS)
     enable_testing()
