@@ -1,3 +1,4 @@
+#include "CodeGenerator.hpp"
 #include "ErrorHandler.hpp"
 #include "Interpreter.hpp"
 #include "Lexer.hpp"
@@ -64,7 +65,10 @@ int main(int argc, char const* argv[])
         return 1;
     }
 
-    interpreter.interpret(stmts);
+    // interpreter.interpret(stmts);
+
+    jl::CodeGenerator generator(file_name);
+    generator.generate(stmts);
 
     return 0;
 }

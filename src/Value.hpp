@@ -197,6 +197,8 @@ inline std::vector<Expr*>& vget(JlValue* ref)
     }
 }
 
+std::string to_string(JlValue* value);
+
 //template<typename T>
 //auto get(JlValue* ref)
 //{

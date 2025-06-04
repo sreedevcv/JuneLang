@@ -14,6 +14,7 @@ add_library(JuneInterpreter
     memory/MemoryPool.cpp
     memory/GarbageCollector.cpp
     memory/DebugArena.cpp
+    CodeGenerator.cpp
 )
 
 target_include_directories(JuneInterpreter 

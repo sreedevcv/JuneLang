@@ -1,7 +1,9 @@
 #include "Value.hpp"
+#include "Expr.hpp"
 
 #include <type_traits>
 #include <utility>
+#include "Callable.hpp"
 
 /*jl::JlValue::JlValue(const Value& val)
     : m_value(val)
@@ -165,4 +167,37 @@ bool jl::is::_exact_same(JlValue* ref1, JlValue* ref2)
 jl::JlValue* jl::JlValue::to()
 {
     return static_cast<JlValue*>(this);
+}
+
+std::string jl::to_string(JlValue* value)
+{
+    if (is::_null(value)) {
+        return "null";
+    } else if (is::_bool(value)) {
+        return jl::vget<bool>(value) ? "true" : "false";
+    } else if (is::_int(value)) {
+        return std::to_string(jl::vget<int>(value));
+    } else if (is::_float(value)) {
+        return std::to_string(jl::vget<double>(value));
+    } else if (is::_str(value)) {
+        return jl::vget<std::string>(value);
+    } else if (is::_obj(value)) {
+        return jl::vget<Instance*>(value)->to_string();
+    } else if (is::_callable(value)) {
+        return jl::vget<Callable*>(value)->to_string();
+    } else if (is::_list(value)) {
+        std::string list = "[";
+        for (auto expr : jl::vget<std::vector<Expr*>&>(value)) {
+            if (dynamic_cast<Literal*>(expr)) {
+                list.append(to_string(static_cast<Literal*>(expr)->m_value));  //NOTE::Problem to pass address og no-gc allocated Jlvalue here??
+            } else {
+                list.append("`expr`");
+            }
+            list.append(", ");
+        }
+        list.append("]");
+        return list;
+    }
+
+    return "`null`";
 }
