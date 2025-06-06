@@ -31,7 +31,7 @@ jl::Lexer::Lexer(std::string& file_path)
 
 jl::Lexer::~Lexer()
 {
-    for (auto ref: m_allocated_refs) {
+    for (auto ref : m_allocated_refs) {
         delete ref;
     }
 }
@@ -161,7 +161,7 @@ void jl::Lexer::add_token(Token::TokenType type)
     m_tokens.push_back(Token(type, lexeme, m_line));
 }
 
-void jl::Lexer::add_token(Token::TokenType type, JlValue* value)
+void jl::Lexer::add_token(Token::TokenType type, Value* value)
 {
     std::string lexeme = m_source.substr(m_start, m_current - m_start);
     m_tokens.push_back(Token(type, lexeme, m_line, value));
@@ -203,7 +203,7 @@ void jl::Lexer::scan_string()
 
     advance(); // Read the ending '"'
     std::string value = m_source.substr(m_start + 1, (m_current - 1) - (m_start + 1));
-    JlValue* str = new JlStr(value);
+    Value* str = new Value { value }; // FIXME::memory leak!
     m_allocated_refs.push_back(str);
     add_token(Token::STRING, str);
 }
@@ -234,12 +234,12 @@ void jl::Lexer::scan_number()
         }
     }
 
-    JlValue* val;
+    Value* val;
     if (is_float) {
-        val = new JlFloat(std::stod(m_source.substr(m_start, m_current - m_start)));
+        val = new Value { std::stod(m_source.substr(m_start, m_current - m_start)) };
         add_token(Token::FLOAT, val);
     } else {
-        val = new JlInt(std::stoi(m_source.substr(m_start, m_current - m_start)));
+        val = new Value { std::stoi(m_source.substr(m_start, m_current - m_start)) };
         add_token(Token::INT, val);
     }
     m_allocated_refs.push_back(val);
@@ -271,19 +271,20 @@ void jl::Lexer::scan_identifier()
     }
 
     std::string lexeme = m_source.substr(m_start, m_current - m_start);
-    JlValue* val;
+    Value* val;
 
+    // FIXME:: Leaks!!!
     if (m_reserved_words.contains(lexeme)) {
         if (lexeme == "true") {
-            val = new JlBool(true);
+            val = new Value { true };
             add_token(Token::TRUE, val);
             m_allocated_refs.push_back(val);
         } else if (lexeme == "false") {
-            val = new JlBool(false);
+            val = new Value { false };
             add_token(Token::FALSE, val);
             m_allocated_refs.push_back(val);
         } else if (lexeme == "null") {
-            val = new JlNull();
+            val = new Value { Null {} };
             add_token(Token::NULL_, val);
             m_allocated_refs.push_back(val);
         } else {

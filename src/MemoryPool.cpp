@@ -3,7 +3,7 @@
 #include "Callable.hpp"
 #include "Environment.hpp"
 #include "Expr.hpp"
-#include "Token.hpp"
+#include "Value.hpp"
 
 #include <print>
 #include <vector>
@@ -34,7 +34,7 @@ void jl::MemoryPool::mark(Stmt* stmt)
     stmt->accept(*this);
 }
 
-void jl::MemoryPool::mark(JlValue* value)
+void jl::MemoryPool::mark(Value* value)
 {
     if (value == nullptr || value->m_marked) {
         return;
@@ -42,41 +42,46 @@ void jl::MemoryPool::mark(JlValue* value)
 
     value->m_marked = true;
 
-    switch (value->m_type) {
-    case JlValue::NONE:
+    // if (is::_int(const Value &ref))
+
+    // /*
+    switch (get_type(*value)) {
+    case Type::NONE:
         std::println("Fatal error!!");
         exit(2);
         break;
-    case JlValue::INT:
+    case Type::INT:
         break;
-    case JlValue::FLOAT:
+    case Type::FLOAT:
         break;
-    case JlValue::BOOL:
-        break; 
-    case JlValue::STR:
+    case Type::BOOL:
+        break;
+    case Type::STR:
         break;
 
-    case JlValue::CALL:
+    case Type::CALL:
     {
-        auto callable = jl::vget<Callable*>(value);
+        auto callable = std::get<Callable*>(value->get());
         mark(callable);
     }
         break;
 
-    case JlValue::OBJ:
+    case Type::OBJ:
     {
-        auto instance = jl::vget<Instance*>(value);
+        auto instance = std::get<Instance*>(value->get());
         mark(instance);
     }
         break;
 
-    case JlValue::LIST:
-        for (auto e : jl::vget<std::vector<Expr*>&>(value)) {
+    case Type::LIST:
+        // FIX::During change to Variant::initial version was getting std::vector<Expr*>&
+        // Note the `&`!!!!
+        for (auto e : std::get<std::vector<Expr*>>(value->get())) {
             mark(e);
         }
         break;
 
-    case JlValue::JNULL:
+    case Type::JNULL:
         break;
     }
 }
@@ -144,23 +149,17 @@ void jl::MemoryPool::mark(Ref* ref)
 {
     if (dynamic_cast<Expr*>(ref)) {
         mark(static_cast<Expr*>(ref));
-    }
-    else if (dynamic_cast<Stmt*>(ref)) {
+    } else if (dynamic_cast<Stmt*>(ref)) {
         mark(static_cast<Stmt*>(ref));
-    }
-    else if (dynamic_cast<JlValue*>(ref)) {
-        mark(static_cast<JlValue*>(ref));
-    }
-    else if (dynamic_cast<Callable*>(ref)) {
+    } else if (dynamic_cast<Value*>(ref)) {
+        mark(static_cast<Value*>(ref));
+    } else if (dynamic_cast<Callable*>(ref)) {
         mark(static_cast<Callable*>(ref));
-    }
-    else if (dynamic_cast<Instance*>(ref)) {
+    } else if (dynamic_cast<Instance*>(ref)) {
         mark(static_cast<Instance*>(ref));
-    }
-    else if (dynamic_cast<Environment*>(ref)) {
+    } else if (dynamic_cast<Environment*>(ref)) {
         mark(static_cast<Environment*>(ref));
-    }
-    else {
+    } else {
         std::println("Fatal error in `void jl::MemoryPool::mark(Ref* ref)`");
         std::exit(3);
     }

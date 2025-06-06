@@ -1,8 +1,5 @@
 #pragma once
 
-#include <type_traits>
-#include <utility>
-
 #include "Environment.hpp"
 #include "Expr.hpp"
 #include "Ref.hpp"
@@ -27,7 +24,7 @@ protected:
     void mark(Ref* ref);
     void mark(Expr* epxr);
     void mark(Stmt* stmt);
-    void mark(JlValue* value);
+    void mark(Value* value);
     void mark(Instance* inst);
     void mark(Callable* callable);
     void mark(Environment* env);

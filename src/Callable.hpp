@@ -13,7 +13,7 @@ class Interpreter;
 
 class Callable : public Ref {
 public:
-    virtual JlValue* call(Interpreter* interpreter, std::vector<JlValue*>& arguments) = 0;
+    virtual Value* call(Interpreter* interpreter, std::vector<Value*>& arguments) = 0;
     virtual int arity() = 0;
     virtual std::string to_string() = 0;
     virtual ~Callable() = default;
@@ -24,7 +24,7 @@ public:
     FunctionCallable(Interpreter* interpreter, Environment* closure, FuncStmt* declaration, bool is_initalizer);
     virtual ~FunctionCallable() = default;
 
-    virtual JlValue* call(Interpreter* interpreter, std::vector<JlValue*>& arguments) override;
+    virtual Value* call(Interpreter* interpreter, std::vector<Value*>& arguments) override;
     virtual int arity() override;
     virtual std::string to_string() override;
 
@@ -44,7 +44,7 @@ public:
     ClassCallable(std::string& name, ClassCallable* super_class, std::map<std::string, FunctionCallable*>& methods);
     virtual ~ClassCallable();
 
-    virtual JlValue* call(Interpreter* interpreter, std::vector<JlValue*>& arguments) override;
+    virtual Value* call(Interpreter* interpreter, std::vector<Value*>& arguments) override;
     virtual int arity() override;
     virtual std::string to_string() override;
 
@@ -63,13 +63,13 @@ public:
     Instance(ClassCallable* class_callable);
     virtual ~Instance();
 
-    JlValue* get(Token& name, Interpreter* interpreter);
-    void set(Token& name, JlValue* value);
+    Value* get(Token& name, Interpreter* interpreter);
+    void set(Token& name, Value* value);
     std::string to_string();
 
 private:
     ClassCallable* m_class;
-    std::map<std::string, JlValue*> m_fields;
+    std::map<std::string, Value*> m_fields;
 
     friend class MemoryPool;
 };

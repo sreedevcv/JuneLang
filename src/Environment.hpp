@@ -4,7 +4,6 @@
 #include "Token.hpp"
 
 #include <unordered_map>
-//#include <unordered_set>
 #include <unordered_set>
 
 namespace jl {
@@ -20,20 +19,20 @@ public:
 
     /* Stores a copy of variable name and value in map if
         they dont already exists otherwise throws an exception */
-    void define(const std::string& name, JlValue* value);
+    void define(const std::string& name, Value* value);
     /* Retrives the sored reference to a token otherwise
         throws an exception */
-    JlValue* get(Token& name);
-    JlValue* get_at(Token& name, int depth);
-    JlValue* get_at(std::string& name, int depth);
-    void assign(Token& token, JlValue* value);
-    void assign_at(Token& token, JlValue* value, int depth);
+    Value* get(Token& name);
+    Value* get_at(Token& name, int depth);
+    Value* get_at(std::string& name, int depth);
+    void assign(Token& token, Value* value);
+    void assign_at(Token& token, Value* value, int depth);
     Environment* ancestor(int depth);
 
     Environment* m_enclosing;
 
 private:
-    std::unordered_map<std::string, JlValue*> m_values;
+    std::unordered_map<std::string, Value*> m_values;
     std::string& m_file_name;
     std::unordered_set<Ref*> m_refs;
 

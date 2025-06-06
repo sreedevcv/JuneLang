@@ -15,7 +15,7 @@ include_directories("include")
 option(BUILD_JUNE_EDITOR "Build Editor" OFF)
 option(BUILD_TESTS "Build tests" OFF)
 
-set (BUILD_JUNE_EDITOR ON)
+set (BUILD_JUNE_EDITOR OFF)
 set (BUILD_TESTS OFF)
 
 if (BUILD_TESTS)

@@ -18,7 +18,7 @@ public:
 private:
     std::string m_file_path;
     std::vector<Token> m_tokens;
-    std::vector<JlValue*> m_allocated_refs;
+    std::vector<Value*> m_allocated_refs;
     std::string m_source;
 
     int m_line = 1;
@@ -37,7 +37,7 @@ private:
     char peek_next();
 
     void add_token(Token::TokenType type);
-    void add_token(Token::TokenType type, JlValue* value);
+    void add_token(Token::TokenType type, Value* value);
     void scan_token();
     void scan_string();
     void scan_number();
