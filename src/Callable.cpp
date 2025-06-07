@@ -16,7 +16,7 @@ jl::FunctionCallable::FunctionCallable(Interpreter* interpreter, Environment* cl
 {
 }
 
-jl::JlValue* jl::FunctionCallable::call(Interpreter* interpreter, std::vector<JlValue*>& arguments)
+jl::Value* jl::FunctionCallable::call(Interpreter* interpreter, std::vector<Value*>& arguments)
 {
     // TODO::Do I actually need this environment to persist???
     Environment* env = m_interpreter->m_gc.allocate<Environment>(m_closure);
@@ -27,7 +27,7 @@ jl::JlValue* jl::FunctionCallable::call(Interpreter* interpreter, std::vector<Jl
 
     try {
         interpreter->execute_block(m_declaration->m_body, env);
-    } catch (JlValue* value) {
+    } catch (Value* value) {
         if (m_is_initializer) {
             return m_closure->get_at(Token::global_this_lexeme, 0);
         }
@@ -38,7 +38,7 @@ jl::JlValue* jl::FunctionCallable::call(Interpreter* interpreter, std::vector<Jl
         return m_closure->get_at(Token::global_this_lexeme, 0);
     }
 
-    return interpreter->m_gc.allocate<JlNull>();
+    return interpreter->m_gc.allocate<Value>(Value { Null {} });
 }
 
 int jl::FunctionCallable::arity()
@@ -55,7 +55,7 @@ jl::FunctionCallable* jl::FunctionCallable::bind(Instance* instance)
 {
     // This env will be cleaned up by the FunctionCallable
     Environment* env = m_interpreter->m_gc.allocate<Environment>(m_closure);
-    env->define(Token::global_this_lexeme, m_interpreter->m_gc.allocate<JlObj>(instance));
+    env->define(Token::global_this_lexeme, m_interpreter->m_gc.allocate<Value>(instance));
     return m_interpreter->m_gc.allocate<FunctionCallable>(m_interpreter, env, m_declaration, m_is_initializer);
 }
 
@@ -74,7 +74,7 @@ jl::ClassCallable::~ClassCallable()
 {
 }
 
-jl::JlValue* jl::ClassCallable::call(Interpreter* interpreter, std::vector<JlValue*>& arguments)
+jl::Value* jl::ClassCallable::call(Interpreter* interpreter, std::vector<Value*>& arguments)
 {
     Instance* instance = interpreter->m_gc.allocate<Instance>(this);
     std::string init_name = "init";
@@ -82,7 +82,7 @@ jl::JlValue* jl::ClassCallable::call(Interpreter* interpreter, std::vector<JlVal
     if (initializer != nullptr) {
         initializer->bind(instance)->call(interpreter, arguments);
     }
-    return interpreter->m_gc.allocate<JlObj>(instance);
+    return interpreter->m_gc.allocate<Value>(Value { instance });
 }
 
 int jl::ClassCallable::arity()
@@ -129,7 +129,7 @@ jl::Instance::~Instance()
     // }
 }
 
-jl::JlValue* jl::Instance::get(Token& name, Interpreter *interpreter)
+jl::Value* jl::Instance::get(Token& name, Interpreter* interpreter)
 {
     if (m_fields.contains(name.get_lexeme())) {
         return m_fields[name.get_lexeme()];
@@ -138,7 +138,7 @@ jl::JlValue* jl::Instance::get(Token& name, Interpreter *interpreter)
     FunctionCallable* method = m_class->find_method(name.get_lexeme());
     if (method != nullptr) {
         Callable* method_instance = method->bind(this);
-        return interpreter->m_gc.allocate<JlCallable>(method_instance);
+        return interpreter->m_gc.allocate<Value>(method_instance); ///
     }
 
     std::string fname = "unknown";
@@ -146,7 +146,7 @@ jl::JlValue* jl::Instance::get(Token& name, Interpreter *interpreter)
     throw "runtime-exception";
 }
 
-void jl::Instance::set(Token& name, JlValue* value)
+void jl::Instance::set(Token& name, Value* value)
 {
     m_fields[name.get_lexeme()] = value;
 }

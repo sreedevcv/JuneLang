@@ -1,160 +1,117 @@
 #include "Value.hpp"
-#include "Expr.hpp"
-
-#include <type_traits>
-#include <utility>
 #include "Callable.hpp"
 
-/*jl::JlValue::JlValue(const Value& val)
-    : m_value(val)
+#include <cstdlib>
+#include <variant>
+
+bool jl::is::_int(Value& ref)
 {
+    return ref.get().index() == 0;
 }
 
-size_t jl::JlValue::index() const
+bool jl::is::_float(Value& ref)
 {
-    return m_value.index();
+    return ref.get().index() == 1;
 }
 
-jl::JlValue::Value* jl::JlValue::get()
+bool jl::is::_bool(Value& ref)
 {
-    return m_value;
+    return ref.get().index() == 2;
 }
 
-jl::JlValue::JlValue(const Value&& val)
+bool jl::is::_str(Value& ref)
 {
-    m_value = std::move(val);
+    return ref.get().index() == 3;
 }
 
-jl::JlValue::JlValue(Value* value)
-    : m_value(*value)
+bool jl::is::_callable(Value& ref)
 {
-}*/
-
-jl::JlInt::JlInt(int val)
-    : m_val(val)
-{
-    m_type = INT;
+    return ref.get().index() == 4;
 }
 
-jl::JlFloat::JlFloat(double val)
-    : m_val(val)
+bool jl::is::_obj(Value& ref)
 {
-    m_type = FLOAT;
+    return ref.get().index() == 5;
 }
 
-jl::JlBool::JlBool(bool val)
-    : m_val(val)
+bool jl::is::_list(Value& ref)
 {
-    m_type = BOOL;
+    return ref.get().index() == 6;
 }
 
-jl::JlStr::JlStr(const std::string& val)
-    : m_val(val)
-{
-    m_type = STR;
-}
-
-jl::JlCallable::JlCallable(Callable* val)
-    : m_val(val)
-{
-    m_type = CALL;
-}
-
-jl::JlObj::JlObj(Instance* val)
-    : m_val(val)
-{
-    m_type = OBJ;
-}
-
-jl::JlList::JlList(std::vector<Expr*>& val)
-    : m_val(val)
-{
-    m_type = LIST;
-}
-
-jl::JlNull::JlNull()
-{
-    m_type = JNULL;
-}
-
-bool jl::is::_int(JlValue* ref)
-{
-    return dynamic_cast<JlInt*>(ref) != nullptr;
-}
-
-bool jl::is::_float(JlValue* ref)
-{
-    return dynamic_cast<JlFloat*>(ref) != nullptr;
-}
-
-bool jl::is::_bool(JlValue* ref)
-{
-    return dynamic_cast<JlBool*>(ref) != nullptr;
-}
-
-bool jl::is::_str(JlValue* ref)
-{
-    return dynamic_cast<JlStr*>(ref) != nullptr;
-}
-
-bool jl::is::_callable(JlValue* ref)
-{
-    return dynamic_cast<JlCallable*>(ref) != nullptr;
-}
-
-bool jl::is::_obj(JlValue* ref)
-{
-    return dynamic_cast<JlObj*>(ref) != nullptr;
-}
-
-bool jl::is::_list(JlValue* ref)
-{
-    return dynamic_cast<JlList*>(ref) != nullptr;
-}
-
-bool jl::is::_number(JlValue* ref)
+bool jl::is::_number(Value& ref)
 {
     return _int(ref) || _float(ref);
 }
 
-bool jl::is::_null(JlValue* ref)
+bool jl::is::_null(Value& ref)
 {
-    return ref->m_type == JlValue::JNULL;
+    return ref.get().index() == 7;
 }
 
-bool jl::is::_same(JlValue* ref1, JlValue* ref2)
+bool jl::is::_same(Value& ref1, Value& ref2)
 {
-    return ref1->m_type == ref2->m_type;
+    return ref1.get().index() == ref2.get().index();
 }
 
-bool jl::is::_exact_same(JlValue* ref1, JlValue* ref2)
+jl::Type jl::get_type(jl::Value& value)
 {
-    switch (ref1->m_type) {
-    case JlValue::NONE:
+    switch (value.get().index()) {
+    case 0:
+        return Type::INT;
+    case 1:
+        return Type::FLOAT;
+    case 2:
+        return Type::BOOL;
+    case 3:
+        return Type::STR;
+    case 4:
+        return Type::CALL;
+    case 5:
+        return Type::OBJ;
+    case 6:
+        return Type::LIST;
+    case 7:
+        return Type::JNULL;
+    default:
+        std::exit(-1);
+    }
+}
+
+bool jl::is::_exact_same(Value& ref1, Value& ref2)
+{
+    const auto idx1 = ref1.get().index();
+
+    if (idx1 != ref2.get().index()) {
+        return false;
+    }
+
+    switch (get_type(ref1)) {
+    case Type::NONE:
         return true;
         break;
-    case JlValue::INT:
-        return static_cast<JlInt*>(ref1)->m_val == static_cast<JlInt*>(ref2)->m_val;
+    case Type::INT:
+        return std::get<int>(ref1.get()) == std::get<int>(ref2.get());
         break;
-    case JlValue::FLOAT:
-        return static_cast<JlFloat*>(ref1)->m_val == static_cast<JlFloat*>(ref2)->m_val;
+    case Type::FLOAT:
+        return std::get<double>(ref1.get()) == std::get<double>(ref2.get());
         break;
-    case JlValue::BOOL:
-        return static_cast<JlBool*>(ref1)->m_val == static_cast<JlBool*>(ref2)->m_val;
+    case Type::BOOL:
+        return std::get<bool>(ref1.get()) == std::get<bool>(ref2.get());
         break;
-    case JlValue::STR:
-        return static_cast<JlStr*>(ref1)->m_val == static_cast<JlStr*>(ref2)->m_val;
+    case Type::STR:
+        return std::get<std::string>(ref1.get()) == std::get<std::string>(ref2.get());
         break;
-    case JlValue::CALL:
-        return static_cast<JlCallable*>(ref1)->m_val == static_cast<JlCallable*>(ref2)->m_val;
+    case Type::CALL:
+        return std::get<Callable*>(ref1.get()) == std::get<Callable*>(ref2.get());
         break;
-    case JlValue::OBJ:
-        return static_cast<JlObj*>(ref1)->m_val == static_cast<JlObj*>(ref2)->m_val;
+    case Type::OBJ:
+        return std::get<Instance*>(ref1.get()) == std::get<Instance*>(ref2.get());
         break;
-    case JlValue::LIST:
-        return static_cast<JlList*>(ref1)->m_val == static_cast<JlList*>(ref2)->m_val;
+    case Type::LIST:
+        return std::get<List>(ref1.get()) == std::get<List>(ref2.get());
         break;
-    case JlValue::JNULL:
+    case Type::JNULL:
         return true;
         break;
     default:
@@ -162,42 +119,4 @@ bool jl::is::_exact_same(JlValue* ref1, JlValue* ref2)
         std::exit(2);
         break;
     }
-}
-
-jl::JlValue* jl::JlValue::to()
-{
-    return static_cast<JlValue*>(this);
-}
-
-std::string jl::to_string(JlValue* value)
-{
-    if (is::_null(value)) {
-        return "null";
-    } else if (is::_bool(value)) {
-        return jl::vget<bool>(value) ? "true" : "false";
-    } else if (is::_int(value)) {
-        return std::to_string(jl::vget<int>(value));
-    } else if (is::_float(value)) {
-        return std::to_string(jl::vget<double>(value));
-    } else if (is::_str(value)) {
-        return jl::vget<std::string>(value);
-    } else if (is::_obj(value)) {
-        return jl::vget<Instance*>(value)->to_string();
-    } else if (is::_callable(value)) {
-        return jl::vget<Callable*>(value)->to_string();
-    } else if (is::_list(value)) {
-        std::string list = "[";
-        for (auto expr : jl::vget<std::vector<Expr*>&>(value)) {
-            if (dynamic_cast<Literal*>(expr)) {
-                list.append(to_string(static_cast<Literal*>(expr)->m_value));  //NOTE::Problem to pass address og no-gc allocated Jlvalue here??
-            } else {
-                list.append("`expr`");
-            }
-            list.append(", ");
-        }
-        list.append("]");
-        return list;
-    }
-
-    return "`null`";
 }

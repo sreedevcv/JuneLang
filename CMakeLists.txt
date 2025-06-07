@@ -15,8 +15,8 @@ include_directories("include")
 option(BUILD_JUNE_EDITOR "Build Editor")
 option(BUILD_TESTS "Build tests")
 
-set (BUILD_JUNE_EDITOR ON)
-set (BUILD_TESTS ON)
+set (BUILD_JUNE_EDITOR OFF)
+set (BUILD_TESTS OFF)
 
 if (BUILD_TESTS)
     enable_testing()

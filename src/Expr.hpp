@@ -117,9 +117,9 @@ public:
 
 class Literal : public Expr {
 public:
-    JlValue* m_value;
+    Value* m_value;
 
-    inline Literal(JlValue* value)
+    inline Literal(Value* value)
         : m_value(value)
     {
     }

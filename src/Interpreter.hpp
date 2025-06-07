@@ -1,15 +1,12 @@
 #pragma once
 
 #include <map>
-#include <stack>
 #include <vector>
 
-#include "Arena.hpp"
 #include "Callable.hpp"
 #include "Environment.hpp"
 #include "Expr.hpp"
 #include "GarbageCollector.hpp"
-#include "MemoryPool.hpp"
 #include "Stmt.hpp"
 
 namespace jl {
@@ -19,11 +16,11 @@ public:
     Interpreter(std::string& file_name);
     virtual ~Interpreter();
 
-    void interpret(Expr* expr, JlValue* value = nullptr);
+    void interpret(Expr* expr, Value* value);
     void interpret(std::vector<Stmt*>& statements);
     void resolve(Expr* expr, int depth);
     void execute_block(std::vector<Stmt*>& statements, Environment* new_env);
-    std::string stringify(JlValue* value);
+    std::string stringify(Value* value);
 
     Environment* m_global_env { nullptr };
     std::string m_file_name;
@@ -58,14 +55,14 @@ private:
     virtual std::any visit_for_each_stmt(ForEachStmt* stmt) override;
     virtual std::any visit_break_stmt(BreakStmt* stmt) override;
 
-    JlValue* evaluate(Expr* expr);
-    bool is_truthy(JlValue* value);
+    Value* evaluate(Expr* expr);
+    bool is_truthy(Value* value);
 
     template <typename Op>
-    JlValue* do_arith_operation(JlValue* left, JlValue* right, Op op, int line, bool is_logical=false);
-    JlValue* append_strings(JlValue* left, JlValue* right);
-    bool is_equal(JlValue* left, JlValue* right);
-    JlValue* look_up_variable(Token& name, Expr* expr);
+    Value* do_arith_operation(Value* left, Value* right, Op op, int line, bool is_logical=false);
+    Value* append_strings(Value* left, Value* right);
+    bool is_equal(Value* left, Value* right);
+    Value* look_up_variable(Token& name, Expr* expr);
 
     Environment m_dummy_env;
     Environment* m_env { nullptr };
@@ -81,9 +78,9 @@ private:
     friend class ToStrNativeFunction;
     friend class ToIntNativeFunction;
 
-    friend JlValue* jlist_clear(Interpreter* interpreter, JlValue* jlist);
-    friend JlValue* jlist_get_len(Interpreter* interpreter, std::string& file_name, JlValue* jlist);
-    friend JlValue* jlist_push_back(Interpreter* interpreter, JlValue* jlist, JlValue* appending_value);
-    friend JlValue* jlist_pop_back(Interpreter* interpreter, JlValue* jlist);
+    friend Value* jlist_clear(Interpreter* interpreter, Value* jlist);
+    friend Value* jlist_get_len(Interpreter* interpreter, std::string& file_name, Value* jlist);
+    friend Value* jlist_push_back(Interpreter* interpreter, Value* jlist, Value* appending_value);
+    friend Value* jlist_pop_back(Interpreter* interpreter, Value* jlist);
 };
 } // namespace jl

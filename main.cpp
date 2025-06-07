@@ -25,7 +25,19 @@ int main(int argc, char const* argv[])
                ]
            ]
        ]
+       fun bubbleSort(list, size) [
+           for (var i = 0; i < size - 1; i += 1) [
+               for (var j = 0; j < size - i - 1; j += 1) [
+                   if (list[j] > list[j + 1]) [
+                       var temp = list[j];
+                       list[j] = list[j + 1];
+                       list[j + 1] = temp;
+                   ]
+               ]
+           ]
+       ]
 
+       bubbleSort(a, 9);
        bubbleSort(a, 9);
 
        for (var i = 0; i < 9; i += 1) [
@@ -38,16 +50,25 @@ int main(int argc, char const* argv[])
     // if  (argc == 2) {
     //     file_name = argv[1];
     // }
+    // if  (argc == 2) {
+    //     file_name = argv[1];
+    // }
 
     // jl::Lexer lexer(file_name);
     lexer.scan();
+    // jl::Lexer lexer(file_name);
+    lexer.scan();
 
+    jl::Arena arena(1000 * 1000);
     jl::Arena arena(1000 * 1000);
 
     if (jl::ErrorHandler::has_error()) {
         return 1;
     }
 
+    auto tokens = lexer.get_tokens();
+    jl::Parser parser(tokens, file_name);
+    auto stmts = parser.parseStatements();
     auto tokens = lexer.get_tokens();
     jl::Parser parser(tokens, file_name);
     auto stmts = parser.parseStatements();

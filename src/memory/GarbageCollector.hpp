@@ -15,7 +15,8 @@ public:
     GarbageCollector(EnvRef global, EnvRef curr, std::vector<Environment*>& env_stack);
     ~GarbageCollector();
 
-    template <CanBeRef T, typename... Args>
+    // template <CanBeRef T, typename... Args>
+    template <typename T, typename... Args>
     T* allocate(Args&&... args)
     {
         alloc_count += 1;
