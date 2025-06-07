@@ -14,11 +14,14 @@ add_library(JuneInterpreter
     memory/MemoryPool.cpp
     memory/GarbageCollector.cpp
     memory/DebugArena.cpp
-    CodeGenerator.cpp
+    codegen/CodeGenerator.cpp
+    codegen/Chunk.cpp
+    codegen/OpCode.cpp
 )
 
 target_include_directories(JuneInterpreter 
     PUBLIC 
     ${CMAKE_CURRENT_SOURCE_DIR}
     memory
+    codegen
 )

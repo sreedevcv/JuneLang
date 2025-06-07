@@ -5,7 +5,7 @@
 
 jl::Value* jl::ToStrNativeFunction::call(Interpreter* interpreter, std::vector<Value*>& arguments)
 {
-    return interpreter->m_gc.allocate<Value>(interpreter->stringify(arguments[0]));
+    return interpreter->m_gc.allocate<Value>(stringify(arguments[0]));
 }
 
 int jl::ToStrNativeFunction::arity()

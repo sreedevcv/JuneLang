@@ -5,12 +5,6 @@
 #include <vector>
 
 namespace jl {
-
-enum class OpCode {
-    PUSH,
-    POP 
-};
-
 class CodeGenerator : public IExprVisitor, public IStmtVisitor {
 public:
     CodeGenerator(std::string& file_name);
@@ -51,8 +45,6 @@ private:
     virtual std::any visit_break_stmt(BreakStmt* stmt) override;
 
     std::string m_file_name;
-    // std::vector<OpCode> m_byte_code;
-    std::vector<std::string> m_byte_code;
 };
 
 

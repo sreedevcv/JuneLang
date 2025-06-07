@@ -43,7 +43,7 @@ std::any jl::CodeGenerator::visit_unary_expr(Unary* expr)
 
 std::any jl::CodeGenerator::visit_literal_expr(Literal* expr)
 {
-    m_byte_code.push_back(std::string { "PUSH " } + to_string(expr->m_value));
+    // m_byte_code.push_back(std::string { "PUSH " } + (expr->m_value));
 }
 
 std::any jl::CodeGenerator::visit_variable_expr(Variable* expr) { }

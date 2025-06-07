@@ -20,7 +20,6 @@ public:
     void interpret(std::vector<Stmt*>& statements);
     void resolve(Expr* expr, int depth);
     void execute_block(std::vector<Stmt*>& statements, Environment* new_env);
-    std::string stringify(Value* value);
 
     Environment* m_global_env { nullptr };
     std::string m_file_name;

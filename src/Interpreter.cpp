@@ -178,38 +178,6 @@ jl::Value* jl::Interpreter::look_up_variable(Token& name, Expr* expr)
     }
 }
 
-std::string jl::Interpreter::stringify(Value* value)
-{
-    if (is::_null(*value)) {
-        return "null";
-    } else if (is::_bool(*value)) {
-        return std::get<bool>(value->get()) ? "true" : "false";
-    } else if (is::_int(*value)) {
-        return std::to_string(std::get<int>(value->get()));
-    } else if (is::_float(*value)) {
-        return std::to_string(std::get<double>(value->get()));
-    } else if (is::_str(*value)) {
-        return std::get<std::string>(value->get());
-    } else if (is::_obj(*value)) {
-        return std::get<Instance*>(value->get())->to_string();
-    } else if (is::_callable(*value)) {
-        return std::get<Callable*>(value->get())->to_string();
-    } else if (is::_list(*value)) {
-        std::string list = "[";
-        for (auto& expr : std::get<std::vector<Expr*>>(value->get())) {
-            if (dynamic_cast<Literal*>(expr)) {
-                list.append(stringify(static_cast<Literal*>(expr)->m_value)); // NOTE::Problem to pass address og no-gc allocated Jlvalue here??
-            } else {
-                list.append("`expr`");
-            }
-            list.append(", ");
-        }
-        list.append("]");
-        return list;
-    }
-
-    return "`null`";
-}
 
 // --------------------------------------------------------------------------------
 // -------------------------------Expressions--------------------------------------

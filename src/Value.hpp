@@ -61,6 +61,8 @@ enum class Type {
 
 Type get_type(Value& value);
 
+std::string stringify(Value* value);
+
 namespace is {
     bool _int(Value& ref);
     bool _float(Value& ref);
