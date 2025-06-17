@@ -1,7 +1,9 @@
 #pragma once
 
+#include "Chunk.hpp"
 #include "Expr.hpp"
 #include "Stmt.hpp"
+#include <any>
 #include <vector>
 
 namespace jl {
@@ -12,8 +14,12 @@ public:
 
     void generate(std::vector<Stmt*> stmts);
 
+    std::any compile(Stmt* stmt);
+    std::any compile(Expr* stmt);
+
+    void disassemble();
+
 private:
-    void visit(Stmt* stmt);
 
     virtual std::any visit_assign_expr(Assign* expr) override;
     virtual std::any visit_binary_expr(Binary* expr) override;
@@ -45,6 +51,8 @@ private:
     virtual std::any visit_break_stmt(BreakStmt* stmt) override;
 
     std::string m_file_name;
+
+    Chunk m_chunk;
 };
 
 

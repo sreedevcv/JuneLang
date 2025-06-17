@@ -6,7 +6,9 @@
 #include "OpCode.hpp"
 #include "Parser.hpp"
 #include "Resolver.hpp"
+#include "VM.hpp"
 #include "Value.hpp"
+#include <cassert>
 #include <print>
 
 int main(int argc, char const* argv[])
@@ -14,41 +16,30 @@ int main(int argc, char const* argv[])
     // jed::Editor editor;
     // editor.start();
 
-    // jl::Lexer lexer(
-    //     R"(
-    //     var a = {3, 5, 1, 2, 6, 9, 8, 4, 7};
+    jl::Lexer lexer(
+        R"( (12 + 24) - (4 * 45) / 12;
+)");
 
-    //    fun bubbleSort(list, size) [
-    //        for (var i = 0; i < size - 1; i += 1) [
-    //            for (var j = 0; j < size - i - 1; j += 1) [
-    //                if (list[j] > list[j + 1]) [
-    //                    var temp = list[j];
-    //                    list[j] = list[j + 1];
-    //                    list[j + 1] = temp;
-    //                ]
-    //            ]
-    //        ]
-    //    ]
+    std::string file_name = "examples/EList.jun";
 
-    //    bubbleSort(a, 9);
-
-    //    for (var i = 0; i < 9; i += 1) [
-    //        print a[i];
-    //    ]
-    //    )");
-
-    // std::string file_name = "examples/EList.jun";
-
-    // lexer.scan();
+    lexer.scan();
 
     // jl::Arena arena(1000 * 1000);
 
-    // if (jl::ErrorHandler::has_error()) {
-    //     return 1;
-    // }
+    if (jl::ErrorHandler::has_error()) {
+        return 1;
+    }
 
-    // auto tokens = lexer.get_tokens();
-    // jl::Parser parser(tokens, file_name);
+    auto tokens = lexer.get_tokens();
+    jl::Parser parser(tokens, file_name);
+    auto exp = parser.parse();
+
+    jl::CodeGenerator codegen(file_name);
+    codegen.compile(exp);
+    codegen.disassemble();
+
+
+
     // auto stmts = parser.parseStatements();
 
     // if (jl::ErrorHandler::has_error()) {
@@ -69,12 +60,15 @@ int main(int argc, char const* argv[])
     // jl::CodeGenerator generator(file_name);
     // generator.generate(stmts);
 
-    jl::Chunk chunk;
-    auto idx = chunk.add_constant(jl::Value { 1 });
-    chunk.add_opcode(jl::OpCode::CONSTANT, 0);
-    chunk.add_opcode((jl::OpCode)idx, 0);
-    chunk.add_opcode(jl::OpCode::RETURN, 1);
-    std::println("{}", chunk.disassemble());
+    // jl::Chunk chunk;
+    // auto idx = chunk.add_constant(jl::Value { 1 });
+    // chunk.add_opcode(jl::OpCode::CONSTANT, 12);
+    // chunk.add_opcode((jl::OpCode)idx, 12);
+    // chunk.add_opcode(jl::OpCode::NEGATE, 13);
+    // chunk.add_opcode(jl::OpCode::RETURN, 13);
+    // // std::println("{}", chunk.disassemble());
+    // jl::VM vm;
+    // assert(vm.run(chunk) == jl::VM::OK);
 
     return 0;
 }

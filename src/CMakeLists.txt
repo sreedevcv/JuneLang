@@ -4,19 +4,25 @@ add_library(JuneInterpreter
     Lexer.cpp
     ErrorHandler.cpp
     Parser.cpp
-    Interpreter.cpp
-    Environment.cpp
     Callable.cpp
     Resolver.cpp
+    interpreter/Interpreter.cpp
+    interpreter/Environment.cpp
+    interpreter/NativeFunctions.cpp
     StreamHandler.cpp
     memory/Arena.cpp
-    NativeFunctions.cpp
     memory/MemoryPool.cpp
     memory/GarbageCollector.cpp
     memory/DebugArena.cpp
     compiler/CodeGenerator.cpp
     compiler/Chunk.cpp
     compiler/OpCode.cpp
+    compiler/VM.cpp
+)
+
+target_link_libraries(
+    JuneInterpreter
+    stdc++exp
 )
 
 target_include_directories(JuneInterpreter 
@@ -24,4 +30,5 @@ target_include_directories(JuneInterpreter
     ${CMAKE_CURRENT_SOURCE_DIR}
     memory
     compiler
+    interpreter
 )

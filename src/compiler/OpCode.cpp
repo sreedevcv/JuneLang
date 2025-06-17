@@ -1,5 +1,5 @@
 #include "OpCode.hpp"
-#include <print>
+#include "Utils.hpp"
 
 const char* jl::to_string(OpCode opcode)
 {
@@ -8,8 +8,32 @@ const char* jl::to_string(OpCode opcode)
         return "RETURN";
     case OpCode::CONSTANT:
         return "CONSTANT";
+    case OpCode::NEGATE:
+        return "NEGATE";
+    case OpCode::ADD:
+        return "ADD";
+    case OpCode::MINUS:
+        return "MINUS";
+    case OpCode::STAR:
+        return "STAR";
+    case OpCode::SLASH:
+        return "SLASH";
+    case OpCode::GREATER:
+        return "GREATER";
+    case OpCode::LESS:
+        return "LESS";
+    case OpCode::GREATER_EQUAL:
+        return "GREATER_EQUAL";
+    case OpCode::LESS_EQUAL:
+        return "LESS_EQUAL";
+    case OpCode::MODULUS:
+        return "PERCENT";
+    case OpCode::EQUAL:
+        return "EQUAL_EQUAL";
+    case OpCode::NOT_EQUAL:
+        return "BANG_EQUAL";
     default:
-        std::println("Unimplemented OpCode\n");
+        unimplemented();
         return "UNKNOWN";
     }
 }
