@@ -17,6 +17,9 @@ enum class OpCode {
     MODULUS,
     EQUAL,
     NOT_EQUAL,
+    NOT,
+    AND,
+    OR,
 };
 
 const char* to_string(OpCode opcode);

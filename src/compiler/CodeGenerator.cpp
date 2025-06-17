@@ -1,5 +1,6 @@
 #include "CodeGenerator.hpp"
 
+#include "OpCode.hpp"
 #include "Operand.hpp"
 #include "Stmt.hpp"
 #include "Token.hpp"
@@ -45,7 +46,6 @@ void jl::CodeGenerator::disassemble()
 /* -----------------------------------------------------EXPR--------------------------------------------------------------- */
 /* ======================================================================================================================== */
 
-std::any jl::CodeGenerator::visit_assign_expr(Assign* expr) { }
 
 std::any jl::CodeGenerator::visit_binary_expr(Binary* expr)
 {
@@ -60,86 +60,86 @@ std::any jl::CodeGenerator::visit_binary_expr(Binary* expr)
     case Token::PLUS: {
         // auto n1 = std::get<int>(l);
         // auto n2 = std::get<int>(r);
-
+        
         auto dest_var = m_chunk.write(OpCode::ADD, l, r);
-        return Operand {dest_var};
+        return Operand { dest_var };
     } break;
     case Token::MINUS: {
         // auto n1 = std::get<int>(l);
         // auto n2 = std::get<int>(r);
 
         auto dest_var = m_chunk.write(OpCode::MINUS, l, r);
-        return Operand {dest_var};
+        return Operand { dest_var };
     } break;
     case Token::STAR: {
         // auto n1 = std::get<int>(l);
         // auto n2 = std::get<int>(r);
 
         auto dest_var = m_chunk.write(OpCode::STAR, l, r);
-        return Operand {dest_var};
+        return Operand { dest_var };
     } break;
     case Token::SLASH: {
         // auto n1 = std::get<int>(l);
         // auto n2 = std::get<int>(r);
-
+        
         auto dest_var = m_chunk.write(OpCode::SLASH, l, r);
-        return Operand {dest_var};
+        return Operand { dest_var };
     } break;
     case Token::GREATER: {
         // auto n1 = std::get<int>(l);
         // auto n2 = std::get<int>(r);
 
         auto dest_var = m_chunk.write(OpCode::GREATER, l, r);
-        return Operand {dest_var};
+        return Operand { dest_var };
     } break;
     case Token::LESS: {
         // auto n1 = std::get<int>(l);
         // auto n2 = std::get<int>(r);
 
         auto dest_var = m_chunk.write(OpCode::LESS, l, r);
-        return Operand {dest_var};
+        return Operand { dest_var };
     } break;
     case Token::GREATER_EQUAL: {
         // auto n1 = std::get<int>(l);
         // auto n2 = std::get<int>(r);
 
         auto dest_var = m_chunk.write(OpCode::GREATER_EQUAL, l, r);
-        return Operand {dest_var};
+        return Operand { dest_var };
     } break;
     case Token::LESS_EQUAL: {
         // auto n1 = std::get<int>(l);
         // auto n2 = std::get<int>(r);
 
         auto dest_var = m_chunk.write(OpCode::LESS_EQUAL, l, r);
-        return Operand {dest_var};
+        return Operand { dest_var };
     } break;
     case Token::PERCENT: {
         // auto n1 = std::get<int>(l);
         // auto n2 = std::get<int>(r);
 
         auto dest_var = m_chunk.write(OpCode::MODULUS, l, r);
-        return Operand {dest_var};
+        return Operand { dest_var };
     } break;
     case Token::EQUAL_EQUAL: {
         // auto n1 = std::get<int>(l);
         // auto n2 = std::get<int>(r);
-
+        
         auto dest_var = m_chunk.write(OpCode::EQUAL, l, r);
-        return Operand {dest_var};
+        return Operand { dest_var };
     } break;
     case Token::BANG_EQUAL: {
         // auto n1 = std::get<int>(l);
         // auto n2 = std::get<int>(r);
-
+        
         auto dest_var = m_chunk.write(OpCode::NOT_EQUAL, l, r);
-        return Operand {dest_var};
+        return Operand { dest_var };
     } break;
     default:
-        unimplemented();
-        break;
-    }
+    unimplemented();
+    break;
+}
 
-    return TempVar { 0 };
+return TempVar { 0 };
 }
 
 std::any jl::CodeGenerator::visit_grouping_expr(Grouping* expr)
@@ -147,8 +147,26 @@ std::any jl::CodeGenerator::visit_grouping_expr(Grouping* expr)
     return compile(expr->m_expr);
 }
 
+
 std::any jl::CodeGenerator::visit_unary_expr(Unary* expr)
 {
+    auto val = std::any_cast<Operand>(compile(expr->m_expr));
+    auto oper = expr->m_oper->get_tokentype();
+    Operand temp;
+
+    switch (oper) {
+        case Token::MINUS:
+        temp = m_chunk.write(OpCode::MINUS, val, Nil {});
+        break;
+    case Token::BANG:
+        temp = m_chunk.write(OpCode::NOT, val, Nil {});
+        break;
+    default:
+        unimplemented();
+        break;
+    }
+
+    return temp;
 }
 
 std::any jl::CodeGenerator::visit_literal_expr(Literal* expr)
@@ -163,8 +181,26 @@ std::any jl::CodeGenerator::visit_literal_expr(Literal* expr)
     }
 }
 
+std::any jl::CodeGenerator::visit_logical_expr(Logical* expr) 
+{
+    const auto left = compile(expr->m_left);
+    const auto right = compile(expr->m_right);
+    const auto l = std::any_cast<Operand>(left);
+    const auto r = std::any_cast<Operand>(right);
+    const auto oper = expr->m_oper.get_tokentype();
+    Operand temp;
+
+    if (oper == Token::OR) {
+        temp = m_chunk.write(OpCode::OR, l, r);
+    } else {
+        temp = m_chunk.write(OpCode::AND, l, r);
+    }
+
+    return temp;
+}
+
+std::any jl::CodeGenerator::visit_assign_expr(Assign* expr) { }
 std::any jl::CodeGenerator::visit_variable_expr(Variable* expr) { }
-std::any jl::CodeGenerator::visit_logical_expr(Logical* expr) { }
 std::any jl::CodeGenerator::visit_call_expr(Call* expr) { }
 std::any jl::CodeGenerator::visit_get_expr(Get* expr) { }
 std::any jl::CodeGenerator::visit_set_expr(Set* expr) { }

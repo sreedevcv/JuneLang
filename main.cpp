@@ -15,9 +15,10 @@ int main(int argc, char const* argv[])
 {
     // jed::Editor editor;
     // editor.start();
+    // !(12 + 24) - (4 * 45) / -12;
 
     jl::Lexer lexer(
-        R"( (12 + 24) - (4 * 45) / 12;
+        R"( !(3 and 4 or 1 )
 )");
 
     std::string file_name = "examples/EList.jun";

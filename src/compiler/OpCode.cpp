@@ -32,6 +32,12 @@ const char* jl::to_string(OpCode opcode)
         return "EQUAL_EQUAL";
     case OpCode::NOT_EQUAL:
         return "BANG_EQUAL";
+    case OpCode::NOT:
+        return "NOT";
+    case OpCode::AND:
+        return "AND";
+    case OpCode::OR:
+        return "OR";
     default:
         unimplemented();
         return "UNKNOWN";
