@@ -363,7 +363,7 @@ jl::Expr* jl::Parser::finish_call(Expr* callee)
 
 jl::Expr* jl::Parser::modify_and_assign(Token::TokenType oper_type, Expr* expr)
 {
-    // NOTE::Remove duplicate code
+    // TODO::Remove duplicate code
     Token& oper_equals = previous();
     Expr* value = or_expr();
 

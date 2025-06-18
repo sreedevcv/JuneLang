@@ -93,5 +93,3 @@ jl::Environment* jl::Environment::ancestor(int depth)
 
     return env;
 }
-
-// 2544 byte(s) leaked in 34 allocation(s).

@@ -20,6 +20,9 @@ enum class OpCode {
     NOT,
     AND,
     OR,
+
+    // 
+    ASSIGN
 };
 
 const char* to_string(OpCode opcode);

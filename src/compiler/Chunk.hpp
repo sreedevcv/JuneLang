@@ -1,11 +1,12 @@
 #pragma once
 
 #include <cstdint>
+#include <optional>
+#include <unordered_map>
 #include <vector>
 
 #include "OpCode.hpp"
 #include "Operand.hpp"
-#include "Value.hpp"
 
 namespace jl {
 
@@ -18,34 +19,24 @@ struct Ir {
 
 class Chunk {
 public:
-    uint8_t add_constant(Value&& constant);
-    void add_opcode(OpCode opcode, uint32_t line);
-    std::string disassemble();
-
-    template <typename T>
-    T read_byte(uint32_t idx) const
-    {
-        return static_cast<T>(m_opcodes[idx]);
-    }
-
-    jl::Value read_constant(uint8_t offset) const;
-
+    std::string disassemble() const;
     TempVar write(OpCode opcode,
         Operand op1,
         Operand op2);
+    void write_with_dest(OpCode opcode,
+        Operand op1,
+        Operand op2,
+        TempVar dest);
+    TempVar store_variable(const std::string& var_name);
+    std::optional<TempVar> look_up_variable(const std::string& var_name) const;
 
 private:
     std::vector<Ir> m_ops;
     uint32_t m_temp_var_count { 0 };
+    std::unordered_map<std::string, TempVar> m_variable_map;
 
-    //////////////////////////////////////////////////////////
-    std::vector<OpCode> m_opcodes;
-    std::vector<uint32_t> m_lines;
-    std::vector<Value> m_constants;
-    
-    // uint32_t write_simple_instruction(std::ostream& out, OpCode opcode, uint32_t offset) const;
-    // uint32_t write_constant_instruction(std::ostream& out, OpCode opcode, uint32_t offset) const;
-    // uint32_t disasemble_opcode(std::ostream& out, uint32_t offset) const;
+    TempVar create_temp_var();
+    void output_var_map(std::ostream& in) const;
 };
 
 }

@@ -1,9 +1,9 @@
 #pragma once
 
+#include "Utils.hpp"
 #include <cstdint>
 #include <string>
 #include <variant>
-#include "Utils.hpp"
 
 namespace jl {
 
@@ -11,9 +11,9 @@ struct TempVar {
     uint32_t idx;
 };
 
-struct Nil {};
+struct Nil { };
 
-using Operand = std::variant<int, double, TempVar, Nil>;
+using Operand = std::variant<int, double, TempVar, Nil, bool>;
 
 inline std::string to_string(const Operand& operand)
 {
@@ -26,6 +26,8 @@ inline std::string to_string(const Operand& operand)
         return "T[" + std::to_string(std::get<TempVar>(operand).idx) + "]";
     case 3:
         return "Nil";
+    case 4:
+        return (std::get<bool>(operand) == true) ? "true" : "false";
     }
 
     unimplemented();

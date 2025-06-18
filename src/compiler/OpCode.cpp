@@ -38,6 +38,8 @@ const char* jl::to_string(OpCode opcode)
         return "AND";
     case OpCode::OR:
         return "OR";
+    case OpCode::ASSIGN:
+        return "ASSIGN";
     default:
         unimplemented();
         return "UNKNOWN";

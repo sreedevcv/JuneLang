@@ -13,12 +13,14 @@
 
 int main(int argc, char const* argv[])
 {
-    // jed::Editor editor;
-    // editor.start();
     // !(12 + 24) - (4 * 45) / -12;
+    // !(3.5 and 4 or true )
 
     jl::Lexer lexer(
-        R"( !(3 and 4 or 1 )
+        R"( var a = 10 + 2;
+        var b = a + 13 and 8;
+        var c;
+        var d;
 )");
 
     std::string file_name = "examples/EList.jun";
@@ -33,10 +35,19 @@ int main(int argc, char const* argv[])
 
     auto tokens = lexer.get_tokens();
     jl::Parser parser(tokens, file_name);
-    auto exp = parser.parse();
+    auto stmts = parser.parseStatements();
+
+    jl::Interpreter interpreter(file_name);
+    jl::Resolver resolver(interpreter, file_name);
+    resolver.resolve(stmts);
+
+    if (jl::ErrorHandler::has_error()) {
+        return 1;
+    }
+
 
     jl::CodeGenerator codegen(file_name);
-    codegen.compile(exp);
+    codegen.generate(stmts);
     codegen.disassemble();
 
 
@@ -78,8 +89,8 @@ int main(int argc, char const* argv[])
         var a = {3, 5, 1, 2};
 
         for (var item: a) [
-            if (item <= 1) [
-                print "BREAKING";
+            if (item ) [
+                printEAKING";
                 break;
             ]
         ]
