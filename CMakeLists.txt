@@ -16,7 +16,7 @@ option(BUILD_JUNE_EDITOR "Build Editor")
 option(BUILD_TESTS "Build tests")
 
 set (BUILD_JUNE_EDITOR OFF)
-set (BUILD_TESTS OFF)
+set (BUILD_TESTS ON)
 
 if (BUILD_TESTS)
     enable_testing()

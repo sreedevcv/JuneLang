@@ -1,6 +1,5 @@
 #include <catch2/catch_test_macros.hpp>
 
-#include <iostream>
 #include <string>
 #include <vector>
 
@@ -47,13 +46,13 @@ TEST_CASE("Lexer Scan 2", "[Lexer]")
 
         switch (scanned_tokens[i].get_tokentype()) {
         case Token::STRING:
-            REQUIRE(jl::vget<std::string>(scanned_tokens[i].get_value()) == "hello+==");
+            REQUIRE(std::get<std::string>(scanned_tokens[i].get_value()->get()) == "hello+==");
             break;
         case Token::INT:
-            REQUIRE(jl::vget<int>(scanned_tokens[i].get_value()) == 123);
+            REQUIRE(std::get<int>(scanned_tokens[i].get_value()->get()) == 123);
             break;
         case Token::FLOAT:
-            REQUIRE(jl::vget<double>(scanned_tokens[i].get_value()) == std::stod("434.534"));
+            REQUIRE(std::get<double>(scanned_tokens[i].get_value()->get()) == std::stod("434.534"));
             break;
         default:
             break;

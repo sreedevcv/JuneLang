@@ -29,7 +29,6 @@ void test_string_with_no_error(const char* source)
 
     REQUIRE(jl::ErrorHandler::has_error() == false);
 
-    jl::JlValue v;
     interpreter.interpret(stmts);
     REQUIRE(jl::ErrorHandler::has_error() == false);
 }
@@ -77,7 +76,6 @@ void test_string_with_error(const char* source, ErrorLoc errorLoc)
         return;
     }
 
-    jl::JlValue v;
     interpreter.interpret(stmts);
     has_error = jl::ErrorHandler::has_error();
     test_passed = (errorLoc != INTERPRETER) ? has_error == false : has_error == true;
