@@ -1,15 +1,11 @@
-#include "Chunk.hpp"
 #include "CodeGenerator.hpp"
 #include "ErrorHandler.hpp"
 #include "Interpreter.hpp"
 #include "Lexer.hpp"
-#include "OpCode.hpp"
 #include "Parser.hpp"
 #include "Resolver.hpp"
 #include "VM.hpp"
-#include "Value.hpp"
 #include <cassert>
-#include <print>
 
 int main(int argc, char const* argv[])
 {
@@ -19,8 +15,7 @@ int main(int argc, char const* argv[])
     jl::Lexer lexer(
         R"( var a = 10 + 2;
         var b = a + 13 and 8;
-        var c;
-        var d;
+        a = b + 1;
 )");
 
     std::string file_name = "examples/EList.jun";
@@ -45,12 +40,9 @@ int main(int argc, char const* argv[])
         return 1;
     }
 
-
     jl::CodeGenerator codegen(file_name);
     codegen.generate(stmts);
     codegen.disassemble();
-
-
 
     // auto stmts = parser.parseStatements();
 

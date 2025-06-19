@@ -22,16 +22,19 @@ public:
     std::string disassemble() const;
     TempVar write(OpCode opcode,
         Operand op1,
-        Operand op2);
+        Operand op2,
+        uint32_t line);
     void write_with_dest(OpCode opcode,
         Operand op1,
         Operand op2,
-        TempVar dest);
+        TempVar dest,
+        uint32_t line);
     TempVar store_variable(const std::string& var_name);
     std::optional<TempVar> look_up_variable(const std::string& var_name) const;
 
 private:
     std::vector<Ir> m_ops;
+    std::vector<uint32_t> m_lines;
     uint32_t m_temp_var_count { 0 };
     std::unordered_map<std::string, TempVar> m_variable_map;
 

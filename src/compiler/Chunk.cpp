@@ -4,17 +4,27 @@
 #include "Operand.hpp"
 
 #include <cassert>
+#include <cstdint>
 #include <iomanip>
 #include <ostream>
 
 std::string jl::Chunk::disassemble() const
 {
     std::stringstream out;
-
     output_var_map(out);
     out << '\n';
 
+    uint32_t line = -1;
+
     for (int i = 0; i < m_ops.size(); i++) {
+        if (m_lines[i] != line) {
+            line = m_lines[i];
+            out << std::setfill('0') << std::setw(4) << line;
+        } else {
+            out << "  | ";
+        }
+
+        out << ' ';
         out << std::setfill('0') << std::setw(4) << i;
         out << std::setfill(' ') << std::setw(10) << jl::to_string(m_ops[i].dest);
         out << " : ";
@@ -37,9 +47,11 @@ void jl::Chunk::output_var_map(std::ostream& in) const
     }
 }
 
-jl::TempVar jl::Chunk::write(OpCode opcode,
+jl::TempVar jl::Chunk::write(
+    OpCode opcode,
     Operand op1,
-    Operand op2)
+    Operand op2,
+    uint32_t line)
 {
     TempVar dest = create_temp_var();
 
@@ -50,13 +62,17 @@ jl::TempVar jl::Chunk::write(OpCode opcode,
         .dest = dest,
     });
 
+    m_lines.push_back(line);
+
     return dest;
 }
 
-void jl::Chunk::write_with_dest(OpCode opcode,
+void jl::Chunk::write_with_dest(
+    OpCode opcode,
     Operand op1,
     Operand op2,
-    TempVar dest)
+    TempVar dest,
+    uint32_t line)
 {
     m_ops.push_back(Ir {
         .opcode = opcode,
@@ -64,6 +80,8 @@ void jl::Chunk::write_with_dest(OpCode opcode,
         .op2 = op2,
         .dest = dest,
     });
+
+    m_lines.push_back(line);
 }
 
 jl::TempVar jl::Chunk::store_variable(const std::string& var_name)
