@@ -7,6 +7,7 @@
 
 #include "ErrorHandler.hpp"
 #include "Operand.hpp"
+#include "Utils.hpp"
 
 static bool is_number(const jl::Operand& op)
 {
@@ -73,125 +74,152 @@ std::pair<jl::VM::InterpretResult, std::vector<jl::Operand>> jl::VM::run(const C
     std::vector<Operand> temp_vars { chunk.get_max_allocated_temps() };
 
     for (const auto& ir : chunk.get_ir()) {
-        Operand result;
-
-        switch (ir.opcode) {
-        case OpCode::ADD: {
-            result = binary_operation(
-                ir.op1,
-                ir.op2,
-                std::plus<> {},
-                temp_vars,
-                0);
-        } break;
-        case OpCode::MINUS: {
-            result = binary_operation(
-                ir.op1,
-                ir.op2,
-                std::minus<> {},
-                temp_vars,
-                0);
-        } break;
-        case OpCode::STAR: {
-            result = binary_operation(
-                ir.op1,
-                ir.op2,
-                std::multiplies<> {},
-                temp_vars,
-                0);
-        } break;
-        case OpCode::SLASH: {
-            result = binary_operation(
-                ir.op1,
-                ir.op2,
-                std::divides<> {},
-                temp_vars,
-                0);
-        } break;
-        case OpCode::GREATER: {
-            result = binary_operation(
-                ir.op1,
-                ir.op2,
-                std::greater<> {},
-                temp_vars,
-                0);
-        } break;
-        case OpCode::LESS: {
-            result = binary_operation(
-                ir.op1,
-                ir.op2,
-                std::less<> {},
-                temp_vars,
-                0);
-        } break;
-        case OpCode::GREATER_EQUAL: {
-            result = binary_operation(
-                ir.op1,
-                ir.op2,
-                std::greater_equal<> {},
-                temp_vars,
-                0);
-        } break;
-        case OpCode::LESS_EQUAL: {
-            result = binary_operation(
-                ir.op1,
-                ir.op2,
-                std::less_equal<> {},
-                temp_vars,
-                0);
-        } break;
-        case OpCode::EQUAL: {
-            result = binary_operation(
-                ir.op1,
-                ir.op2,
-                std::equal_to<> {},
-                temp_vars,
-                0);
-        } break;
-        case OpCode::NOT_EQUAL: {
-            result = binary_operation(
-                ir.op1,
-                ir.op2,
-                std::not_equal_to<> {},
-                temp_vars,
-                0);
-        } break;
-            // case OpCode::NOT: {
-            //     result = binary_operation(
-            //         ir.op1,
-            //         ir.op2,
-            //         std::plus<> {},
-            //         temp_vars,
-            //         0);
-            // } break;
-            // case OpCode::AND: {
-            //     result = binary_operation(
-            //         ir.op1,
-            //         ir.op2,
-            //         std::plus<> {},
-            //         temp_vars,
-            //         0);
-            // } break;
-            // case OpCode::OR: {
-            //     result = binary_operation(
-            //         ir.op1,
-            //         ir.op2,
-            //         std::plus<> {},
-            //         temp_vars,
-            //         0);
-            // } break;
-        case OpCode::ASSIGN: {
-            result = jl::get_type(ir.op1) == jl::OperandType::TEMP
-                ? get_temp_var_data(ir.op1, temp_vars)
-                : ir.op1;
-        } break;
+        switch (ir.type()) {
+        case Ir::BINARY:
+            handle_binary_ir(ir, temp_vars);
+            break;
+        case Ir::UNARY:
+            handle_unary_ir(ir, temp_vars);
+            break;
         default:
             unimplemented();
-            break;
         }
-
-        temp_vars[ir.dest.idx] = result;
     }
 
-    return {InterpretResult::OK, temp_vars};
+    return { InterpretResult::OK, temp_vars };
+}
+
+void jl::VM::handle_binary_ir(const Ir& ir, std::vector<Operand>& temp_vars)
+{
+    Operand result;
+    const auto& binar_ir = ir.binary();
+
+    switch (ir.opcode()) {
+    case OpCode::ADD: {
+        result = binary_operation(
+            binar_ir.op1,
+            binar_ir.op2,
+            std::plus<> {},
+            temp_vars,
+            0);
+    } break;
+    case OpCode::MINUS: {
+        result = binary_operation(
+            binar_ir.op1,
+            binar_ir.op2,
+            std::minus<> {},
+            temp_vars,
+            0);
+    } break;
+    case OpCode::STAR: {
+        result = binary_operation(
+            binar_ir.op1,
+            binar_ir.op2,
+            std::multiplies<> {},
+            temp_vars,
+            0);
+    } break;
+    case OpCode::SLASH: {
+        result = binary_operation(
+            binar_ir.op1,
+            binar_ir.op2,
+            std::divides<> {},
+            temp_vars,
+            0);
+    } break;
+    case OpCode::GREATER: {
+        result = binary_operation(
+            binar_ir.op1,
+            binar_ir.op2,
+            std::greater<> {},
+            temp_vars,
+            0);
+    } break;
+    case OpCode::LESS: {
+        result = binary_operation(
+            binar_ir.op1,
+            binar_ir.op2,
+            std::less<> {},
+            temp_vars,
+            0);
+    } break;
+    case OpCode::GREATER_EQUAL: {
+        result = binary_operation(
+            binar_ir.op1,
+            binar_ir.op2,
+            std::greater_equal<> {},
+            temp_vars,
+            0);
+    } break;
+    case OpCode::LESS_EQUAL: {
+        result = binary_operation(
+            binar_ir.op1,
+            binar_ir.op2,
+            std::less_equal<> {},
+            temp_vars,
+            0);
+    } break;
+    case OpCode::EQUAL: {
+        result = binary_operation(
+            binar_ir.op1,
+            binar_ir.op2,
+            std::equal_to<> {},
+            temp_vars,
+            0);
+    } break;
+    case OpCode::NOT_EQUAL: {
+        result = binary_operation(
+            binar_ir.op1,
+            binar_ir.op2,
+            std::not_equal_to<> {},
+            temp_vars,
+            0);
+    } break;
+        // case OpCode::NOT: {
+        //     result = binary_operation(
+        //         ir.op1,
+        //         ir.op2,
+        //         std::plus<> {},
+        //         temp_vars,
+        //         0);
+        // } break;
+        // case OpCode::AND: {
+        //     result = binary_operation(
+        //         ir.op1,
+        //         ir.op2,
+        //         std::plus<> {},
+        //         temp_vars,
+        //         0);
+        // } break;
+        // case OpCode::OR: {
+        //     result = binary_operation(
+        //         ir.op1,
+        //         ir.op2,
+        //         std::plus<> {},
+        //         temp_vars,
+        //         0);
+        // } break;
+    default:
+        unimplemented();
+        break;
+    }
+
+    temp_vars[ir.dest().idx] = result;
+}
+void jl::VM::handle_unary_ir(const Ir& ir, std::vector<Operand>& temp_vars)
+{
+    Operand result;
+    const auto& unary_ir = ir.unary();
+
+    switch (ir.opcode()) {
+    case OpCode::ASSIGN: {
+        result = jl::get_type(unary_ir.operand) == jl::OperandType::TEMP
+            ? get_temp_var_data(unary_ir.operand, temp_vars)
+            : unary_ir.operand;
+    } break;
+    default:
+        unimplemented();
+    }
+
+    temp_vars[ir.dest().idx] = result;
 }

@@ -3,9 +3,6 @@
 namespace jl {
 
 enum class OpCode {
-    RETURN,
-    CONSTANT,
-    NEGATE,
     ADD,
     MINUS,
     STAR,
@@ -20,9 +17,11 @@ enum class OpCode {
     NOT,
     AND,
     OR,
-
+    
     // 
-    ASSIGN
+    ASSIGN,
+    
+    RETURN,
 };
 
 const char* to_string(OpCode opcode);

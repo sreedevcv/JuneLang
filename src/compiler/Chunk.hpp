@@ -5,17 +5,11 @@
 #include <unordered_map>
 #include <vector>
 
+#include "Ir.hpp"
 #include "OpCode.hpp"
 #include "Operand.hpp"
 
 namespace jl {
-
-struct Ir {
-    OpCode opcode;
-    Operand op1;
-    Operand op2;
-    TempVar dest;
-};
 
 class Chunk {
 public:
@@ -29,6 +23,14 @@ public:
         Operand op2,
         TempVar dest,
         uint32_t line);
+    TempVar write(OpCode opcode,
+        Operand operand,
+        uint32_t line);
+    void write_with_dest(OpCode opcode,
+        Operand operand,
+        TempVar dest,
+        uint32_t line);
+
     TempVar store_variable(const std::string& var_name);
     std::optional<TempVar> look_up_variable(const std::string& var_name) const;
 

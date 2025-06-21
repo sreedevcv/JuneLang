@@ -1,7 +1,9 @@
 #include "Chunk.hpp"
 #include "ErrorHandler.hpp"
+#include "Ir.hpp"
 #include "OpCode.hpp"
 #include "Operand.hpp"
+#include "Utils.hpp"
 
 #include <cassert>
 #include <cstdint>
@@ -36,11 +38,20 @@ std::string jl::Chunk::disassemble() const
 
         out << ' ';
         out << std::setfill('0') << std::setw(4) << i;
-        out << std::setfill(' ') << std::setw(10) << jl::to_string(m_ir[i].dest);
+        out << std::setfill(' ') << std::setw(10) << jl::to_string(m_ir[i].dest());
         out << " : ";
-        out << std::setfill(' ') << std::setw(10) << jl::to_string(m_ir[i].opcode);
-        out << std::setfill(' ') << std::setw(10) << jl::to_string(m_ir[i].op1);
-        out << std::setfill(' ') << std::setw(10) << jl::to_string(m_ir[i].op2);
+        out << std::setfill(' ') << std::setw(10) << jl::to_string(m_ir[i].opcode());
+        switch (m_ir[i].type()) {
+        case Ir::BINARY:
+            out << std::setfill(' ') << std::setw(10) << jl::to_string(m_ir[i].binary().op1);
+            out << std::setfill(' ') << std::setw(10) << jl::to_string(m_ir[i].binary().op2);
+            break;
+        case Ir::UNARY:
+            out << std::setfill(' ') << std::setw(10) << jl::to_string(m_ir[i].unary().operand);
+            break;
+        default:
+            unimplemented();
+        }
         out << '\n';
     }
 
@@ -65,12 +76,12 @@ jl::TempVar jl::Chunk::write(
 {
     TempVar dest = create_temp_var();
 
-    m_ir.push_back(Ir {
-        .opcode = opcode,
-        .op1 = op1,
-        .op2 = op2,
-        .dest = dest,
-    });
+    m_ir.push_back(Ir { BinaryIr {
+        opcode,
+        op1,
+        op2,
+        dest,
+    } });
 
     m_lines.push_back(line);
 
@@ -84,12 +95,45 @@ void jl::Chunk::write_with_dest(
     TempVar dest,
     uint32_t line)
 {
-    m_ir.push_back(Ir {
-        .opcode = opcode,
-        .op1 = op1,
-        .op2 = op2,
-        .dest = dest,
-    });
+    m_ir.push_back(Ir { BinaryIr {
+        opcode,
+        op1,
+        op2,
+        dest,
+    } });
+
+    m_lines.push_back(line);
+}
+
+jl::TempVar jl::Chunk::write(
+    OpCode opcode,
+    Operand operand,
+    uint32_t line)
+{
+    TempVar dest = create_temp_var();
+
+    m_ir.push_back(Ir { UnaryIr {
+        opcode,
+        operand,
+        dest,
+    } });
+
+    m_lines.push_back(line);
+
+    return dest;
+}
+
+void jl::Chunk::write_with_dest(
+    OpCode opcode,
+    Operand operand,
+    TempVar dest,
+    uint32_t line)
+{
+    m_ir.push_back(Ir { UnaryIr {
+        opcode,
+        operand,
+        dest,
+    } });
 
     m_lines.push_back(line);
 }

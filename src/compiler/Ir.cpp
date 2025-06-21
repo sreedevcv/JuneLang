@@ -1,0 +1,57 @@
+#include "Ir.hpp"
+
+#include "Operand.hpp"
+#include "Utils.hpp"
+
+jl::Ir::Type jl::get_type(const jl::Ir& ir)
+{
+    switch (ir.data.index()) {
+    case 0:
+        return jl::Ir::UNARY;
+    case 1:
+        return jl::Ir::BINARY;
+    default:
+        unimplemented();
+    }
+
+    return static_cast<jl::Ir::Type>(1000);
+}
+
+jl::Ir::Type jl::Ir::type() const
+{
+    return jl::get_type(*this);
+}
+
+const jl::BinaryIr& jl::Ir::binary() const
+{
+    return std::get<BinaryIr>(data);
+}
+
+const jl::UnaryIr& jl::Ir::unary() const
+{
+    return std::get<UnaryIr>(data);
+}
+
+const jl::OpCode& jl::Ir::opcode() const
+{
+    switch (type()) {
+    case BINARY:
+        return binary().opcode;
+    case UNARY:
+        return unary().opcode;
+    default:
+        unimplemented();
+    }
+}
+
+const jl::TempVar& jl::Ir::dest() const
+{
+    switch (type()) {
+    case BINARY:
+        return binary().dest;
+    case UNARY:
+        return unary().dest;
+    default:
+        unimplemented();
+    }
+}

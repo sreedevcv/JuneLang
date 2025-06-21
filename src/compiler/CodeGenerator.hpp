@@ -2,6 +2,7 @@
 
 #include "Chunk.hpp"
 #include "Expr.hpp"
+#include "Operand.hpp"
 #include "Stmt.hpp"
 #include <any>
 #include <vector>
@@ -14,8 +15,8 @@ public:
 
     void generate(std::vector<Stmt*> stmts);
 
-    std::any compile(Stmt* stmt);
-    std::any compile(Expr* stmt);
+    jl::Operand compile(Stmt* stmt);
+    jl::Operand compile(Expr* stmt);
 
     void disassemble();
     const Chunk& get_chunk() const;

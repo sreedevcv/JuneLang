@@ -17,6 +17,9 @@ public:
 
 private:
     uint32_t m_ip { 0 };
+
+    void handle_binary_ir(const Ir& ir, std::vector<Operand>& temp_vars);
+    void handle_unary_ir(const Ir& ir, std::vector<Operand>& temp_vars);
 };
 
 }

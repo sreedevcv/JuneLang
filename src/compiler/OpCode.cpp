@@ -6,10 +6,6 @@ const char* jl::to_string(OpCode opcode)
     switch (opcode) {
     case OpCode::RETURN:
         return "RETURN";
-    case OpCode::CONSTANT:
-        return "CONSTANT";
-    case OpCode::NEGATE:
-        return "NEGATE";
     case OpCode::ADD:
         return "ADD";
     case OpCode::MINUS:

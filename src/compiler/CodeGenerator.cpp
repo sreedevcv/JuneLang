@@ -1,6 +1,5 @@
 #include "CodeGenerator.hpp"
 
-#include "ErrorHandler.hpp"
 #include "OpCode.hpp"
 #include "Operand.hpp"
 #include "Stmt.hpp"
@@ -34,14 +33,14 @@ const jl::Chunk& jl::CodeGenerator::get_chunk() const
     return m_chunk;
 }
 
-std::any jl::CodeGenerator::compile(Stmt* stmt)
+jl::Operand jl::CodeGenerator::compile(Stmt* stmt)
 {
-    return stmt->accept(*this);
+    return std::any_cast<Operand>(stmt->accept(*this));
 }
 
-std::any jl::CodeGenerator::compile(Expr* expr)
+jl::Operand jl::CodeGenerator::compile(Expr* expr)
 {
-    return expr->accept(*this);
+    return std::any_cast<Operand>(expr->accept(*this));
 }
 
 void jl::CodeGenerator::disassemble()
@@ -56,10 +55,8 @@ void jl::CodeGenerator::disassemble()
 std::any jl::CodeGenerator::visit_binary_expr(Binary* expr)
 {
     const auto type = expr->m_oper->get_tokentype();
-    const auto left_var = compile(expr->m_left);
-    const auto right_var = compile(expr->m_right);
-    const auto l = std::any_cast<Operand>(left_var);
-    const auto r = std::any_cast<Operand>(right_var);
+    const auto l = compile(expr->m_left);
+    const auto r = compile(expr->m_right);
     const uint32_t line = expr->m_oper->get_line();
     
     // if (get_type(l) != get_type(r)) {
@@ -117,16 +114,16 @@ std::any jl::CodeGenerator::visit_grouping_expr(Grouping* expr)
 
 std::any jl::CodeGenerator::visit_unary_expr(Unary* expr)
 {
-    auto val = std::any_cast<Operand>(compile(expr->m_expr));
+    auto val = compile(expr->m_expr);
     auto oper = expr->m_oper->get_tokentype();
     Operand temp;
 
     switch (oper) {
     case Token::MINUS:
-        temp = m_chunk.write(OpCode::MINUS, val, Nil {}, expr->m_oper->get_line());
+        temp = m_chunk.write(OpCode::MINUS, val, expr->m_oper->get_line());
         break;
     case Token::BANG:
-        temp = m_chunk.write(OpCode::NOT, val, Nil {}, expr->m_oper->get_line());
+        temp = m_chunk.write(OpCode::NOT, val, expr->m_oper->get_line());
         break;
     default:
         unimplemented();
@@ -159,10 +156,8 @@ std::any jl::CodeGenerator::visit_literal_expr(Literal* expr)
 
 std::any jl::CodeGenerator::visit_logical_expr(Logical* expr)
 {
-    const auto left = compile(expr->m_left);
-    const auto right = compile(expr->m_right);
-    const auto l = std::any_cast<Operand>(left);
-    const auto r = std::any_cast<Operand>(right);
+    const auto l = compile(expr->m_left);
+    const auto r = compile(expr->m_right);
     const auto oper = expr->m_oper.get_tokentype();
     Operand temp;
 
@@ -193,13 +188,13 @@ std::any jl::CodeGenerator::visit_variable_expr(Variable* expr)
 
 std::any jl::CodeGenerator::visit_assign_expr(Assign* expr)
 {
-    const auto assignee = std::any_cast<Operand>(compile(expr->m_expr));
+    const auto assignee = compile(expr->m_expr);
 
     const auto& var_name = expr->m_token.get_lexeme();
     const auto dest_var = m_chunk.look_up_variable(var_name);
 
     if (dest_var) {
-        m_chunk.write_with_dest(OpCode::ASSIGN, assignee, Nil {}, *dest_var, expr->m_token.get_line());
+        m_chunk.write_with_dest(OpCode::ASSIGN, assignee, *dest_var, expr->m_token.get_line());
     } else {
         unimplemented();
     }
@@ -226,12 +221,12 @@ std::any jl::CodeGenerator::visit_var_stmt(VarStmt* stmt)
 {
     Operand operand = Nil {};
     if (stmt->m_initializer != nullptr) {
-        operand = std::any_cast<Operand>(compile(stmt->m_initializer));
+        operand = compile(stmt->m_initializer);
     }
 
     const auto var = m_chunk.store_variable(stmt->m_name.get_lexeme());
     if (stmt->m_initializer != nullptr) {
-        m_chunk.write_with_dest(OpCode::ASSIGN, operand, Nil {}, var, stmt->m_name.get_line());
+        m_chunk.write_with_dest(OpCode::ASSIGN, operand, var, stmt->m_name.get_line());
     }
 
     return Operand { var };
@@ -239,15 +234,27 @@ std::any jl::CodeGenerator::visit_var_stmt(VarStmt* stmt)
 
 std::any jl::CodeGenerator::visit_expr_stmt(ExprStmt* stmt)
 {
-    const auto operand = std::any_cast<Operand>(compile(stmt->m_expr));
+    const auto operand = compile(stmt->m_expr);
     return operand;
 }
 
+std::any jl::CodeGenerator::visit_block_stmt(BlockStmt* stmt) 
+{
+    for (auto s: stmt->m_statements) {
+        compile(s);
+    }
+
+    return Operand {Nil{}};
+}
+
+std::any jl::CodeGenerator::visit_while_stmt(WhileStmt* stmt) 
+{
+    
+}
+
 std::any jl::CodeGenerator::visit_print_stmt(PrintStmt* stmt) { }
-std::any jl::CodeGenerator::visit_block_stmt(BlockStmt* stmt) { }
 std::any jl::CodeGenerator::visit_empty_stmt(EmptyStmt* stmt) { }
 std::any jl::CodeGenerator::visit_if_stmt(IfStmt* stmt) { }
-std::any jl::CodeGenerator::visit_while_stmt(WhileStmt* stmt) { }
 std::any jl::CodeGenerator::visit_func_stmt(FuncStmt* stmt) { }
 std::any jl::CodeGenerator::visit_return_stmt(ReturnStmt* stmt) { }
 std::any jl::CodeGenerator::visit_class_stmt(ClassStmt* stmt) { }

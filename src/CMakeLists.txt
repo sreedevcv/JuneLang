@@ -1,15 +1,15 @@
 add_library(JuneInterpreter
-    Value.cpp
-    Token.cpp
-    Lexer.cpp
-    ErrorHandler.cpp
-    Parser.cpp
-    Callable.cpp
-    Resolver.cpp
+    frontend/Value.cpp
+    frontend/Token.cpp
+    frontend/Lexer.cpp
+    frontend/ErrorHandler.cpp
+    frontend/Parser.cpp
+    frontend/Callable.cpp
+    frontend/Resolver.cpp
+    frontend/StreamHandler.cpp
     interpreter/Interpreter.cpp
     interpreter/Environment.cpp
     interpreter/NativeFunctions.cpp
-    StreamHandler.cpp
     memory/Arena.cpp
     memory/MemoryPool.cpp
     memory/GarbageCollector.cpp
@@ -18,6 +18,7 @@ add_library(JuneInterpreter
     compiler/Chunk.cpp
     compiler/OpCode.cpp
     compiler/VM.cpp
+    compiler/Ir.cpp
 )
 
 target_link_libraries(
@@ -31,4 +32,5 @@ target_include_directories(JuneInterpreter
     memory
     compiler
     interpreter
+    frontend
 )
