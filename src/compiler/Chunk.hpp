@@ -37,15 +37,18 @@ public:
     const std::vector<Ir>& get_ir() const;
     uint32_t get_max_allocated_temps() const;
     void output_var_map(std::ostream& in) const;
-    const std::unordered_map<std::string, TempVar>& get_variable_map() const;
+    const std::unordered_map<std::string, uint32_t>& get_variable_map() const;
 
 private:
+    std::string m_file_name { "test" };
     std::vector<Ir> m_ir;
     std::vector<uint32_t> m_lines;
     uint32_t m_temp_var_count { 0 };
-    std::unordered_map<std::string, TempVar> m_variable_map;
+    std::vector<OperandType> m_temp_var_types;
+    std::unordered_map<std::string, uint32_t> m_variable_map;
 
-    TempVar create_temp_var();
+    TempVar create_temp_var(OperandType type);
+    OperandType handle_binary_type_inference(jl::Operand op1, jl::Operand op2, uint32_t line);
 };
 
 }

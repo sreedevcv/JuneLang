@@ -9,15 +9,6 @@
 #include "Operand.hpp"
 #include "Utils.hpp"
 
-static bool is_number(const jl::Operand& op)
-{
-    const auto type = jl::get_type(op);
-
-    return (type == jl::OperandType::INT || type == jl::OperandType::FLOAT)
-        ? true
-        : false;
-}
-
 static const jl::Operand& get_temp_var_data(
     const jl::Operand& op1,
     const std::vector<jl::Operand>& temp_vars)
@@ -27,7 +18,6 @@ static const jl::Operand& get_temp_var_data(
 }
 
 // Does the operation and return the value(double | int) as Operand
-//
 template <typename Op>
 static const jl::Operand binary_operation(
     const jl::Operand& op1,
@@ -206,6 +196,7 @@ void jl::VM::handle_binary_ir(const Ir& ir, std::vector<Operand>& temp_vars)
 
     temp_vars[ir.dest().idx] = result;
 }
+
 void jl::VM::handle_unary_ir(const Ir& ir, std::vector<Operand>& temp_vars)
 {
     Operand result;

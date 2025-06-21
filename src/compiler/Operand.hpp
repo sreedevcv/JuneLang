@@ -1,17 +1,19 @@
 #pragma once
 
-#include "Utils.hpp"
 #include <cstdint>
+#include <optional>
 #include <string>
 #include <variant>
+#include <vector>
 
 namespace jl {
 
-struct TempVar {
-    uint32_t idx;
-};
-
-struct Nil { };
+// enum class DataType {
+//     INT,
+//     FLOAT,
+//     BOOL,
+//     NIL,
+// };
 
 enum class OperandType {
     INT,
@@ -19,46 +21,44 @@ enum class OperandType {
     TEMP,
     NIL,
     BOOL,
+    UNASSIGNED, // Not represend in Operand variant
 };
+
+struct TempVar {
+    uint32_t idx;
+};
+
+struct Nil { };
 
 using Operand = std::variant<int, double, TempVar, Nil, bool>;
 
-inline std::string to_string(const Operand& operand)
-{
-    switch (operand.index()) {
-    case 0:
-        return std::to_string(std::get<int>(operand));
-    case 1:
-        return std::to_string(std::get<double>(operand));
-    case 2:
-        return "T[" + std::to_string(std::get<TempVar>(operand).idx) + "]";
-    case 3:
-        return "Nil";
-    case 4:
-        return (std::get<bool>(operand) == true) ? "true" : "false";
-    }
+std::string to_string(const Operand& operand);
+std::string to_string(const Operand& operand, const std::vector<OperandType>& var_map);
+std::string to_string(const OperandType& operand_type);
+OperandType get_type(const Operand& operand);
+OperandType get_nested_type(const Operand& operand, const std::vector<OperandType>& var_map);
+std::optional<OperandType> infer_type_for_binary(
+    const Operand& op1,
+    const Operand& op2,
+    const std::vector<OperandType>& var_map);
+bool is_number(const Operand& operand);
 
-    unimplemented();
-    return "Unimplemented";
-}
+// inline DataType get_data_type(const Operand& operand)
+// {
+//     switch (get_type(operand)) {
+//     case OperandType::INT:
+//         return DataType::INT;
+//     case OperandType::FLOAT:
+//         return DataType::INT;
+//     case OperandType::TEMP:
+//         return std::get<TempVar>(operand).type;
+//     case OperandType::NIL:
+//         return DataType::NIL;
+//     case OperandType::BOOL:
+//     }
 
-inline OperandType get_type(const Operand& operand)
-{
-    switch (operand.index()) {
-    case 0:
-        return OperandType::INT;
-    case 1:
-        return OperandType::FLOAT;
-    case 2:
-        return OperandType::TEMP;
-    case 3:
-        return OperandType::NIL;
-    case 4:
-        return OperandType::BOOL;
-    }
-
-    unimplemented();
-    return OperandType::NIL;
-}
+//     unimplemented();
+//     return DataType::UNASSIGNED;
+// }
 
 }

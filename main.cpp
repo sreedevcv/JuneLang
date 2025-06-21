@@ -21,7 +21,8 @@ int main(int argc, char const* argv[])
             var a = 10 + 2;
             var b = a *  2 + 1;
             [
-                var c = 3;
+                var c = 3.0;
+                a = c;
             ]
         ]
 )");
@@ -50,13 +51,18 @@ int main(int argc, char const* argv[])
 
     jl::CodeGenerator codegen(file_name);
     codegen.generate(stmts);
+
+    // if (jl::ErrorHandler::has_error()) {
+    //     return 1;
+    // }
+
     codegen.disassemble();
     const auto chunk = codegen.get_chunk();
     jl::VM vm;
     const auto [res, vars] = vm.run(chunk);
 
-    for (const auto& [name, temp] : chunk.get_variable_map()) {
-        std::println("{}\t{}", name, jl::to_string(vars[temp.idx]));
+    for (const auto& [name, idx] : chunk.get_variable_map()) {
+        std::println("{}\t{}", name, jl::to_string(vars[idx]));
     }
 
     return 0;

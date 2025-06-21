@@ -46,9 +46,9 @@ TEST_CASE("Expressions", "[Codegen]")
     const auto [status, temp_vars] = vm.run(chunk);
     const auto var_map = chunk.get_variable_map();
 
-    const auto a_value = temp_vars[var_map.at("a").idx];
-    const auto b_value = temp_vars[var_map.at("b").idx];
-    const auto c_value = temp_vars[var_map.at("c").idx];
+    const auto a_value = temp_vars[var_map.at("a")];
+    const auto b_value = temp_vars[var_map.at("b")];
+    const auto c_value = temp_vars[var_map.at("c")];
 
     REQUIRE(std::get<int>(a_value) == 12);
     REQUIRE(std::get<int>(b_value) == 20);

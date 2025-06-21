@@ -19,6 +19,7 @@ add_library(JuneInterpreter
     compiler/OpCode.cpp
     compiler/VM.cpp
     compiler/Ir.cpp
+    compiler/Operand.cpp
 )
 
 target_link_libraries(

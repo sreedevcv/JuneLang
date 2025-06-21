@@ -59,10 +59,6 @@ std::any jl::CodeGenerator::visit_binary_expr(Binary* expr)
     const auto r = compile(expr->m_right);
     const uint32_t line = expr->m_oper->get_line();
     
-    // if (get_type(l) != get_type(r)) {
-    //     ErrorHandler::error(m_file_name, line, "Left and right operand of binary operation do not have the same type");
-    // }
-
     TempVar dest_var;
 
     switch (type) {
@@ -224,7 +220,7 @@ std::any jl::CodeGenerator::visit_var_stmt(VarStmt* stmt)
         operand = compile(stmt->m_initializer);
     }
 
-    const auto var = m_chunk.store_variable(stmt->m_name.get_lexeme());
+    auto var = m_chunk.store_variable(stmt->m_name.get_lexeme());
     if (stmt->m_initializer != nullptr) {
         m_chunk.write_with_dest(OpCode::ASSIGN, operand, var, stmt->m_name.get_line());
     }
