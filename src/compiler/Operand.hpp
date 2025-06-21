@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Utils.hpp"
+#include "Value.hpp"
 #include <cstdint>
 #include <string>
 #include <variant>
@@ -12,6 +13,14 @@ struct TempVar {
 };
 
 struct Nil { };
+
+enum class OperandType {
+    INT,
+    FLOAT,
+    TEMP,
+    NIL,
+    BOOL,
+};
 
 using Operand = std::variant<int, double, TempVar, Nil, bool>;
 
@@ -32,6 +41,25 @@ inline std::string to_string(const Operand& operand)
 
     unimplemented();
     return "Unimplemented";
+}
+
+inline OperandType get_type(const Operand& operand)
+{
+    switch (operand.index()) {
+    case 0:
+        return OperandType::INT;
+    case 1:
+        return OperandType::FLOAT;
+    case 2:
+        return OperandType::TEMP;
+    case 3:
+        return OperandType::NIL;
+    case 4:
+        return OperandType::BOOL;
+    }
+
+    unimplemented();
+    return OperandType::NIL;
 }
 
 }

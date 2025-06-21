@@ -1,5 +1,6 @@
 #include "CodeGenerator.hpp"
 
+#include "ErrorHandler.hpp"
 #include "OpCode.hpp"
 #include "Operand.hpp"
 #include "Stmt.hpp"
@@ -28,6 +29,11 @@ void jl::CodeGenerator::generate(std::vector<Stmt*> stmts)
     }
 }
 
+const jl::Chunk& jl::CodeGenerator::get_chunk() const
+{
+    return m_chunk;
+}
+
 std::any jl::CodeGenerator::compile(Stmt* stmt)
 {
     return stmt->accept(*this);
@@ -54,8 +60,13 @@ std::any jl::CodeGenerator::visit_binary_expr(Binary* expr)
     const auto right_var = compile(expr->m_right);
     const auto l = std::any_cast<Operand>(left_var);
     const auto r = std::any_cast<Operand>(right_var);
-    TempVar dest_var;
     const uint32_t line = expr->m_oper->get_line();
+    
+    // if (get_type(l) != get_type(r)) {
+    //     ErrorHandler::error(m_file_name, line, "Left and right operand of binary operation do not have the same type");
+    // }
+
+    TempVar dest_var;
 
     switch (type) {
     case Token::PLUS: {

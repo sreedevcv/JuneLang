@@ -1,24 +1,22 @@
-// #pragma once
+#pragma once
 
-// #include "Chunk.hpp"
-// #include "Value.hpp"
-// #include <cstdint>
-// #include <stack>
-// namespace jl {
+#include "Chunk.hpp"
+#include <cstdint>
 
-// class VM {
-// public:
-//     enum InterpretResult {
-//         OK,
-//         COMPILER_ERROR,
-//         RUNTIME_ERROR,
-//     };
+namespace jl {
 
-//     InterpretResult run(const Chunk& chunk);
+class VM {
+public:
+    enum InterpretResult {
+        OK,
+        COMPILER_ERROR,
+        RUNTIME_ERROR,
+    };
 
-// private:
-//     uint32_t m_ip { 0 };
-//     std::stack<Value> m_stack;
-// };
+    std::pair<InterpretResult, std::vector<Operand>> run(const Chunk& chunk);
 
-// }
+private:
+    uint32_t m_ip { 0 };
+};
+
+}

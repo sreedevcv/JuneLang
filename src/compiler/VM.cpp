@@ -1,64 +1,197 @@
-// #include "VM.hpp"
-// #include "OpCode.hpp"
-// #include "Value.hpp"
-// #include <cstdint>
-// #include <cstdlib>
-// #include <iostream>
-// #include <print>
-// #include <stack>
+#include "VM.hpp"
 
-// static jl::Value pop(std::stack<jl::Value>& stk)
-// {
-//     jl::Value constant = std::move(stk.top());
-//     stk.pop();
+#include <cstdint>
+#include <functional>
+#include <string>
+#include <vector>
 
-//     return constant;
-// }
+#include "ErrorHandler.hpp"
+#include "Operand.hpp"
 
-// jl::VM::InterpretResult jl::VM::run(const Chunk& chunk)
-// {
-//     m_ip = 0;
+static bool is_number(const jl::Operand& op)
+{
+    const auto type = jl::get_type(op);
 
-//     while (true) {
-//         auto instruction = chunk.read_byte<OpCode>(m_ip++);
+    return (type == jl::OperandType::INT || type == jl::OperandType::FLOAT)
+        ? true
+        : false;
+}
 
-//         chunk.disasemble_opcode(std::cout, m_ip);
+static const jl::Operand& get_temp_var_data(
+    const jl::Operand& op1,
+    const std::vector<jl::Operand>& temp_vars)
+{
+    const auto var = std::get<jl::TempVar>(op1);
+    return temp_vars[var.idx];
+}
 
-//         switch (instruction) {
-//         case OpCode::RETURN: {
-//             auto constant = pop(m_stack);
-//             std::println("{}", stringify(&constant));
-//             return OK;
-//         }
-//         case OpCode::CONSTANT: {
-//             const auto offset = chunk.read_byte<uint8_t>(m_ip++);
-//             auto constant = chunk.read_constant(offset);
-//             m_stack.push(std::move(constant));
-//             break;
-//         }
-//         case OpCode::NEGATE: {
-//             auto constant = pop(m_stack);
-            
-//             switch (get_type(constant)) {
-//             case Type::INT: {
-//                 int n = std::get<int>(constant.get());
-//                 constant.get() = n * -1;
-//                 break;
-//             }
-//             case Type::FLOAT: {
-//                 double n = std::get<double>(constant.get());
-//                 constant.get() = n * -1;
-//                 break;
-//             }
+// Does the operation and return the value(double | int) as Operand
+//
+template <typename Op>
+static const jl::Operand binary_operation(
+    const jl::Operand& op1,
+    const jl::Operand& op2,
+    Op bin_oper,
+    const std::vector<jl::Operand>& temp_vars,
+    uint32_t line)
+{
+    const auto& left = jl::get_type(op1) == jl::OperandType::TEMP
+        ? get_temp_var_data(op1, temp_vars)
+        : op1;
+    const auto& right = jl::get_type(op2) == jl::OperandType::TEMP
+        ? get_temp_var_data(op2, temp_vars)
+        : op2;
 
-//             default:
-//                 std::println("Cannot negate a non number: {}", stringify(&constant));
-//                 std::exit(1);
-//             }
+    auto file = std::string("temp");
+    if (!is_number(left) && !is_number(right)) {
+        jl::ErrorHandler::error(file, "vm", "binary expression", line, "Left and right operands must be a number", 0);
+        std::exit(1);
+    }
 
-//             m_stack.push(constant);
-//             break;
-//         }
-//         }
-//     }
-// }
+    const auto type1 = jl::get_type(left);
+    const auto type2 = jl::get_type(right);
+
+    if (type1 == jl::OperandType::FLOAT || type2 == jl::OperandType::FLOAT) {
+        const double& l = type1 == jl::OperandType::FLOAT
+            ? std::get<double>(left)
+            : std::get<int>(left);
+        const double& r = type2 == jl::OperandType::FLOAT
+            ? std::get<double>(right)
+            : std::get<int>(right);
+
+        return jl::Operand { bin_oper(l, r) };
+    } else {
+        const int& l = std::get<int>(left);
+        const int& r = std::get<int>(right);
+
+        return jl::Operand { bin_oper(l, r) };
+    }
+}
+
+std::pair<jl::VM::InterpretResult, std::vector<jl::Operand>> jl::VM::run(const Chunk& chunk)
+{
+    std::vector<Operand> temp_vars { chunk.get_max_allocated_temps() };
+
+    for (const auto& ir : chunk.get_ir()) {
+        Operand result;
+
+        switch (ir.opcode) {
+        case OpCode::ADD: {
+            result = binary_operation(
+                ir.op1,
+                ir.op2,
+                std::plus<> {},
+                temp_vars,
+                0);
+        } break;
+        case OpCode::MINUS: {
+            result = binary_operation(
+                ir.op1,
+                ir.op2,
+                std::minus<> {},
+                temp_vars,
+                0);
+        } break;
+        case OpCode::STAR: {
+            result = binary_operation(
+                ir.op1,
+                ir.op2,
+                std::multiplies<> {},
+                temp_vars,
+                0);
+        } break;
+        case OpCode::SLASH: {
+            result = binary_operation(
+                ir.op1,
+                ir.op2,
+                std::divides<> {},
+                temp_vars,
+                0);
+        } break;
+        case OpCode::GREATER: {
+            result = binary_operation(
+                ir.op1,
+                ir.op2,
+                std::greater<> {},
+                temp_vars,
+                0);
+        } break;
+        case OpCode::LESS: {
+            result = binary_operation(
+                ir.op1,
+                ir.op2,
+                std::less<> {},
+                temp_vars,
+                0);
+        } break;
+        case OpCode::GREATER_EQUAL: {
+            result = binary_operation(
+                ir.op1,
+                ir.op2,
+                std::greater_equal<> {},
+                temp_vars,
+                0);
+        } break;
+        case OpCode::LESS_EQUAL: {
+            result = binary_operation(
+                ir.op1,
+                ir.op2,
+                std::less_equal<> {},
+                temp_vars,
+                0);
+        } break;
+        case OpCode::EQUAL: {
+            result = binary_operation(
+                ir.op1,
+                ir.op2,
+                std::equal_to<> {},
+                temp_vars,
+                0);
+        } break;
+        case OpCode::NOT_EQUAL: {
+            result = binary_operation(
+                ir.op1,
+                ir.op2,
+                std::not_equal_to<> {},
+                temp_vars,
+                0);
+        } break;
+            // case OpCode::NOT: {
+            //     result = binary_operation(
+            //         ir.op1,
+            //         ir.op2,
+            //         std::plus<> {},
+            //         temp_vars,
+            //         0);
+            // } break;
+            // case OpCode::AND: {
+            //     result = binary_operation(
+            //         ir.op1,
+            //         ir.op2,
+            //         std::plus<> {},
+            //         temp_vars,
+            //         0);
+            // } break;
+            // case OpCode::OR: {
+            //     result = binary_operation(
+            //         ir.op1,
+            //         ir.op2,
+            //         std::plus<> {},
+            //         temp_vars,
+            //         0);
+            // } break;
+        case OpCode::ASSIGN: {
+            result = jl::get_type(ir.op1) == jl::OperandType::TEMP
+                ? get_temp_var_data(ir.op1, temp_vars)
+                : ir.op1;
+        } break;
+        default:
+            unimplemented();
+            break;
+        }
+
+        temp_vars[ir.dest.idx] = result;
+    }
+
+    return {InterpretResult::OK, temp_vars};
+}

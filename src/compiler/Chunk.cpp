@@ -8,6 +8,16 @@
 #include <iomanip>
 #include <ostream>
 
+const std::vector<jl::Ir>& jl::Chunk::get_ir() const
+{
+    return m_ir;
+}
+
+uint32_t jl::Chunk::get_max_allocated_temps() const
+{
+    return m_temp_var_count;
+}
+
 std::string jl::Chunk::disassemble() const
 {
     std::stringstream out;
@@ -16,7 +26,7 @@ std::string jl::Chunk::disassemble() const
 
     uint32_t line = -1;
 
-    for (int i = 0; i < m_ops.size(); i++) {
+    for (int i = 0; i < m_ir.size(); i++) {
         if (m_lines[i] != line) {
             line = m_lines[i];
             out << std::setfill('0') << std::setw(4) << line;
@@ -26,11 +36,11 @@ std::string jl::Chunk::disassemble() const
 
         out << ' ';
         out << std::setfill('0') << std::setw(4) << i;
-        out << std::setfill(' ') << std::setw(10) << jl::to_string(m_ops[i].dest);
+        out << std::setfill(' ') << std::setw(10) << jl::to_string(m_ir[i].dest);
         out << " : ";
-        out << std::setfill(' ') << std::setw(10) << jl::to_string(m_ops[i].opcode);
-        out << std::setfill(' ') << std::setw(10) << jl::to_string(m_ops[i].op1);
-        out << std::setfill(' ') << std::setw(10) << jl::to_string(m_ops[i].op2);
+        out << std::setfill(' ') << std::setw(10) << jl::to_string(m_ir[i].opcode);
+        out << std::setfill(' ') << std::setw(10) << jl::to_string(m_ir[i].op1);
+        out << std::setfill(' ') << std::setw(10) << jl::to_string(m_ir[i].op2);
         out << '\n';
     }
 
@@ -55,7 +65,7 @@ jl::TempVar jl::Chunk::write(
 {
     TempVar dest = create_temp_var();
 
-    m_ops.push_back(Ir {
+    m_ir.push_back(Ir {
         .opcode = opcode,
         .op1 = op1,
         .op2 = op2,
@@ -74,7 +84,7 @@ void jl::Chunk::write_with_dest(
     TempVar dest,
     uint32_t line)
 {
-    m_ops.push_back(Ir {
+    m_ir.push_back(Ir {
         .opcode = opcode,
         .op1 = op1,
         .op2 = op2,
@@ -109,4 +119,9 @@ jl::TempVar jl::Chunk::create_temp_var()
     return TempVar {
         .idx = m_temp_var_count++
     };
+}
+
+const std::unordered_map<std::string, jl::TempVar>& jl::Chunk::get_variable_map() const
+{
+    return m_variable_map;
 }

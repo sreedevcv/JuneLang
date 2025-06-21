@@ -18,9 +18,9 @@ public:
     std::any compile(Expr* stmt);
 
     void disassemble();
+    const Chunk& get_chunk() const;
 
 private:
-
     virtual std::any visit_assign_expr(Assign* expr) override;
     virtual std::any visit_binary_expr(Binary* expr) override;
     virtual std::any visit_grouping_expr(Grouping* expr) override;
@@ -54,6 +54,5 @@ private:
 
     Chunk m_chunk;
 };
-
 
 } // namespace jl

@@ -2,10 +2,13 @@
 #include "ErrorHandler.hpp"
 #include "Interpreter.hpp"
 #include "Lexer.hpp"
+#include "Operand.hpp"
 #include "Parser.hpp"
 #include "Resolver.hpp"
 #include "VM.hpp"
+
 #include <cassert>
+#include <print>
 
 int main(int argc, char const* argv[])
 {
@@ -14,8 +17,7 @@ int main(int argc, char const* argv[])
 
     jl::Lexer lexer(
         R"( var a = 10 + 2;
-        var b = a + 13 and 8;
-        a = b + 1;
+        var b = a *  2 + 1;
 )");
 
     std::string file_name = "examples/EList.jun";
@@ -43,6 +45,13 @@ int main(int argc, char const* argv[])
     jl::CodeGenerator codegen(file_name);
     codegen.generate(stmts);
     codegen.disassemble();
+    const auto chunk = codegen.get_chunk();
+    jl::VM vm;
+    const auto [res, vars] = vm.run(chunk);
+
+    for (const auto& [name, temp] : chunk.get_variable_map()) {
+        std::println("{}\t{}", name, jl::to_string(vars[temp.idx]));
+    }
 
     // auto stmts = parser.parseStatements();
 

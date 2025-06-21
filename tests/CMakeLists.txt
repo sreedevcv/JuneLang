@@ -12,6 +12,16 @@ target_link_libraries(interpreter_tests PRIVATE
     JuneInterpreter
 )
 
+add_executable(codegen_tests 
+    codegen/TestBasicExpr.cpp
+)
+
+target_link_libraries(codegen_tests PRIVATE 
+    Catch2::Catch2WithMain
+    JuneInterpreter
+)
+
 include(CTest)
 include(Catch)
-catch_discover_tests(interpreter_tests)
+# catch_discover_tests(interpreter_tests)
+catch_discover_tests(codegen_tests)
