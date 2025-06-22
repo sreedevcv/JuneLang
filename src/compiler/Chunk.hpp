@@ -1,13 +1,13 @@
 #pragma once
 
 #include <cstdint>
-#include <optional>
 #include <unordered_map>
 #include <vector>
 
 #include "Ir.hpp"
 #include "OpCode.hpp"
 #include "Operand.hpp"
+#include "VariableManager.hpp"
 
 namespace jl {
 
@@ -31,24 +31,20 @@ public:
         TempVar dest,
         uint32_t line);
 
-    TempVar store_variable(const std::string& var_name);
-    std::optional<TempVar> look_up_variable(const std::string& var_name) const;
-
     const std::vector<Ir>& get_ir() const;
     uint32_t get_max_allocated_temps() const;
     void output_var_map(std::ostream& in) const;
+    TempVar store_variable(const std::string& var_name);
+    std::optional<TempVar> look_up_variable(const std::string& var_name) const;
     const std::unordered_map<std::string, uint32_t>& get_variable_map() const;
 
 private:
     std::string m_file_name { "test" };
     std::vector<Ir> m_ir;
     std::vector<uint32_t> m_lines;
-    uint32_t m_temp_var_count { 0 };
-    std::vector<OperandType> m_temp_var_types;
-    std::unordered_map<std::string, uint32_t> m_variable_map;
+    VariableManager m_var_manager;
 
-    TempVar create_temp_var(OperandType type);
-    OperandType handle_binary_type_inference(jl::Operand op1, jl::Operand op2, uint32_t line);
+    OperandType handle_binary_type_inference(jl::Operand op1, jl::Operand op2, OpCode opcode, uint32_t line);
 };
 
 }

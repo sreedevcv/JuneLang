@@ -190,7 +190,7 @@ std::any jl::CodeGenerator::visit_assign_expr(Assign* expr)
     const auto dest_var = m_chunk.look_up_variable(var_name);
 
     if (dest_var) {
-        m_chunk.write_with_dest(OpCode::ASSIGN, assignee, *dest_var, expr->m_token.get_line());
+        m_chunk.write_with_dest(OpCode::MOVE, assignee, *dest_var, expr->m_token.get_line());
     } else {
         unimplemented();
     }
@@ -222,7 +222,7 @@ std::any jl::CodeGenerator::visit_var_stmt(VarStmt* stmt)
 
     auto var = m_chunk.store_variable(stmt->m_name.get_lexeme());
     if (stmt->m_initializer != nullptr) {
-        m_chunk.write_with_dest(OpCode::ASSIGN, operand, var, stmt->m_name.get_line());
+        m_chunk.write_with_dest(OpCode::MOVE, operand, var, stmt->m_name.get_line());
     }
 
     return Operand { var };

@@ -19,11 +19,19 @@ enum class OpCode {
     OR,
     
     // 
-    ASSIGN,
-    
+    MOVE,
     RETURN,
 };
 
+enum class OperatorCategory {
+    ARITHAMETIC,
+    COMPARISON,
+    BOOLEAN,
+    OTHER,
+};
+
 const char* to_string(OpCode opcode);
+OperatorCategory get_category(const OpCode& opcode);
+
 
 }

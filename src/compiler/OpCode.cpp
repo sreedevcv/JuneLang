@@ -34,10 +34,37 @@ const char* jl::to_string(OpCode opcode)
         return "AND";
     case OpCode::OR:
         return "OR";
-    case OpCode::ASSIGN:
-        return "ASSIGN";
+    case OpCode::MOVE:
+        return "MOVE";
     default:
         unimplemented();
         return "UNKNOWN";
+    }
+}
+
+jl::OperatorCategory jl::get_category(const OpCode& opcode)
+{
+    switch (opcode) {
+    case OpCode::ADD:
+    case OpCode::MINUS:
+    case OpCode::STAR:
+    case OpCode::MODULUS:
+    case OpCode::SLASH:
+        return OperatorCategory::ARITHAMETIC;
+    case OpCode::GREATER:
+    case OpCode::LESS:
+    case OpCode::GREATER_EQUAL:
+    case OpCode::LESS_EQUAL:
+    case OpCode::EQUAL:
+    case OpCode::NOT_EQUAL:
+        return OperatorCategory::COMPARISON;
+    case OpCode::NOT:
+    case OpCode::AND:
+    case OpCode::OR:
+        return OperatorCategory::BOOLEAN;
+    case OpCode::MOVE:
+    case OpCode::RETURN:
+        return OperatorCategory::OTHER;
+        break;
     }
 }

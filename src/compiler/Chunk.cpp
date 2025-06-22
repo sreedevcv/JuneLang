@@ -9,7 +9,6 @@
 #include <cstdint>
 #include <format>
 #include <iomanip>
-#include <optional>
 #include <ostream>
 
 const std::vector<jl::Ir>& jl::Chunk::get_ir() const
@@ -19,7 +18,7 @@ const std::vector<jl::Ir>& jl::Chunk::get_ir() const
 
 uint32_t jl::Chunk::get_max_allocated_temps() const
 {
-    return m_temp_var_count;
+    return m_var_manager.get_max_allocated_temps();
 }
 
 std::string jl::Chunk::disassemble() const
@@ -40,16 +39,16 @@ std::string jl::Chunk::disassemble() const
 
         out << ' ';
         out << std::setfill('0') << std::setw(4) << i;
-        out << std::setfill(' ') << std::setw(10) << jl::to_string(m_ir[i].dest(), m_temp_var_types);
+        out << std::setfill(' ') << std::setw(10) << m_var_manager.pretty_print(m_ir[i].dest());
         out << " : ";
         out << std::setfill(' ') << std::setw(10) << jl::to_string(m_ir[i].opcode());
         switch (m_ir[i].type()) {
         case Ir::BINARY:
-            out << std::setfill(' ') << std::setw(10) << jl::to_string(m_ir[i].binary().op1, m_temp_var_types);
-            out << std::setfill(' ') << std::setw(10) << jl::to_string(m_ir[i].binary().op2, m_temp_var_types);
+            out << std::setfill(' ') << std::setw(10) << m_var_manager.pretty_print(m_ir[i].binary().op1);
+            out << std::setfill(' ') << std::setw(10) << m_var_manager.pretty_print(m_ir[i].binary().op2);
             break;
         case Ir::UNARY:
-            out << std::setfill(' ') << std::setw(10) << jl::to_string(m_ir[i].unary().operand, m_temp_var_types);
+            out << std::setfill(' ') << std::setw(10) << m_var_manager.pretty_print(m_ir[i].unary().operand);
             break;
         default:
             unimplemented();
@@ -62,7 +61,7 @@ std::string jl::Chunk::disassemble() const
 
 void jl::Chunk::output_var_map(std::ostream& in) const
 {
-    for (const auto& [name, var] : m_variable_map) {
+    for (const auto& [name, var] : m_var_manager.get_variable_map()) {
         in << std::setfill(' ') << std::setw(12) << name;
         in << " : ";
         in << std::setfill(' ') << std::setw(3) << std::to_string(var);
@@ -70,9 +69,9 @@ void jl::Chunk::output_var_map(std::ostream& in) const
     }
 }
 
-jl::OperandType jl::Chunk::handle_binary_type_inference(jl::Operand op1, jl::Operand op2, uint32_t line)
+jl::OperandType jl::Chunk::handle_binary_type_inference(jl::Operand op1, jl::Operand op2, OpCode opcode, uint32_t line)
 {
-    const auto inferred_type = infer_type_for_binary(op1, op2, m_temp_var_types);
+    const auto inferred_type = m_var_manager.infer_type_for_binary(op1, op2, opcode);
 
     // Handle error
     if (!inferred_type) {
@@ -81,8 +80,8 @@ jl::OperandType jl::Chunk::handle_binary_type_inference(jl::Operand op1, jl::Ope
             line,
             std::format(
                 "[Druing codegen] Left[{}] and right[{}] types do not match",
-                to_string(op1, m_temp_var_types),
-                to_string(op2, m_temp_var_types))
+                m_var_manager.pretty_print(op1),
+                m_var_manager.pretty_print(op2))
                 .c_str(),
             line);
         // Assume that op1's type is the intended type ;)
@@ -104,8 +103,8 @@ jl::TempVar jl::Chunk::write(
     Operand op2,
     uint32_t line)
 {
-    const auto inferred_type = handle_binary_type_inference(op1, op2, line);
-    const auto dest = create_temp_var(inferred_type);
+    const auto inferred_type = handle_binary_type_inference(op1, op2, opcode, line);
+    const auto dest = m_var_manager.create_temp_var(inferred_type);
 
     m_ir.push_back(Ir { BinaryIr {
         opcode,
@@ -126,13 +125,13 @@ void jl::Chunk::write_with_dest(
     TempVar dest,
     uint32_t line)
 {
-    const auto inferred_type = handle_binary_type_inference(op1, op2, line);
+    const auto inferred_type = handle_binary_type_inference(op1, op2, opcode, line);
     // Get the destination type from look up table
-    const auto dest_type = m_temp_var_types[dest.idx];
+    const auto dest_type = m_var_manager.get_data_type(dest.idx);
 
     // If its a new variable
     if (dest_type == OperandType::UNASSIGNED) {
-        m_temp_var_types[dest.idx] = inferred_type; // Update the look up table
+        m_var_manager.set_data_type(dest.idx, inferred_type); // Update the look up table
     } else if (dest_type != inferred_type) {
         ErrorHandler::error(
             m_file_name,
@@ -160,14 +159,14 @@ jl::TempVar jl::Chunk::write(
     Operand operand,
     uint32_t line)
 {
-    const auto type = get_nested_type(operand, m_temp_var_types);
+    const auto type = m_var_manager.get_nested_type(operand);
 
     if (type == OperandType::UNASSIGNED) {
         ErrorHandler::error(m_file_name, line, "Use of unintialized variable");
-        return create_temp_var(type);
+        return m_var_manager.create_temp_var(type);
     }
 
-    TempVar dest = create_temp_var(type);
+    TempVar dest = m_var_manager.create_temp_var(type);
 
     m_ir.push_back(Ir { UnaryIr {
         opcode,
@@ -186,17 +185,17 @@ void jl::Chunk::write_with_dest(
     TempVar dest,
     uint32_t line)
 {
-    const auto type = get_nested_type(operand, m_temp_var_types);
+    const auto type = m_var_manager.get_nested_type(operand);
 
     if (type == OperandType::UNASSIGNED) {
         ErrorHandler::error(m_file_name, line, "Use of unintialized variable");
         return;
     } else {
-        const auto dest_type = m_temp_var_types[dest.idx];
+        const auto dest_type = m_var_manager.get_data_type(dest.idx);
 
         // Update type data
         if (dest_type == OperandType::UNASSIGNED) {
-            m_temp_var_types[dest.idx] = type;
+            m_var_manager.set_data_type(dest.idx, type);
         } else if (dest_type != type) {
             ErrorHandler::error(
                 m_file_name,
@@ -218,45 +217,17 @@ void jl::Chunk::write_with_dest(
     m_lines.push_back(line);
 }
 
+const std::unordered_map<std::string, uint32_t>& jl::Chunk::get_variable_map() const
+{
+    return m_var_manager.get_variable_map();
+}
+
 jl::TempVar jl::Chunk::store_variable(const std::string& var_name)
 {
-    if (m_variable_map.contains(var_name)) {
-        ErrorHandler::error(
-            m_file_name,
-            1,
-            std::format("Redeclaration of a variable: {}", var_name)
-                .c_str());
-        // For now we replace the existing varible with this one
-    }
-
-    TempVar var = create_temp_var(OperandType::UNASSIGNED);
-    m_variable_map.insert(std::pair { var_name, var.idx });
-
-    return var;
+    return m_var_manager.store_variable(var_name);
 }
 
 std::optional<jl::TempVar> jl::Chunk::look_up_variable(const std::string& var_name) const
 {
-    if (m_variable_map.contains(var_name)) {
-        const auto idx = m_variable_map.at(var_name);
-        return TempVar {
-            .idx = idx,
-        };
-    } else {
-        return std::nullopt;
-    }
-}
-
-jl::TempVar jl::Chunk::create_temp_var(OperandType type)
-{
-    m_temp_var_types.push_back(type);
-
-    return TempVar {
-        .idx = m_temp_var_count++,
-    };
-}
-
-const std::unordered_map<std::string, uint32_t>& jl::Chunk::get_variable_map() const
-{
-    return m_variable_map;
+    return m_var_manager.look_up_variable(var_name);
 }

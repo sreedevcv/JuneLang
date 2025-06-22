@@ -20,6 +20,7 @@ add_library(JuneInterpreter
     compiler/VM.cpp
     compiler/Ir.cpp
     compiler/Operand.cpp
+    compiler/VariableManager.cpp
 )
 
 target_link_libraries(

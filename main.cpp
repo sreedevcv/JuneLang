@@ -18,11 +18,10 @@ int main(int argc, char const* argv[])
     jl::Lexer lexer(
         R"( 
         [
-            var a = 10 + 2;
-            var b = a *  2 + 1;
+            var a = 3 < 5;
+            var b = a and (5 == 4);
             [
                 var c = 3.0;
-                a = c;
             ]
         ]
 )");
@@ -30,8 +29,6 @@ int main(int argc, char const* argv[])
     std::string file_name = "examples/EList.jun";
 
     lexer.scan();
-
-    // jl::Arena arena(1000 * 1000);
 
     if (jl::ErrorHandler::has_error()) {
         return 1;
@@ -52,9 +49,9 @@ int main(int argc, char const* argv[])
     jl::CodeGenerator codegen(file_name);
     codegen.generate(stmts);
 
-    // if (jl::ErrorHandler::has_error()) {
-    //     return 1;
-    // }
+    if (jl::ErrorHandler::has_error()) {
+        return 1;
+    }
 
     codegen.disassemble();
     const auto chunk = codegen.get_chunk();
