@@ -1,5 +1,6 @@
 #include "CodeGenerator.hpp"
 
+#include "ErrorHandler.hpp"
 #include "OpCode.hpp"
 #include "Operand.hpp"
 #include "Stmt.hpp"
@@ -26,6 +27,8 @@ void jl::CodeGenerator::generate(std::vector<Stmt*> stmts)
     for (auto stmt : stmts) {
         compile(stmt);
     }
+
+    m_chunk.write_control(OpCode::RETURN, Nil {}, m_chunk.get_last_line());
 }
 
 const jl::Chunk& jl::CodeGenerator::get_chunk() const
@@ -58,7 +61,7 @@ std::any jl::CodeGenerator::visit_binary_expr(Binary* expr)
     const auto l = compile(expr->m_left);
     const auto r = compile(expr->m_right);
     const uint32_t line = expr->m_oper->get_line();
-    
+
     TempVar dest_var;
 
     switch (type) {
@@ -234,18 +237,56 @@ std::any jl::CodeGenerator::visit_expr_stmt(ExprStmt* stmt)
     return operand;
 }
 
-std::any jl::CodeGenerator::visit_block_stmt(BlockStmt* stmt) 
+std::any jl::CodeGenerator::visit_block_stmt(BlockStmt* stmt)
 {
-    for (auto s: stmt->m_statements) {
+    for (auto s : stmt->m_statements) {
         compile(s);
     }
 
-    return Operand {Nil{}};
+    return Operand { Nil {} };
 }
 
-std::any jl::CodeGenerator::visit_while_stmt(WhileStmt* stmt) 
+std::any jl::CodeGenerator::visit_while_stmt(WhileStmt* stmt)
 {
-    
+    const int32_t loop_start_label = m_chunk.create_new_label();
+    const int32_t loop_end_label = m_chunk.create_new_label();
+    // Write the label to jmp to start the loop again
+    m_chunk.write_control(
+        OpCode::LABEL,
+        loop_start_label,
+        m_chunk.get_last_line());
+
+    const auto condition = compile(stmt->m_condition);
+
+    if (get_type(condition) != OperandType::BOOL
+        && m_chunk.get_nested_type(condition) != OperandType::BOOL) {
+        ErrorHandler::error(
+            m_file_name,
+            m_chunk.get_last_line(),
+            "While loop condition doesn't evaluate to a bool!");
+    }
+    // Jmp to end if condition false
+    m_chunk.write_jump(
+        OpCode::JMP_UNLESS,
+        condition,
+        loop_end_label,
+        m_chunk.get_last_line());
+
+    compile(stmt->m_body);
+
+    // Jmp to beginning
+    m_chunk.write_control(
+        OpCode::JMP,
+        loop_start_label,
+        m_chunk.get_last_line());
+
+    // Write the ending label
+    m_chunk.write_control(
+        OpCode::LABEL,
+        loop_end_label,
+        m_chunk.get_last_line());
+
+    return Operand { Nil {} };
 }
 
 std::any jl::CodeGenerator::visit_print_stmt(PrintStmt* stmt) { }

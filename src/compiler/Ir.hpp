@@ -19,17 +19,32 @@ struct UnaryIr {
     TempVar dest;
 };
 
+struct ControlIr {
+    OpCode opcode;
+    Operand data;
+};
+
+struct JumpIr {
+    OpCode opcode;
+    Operand data;
+    Operand label;
+};
+
 struct Ir {
-    std::variant<UnaryIr, BinaryIr> data;
+    std::variant<UnaryIr, BinaryIr, ControlIr, JumpIr> data;
 
     enum Type {
         UNARY,
         BINARY,
+        CONTROL,
+        JUMP,
     };
 
     Type type() const;
     const BinaryIr& binary() const;
     const UnaryIr& unary() const;
+    const ControlIr& control() const;
+    const JumpIr& jump() const;
     const OpCode& opcode() const;
     const TempVar& dest() const;
 };

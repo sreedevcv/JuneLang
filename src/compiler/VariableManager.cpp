@@ -15,6 +15,7 @@ jl::TempVar jl::VariableManager::create_temp_var(OperandType type)
 
 jl::TempVar jl::VariableManager::store_variable(const std::string& var_name)
 {
+    // TODO:: Return nullopt and handle redeclaration error
     if (m_variable_map.contains(var_name)) {
         // ErrorHandler::error(
         //     m_file_name,
@@ -66,7 +67,7 @@ std::optional<jl::OperandType> jl::VariableManager::infer_type_for_binary(
 
     switch (operator_type) {
     case OperatorCategory::ARITHAMETIC:
-        if (is_number(op1) && is_number(op2)) {
+        if (is_number(t1) && is_number(t2)) {
             if (t1 == OperandType::FLOAT || t2 == OperandType::FLOAT) {
                 return OperandType::FLOAT;
             } else {
@@ -75,7 +76,7 @@ std::optional<jl::OperandType> jl::VariableManager::infer_type_for_binary(
         }
         break;
     case OperatorCategory::COMPARISON:
-        if (is_number(op1) && is_number(op2)) {
+        if (is_number(t1) && is_number(t2)) {
             return OperandType::BOOL;
         }
         break;

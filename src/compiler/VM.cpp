@@ -1,18 +1,32 @@
 #include "VM.hpp"
 
+#include <climits>
+#include <cstdint>
 #include <functional>
 #include <vector>
 
+#include "Ir.hpp"
 #include "OpCode.hpp"
 #include "Operand.hpp"
 #include "Utils.hpp"
 
 static const jl::Operand& get_temp_var_data(
-    const jl::Operand& op1,
+    const jl::Operand& operand,
     const std::vector<jl::Operand>& temp_vars)
 {
-    const auto var = std::get<jl::TempVar>(op1);
+    const auto var = std::get<jl::TempVar>(operand);
     return temp_vars[var.idx];
+}
+
+static const jl::Operand& get_nested_data(
+    const jl::Operand& operand,
+    const std::vector<jl::Operand>& temp_vars)
+{
+    if (jl::get_type(operand) == jl::OperandType::TEMP) {
+        return get_temp_var_data(operand, temp_vars);
+    } else {
+        return operand;
+    }
 }
 
 template <typename Op>
@@ -141,16 +155,28 @@ static const jl::Operand do_arithametic(
 
 std::pair<jl::VM::InterpretResult, std::vector<jl::Operand>> jl::VM::run(const Chunk& chunk)
 {
+    const auto& irs = chunk.get_ir();
     std::vector<Operand> temp_vars { chunk.get_max_allocated_temps() };
+    const auto locations = fill_labels(irs, chunk.get_max_labels());
+    uint32_t ip = 0;
 
-    for (const auto& ir : chunk.get_ir()) {
+    while (ip < irs.size()) {
+        const auto& ir = irs[ip];
+
         switch (ir.type()) {
         case Ir::BINARY:
             handle_binary_ir(ir, temp_vars);
+            ip += 1;
             break;
         case Ir::UNARY:
             handle_unary_ir(ir, temp_vars);
+            ip += 1;
             break;
+        case Ir::JUMP:
+        case Ir::CONTROL:
+            ip = handle_control_ir(ip, ir, temp_vars, locations);
+            break;
+
         default:
             unimplemented();
         }
@@ -217,4 +243,53 @@ void jl::VM::handle_unary_ir(const Ir& ir, std::vector<Operand>& temp_vars)
     }
 
     temp_vars[ir.dest().idx] = result;
+}
+
+std::vector<uint32_t> jl::VM::fill_labels(const std::vector<Ir>& irs, uint32_t max_labels) const
+{
+    if (max_labels == 0) {
+        return {};
+    }
+
+    std::vector<uint32_t> locations;
+    locations.resize(max_labels);
+
+    for (int i = 0; i < irs.size(); i++) {
+        const auto& ir = irs[i];
+
+        if (ir.opcode() == OpCode::LABEL) {
+            locations[std::get<int>(ir.control().data)] = i;
+        }
+    }
+
+    return locations;
+}
+
+uint32_t jl::VM::handle_control_ir(const uint32_t ip, const Ir& ir, std::vector<Operand>& temp_vars, const std::vector<uint32_t>& label_locations)
+{
+    switch (ir.opcode()) {
+    case OpCode::LABEL:
+        return ip + 1;
+        break;
+    case OpCode::JMP: {
+        const auto label = std::get<int>(ir.control().data);
+        return label_locations[label];
+    } break;
+    case OpCode::JMP_UNLESS: {
+        const auto condition = get_nested_data(ir.jump().data, temp_vars);
+        // Evaluate and jump
+        if (std::get<bool>(condition) == false) {
+            const auto label = std::get<int>(ir.jump().label);
+            return label_locations[label];
+        } else {
+            return ip + 1;
+        }
+    } break;
+    case OpCode::RETURN:
+        return INT_MAX;
+    default:
+        unimplemented();
+    }
+
+    return ip;
 }

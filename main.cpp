@@ -15,16 +15,23 @@ int main(int argc, char const* argv[])
     // !(12 + 24) - (4 * 45) / -12;
     // !(3.5 and 4 or true )
 
+    //             var a = 3 < 5;
+    // var b = a and (5 == 4);
+    // [
+    //     var c = 3.0;
+    // ]
+
     jl::Lexer lexer(
         R"( 
-        [
-            var a = 3 < 5;
-            var b = a and (5 == 4);
+            var sum = 0;
+            // while (i <= 10)
+            for (var i = 0; i <= 10; i += 1)
             [
-                var c = 3.0;
+                sum += i;
             ]
-        ]
-)");
+
+            var b = i;
+        )");
 
     std::string file_name = "examples/EList.jun";
 

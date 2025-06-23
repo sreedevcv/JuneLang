@@ -36,6 +36,12 @@ const char* jl::to_string(OpCode opcode)
         return "OR";
     case OpCode::MOVE:
         return "MOVE";
+    case jl::OpCode::LABEL:
+        return "LABEL";
+    case jl::OpCode::JMP:
+        return "JMP";
+    case jl::OpCode::JMP_UNLESS:
+        return "JMP_UNLESS";
     default:
         unimplemented();
         return "UNKNOWN";
@@ -64,6 +70,9 @@ jl::OperatorCategory jl::get_category(const OpCode& opcode)
         return OperatorCategory::BOOLEAN;
     case OpCode::MOVE:
     case OpCode::RETURN:
+    case jl::OpCode::JMP_UNLESS:
+    case jl::OpCode::LABEL:
+    case jl::OpCode::JMP:
         return OperatorCategory::OTHER;
         break;
     }

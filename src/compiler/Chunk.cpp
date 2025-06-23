@@ -30,6 +30,7 @@ std::string jl::Chunk::disassemble() const
     uint32_t line = -1;
 
     for (int i = 0; i < m_ir.size(); i++) {
+        // Print line number
         if (m_lines[i] != line) {
             line = m_lines[i];
             out << std::setfill('0') << std::setw(4) << line;
@@ -37,11 +38,21 @@ std::string jl::Chunk::disassemble() const
             out << "  | ";
         }
 
+        // Print ir index
         out << ' ';
         out << std::setfill('0') << std::setw(4) << i;
-        out << std::setfill(' ') << std::setw(10) << m_var_manager.pretty_print(m_ir[i].dest());
-        out << " : ";
-        out << std::setfill(' ') << std::setw(10) << jl::to_string(m_ir[i].opcode());
+
+        // Print destination and opcode
+        if (m_ir[i].type() == Ir::BINARY || m_ir[i].type() == Ir::UNARY) {
+            out << std::setfill(' ') << std::setw(10) << m_var_manager.pretty_print(m_ir[i].dest());
+            out << " : ";
+            out << std::setfill(' ') << std::setw(10) << jl::to_string(m_ir[i].opcode());
+        } else {
+            out << std::setfill(' ') << std::setw(10) << ' ';
+            out << "   ";
+            out << std::setfill(' ') << std::setw(10) << jl::to_string(m_ir[i].opcode());
+        }
+
         switch (m_ir[i].type()) {
         case Ir::BINARY:
             out << std::setfill(' ') << std::setw(10) << m_var_manager.pretty_print(m_ir[i].binary().op1);
@@ -49,6 +60,13 @@ std::string jl::Chunk::disassemble() const
             break;
         case Ir::UNARY:
             out << std::setfill(' ') << std::setw(10) << m_var_manager.pretty_print(m_ir[i].unary().operand);
+            break;
+        case Ir::CONTROL:
+            out << std::setfill(' ') << std::setw(10) << "--> " << to_string(m_ir[i].control().data);
+            break;
+        case Ir::JUMP:
+            out << std::setfill(' ') << std::setw(10) << "--> " << std::get<int>(m_ir[i].jump().label);
+            out << std::setfill(' ') << std::setw(10) << m_var_manager.pretty_print(m_ir[i].jump().data);
             break;
         default:
             unimplemented();
@@ -217,6 +235,32 @@ void jl::Chunk::write_with_dest(
     m_lines.push_back(line);
 }
 
+void jl::Chunk::write_control(OpCode opcode, Operand data, uint32_t line)
+{
+    if (opcode == OpCode::LABEL && get_type(data) != OperandType::INT) {
+        ErrorHandler::error(m_file_name, line, "Label needs an int");
+        return;
+    }
+
+    m_ir.push_back(Ir {
+        ControlIr {
+            .opcode = opcode,
+            .data = data } });
+
+    m_lines.push_back(line);
+}
+
+void jl::Chunk::write_jump(OpCode opcode, Operand data, Operand label, uint32_t line)
+{
+    m_ir.push_back(Ir {
+        JumpIr {
+            .opcode = opcode,
+            .data = data,
+            .label = label } });
+
+    m_lines.push_back(line);
+}
+
 const std::unordered_map<std::string, uint32_t>& jl::Chunk::get_variable_map() const
 {
     return m_var_manager.get_variable_map();
@@ -230,4 +274,24 @@ jl::TempVar jl::Chunk::store_variable(const std::string& var_name)
 std::optional<jl::TempVar> jl::Chunk::look_up_variable(const std::string& var_name) const
 {
     return m_var_manager.look_up_variable(var_name);
+}
+
+int32_t jl::Chunk::create_new_label()
+{
+    return m_label_count++;
+}
+
+uint32_t jl::Chunk::get_last_line() const
+{
+    return m_lines.empty() ? 0 : m_lines.back();
+}
+
+int32_t jl::Chunk::get_max_labels() const
+{
+    return m_label_count;
+}
+
+jl::OperandType jl::Chunk::get_nested_type(const Operand& operand) const
+{
+    return m_var_manager.get_nested_type(operand);
 }

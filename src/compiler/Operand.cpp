@@ -92,3 +92,8 @@ bool jl::is_number(const Operand& operand)
     const auto type = get_type(operand);
     return type == OperandType::INT || type == OperandType::FLOAT;
 }
+
+bool jl::is_number(const OperandType type)
+{
+    return type == OperandType::INT || type == OperandType::FLOAT;
+}

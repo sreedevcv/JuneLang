@@ -20,6 +20,9 @@ enum class OpCode {
     
     // 
     MOVE,
+    LABEL,
+    JMP,
+    JMP_UNLESS,
     RETURN,
 };
 

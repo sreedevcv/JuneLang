@@ -28,6 +28,7 @@ std::string to_string(const OperandType& operand_type);
 OperandType get_type(const Operand& operand);
 
 bool is_number(const Operand& operand);
+bool is_number(const OperandType type);
 
 // inline DataType get_data_type(const Operand& operand)
 // {
