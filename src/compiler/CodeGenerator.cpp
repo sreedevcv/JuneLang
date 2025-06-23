@@ -288,10 +288,34 @@ std::any jl::CodeGenerator::visit_while_stmt(WhileStmt* stmt)
 
     return Operand { Nil {} };
 }
+std::any jl::CodeGenerator::visit_empty_stmt(EmptyStmt* stmt)
+{
+    return Operand { Nil {} };
+}
+
+std::any jl::CodeGenerator::visit_if_stmt(IfStmt* stmt)
+{
+    const auto else_label = m_chunk.create_new_label();
+    const auto condition = compile(stmt->m_condition);
+    m_chunk.write_jump(OpCode::JMP_UNLESS, condition, else_label, m_chunk.get_last_line());
+
+    compile(stmt->m_then_stmt);
+
+    if (stmt->m_else_stmt != nullptr) {
+        const auto end_label = m_chunk.create_new_label();
+        m_chunk.write_control(OpCode::JMP, end_label, m_chunk.get_last_line());
+
+        m_chunk.write_control(OpCode::LABEL, else_label, m_chunk.get_last_line());
+        compile(stmt->m_else_stmt);
+        m_chunk.write_control(OpCode::LABEL, end_label, m_chunk.get_last_line());
+    } else {
+        m_chunk.write_control(OpCode::LABEL, else_label, m_chunk.get_last_line());
+    }
+
+    return Operand { Nil {} };
+}
 
 std::any jl::CodeGenerator::visit_print_stmt(PrintStmt* stmt) { }
-std::any jl::CodeGenerator::visit_empty_stmt(EmptyStmt* stmt) { }
-std::any jl::CodeGenerator::visit_if_stmt(IfStmt* stmt) { }
 std::any jl::CodeGenerator::visit_func_stmt(FuncStmt* stmt) { }
 std::any jl::CodeGenerator::visit_return_stmt(ReturnStmt* stmt) { }
 std::any jl::CodeGenerator::visit_class_stmt(ClassStmt* stmt) { }

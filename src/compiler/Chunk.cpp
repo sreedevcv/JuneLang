@@ -62,10 +62,10 @@ std::string jl::Chunk::disassemble() const
             out << std::setfill(' ') << std::setw(10) << m_var_manager.pretty_print(m_ir[i].unary().operand);
             break;
         case Ir::CONTROL:
-            out << std::setfill(' ') << std::setw(10) << "--> " << to_string(m_ir[i].control().data);
+            out << std::setfill(' ') << std::setw(10) << "{" << to_string(m_ir[i].control().data) << "}";
             break;
         case Ir::JUMP:
-            out << std::setfill(' ') << std::setw(10) << "--> " << std::get<int>(m_ir[i].jump().label);
+            out << std::setfill(' ') << std::setw(10) << "{" << std::get<int>(m_ir[i].jump().label) << "}";
             out << std::setfill(' ') << std::setw(10) << m_var_manager.pretty_print(m_ir[i].jump().data);
             break;
         default:
