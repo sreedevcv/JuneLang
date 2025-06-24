@@ -354,6 +354,20 @@ std::any jl::CodeGenerator::visit_func_stmt(FuncStmt* stmt)
     m_func_stack.emplace(std::move(chunk));
     m_chunk = &m_func_stack.top();
 
+    // Add function parameters to chunk
+    for (int i = 0; i < stmt->m_params.size(); i++) {
+        const auto type = from_str(stmt->m_data_types[i]->get_lexeme());
+        auto param_type = OperandType::UNASSIGNED;
+
+        if (type) {
+            param_type = *type;
+        } else {
+            ErrorHandler::error(m_file_name, stmt->m_data_types[i]->get_line(), "Unknown data type");
+        }
+
+        m_chunk->add_input_parameter(stmt->m_params[i]->get_lexeme(), param_type);
+    }
+
     for (auto s : stmt->m_body) {
         compile(s);
     }

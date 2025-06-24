@@ -23,12 +23,14 @@ int main(int argc, char const* argv[])
 
     jl::Lexer lexer(
         R"( 
-            var a: bool ;
-
+            var a: bool;
             a = false;
 
-            fun hello() [
-                var a = 10;
+            fun hello(x: int, y: float, z: bool) [
+                var a = x + y;
+                if (z) [
+                    var b: float = z;
+                ]
             ]
 
             fun hai() [

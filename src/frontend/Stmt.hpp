@@ -3,6 +3,7 @@
 #include "Expr.hpp"
 #include "Ref.hpp"
 #include "Token.hpp"
+#include <vector>
 
 namespace jl {
 
@@ -191,11 +192,13 @@ class FuncStmt : public Stmt {
 public:
     Token& m_name;
     std::vector<Token*> m_params; // Should i delete these??
+    std::vector<Token*> m_data_types;
     std::vector<Stmt*> m_body;
 
-    inline FuncStmt(Token& name, std::vector<Token*>& params, std::vector<Stmt*>& body)
+    inline FuncStmt(Token& name, std::vector<Token*>& params, std::vector<Token*> data_types, std::vector<Stmt*>& body)
         : m_name(name)
         , m_params(params)
+        , m_data_types(data_types)
         , m_body(body)
     {
     }

@@ -45,6 +45,7 @@ public:
     int32_t create_new_label();
     uint32_t get_last_line() const;
     int32_t get_max_labels() const;
+    void add_input_parameter(const std::string& name, OperandType type);
 
     std::string m_name;
 
@@ -54,6 +55,7 @@ private:
     std::vector<uint32_t> m_lines;
     VariableManager m_var_manager;
     int32_t m_label_count { 0 };
+    std::vector<std::string> m_inputs;
 
     OperandType handle_binary_type_inference(jl::Operand op1, jl::Operand op2, OpCode opcode, uint32_t line);
 };

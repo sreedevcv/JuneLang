@@ -32,6 +32,12 @@ std::string jl::Chunk::disassemble() const
 
     out << "------------[" << m_name << "]------------\n";
 
+    out << "INPUTS: ";
+    for (int i = 0; i < m_inputs.size(); i++) {
+        out << "<" << m_inputs[i] << "> ";
+    }
+    out << "\n";
+
     output_var_map(out);
     out << '\n';
 
@@ -302,4 +308,10 @@ int32_t jl::Chunk::get_max_labels() const
 jl::OperandType jl::Chunk::get_nested_type(const Operand& operand) const
 {
     return m_var_manager.get_nested_type(operand);
+}
+
+void jl::Chunk::add_input_parameter(const std::string& name, OperandType type)
+{
+    m_inputs.push_back(name);
+    store_variable(name, type);
 }
