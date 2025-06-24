@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <optional>
 #include <string>
 #include <variant>
 
@@ -26,6 +27,7 @@ using Operand = std::variant<int, double, TempVar, Nil, bool>;
 std::string to_string(const Operand& operand);
 std::string to_string(const OperandType& operand_type);
 OperandType get_type(const Operand& operand);
+std::optional<OperandType> from_str(const std::string& type_name);
 
 bool is_number(const Operand& operand);
 bool is_number(const OperandType type);

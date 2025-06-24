@@ -1,6 +1,7 @@
 #include "Operand.hpp"
 
 #include "Utils.hpp"
+#include <optional>
 #include <string>
 
 // static std::string to_string(const jl::TempVar& var)
@@ -96,4 +97,19 @@ bool jl::is_number(const Operand& operand)
 bool jl::is_number(const OperandType type)
 {
     return type == OperandType::INT || type == OperandType::FLOAT;
+}
+
+std::optional<jl::OperandType> jl::from_str(const std::string& type_name)
+{
+    if (type_name == "int") {
+        return OperandType::INT;
+    } else if (type_name == "float") {
+        return OperandType::FLOAT;
+    } else if (type_name == "bool") {
+        return OperandType::BOOL;
+    } else if (type_name == "nil") {
+        return OperandType::NIL;
+    } else {
+        return std::nullopt;
+    }
 }

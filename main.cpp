@@ -23,7 +23,9 @@ int main(int argc, char const* argv[])
 
     jl::Lexer lexer(
         R"( 
-            var a: int  = 100;
+            var a: bool ;
+
+            a = false;
 
             fun hello() [
                 var a = 10;

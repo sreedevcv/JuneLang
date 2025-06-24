@@ -240,12 +240,17 @@ std::any jl::CodeGenerator::visit_var_stmt(VarStmt* stmt)
         operand = compile(stmt->m_initializer);
     }
 
-    OperandType type = OperandType::UNASSIGNED;
+    OperandType type_name = OperandType::UNASSIGNED;
     if (stmt->m_data_type != nullptr) {
-
+        const auto type = from_str(stmt->m_data_type->get_lexeme());
+        if (type) {
+            type_name = *type;
+        } else {
+            ErrorHandler::error(m_file_name, stmt->m_data_type->get_line(), "Unknown data type");
+        }
     }
 
-    auto var = m_chunk->store_variable(stmt->m_name.get_lexeme(), type);
+    auto var = m_chunk->store_variable(stmt->m_name.get_lexeme(), type_name);
     if (stmt->m_initializer != nullptr) {
         m_chunk->write_with_dest(OpCode::MOVE, operand, var, stmt->m_name.get_line());
     }
