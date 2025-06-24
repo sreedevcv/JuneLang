@@ -1,5 +1,6 @@
 #include "CodeGenerator.hpp"
 
+#include "Chunk.hpp"
 #include "ErrorHandler.hpp"
 #include "OpCode.hpp"
 #include "Operand.hpp"
@@ -8,6 +9,7 @@
 #include "Utils.hpp"
 #include "Value.hpp"
 
+#include <algorithm>
 #include <any>
 #include <cstdint>
 #include <print>
@@ -16,6 +18,11 @@
 jl::CodeGenerator::CodeGenerator(std::string& file_name)
     : m_file_name(file_name)
 {
+    Chunk chunk { "__root__" };
+    // m_chunk_list.push_back(chunk);
+    // m_chunk = &m_chunk_list.back();
+    m_func_stack.push(std::move(chunk));
+    m_chunk = &m_func_stack.top();
 }
 
 jl::CodeGenerator::~CodeGenerator()
@@ -28,12 +35,15 @@ void jl::CodeGenerator::generate(std::vector<Stmt*> stmts)
         compile(stmt);
     }
 
-    m_chunk.write_control(OpCode::RETURN, Nil {}, m_chunk.get_last_line());
+    m_chunk->write_control(OpCode::RETURN, Nil {}, m_chunk->get_last_line());
+
+    m_chunk_list.insert({ m_func_stack.top().m_name, std::move(m_func_stack.top()) });
+    m_func_stack.pop();
 }
 
-const jl::Chunk& jl::CodeGenerator::get_chunk() const
+const jl::Chunk& jl::CodeGenerator::get_root_chunk() const
 {
-    return m_chunk;
+    return m_chunk_list.at("__root__");
 }
 
 jl::Operand jl::CodeGenerator::compile(Stmt* stmt)
@@ -48,7 +58,14 @@ jl::Operand jl::CodeGenerator::compile(Expr* expr)
 
 void jl::CodeGenerator::disassemble()
 {
-    std::println("{}", m_chunk.disassemble());
+    for (const auto& [name, chunk] : m_chunk_list) {
+        std::println("{}", chunk.disassemble());
+    }
+}
+
+bool jl::CodeGenerator::check_if_func_exists(const std::string& name) const
+{
+    return m_chunk_list.contains(name);
 }
 
 /* ======================================================================================================================== */
@@ -66,37 +83,37 @@ std::any jl::CodeGenerator::visit_binary_expr(Binary* expr)
 
     switch (type) {
     case Token::PLUS: {
-        dest_var = m_chunk.write(OpCode::ADD, l, r, line);
+        dest_var = m_chunk->write(OpCode::ADD, l, r, line);
     } break;
     case Token::MINUS: {
-        dest_var = m_chunk.write(OpCode::MINUS, l, r, line);
+        dest_var = m_chunk->write(OpCode::MINUS, l, r, line);
     } break;
     case Token::STAR: {
-        dest_var = m_chunk.write(OpCode::STAR, l, r, line);
+        dest_var = m_chunk->write(OpCode::STAR, l, r, line);
     } break;
     case Token::SLASH: {
-        dest_var = m_chunk.write(OpCode::SLASH, l, r, line);
+        dest_var = m_chunk->write(OpCode::SLASH, l, r, line);
     } break;
     case Token::GREATER: {
-        dest_var = m_chunk.write(OpCode::GREATER, l, r, line);
+        dest_var = m_chunk->write(OpCode::GREATER, l, r, line);
     } break;
     case Token::LESS: {
-        dest_var = m_chunk.write(OpCode::LESS, l, r, line);
+        dest_var = m_chunk->write(OpCode::LESS, l, r, line);
     } break;
     case Token::GREATER_EQUAL: {
-        dest_var = m_chunk.write(OpCode::GREATER_EQUAL, l, r, line);
+        dest_var = m_chunk->write(OpCode::GREATER_EQUAL, l, r, line);
     } break;
     case Token::LESS_EQUAL: {
-        dest_var = m_chunk.write(OpCode::LESS_EQUAL, l, r, line);
+        dest_var = m_chunk->write(OpCode::LESS_EQUAL, l, r, line);
     } break;
     case Token::PERCENT: {
-        dest_var = m_chunk.write(OpCode::MODULUS, l, r, line);
+        dest_var = m_chunk->write(OpCode::MODULUS, l, r, line);
     } break;
     case Token::EQUAL_EQUAL: {
-        dest_var = m_chunk.write(OpCode::EQUAL, l, r, line);
+        dest_var = m_chunk->write(OpCode::EQUAL, l, r, line);
     } break;
     case Token::BANG_EQUAL: {
-        dest_var = m_chunk.write(OpCode::NOT_EQUAL, l, r, line);
+        dest_var = m_chunk->write(OpCode::NOT_EQUAL, l, r, line);
     } break;
     default:
         unimplemented();
@@ -119,10 +136,10 @@ std::any jl::CodeGenerator::visit_unary_expr(Unary* expr)
 
     switch (oper) {
     case Token::MINUS:
-        temp = m_chunk.write(OpCode::MINUS, val, expr->m_oper->get_line());
+        temp = m_chunk->write(OpCode::MINUS, val, expr->m_oper->get_line());
         break;
     case Token::BANG:
-        temp = m_chunk.write(OpCode::NOT, val, expr->m_oper->get_line());
+        temp = m_chunk->write(OpCode::NOT, val, expr->m_oper->get_line());
         break;
     default:
         unimplemented();
@@ -161,9 +178,9 @@ std::any jl::CodeGenerator::visit_logical_expr(Logical* expr)
     Operand temp;
 
     if (oper == Token::OR) {
-        temp = m_chunk.write(OpCode::OR, l, r, expr->m_oper.get_line());
+        temp = m_chunk->write(OpCode::OR, l, r, expr->m_oper.get_line());
     } else {
-        temp = m_chunk.write(OpCode::AND, l, r, expr->m_oper.get_line());
+        temp = m_chunk->write(OpCode::AND, l, r, expr->m_oper.get_line());
     }
 
     return temp;
@@ -174,7 +191,7 @@ std::any jl::CodeGenerator::visit_logical_expr(Logical* expr)
 std::any jl::CodeGenerator::visit_variable_expr(Variable* expr)
 {
     const auto& var_name = expr->m_name.get_lexeme();
-    const auto temp_var = m_chunk.look_up_variable(var_name);
+    const auto temp_var = m_chunk->look_up_variable(var_name);
 
     if (temp_var) {
         return Operand { *temp_var };
@@ -190,10 +207,10 @@ std::any jl::CodeGenerator::visit_assign_expr(Assign* expr)
     const auto assignee = compile(expr->m_expr);
 
     const auto& var_name = expr->m_token.get_lexeme();
-    const auto dest_var = m_chunk.look_up_variable(var_name);
+    const auto dest_var = m_chunk->look_up_variable(var_name);
 
     if (dest_var) {
-        m_chunk.write_with_dest(OpCode::MOVE, assignee, *dest_var, expr->m_token.get_line());
+        m_chunk->write_with_dest(OpCode::MOVE, assignee, *dest_var, expr->m_token.get_line());
     } else {
         unimplemented();
     }
@@ -223,9 +240,14 @@ std::any jl::CodeGenerator::visit_var_stmt(VarStmt* stmt)
         operand = compile(stmt->m_initializer);
     }
 
-    auto var = m_chunk.store_variable(stmt->m_name.get_lexeme());
+    OperandType type = OperandType::UNASSIGNED;
+    if (stmt->m_data_type != nullptr) {
+
+    }
+
+    auto var = m_chunk->store_variable(stmt->m_name.get_lexeme(), type);
     if (stmt->m_initializer != nullptr) {
-        m_chunk.write_with_dest(OpCode::MOVE, operand, var, stmt->m_name.get_line());
+        m_chunk->write_with_dest(OpCode::MOVE, operand, var, stmt->m_name.get_line());
     }
 
     return Operand { var };
@@ -248,43 +270,40 @@ std::any jl::CodeGenerator::visit_block_stmt(BlockStmt* stmt)
 
 std::any jl::CodeGenerator::visit_while_stmt(WhileStmt* stmt)
 {
-    const int32_t loop_start_label = m_chunk.create_new_label();
-    const int32_t loop_end_label = m_chunk.create_new_label();
+    const int32_t loop_start_label = m_chunk->create_new_label();
+    const int32_t loop_end_label = m_chunk->create_new_label();
     // Write the label to jmp to start the loop again
-    m_chunk.write_control(
-        OpCode::LABEL,
-        loop_start_label,
-        m_chunk.get_last_line());
+    m_chunk->write_control(OpCode::LABEL, loop_start_label, m_chunk->get_last_line());
 
     const auto condition = compile(stmt->m_condition);
 
     if (get_type(condition) != OperandType::BOOL
-        && m_chunk.get_nested_type(condition) != OperandType::BOOL) {
+        && m_chunk->get_nested_type(condition) != OperandType::BOOL) {
         ErrorHandler::error(
             m_file_name,
-            m_chunk.get_last_line(),
+            m_chunk->get_last_line(),
             "While loop condition doesn't evaluate to a bool!");
     }
     // Jmp to end if condition false
-    m_chunk.write_jump(
+    m_chunk->write_jump(
         OpCode::JMP_UNLESS,
         condition,
         loop_end_label,
-        m_chunk.get_last_line());
+        m_chunk->get_last_line());
 
     compile(stmt->m_body);
 
     // Jmp to beginning
-    m_chunk.write_control(
+    m_chunk->write_control(
         OpCode::JMP,
         loop_start_label,
-        m_chunk.get_last_line());
+        m_chunk->get_last_line());
 
     // Write the ending label
-    m_chunk.write_control(
+    m_chunk->write_control(
         OpCode::LABEL,
         loop_end_label,
-        m_chunk.get_last_line());
+        m_chunk->get_last_line());
 
     return Operand { Nil {} };
 }
@@ -295,28 +314,53 @@ std::any jl::CodeGenerator::visit_empty_stmt(EmptyStmt* stmt)
 
 std::any jl::CodeGenerator::visit_if_stmt(IfStmt* stmt)
 {
-    const auto else_label = m_chunk.create_new_label();
+    const auto else_label = m_chunk->create_new_label();
     const auto condition = compile(stmt->m_condition);
-    m_chunk.write_jump(OpCode::JMP_UNLESS, condition, else_label, m_chunk.get_last_line());
+    m_chunk->write_jump(OpCode::JMP_UNLESS, condition, else_label, m_chunk->get_last_line());
 
     compile(stmt->m_then_stmt);
 
     if (stmt->m_else_stmt != nullptr) {
-        const auto end_label = m_chunk.create_new_label();
-        m_chunk.write_control(OpCode::JMP, end_label, m_chunk.get_last_line());
+        const auto end_label = m_chunk->create_new_label();
+        m_chunk->write_control(OpCode::JMP, end_label, m_chunk->get_last_line());
 
-        m_chunk.write_control(OpCode::LABEL, else_label, m_chunk.get_last_line());
+        m_chunk->write_control(OpCode::LABEL, else_label, m_chunk->get_last_line());
         compile(stmt->m_else_stmt);
-        m_chunk.write_control(OpCode::LABEL, end_label, m_chunk.get_last_line());
+        m_chunk->write_control(OpCode::LABEL, end_label, m_chunk->get_last_line());
     } else {
-        m_chunk.write_control(OpCode::LABEL, else_label, m_chunk.get_last_line());
+        m_chunk->write_control(OpCode::LABEL, else_label, m_chunk->get_last_line());
     }
 
     return Operand { Nil {} };
 }
 
+std::any jl::CodeGenerator::visit_func_stmt(FuncStmt* stmt)
+{
+    if (check_if_func_exists(stmt->m_name.get_lexeme())) {
+        ErrorHandler::error(
+            m_file_name,
+            stmt->m_name.get_line(),
+            "Functions with the same name!");
+        return Operand { Nil {} };
+    }
+
+    // TODO::Write a helper method to push/pop chunk
+    Chunk chunk { stmt->m_name.get_lexeme() };
+    m_func_stack.emplace(std::move(chunk));
+    m_chunk = &m_func_stack.top();
+
+    for (auto s : stmt->m_body) {
+        compile(s);
+    }
+
+    m_chunk_list.insert({ stmt->m_name.get_lexeme(), std::move(m_func_stack.top()) });
+    m_func_stack.pop();
+    m_chunk = &m_func_stack.top();
+
+    return Operand { Nil {} };
+}
+
 std::any jl::CodeGenerator::visit_print_stmt(PrintStmt* stmt) { }
-std::any jl::CodeGenerator::visit_func_stmt(FuncStmt* stmt) { }
 std::any jl::CodeGenerator::visit_return_stmt(ReturnStmt* stmt) { }
 std::any jl::CodeGenerator::visit_class_stmt(ClassStmt* stmt) { }
 std::any jl::CodeGenerator::visit_for_each_stmt(ForEachStmt* stmt) { }

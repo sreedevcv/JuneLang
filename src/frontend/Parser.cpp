@@ -2,6 +2,7 @@
 
 #include "ErrorHandler.hpp"
 #include "Expr.hpp"
+#include "Token.hpp"
 
 jl::Parser::Parser(std::vector<Token>& tokens, std::string& file_name)
     : m_tokens(tokens)
@@ -11,7 +12,7 @@ jl::Parser::Parser(std::vector<Token>& tokens, std::string& file_name)
 
 jl::Parser::~Parser()
 {
-    for (auto ref: m_allocated_refs) {
+    for (auto ref : m_allocated_refs) {
         delete ref;
     }
 }
@@ -485,10 +486,17 @@ jl::Stmt* jl::Parser::var_declaration(bool for_each)
 {
     Token& name = consume(Token::IDENTIFIER, "Expected a variable name");
     Expr* initializer = nullptr;
+    Token* type_name = nullptr;
+
+    // Variable with type declaration
+    if (match({ Token::COLON })) {
+        type_name = &consume(Token::IDENTIFIER, "Expected a data-type");
+    }
 
     if (match({ Token::EQUAL })) {
         initializer = expression();
     }
+
     if (for_each) {
         if (!match({ Token::COLON, Token::SEMI_COLON })) {
             ErrorHandler::error(m_file_name, "parsing", "for each loop", name.get_line(), "Varible declaration should be followed `:` or `;` in a for loop", 0);
@@ -497,7 +505,8 @@ jl::Stmt* jl::Parser::var_declaration(bool for_each)
     } else {
         consume(Token::SEMI_COLON, "Expected ; after variable declaration");
     }
-    Stmt* var = new VarStmt(name, initializer);
+
+    Stmt* var = new VarStmt(name, initializer, type_name);
     m_allocated_refs.push_back(var);
     return var;
 }

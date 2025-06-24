@@ -13,6 +13,8 @@ namespace jl {
 
 class Chunk {
 public:
+    Chunk(std::string name);
+
     std::string disassemble() const;
     TempVar write(OpCode opcode,
         Operand op1,
@@ -36,13 +38,15 @@ public:
     const std::vector<Ir>& get_ir() const;
     uint32_t get_max_allocated_temps() const;
     void output_var_map(std::ostream& in) const;
-    TempVar store_variable(const std::string& var_name);
+    TempVar store_variable(const std::string& var_name, OperandType type);
     std::optional<TempVar> look_up_variable(const std::string& var_name) const;
     const std::unordered_map<std::string, uint32_t>& get_variable_map() const;
     OperandType get_nested_type(const Operand& operand) const;
     int32_t create_new_label();
     uint32_t get_last_line() const;
     int32_t get_max_labels() const;
+
+    std::string m_name;
 
 private:
     std::string m_file_name { "test" };

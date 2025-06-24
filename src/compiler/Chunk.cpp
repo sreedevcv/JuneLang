@@ -11,6 +11,11 @@
 #include <iomanip>
 #include <ostream>
 
+jl::Chunk::Chunk(std::string name)
+    : m_name(std::move(name))
+{
+}
+
 const std::vector<jl::Ir>& jl::Chunk::get_ir() const
 {
     return m_ir;
@@ -24,6 +29,9 @@ uint32_t jl::Chunk::get_max_allocated_temps() const
 std::string jl::Chunk::disassemble() const
 {
     std::stringstream out;
+
+    out << "------------[" << m_name << "]------------\n";
+
     output_var_map(out);
     out << '\n';
 
@@ -145,11 +153,11 @@ void jl::Chunk::write_with_dest(
 {
     const auto inferred_type = handle_binary_type_inference(op1, op2, opcode, line);
     // Get the destination type from look up table
-    const auto dest_type = m_var_manager.get_data_type(dest.idx);
+    const auto dest_type = m_var_manager.get_var_data_type(dest.idx);
 
     // If its a new variable
     if (dest_type == OperandType::UNASSIGNED) {
-        m_var_manager.set_data_type(dest.idx, inferred_type); // Update the look up table
+        m_var_manager.set_var_data_type(dest.idx, inferred_type); // Update the look up table
     } else if (dest_type != inferred_type) {
         ErrorHandler::error(
             m_file_name,
@@ -209,11 +217,11 @@ void jl::Chunk::write_with_dest(
         ErrorHandler::error(m_file_name, line, "Use of unintialized variable");
         return;
     } else {
-        const auto dest_type = m_var_manager.get_data_type(dest.idx);
+        const auto dest_type = m_var_manager.get_var_data_type(dest.idx);
 
         // Update type data
         if (dest_type == OperandType::UNASSIGNED) {
-            m_var_manager.set_data_type(dest.idx, type);
+            m_var_manager.set_var_data_type(dest.idx, type);
         } else if (dest_type != type) {
             ErrorHandler::error(
                 m_file_name,
@@ -266,9 +274,9 @@ const std::unordered_map<std::string, uint32_t>& jl::Chunk::get_variable_map() c
     return m_var_manager.get_variable_map();
 }
 
-jl::TempVar jl::Chunk::store_variable(const std::string& var_name)
+jl::TempVar jl::Chunk::store_variable(const std::string& var_name, OperandType type)
 {
-    return m_var_manager.store_variable(var_name);
+    return m_var_manager.store_variable(var_name, type);
 }
 
 std::optional<jl::TempVar> jl::Chunk::look_up_variable(const std::string& var_name) const

@@ -23,20 +23,19 @@ int main(int argc, char const* argv[])
 
     jl::Lexer lexer(
         R"( 
-            var a = 0;
-            var b = 0;
-            var c = 0;
+            var a: int  = 100;
 
-            for (var i = 0; i < 3; i += 1) [            
-                if (i == 0) [
-                    a = i;
-                ] else if (i == 1) [
-                    b = i; 
-                ] else [
-                    c = i; 
+            fun hello() [
+                var a = 10;
+            ]
+
+            fun hai() [
+                if (1 == 2) [
+                    var d = 3;
                 ]
             ]
 
+            var x = 1;
         )");
 
     std::string file_name = "examples/EList.jun";
@@ -71,7 +70,11 @@ int main(int argc, char const* argv[])
     }
 
     codegen.disassemble();
-    const auto chunk = codegen.get_chunk();
+
+
+    const auto chunk = codegen.get_root_chunk();
+    // std::println("{}", chunk.disassemble());
+
     jl::VM vm;
     const auto [res, vars] = vm.run(chunk);
 

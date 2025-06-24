@@ -2,6 +2,7 @@
 
 #include "Expr.hpp"
 #include "Ref.hpp"
+#include "Token.hpp"
 
 namespace jl {
 
@@ -84,10 +85,12 @@ class VarStmt : public Stmt {
 public:
     Token& m_name;
     Expr* m_initializer;
+    Token* m_data_type;
 
-    inline VarStmt(Token& name, Expr* initializer)
+    inline VarStmt(Token& name, Expr* initializer, Token* data_type)
         : m_name(name)
         , m_initializer(initializer)
+        , m_data_type(data_type)
     {
     }
 
@@ -229,7 +232,7 @@ public:
 
     virtual ~ReturnStmt()
     {
-    //     delete m_expr;
+        //     delete m_expr;
     }
 };
 

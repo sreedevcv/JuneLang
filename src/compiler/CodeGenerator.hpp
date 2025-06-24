@@ -4,7 +4,11 @@
 #include "Expr.hpp"
 #include "Operand.hpp"
 #include "Stmt.hpp"
+
 #include <any>
+#include <stack>
+#include <string>
+#include <unordered_map>
 #include <vector>
 
 namespace jl {
@@ -19,7 +23,7 @@ public:
     jl::Operand compile(Expr* stmt);
 
     void disassemble();
-    const Chunk& get_chunk() const;
+    const Chunk& get_root_chunk() const;
 
 private:
     virtual std::any visit_assign_expr(Assign* expr) override;
@@ -52,8 +56,11 @@ private:
     virtual std::any visit_break_stmt(BreakStmt* stmt) override;
 
     std::string m_file_name;
+    Chunk* m_chunk;
+    std::unordered_map<std::string, Chunk> m_chunk_list;
+    std::stack<Chunk> m_func_stack;
 
-    Chunk m_chunk;
+    bool check_if_func_exists(const std::string& name) const;
 };
 
 } // namespace jl

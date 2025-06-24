@@ -14,9 +14,9 @@ class VariableManager {
 public:
     uint32_t get_max_allocated_temps() const;
     TempVar create_temp_var(OperandType type);
-    OperandType get_data_type(uint32_t idx) const;
-    TempVar store_variable(const std::string& var_name);
-    void set_data_type(uint32_t idx, OperandType type);
+    OperandType get_var_data_type(uint32_t idx) const;
+    TempVar store_variable(const std::string& var_name, OperandType type);
+    void set_var_data_type(uint32_t idx, OperandType type);
     std::string pretty_print(const Operand& operand) const;
     OperandType get_nested_type(const Operand& operand) const;
     const std::unordered_map<std::string, uint32_t>& get_variable_map() const;

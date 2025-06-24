@@ -13,7 +13,7 @@ jl::TempVar jl::VariableManager::create_temp_var(OperandType type)
     };
 }
 
-jl::TempVar jl::VariableManager::store_variable(const std::string& var_name)
+jl::TempVar jl::VariableManager::store_variable(const std::string& var_name, OperandType type)
 {
     // TODO:: Return nullopt and handle redeclaration error
     if (m_variable_map.contains(var_name)) {
@@ -26,7 +26,7 @@ jl::TempVar jl::VariableManager::store_variable(const std::string& var_name)
         // For now we replace the existing varible with this one
     }
 
-    TempVar var = create_temp_var(OperandType::UNASSIGNED);
+    TempVar var = create_temp_var(type);
     m_variable_map.insert(std::pair { var_name, var.idx });
 
     return var;
@@ -97,12 +97,12 @@ const std::unordered_map<std::string, uint32_t>& jl::VariableManager::get_variab
     return m_variable_map;
 }
 
-void jl::VariableManager::set_data_type(uint32_t idx, OperandType type)
+void jl::VariableManager::set_var_data_type(uint32_t idx, OperandType type)
 {
     m_types[idx] = type;
 }
 
-jl::OperandType jl::VariableManager::get_data_type(uint32_t idx) const
+jl::OperandType jl::VariableManager::get_var_data_type(uint32_t idx) const
 {
     return m_types[idx];
 }

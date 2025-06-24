@@ -40,7 +40,7 @@ compile(const char* source_code)
     REQUIRE(jl::ErrorHandler::has_error() == false);
 
     jl::VM vm;
-    const auto chunk = codegen.get_chunk();
+    const auto chunk = codegen.get_root_chunk();
     const auto [status, temp_vars] = vm.run(chunk);
     const auto var_map = chunk.get_variable_map();
 
@@ -111,19 +111,19 @@ TEST_CASE("If ladders", "[Codegen]")
     using namespace jl;
 
     const auto [temp_vars, var_map] = compile(R"(
-            var a = 0;
-            var b = 0;
-            var c = 0;
+        var a = 0;
+        var b = 0;
+        var c = 0;
 
-            for (var i = 0; i < 3; i += 1) [            
-                if (i == 0) [
-                    a = i;
-                ] else if (i == 1) [
-                    b = i; 
-                ] else [
-                    c = i; 
-                ]
+        for (var i = 0; i < 3; i += 1) [            
+            if (i == 0) [
+                a = i;
+            ] else if (i == 1) [
+                b = i; 
+            ] else [
+                c = i; 
             ]
+        ]
 )");
 
     const auto a_value = temp_vars[var_map.at("a")];
