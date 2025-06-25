@@ -12,8 +12,10 @@
 #include <algorithm>
 #include <any>
 #include <cstdint>
+#include <optional>
 #include <print>
 #include <string>
+#include <vector>
 
 jl::CodeGenerator::CodeGenerator(std::string& file_name)
     : m_file_name(file_name)
@@ -321,16 +323,21 @@ std::any jl::CodeGenerator::visit_if_stmt(IfStmt* stmt)
 {
     const auto else_label = m_chunk->create_new_label();
     const auto condition = compile(stmt->m_condition);
+    // Jump to after if-block if condition fails
     m_chunk->write_jump(OpCode::JMP_UNLESS, condition, else_label, m_chunk->get_last_line());
-
+    // Compile if-block
     compile(stmt->m_then_stmt);
 
     if (stmt->m_else_stmt != nullptr) {
+        // Jmp to the end of if-else ladder if contol comes after execution of if-block
         const auto end_label = m_chunk->create_new_label();
         m_chunk->write_control(OpCode::JMP, end_label, m_chunk->get_last_line());
 
+        // Place the else label to come if the previous condtion fails
         m_chunk->write_control(OpCode::LABEL, else_label, m_chunk->get_last_line());
+        // Compile the else body
         compile(stmt->m_else_stmt);
+        // Place the ending label
         m_chunk->write_control(OpCode::LABEL, end_label, m_chunk->get_last_line());
     } else {
         m_chunk->write_control(OpCode::LABEL, else_label, m_chunk->get_last_line());
@@ -354,6 +361,8 @@ std::any jl::CodeGenerator::visit_func_stmt(FuncStmt* stmt)
     m_func_stack.emplace(std::move(chunk));
     m_chunk = &m_func_stack.top();
 
+    std::vector<TempVar> parameter_vars;
+
     // Add function parameters to chunk
     for (int i = 0; i < stmt->m_params.size(); i++) {
         const auto type = from_str(stmt->m_data_types[i]->get_lexeme());
@@ -365,9 +374,32 @@ std::any jl::CodeGenerator::visit_func_stmt(FuncStmt* stmt)
             ErrorHandler::error(m_file_name, stmt->m_data_types[i]->get_line(), "Unknown data type");
         }
 
-        m_chunk->add_input_parameter(stmt->m_params[i]->get_lexeme(), param_type);
+        const auto var = m_chunk->add_input_parameter(stmt->m_params[i]->get_lexeme(), param_type);
+        parameter_vars.push_back(var);
     }
 
+    // Retrieve return type
+    if (stmt->m_return_type == nullptr) {
+        m_chunk->return_type = OperandType::UNASSIGNED;
+    } else {
+        const auto type = from_str(stmt->m_return_type->get_lexeme());
+        if (type) {
+            m_chunk->return_type = *type;
+        } else {
+            m_chunk->return_type = OperandType::UNASSIGNED;
+            ErrorHandler::error(
+                m_file_name,
+                stmt->m_return_type->get_line(),
+                "Function has unkown return type!");
+        }
+    }
+
+    // Pop all function arg values from stack
+    for (const auto var : parameter_vars) {
+        m_chunk->write_control(OpCode::POP, var, m_chunk->get_last_line());
+    }
+
+    // Compile the function body
     for (auto s : stmt->m_body) {
         compile(s);
     }
@@ -379,8 +411,41 @@ std::any jl::CodeGenerator::visit_func_stmt(FuncStmt* stmt)
     return Operand { Nil {} };
 }
 
+std::any jl::CodeGenerator::visit_return_stmt(ReturnStmt* stmt)
+{
+    const auto line = stmt->m_keyword.get_line();
+
+    // Can return but is not returning anything
+    if (stmt->m_expr == nullptr && m_chunk->return_type != OperandType::UNASSIGNED) {
+        ErrorHandler::error(m_file_name, line, "Non-void function is not returning a value");
+        m_chunk->write_control(OpCode::PUSH, Nil {}, line);
+        return Operand { Nil {} };
+    }
+
+    // Cannot return a value but is still returning something
+    if (stmt->m_expr != nullptr && m_chunk->return_type == OperandType::UNASSIGNED) {
+        ErrorHandler::error(m_file_name, line, "Void function cannot return a value");
+        return Operand { Nil {} };
+    }
+
+    if (stmt->m_expr != nullptr) {
+        const auto ret_var = compile(stmt->m_expr);
+
+        // Types don't match
+        if (m_chunk->get_nested_type(ret_var) != m_chunk->return_type) {
+            ErrorHandler::error(m_file_name, line, "Return value of function does not match declaration");
+        }
+
+        m_chunk->write_control(OpCode::PUSH, ret_var, m_chunk->get_last_line());
+    } //
+    // else if (m_chunk->return_type != OperandType::UNASSIGNED) {
+
+    // }
+
+    return Operand { Nil {} };
+}
+
 std::any jl::CodeGenerator::visit_print_stmt(PrintStmt* stmt) { }
-std::any jl::CodeGenerator::visit_return_stmt(ReturnStmt* stmt) { }
 std::any jl::CodeGenerator::visit_class_stmt(ClassStmt* stmt) { }
 std::any jl::CodeGenerator::visit_for_each_stmt(ForEachStmt* stmt) { }
 std::any jl::CodeGenerator::visit_break_stmt(BreakStmt* stmt) { }

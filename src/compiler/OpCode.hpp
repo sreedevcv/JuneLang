@@ -17,13 +17,15 @@ enum class OpCode {
     NOT,
     AND,
     OR,
-    
-    // 
+
+    //
     MOVE,
     LABEL,
     JMP,
     JMP_UNLESS,
     RETURN,
+    PUSH,
+    POP,
 };
 
 enum class OperatorCategory {
@@ -35,6 +37,5 @@ enum class OperatorCategory {
 
 const char* to_string(OpCode opcode);
 OperatorCategory get_category(const OpCode& opcode);
-
 
 }

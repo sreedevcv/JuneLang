@@ -617,6 +617,7 @@ jl::Stmt* jl::Parser::function(const char* kind)
             if (parameters.size() >= 255) {
                 ErrorHandler::error(m_file_name, "parsing", "function call", peek().get_line(), "Cannot have more than 255 parameters for a function", 0);
             }
+
             Token& param = consume(Token::IDENTIFIER, "Expected parameter name here");
             consume(Token::COLON, "Expected a colon after parameter name");
             Token& data_type = consume(Token::IDENTIFIER, "Expected data type here after :");
@@ -628,10 +629,15 @@ jl::Stmt* jl::Parser::function(const char* kind)
     }
 
     consume(Token::RIGHT_PAR, "Expected ) after function parameters");
-    consume(Token::LEFT_SQUARE, "Expected [ befor function body");
+
+    Token* return_type = nullptr;
+    if (match({ Token::COLON })) {
+        return_type = &consume(Token::IDENTIFIER, "Expected return data type here after :");
+    }
+    consume(Token::LEFT_SQUARE, "Expected [ before function body");
 
     std::vector<Stmt*> body = block();
-    Stmt* func = new FuncStmt(name, parameters, data_types, body);
+    Stmt* func = new FuncStmt(name, parameters, data_types, return_type, body);
     m_allocated_refs.push_back(func);
     return func;
 }

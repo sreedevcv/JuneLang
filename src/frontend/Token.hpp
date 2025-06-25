@@ -82,6 +82,7 @@ public:
     static Value global_false_constant;
     static std::string global_super_lexeme;
     static std::string global_this_lexeme;
+    static Token global_void_token;
     // static Token global_plus_equal;
 
 private:

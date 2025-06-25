@@ -32,6 +32,8 @@ std::string jl::Chunk::disassemble() const
 
     out << "------------[" << m_name << "]------------\n";
 
+    out << "OUTPUT: ";
+    out << to_string(return_type) << "\t";
     out << "INPUTS: ";
     for (int i = 0; i < m_inputs.size(); i++) {
         out << "<" << m_inputs[i] << "> ";
@@ -310,8 +312,8 @@ jl::OperandType jl::Chunk::get_nested_type(const Operand& operand) const
     return m_var_manager.get_nested_type(operand);
 }
 
-void jl::Chunk::add_input_parameter(const std::string& name, OperandType type)
+jl::TempVar jl::Chunk::add_input_parameter(const std::string& name, OperandType type)
 {
     m_inputs.push_back(name);
-    store_variable(name, type);
+    return store_variable(name, type);
 }

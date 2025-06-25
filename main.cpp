@@ -26,17 +26,21 @@ int main(int argc, char const* argv[])
             var a: bool;
             a = false;
 
-            fun hello(x: int, y: float, z: bool) [
+            fun hello(x: int, y: float, z: bool): bool [
                 var a = x + y;
                 if (z) [
-                    var b: float = z;
+                    var b: float = y;
                 ]
+
+                return z;
             ]
 
-            fun hai() [
+            fun hai(): int [
                 if (1 == 2) [
                     var d = 3;
                 ]
+
+                return 1;
             ]
 
             var x = 1;

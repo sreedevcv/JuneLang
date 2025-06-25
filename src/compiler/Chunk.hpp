@@ -45,9 +45,10 @@ public:
     int32_t create_new_label();
     uint32_t get_last_line() const;
     int32_t get_max_labels() const;
-    void add_input_parameter(const std::string& name, OperandType type);
+    TempVar add_input_parameter(const std::string& name, OperandType type);
 
     std::string m_name;
+    OperandType return_type { OperandType::UNASSIGNED };
 
 private:
     std::string m_file_name { "test" };
