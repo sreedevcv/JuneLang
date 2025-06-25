@@ -46,6 +46,8 @@ const char* jl::to_string(OpCode opcode)
         return "PUSH";
     case jl::OpCode::POP:
         return "POP";
+    case jl::OpCode::CALL:
+        return "CALL";
     default:
         unimplemented();
         return "UNKNOWN";
@@ -79,6 +81,7 @@ jl::OperatorCategory jl::get_category(const OpCode& opcode)
     case jl::OpCode::JMP:
     case jl::OpCode::PUSH:
     case jl::OpCode::POP:
+    case jl::OpCode::CALL:
         return OperatorCategory::OTHER;
         break;
     }

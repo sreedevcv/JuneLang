@@ -36,15 +36,19 @@ public:
     void write_jump(OpCode opcode, Operand data, Operand label, uint32_t line);
 
     const std::vector<Ir>& get_ir() const;
+
     uint32_t get_max_allocated_temps() const;
     void output_var_map(std::ostream& in) const;
+    uint32_t get_last_line() const;
+    int32_t get_max_labels() const;
+
     TempVar store_variable(const std::string& var_name, OperandType type);
     std::optional<TempVar> look_up_variable(const std::string& var_name) const;
     const std::unordered_map<std::string, uint32_t>& get_variable_map() const;
+    const std::vector<std::string>& get_input_variable_names() const;
+
     OperandType get_nested_type(const Operand& operand) const;
     int32_t create_new_label();
-    uint32_t get_last_line() const;
-    int32_t get_max_labels() const;
     TempVar add_input_parameter(const std::string& name, OperandType type);
 
     std::string m_name;

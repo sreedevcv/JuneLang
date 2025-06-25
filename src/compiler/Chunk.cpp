@@ -317,3 +317,8 @@ jl::TempVar jl::Chunk::add_input_parameter(const std::string& name, OperandType 
     m_inputs.push_back(name);
     return store_variable(name, type);
 }
+
+const std::vector<std::string>& jl::Chunk::get_input_variable_names() const
+{
+    return m_inputs;
+}

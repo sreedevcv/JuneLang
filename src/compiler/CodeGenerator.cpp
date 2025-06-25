@@ -222,7 +222,60 @@ std::any jl::CodeGenerator::visit_assign_expr(Assign* expr)
     return Operand { *dest_var };
 }
 
-std::any jl::CodeGenerator::visit_call_expr(Call* expr) { }
+std::any jl::CodeGenerator::visit_call_expr(Call* expr)
+{
+    // Compile the callee
+    const auto func_temp_var = compile(expr->m_callee);
+    const auto line = expr->m_paren.get_line();
+    // Ensure that its a temp_var
+    if (get_type(func_temp_var) != OperandType::TEMP) {
+        ErrorHandler::error(m_file_name, line, "Only functions can be called");
+        return Operand { Nil {} };
+    }
+
+    // Ensure temp-var is associated with a named function
+    std::optional<std::string> func_name;
+    for (const auto& [name, temp] : m_chunk->get_variable_map()) {
+        if (temp == std::get<TempVar>(func_temp_var).idx) {
+            func_name = name;
+        }
+    }
+
+    if (!func_name) {
+        ErrorHandler::error(m_file_name, line, "No such function exists");
+        return Operand { Nil {} };
+    }
+
+    // Get the function chunk
+    const auto func_chunk = m_chunk_list.at(*func_name);
+    const auto func_inputs = func_chunk.get_input_variable_names();
+
+    // Ensure whether the arity is same
+    if (func_inputs.size() != expr->m_arguments.size()) {
+        ErrorHandler::error(m_file_name, line, "No. of func arguments is wrong");
+        return Operand { Nil {} };
+    }
+
+    // Compile all the function arguments
+    for (int i = expr->m_arguments.size() - 1; i >= 0; i--) {
+        auto arg = expr->m_arguments[i];
+        const auto arg_var = compile(arg);
+
+        // The data type should be same as function signature
+        const auto& arg_name = func_inputs[i];
+        const auto temp = *func_chunk.look_up_variable(arg_name);
+        const auto temp_operand = Operand { temp };
+
+        if (func_chunk.get_nested_type(temp_operand) != m_chunk->get_nested_type(arg_var)) {
+            ErrorHandler::error(m_file_name, line, "Func argument type mismatch");
+        }
+
+        m_chunk->write_control(OpCode::PUSH, arg_var, m_chunk->get_last_line());
+    }
+
+    const auto ret_var = m_chunk->write(OpCode::CALL, func_temp_var, m_chunk->get_last_line());
+    return Operand { ret_var };
+}
 
 std::any jl::CodeGenerator::visit_get_expr(Get* expr) { }
 std::any jl::CodeGenerator::visit_set_expr(Set* expr) { }
@@ -356,10 +409,33 @@ std::any jl::CodeGenerator::visit_func_stmt(FuncStmt* stmt)
         return Operand { Nil {} };
     }
 
+    // Retrieve return type
+    OperandType return_type;
+    if (stmt->m_return_type == nullptr) {
+        return_type = OperandType::UNASSIGNED;
+    } else {
+        const auto type = from_str(stmt->m_return_type->get_lexeme());
+        if (type) {
+            return_type = *type;
+        } else {
+            return_type = OperandType::UNASSIGNED;
+            ErrorHandler::error(
+                m_file_name,
+                stmt->m_return_type->get_line(),
+                "Function has unkown return type!");
+        }
+    }
+
+    // Store the function_name as a variable
+    m_chunk->store_variable(stmt->m_name.get_lexeme(), return_type);
+
     // TODO::Write a helper method to push/pop chunk
     Chunk chunk { stmt->m_name.get_lexeme() };
     m_func_stack.emplace(std::move(chunk));
     m_chunk = &m_func_stack.top();
+
+    // Store the return type
+    m_chunk->return_type = return_type;
 
     std::vector<TempVar> parameter_vars;
 
@@ -418,7 +494,7 @@ std::any jl::CodeGenerator::visit_return_stmt(ReturnStmt* stmt)
     // Can return but is not returning anything
     if (stmt->m_expr == nullptr && m_chunk->return_type != OperandType::UNASSIGNED) {
         ErrorHandler::error(m_file_name, line, "Non-void function is not returning a value");
-        m_chunk->write_control(OpCode::PUSH, Nil {}, line);
+        m_chunk->write_control(OpCode::RETURN, Nil {}, line);
         return Operand { Nil {} };
     }
 
@@ -436,11 +512,8 @@ std::any jl::CodeGenerator::visit_return_stmt(ReturnStmt* stmt)
             ErrorHandler::error(m_file_name, line, "Return value of function does not match declaration");
         }
 
-        m_chunk->write_control(OpCode::PUSH, ret_var, m_chunk->get_last_line());
-    } //
-    // else if (m_chunk->return_type != OperandType::UNASSIGNED) {
-
-    // }
+        m_chunk->write_control(OpCode::RETURN, ret_var, m_chunk->get_last_line());
+    }
 
     return Operand { Nil {} };
 }

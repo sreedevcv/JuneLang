@@ -43,7 +43,7 @@ int main(int argc, char const* argv[])
                 return 1;
             ]
 
-            var x = 1;
+            var x: bool = hello(1, 2.0, a);
         )");
 
     std::string file_name = "examples/EList.jun";
