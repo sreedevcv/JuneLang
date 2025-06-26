@@ -3,6 +3,7 @@
 #include <climits>
 #include <cstdint>
 #include <functional>
+#include <print>
 #include <vector>
 
 #include "Ir.hpp"
@@ -153,30 +154,42 @@ static const jl::Operand do_arithametic(
     return result;
 }
 
-std::pair<jl::VM::InterpretResult, std::vector<jl::Operand>> jl::VM::run(const Chunk& chunk)
+std::pair<jl::VM::InterpretResult, std::vector<jl::Operand>> jl::VM::run(const Chunk& chunk,
+    const std::unordered_map<std::string, Chunk>& chunk_map)
 {
     const auto& irs = chunk.get_ir();
     std::vector<Operand> temp_vars { chunk.get_max_allocated_temps() };
     const auto locations = fill_labels(irs, chunk.get_max_labels());
-    uint32_t ip = 0;
+    uint32_t pc = 0;
 
-    while (ip < irs.size()) {
-        const auto& ir = irs[ip];
+    while (pc < irs.size()) {
+        const auto& ir = irs[pc];
+
+        if (ir.opcode() == OpCode::CALL) {
+            const auto& func_var = ir.unary().operand;
+            const auto& func_name = chunk.get_variable_name_from_temp_var(std::get<TempVar>(func_var).idx);
+            const auto& func_chunk = chunk_map.at(func_name);
+            run(func_chunk, chunk_map);
+            const auto ret_val = m_stack.top();
+            m_stack.pop();
+            temp_vars[ir.dest().idx] = ret_val;
+            pc += 1;
+            continue;
+        }
 
         switch (ir.type()) {
         case Ir::BINARY:
             handle_binary_ir(ir, temp_vars);
-            ip += 1;
+            pc += 1;
             break;
         case Ir::UNARY:
             handle_unary_ir(ir, temp_vars);
-            ip += 1;
+            pc += 1;
             break;
         case Ir::JUMP:
         case Ir::CONTROL:
-            ip = handle_control_ir(ip, ir, temp_vars, locations);
+            pc = handle_control_ir(pc, ir, temp_vars, locations);
             break;
-
         default:
             unimplemented();
         }
@@ -265,11 +278,13 @@ std::vector<uint32_t> jl::VM::fill_labels(const std::vector<Ir>& irs, uint32_t m
     return locations;
 }
 
-uint32_t jl::VM::handle_control_ir(const uint32_t ip, const Ir& ir, std::vector<Operand>& temp_vars, const std::vector<uint32_t>& label_locations)
+uint32_t jl::VM::handle_control_ir(
+    const uint32_t pc,
+    const Ir& ir, std::vector<Operand>& temp_vars,
+    const std::vector<uint32_t>& label_locations)
 {
     switch (ir.opcode()) {
     case OpCode::LABEL:
-        return ip + 1;
         break;
     case OpCode::JMP: {
         const auto label = std::get<int>(ir.control().data);
@@ -282,14 +297,33 @@ uint32_t jl::VM::handle_control_ir(const uint32_t ip, const Ir& ir, std::vector<
             const auto label = std::get<int>(ir.jump().label);
             return label_locations[label];
         } else {
-            return ip + 1;
+            return pc + 1;
         }
     } break;
-    case OpCode::RETURN:
-        return INT_MAX;
+    case OpCode::PUSH: {
+        const auto& operand = ir.control().data;
+        const auto& data = jl::get_type(operand) == jl::OperandType::TEMP
+            ? get_temp_var_data(operand, temp_vars)
+            : operand;
+        m_stack.push(data);
+    } break;
+    case OpCode::POP: {
+        const auto data = m_stack.top();
+        m_stack.pop();
+        const auto temp_var = std::get<TempVar>(ir.control().data);
+        temp_vars[temp_var.idx] = data;
+    } break;
+    case OpCode::RETURN: {
+        const auto& operand = ir.control().data;
+        const auto& data = jl::get_type(operand) == jl::OperandType::TEMP
+            ? get_temp_var_data(operand, temp_vars)
+            : operand;
+        m_stack.push(data);
+    } break;
+
     default:
         unimplemented();
     }
 
-    return ip;
+    return pc + 1;
 }

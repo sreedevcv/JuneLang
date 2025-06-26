@@ -44,6 +44,7 @@ public:
 
     TempVar store_variable(const std::string& var_name, OperandType type);
     std::optional<TempVar> look_up_variable(const std::string& var_name) const;
+    const std::string& get_variable_name_from_temp_var(uint32_t idx) const;
     const std::unordered_map<std::string, uint32_t>& get_variable_map() const;
     const std::vector<std::string>& get_input_variable_names() const;
 

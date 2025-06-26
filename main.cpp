@@ -21,29 +21,41 @@ int main(int argc, char const* argv[])
     //     var c = 3.0;
     // ]
 
+    // var a: bool;
+    // a = false;
+
+    // fun hello(x: int, y: float, z: bool): bool [
+    //     var a = x + y;
+    //     if (z) [
+    //         var b: float = y;
+    //     ]
+
+    //     return z;
+    // ]
+
+    // fun hai(): int [
+    //     if (1 == 2) [
+    //         var d = 3;
+    //     ]
+
+    //     return hai();
+    // ]
+
+    // var x: bool = hello(1, 2.0, a);
+
     jl::Lexer lexer(
         R"( 
-            var a: bool;
-            a = false;
+            fun sum_till(till: int): int [
+                var sum = 0;
 
-            fun hello(x: int, y: float, z: bool): bool [
-                var a = x + y;
-                if (z) [
-                    var b: float = y;
+                for (var i = 1; i <= till; i+=1) [
+                    sum += i;
                 ]
 
-                return z;
+                return sum;
             ]
 
-            fun hai(): int [
-                if (1 == 2) [
-                    var d = 3;
-                ]
-
-                return hai();
-            ]
-
-            var x: bool = hello(1, 2.0, a);
+            var a = sum_till(10);
         )");
 
     std::string file_name = "examples/EList.jun";
@@ -71,7 +83,7 @@ int main(int argc, char const* argv[])
     }
 
     jl::CodeGenerator codegen(file_name);
-    codegen.generate(stmts);
+    const auto chunk_map = codegen.generate(stmts);
 
     if (jl::ErrorHandler::has_error()) {
         return 1;
@@ -79,12 +91,11 @@ int main(int argc, char const* argv[])
 
     codegen.disassemble();
 
-
     const auto chunk = codegen.get_root_chunk();
     // std::println("{}", chunk.disassemble());
 
     jl::VM vm;
-    const auto [res, vars] = vm.run(chunk);
+    const auto [res, vars] = vm.run(chunk, chunk_map);
 
     for (const auto& [name, idx] : chunk.get_variable_map()) {
         std::println("{}\t{}", name, jl::to_string(vars[idx]));

@@ -17,7 +17,7 @@ public:
     CodeGenerator(std::string& file_name);
     virtual ~CodeGenerator();
 
-    void generate(std::vector<Stmt*> stmts);
+    const std::unordered_map<std::string, Chunk>& generate(std::vector<Stmt*> stmts);
 
     jl::Operand compile(Stmt* stmt);
     jl::Operand compile(Expr* stmt);

@@ -25,6 +25,7 @@ public:
         const Operand& op1,
         const Operand& op2,
         OpCode opcode) const;
+    const std::string& get_variable_name_from_temp_var(uint32_t idx) const;
 
 private:
     static uint32_t constexpr max_data_types { 6 };

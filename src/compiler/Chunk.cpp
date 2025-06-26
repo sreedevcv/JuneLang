@@ -292,6 +292,11 @@ std::optional<jl::TempVar> jl::Chunk::look_up_variable(const std::string& var_na
     return m_var_manager.look_up_variable(var_name);
 }
 
+const std::string& jl::Chunk::get_variable_name_from_temp_var(uint32_t idx) const
+{
+    return m_var_manager.get_variable_name_from_temp_var(idx);
+}
+
 int32_t jl::Chunk::create_new_label()
 {
     return m_label_count++;

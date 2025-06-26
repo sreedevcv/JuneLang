@@ -56,6 +56,17 @@ jl::OperandType jl::VariableManager::get_nested_type(const Operand& operand) con
         : get_type(operand);
 }
 
+const std::string& jl::VariableManager::get_variable_name_from_temp_var(uint32_t idx) const
+{
+    for (const auto& [name, var] : m_variable_map) {
+        if (var == idx) {
+            return name;
+        }
+    }
+
+    return get_variable_map().begin()->first;
+}
+
 std::optional<jl::OperandType> jl::VariableManager::infer_type_for_binary(
     const Operand& op1,
     const Operand& op2,

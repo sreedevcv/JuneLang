@@ -28,13 +28,14 @@ jl::CodeGenerator::~CodeGenerator()
 {
 }
 
-void jl::CodeGenerator::generate(std::vector<Stmt*> stmts)
+const std::unordered_map<std::string, jl::Chunk>& jl::CodeGenerator::generate(std::vector<Stmt*> stmts)
 {
     for (auto stmt : stmts) {
         compile(stmt);
     }
 
     m_chunk->write_control(OpCode::RETURN, Nil {}, m_chunk->get_last_line());
+    return m_chunk_list;
 }
 
 const jl::Chunk& jl::CodeGenerator::get_root_chunk() const
@@ -281,6 +282,8 @@ std::any jl::CodeGenerator::visit_call_expr(Call* expr)
     }
 
     const auto ret_var = m_chunk->write(OpCode::CALL, func_temp_var, m_chunk->get_last_line());
+    // TODO: Type the ret_var with the return type of the function 
+    // Not necessary i think, but test first
     return Operand { ret_var };
 }
 
