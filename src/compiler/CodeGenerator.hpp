@@ -58,9 +58,11 @@ private:
     std::string m_file_name;
     Chunk* m_chunk;
     std::unordered_map<std::string, Chunk> m_chunk_list;
-    std::stack<Chunk> m_func_stack;
+    std::stack<Chunk*> m_func_stack;
 
     bool check_if_func_exists(const std::string& name) const;
+    void push_chunk(Chunk&& chunk, const std::string& name);
+    void pop_chunk();
 };
 
 } // namespace jl

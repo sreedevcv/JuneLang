@@ -40,7 +40,7 @@ int main(int argc, char const* argv[])
                     var d = 3;
                 ]
 
-                return 1;
+                return hai();
             ]
 
             var x: bool = hello(1, 2.0, a);

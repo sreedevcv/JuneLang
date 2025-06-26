@@ -9,22 +9,19 @@
 #include "Utils.hpp"
 #include "Value.hpp"
 
-#include <algorithm>
 #include <any>
 #include <cstdint>
 #include <optional>
 #include <print>
 #include <string>
+#include <utility>
 #include <vector>
 
 jl::CodeGenerator::CodeGenerator(std::string& file_name)
     : m_file_name(file_name)
 {
     Chunk chunk { "__root__" };
-    // m_chunk_list.push_back(chunk);
-    // m_chunk = &m_chunk_list.back();
-    m_func_stack.push(std::move(chunk));
-    m_chunk = &m_func_stack.top();
+    push_chunk(std::move(chunk), "__root__");
 }
 
 jl::CodeGenerator::~CodeGenerator()
@@ -38,9 +35,6 @@ void jl::CodeGenerator::generate(std::vector<Stmt*> stmts)
     }
 
     m_chunk->write_control(OpCode::RETURN, Nil {}, m_chunk->get_last_line());
-
-    m_chunk_list.insert({ m_func_stack.top().m_name, std::move(m_func_stack.top()) });
-    m_func_stack.pop();
 }
 
 const jl::Chunk& jl::CodeGenerator::get_root_chunk() const
@@ -68,6 +62,19 @@ void jl::CodeGenerator::disassemble()
 bool jl::CodeGenerator::check_if_func_exists(const std::string& name) const
 {
     return m_chunk_list.contains(name);
+}
+
+void jl::CodeGenerator::push_chunk(Chunk&& chunk, const std::string& name)
+{
+    m_chunk_list.insert({ name, std::move(chunk) });
+    m_func_stack.push(&m_chunk_list.at(name));
+    m_chunk = m_func_stack.top();
+}
+
+void jl::CodeGenerator::pop_chunk()
+{
+    m_func_stack.pop();
+    m_chunk = m_func_stack.top();
 }
 
 /* ======================================================================================================================== */
@@ -426,13 +433,14 @@ std::any jl::CodeGenerator::visit_func_stmt(FuncStmt* stmt)
         }
     }
 
-    // Store the function_name as a variable
+    // Store the function_name as a variable in the outer chunk
     m_chunk->store_variable(stmt->m_name.get_lexeme(), return_type);
 
-    // TODO::Write a helper method to push/pop chunk
     Chunk chunk { stmt->m_name.get_lexeme() };
-    m_func_stack.emplace(std::move(chunk));
-    m_chunk = &m_func_stack.top();
+    push_chunk(std::move(chunk), stmt->m_name.get_lexeme());
+
+    // Store the function_name as a variable in the new chunk also for recursion support
+    m_chunk->store_variable(stmt->m_name.get_lexeme(), return_type);
 
     // Store the return type
     m_chunk->return_type = return_type;
@@ -480,9 +488,7 @@ std::any jl::CodeGenerator::visit_func_stmt(FuncStmt* stmt)
         compile(s);
     }
 
-    m_chunk_list.insert({ stmt->m_name.get_lexeme(), std::move(m_func_stack.top()) });
-    m_func_stack.pop();
-    m_chunk = &m_func_stack.top();
+    pop_chunk();
 
     return Operand { Nil {} };
 }
