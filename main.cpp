@@ -8,7 +8,9 @@
 #include "VM.hpp"
 
 #include <cassert>
+#include <cstdlib>
 #include <print>
+#include <string>
 
 int main(int argc, char const* argv[])
 {
@@ -43,20 +45,13 @@ int main(int argc, char const* argv[])
 
     // var x: bool = hello(1, 2.0, a);
 
-    jl::Lexer lexer(
-        R"( 
-            fun sum_till(till: int): int [
-                var sum = 0;
+    if (argc < 2) {
+        std::println("No file provided");
+        std::exit(1);
+    }
 
-                for (var i = 1; i <= till; i+=1) [
-                    sum += i;
-                ]
-
-                return sum;
-            ]
-
-            var a = sum_till(10);
-        )");
+    std::string file {argv[1]};
+    jl::Lexer lexer(file);
 
     std::string file_name = "examples/EList.jun";
 

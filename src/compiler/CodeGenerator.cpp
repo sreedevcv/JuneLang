@@ -249,14 +249,14 @@ std::any jl::CodeGenerator::visit_call_expr(Call* expr)
         }
     }
 
-    if (!func_name) {
+    if (!func_name || !check_if_func_exists(*func_name)) {
         ErrorHandler::error(m_file_name, line, "No such function exists");
         return Operand { Nil {} };
     }
 
     // Get the function chunk
-    const auto func_chunk = m_chunk_list.at(*func_name);
-    const auto func_inputs = func_chunk.get_input_variable_names();
+    const auto& func_chunk = m_chunk_list.at(*func_name);
+    const auto& func_inputs = func_chunk.get_input_variable_names();
 
     // Ensure whether the arity is same
     if (func_inputs.size() != expr->m_arguments.size()) {
@@ -281,8 +281,15 @@ std::any jl::CodeGenerator::visit_call_expr(Call* expr)
         m_chunk->write_control(OpCode::PUSH, arg_var, m_chunk->get_last_line());
     }
 
-    const auto ret_var = m_chunk->write(OpCode::CALL, func_temp_var, m_chunk->get_last_line());
-    // TODO: Type the ret_var with the return type of the function 
+    m_chunk->write_control(OpCode::CALL, func_temp_var, m_chunk->get_last_line());
+
+    const auto ret_var = m_chunk->create_temp_var(func_chunk.return_type);
+    
+    if (func_chunk.return_type != OperandType::NIL) {
+        m_chunk->write_control(OpCode::POP, ret_var, m_chunk->get_last_line());
+    }
+
+    // TODO: Type the ret_var with the return type of the function
     // Not necessary i think, but test first
     return Operand { ret_var };
 }
@@ -422,13 +429,13 @@ std::any jl::CodeGenerator::visit_func_stmt(FuncStmt* stmt)
     // Retrieve return type
     OperandType return_type;
     if (stmt->m_return_type == nullptr) {
-        return_type = OperandType::UNASSIGNED;
+        return_type = OperandType::NIL;
     } else {
         const auto type = from_str(stmt->m_return_type->get_lexeme());
         if (type) {
             return_type = *type;
         } else {
-            return_type = OperandType::UNASSIGNED;
+            return_type = OperandType::NIL;
             ErrorHandler::error(
                 m_file_name,
                 stmt->m_return_type->get_line(),
@@ -465,22 +472,6 @@ std::any jl::CodeGenerator::visit_func_stmt(FuncStmt* stmt)
         parameter_vars.push_back(var);
     }
 
-    // Retrieve return type
-    if (stmt->m_return_type == nullptr) {
-        m_chunk->return_type = OperandType::UNASSIGNED;
-    } else {
-        const auto type = from_str(stmt->m_return_type->get_lexeme());
-        if (type) {
-            m_chunk->return_type = *type;
-        } else {
-            m_chunk->return_type = OperandType::UNASSIGNED;
-            ErrorHandler::error(
-                m_file_name,
-                stmt->m_return_type->get_line(),
-                "Function has unkown return type!");
-        }
-    }
-
     // Pop all function arg values from stack
     for (const auto var : parameter_vars) {
         m_chunk->write_control(OpCode::POP, var, m_chunk->get_last_line());
@@ -489,6 +480,12 @@ std::any jl::CodeGenerator::visit_func_stmt(FuncStmt* stmt)
     // Compile the function body
     for (auto s : stmt->m_body) {
         compile(s);
+    }
+
+    // Add a halt just in case the execution comes here without hitting a return
+    // to indicate a runtime error
+    if (return_type != OperandType::NIL) {
+        m_chunk->write_control(OpCode::HALT, Nil {}, m_chunk->get_last_line());
     }
 
     pop_chunk();
@@ -501,14 +498,14 @@ std::any jl::CodeGenerator::visit_return_stmt(ReturnStmt* stmt)
     const auto line = stmt->m_keyword.get_line();
 
     // Can return but is not returning anything
-    if (stmt->m_expr == nullptr && m_chunk->return_type != OperandType::UNASSIGNED) {
+    if (stmt->m_expr == nullptr && m_chunk->return_type != OperandType::NIL) {
         ErrorHandler::error(m_file_name, line, "Non-void function is not returning a value");
         m_chunk->write_control(OpCode::RETURN, Nil {}, line);
         return Operand { Nil {} };
     }
 
     // Cannot return a value but is still returning something
-    if (stmt->m_expr != nullptr && m_chunk->return_type == OperandType::UNASSIGNED) {
+    if (stmt->m_expr != nullptr && m_chunk->return_type == OperandType::NIL) {
         ErrorHandler::error(m_file_name, line, "Void function cannot return a value");
         return Operand { Nil {} };
     }
@@ -521,8 +518,10 @@ std::any jl::CodeGenerator::visit_return_stmt(ReturnStmt* stmt)
             ErrorHandler::error(m_file_name, line, "Return value of function does not match declaration");
         }
 
-        m_chunk->write_control(OpCode::RETURN, ret_var, m_chunk->get_last_line());
+        m_chunk->write_control(OpCode::PUSH, ret_var, m_chunk->get_last_line());
     }
+
+    m_chunk->write_control(OpCode::RETURN, Nil {}, m_chunk->get_last_line());
 
     return Operand { Nil {} };
 }

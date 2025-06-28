@@ -134,3 +134,62 @@ TEST_CASE("If ladders", "[Codegen]")
     REQUIRE(std::get<int>(b_value) == 1);
     REQUIRE(std::get<int>(c_value) == 2);
 }
+
+TEST_CASE("Simple Function", "[Codegen]")
+{
+    using namespace jl;
+
+    const auto [temp_vars, var_map] = compile(R"(
+        fun sum_till(till: int): int [
+            var sum = 0;
+
+            for (var i = 1; i <= till; i+=1) [
+                sum += i;
+            ]
+
+            return sum;
+        ]
+
+        var a = sum_till(10);
+)");
+
+    const auto a_value = temp_vars[var_map.at("a")];
+
+    REQUIRE(std::get<int>(a_value) == 55);
+}
+
+TEST_CASE("Empty function", "[Codegen]")
+{
+    using namespace jl;
+
+    const auto [temp_vars, var_map] = compile(R"(
+        fun hai() [
+        ]
+
+        hai();
+)");
+}
+
+
+
+
+// TEST_CASE("Recursive function", "[Codegen]")
+// {
+//     using namespace jl;
+
+//     const auto [temp_vars, var_map] = compile(R"(
+//         fun factorial(n: int): int [
+//             if (n == 0) [
+//                 return 1;
+//             ]
+
+//             return factorial(n) * factorial(n - 1);
+//         ]
+
+//         var a = factorial(4 + 1);
+// )");
+
+//     const auto a_value = temp_vars[var_map.at("a")];
+
+//     REQUIRE(std::get<int>(a_value) == 120);
+// }

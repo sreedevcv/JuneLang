@@ -51,6 +51,7 @@ public:
     OperandType get_nested_type(const Operand& operand) const;
     int32_t create_new_label();
     TempVar add_input_parameter(const std::string& name, OperandType type);
+    TempVar create_temp_var(OperandType type);
 
     std::string m_name;
     OperandType return_type { OperandType::UNASSIGNED };

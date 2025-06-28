@@ -1,14 +1,11 @@
-var a = 5;
-var b = 10;
+fun sum_till(till: int): int [
+    var sum = 0;
 
-fun temp(x, y)
-[
-    for var i=x; i < y; i = i+1;
-    [
-        print i;
+    for (var i = 1; i <= till; i+=1) [
+        sum += i;
     ]
+
+    return sum;
 ]
 
-
-print "Hello  World";
-temp(a, b);
+var a = sum_till(10);

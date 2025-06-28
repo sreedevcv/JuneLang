@@ -2,6 +2,7 @@
 
 #include <climits>
 #include <cstdint>
+#include <cstdlib>
 #include <functional>
 #include <print>
 #include <vector>
@@ -154,7 +155,8 @@ static const jl::Operand do_arithametic(
     return result;
 }
 
-std::pair<jl::VM::InterpretResult, std::vector<jl::Operand>> jl::VM::run(const Chunk& chunk,
+std::pair<jl::VM::InterpretResult, std::vector<jl::Operand>> jl::VM::run(
+    const Chunk& chunk,
     const std::unordered_map<std::string, Chunk>& chunk_map)
 {
     const auto& irs = chunk.get_ir();
@@ -166,13 +168,13 @@ std::pair<jl::VM::InterpretResult, std::vector<jl::Operand>> jl::VM::run(const C
         const auto& ir = irs[pc];
 
         if (ir.opcode() == OpCode::CALL) {
-            const auto& func_var = ir.unary().operand;
+            const auto& func_var = ir.control().data;
             const auto& func_name = chunk.get_variable_name_from_temp_var(std::get<TempVar>(func_var).idx);
             const auto& func_chunk = chunk_map.at(func_name);
             run(func_chunk, chunk_map);
-            const auto ret_val = m_stack.top();
-            m_stack.pop();
-            temp_vars[ir.dest().idx] = ret_val;
+            // const auto ret_val = m_stack.top();
+            // m_stack.pop();
+            // temp_vars[ir.dest().idx] = ret_val;
             pc += 1;
             continue;
         }
@@ -286,6 +288,10 @@ uint32_t jl::VM::handle_control_ir(
     switch (ir.opcode()) {
     case OpCode::LABEL:
         break;
+    case OpCode::HALT:
+    std::println("[Halting...]");
+        std::exit(1);
+        break;
     case OpCode::JMP: {
         const auto label = std::get<int>(ir.control().data);
         return label_locations[label];
@@ -314,11 +320,11 @@ uint32_t jl::VM::handle_control_ir(
         temp_vars[temp_var.idx] = data;
     } break;
     case OpCode::RETURN: {
-        const auto& operand = ir.control().data;
-        const auto& data = jl::get_type(operand) == jl::OperandType::TEMP
-            ? get_temp_var_data(operand, temp_vars)
-            : operand;
-        m_stack.push(data);
+        // const auto& operand = ir.control().data;
+        // const auto& data = jl::get_type(operand) == jl::OperandType::TEMP
+        //     ? get_temp_var_data(operand, temp_vars)
+        //     : operand;
+        // m_stack.push(data);
     } break;
 
     default:

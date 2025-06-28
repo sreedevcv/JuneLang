@@ -198,6 +198,9 @@ jl::TempVar jl::Chunk::write(
     if (type == OperandType::UNASSIGNED) {
         ErrorHandler::error(m_file_name, line, "Use of unintialized variable");
         return m_var_manager.create_temp_var(type);
+    } else if (type == OperandType::NIL) {
+        ErrorHandler::error(m_file_name, line, "Cannot use nil type in assignemnt");
+        return m_var_manager.create_temp_var(type);
     }
 
     TempVar dest = m_var_manager.create_temp_var(type);
@@ -224,12 +227,18 @@ void jl::Chunk::write_with_dest(
     if (type == OperandType::UNASSIGNED) {
         ErrorHandler::error(m_file_name, line, "Use of unintialized variable");
         return;
+    } else if (type == OperandType::NIL) {
+        ErrorHandler::error(m_file_name, line, "Cannot use nil type in assignemnt");
+        return;
     } else {
         const auto dest_type = m_var_manager.get_var_data_type(dest.idx);
 
         // Update type data
         if (dest_type == OperandType::UNASSIGNED) {
             m_var_manager.set_var_data_type(dest.idx, type);
+        } else if (dest_type == OperandType::NIL) {
+            ErrorHandler::error(m_file_name, line, "Cannot use nil type in assignemnt");
+            return;
         } else if (dest_type != type) {
             ErrorHandler::error(
                 m_file_name,
@@ -321,6 +330,11 @@ jl::TempVar jl::Chunk::add_input_parameter(const std::string& name, OperandType 
 {
     m_inputs.push_back(name);
     return store_variable(name, type);
+}
+
+jl::TempVar jl::Chunk::create_temp_var(OperandType type)
+{
+    return m_var_manager.create_temp_var(type);
 }
 
 const std::vector<std::string>& jl::Chunk::get_input_variable_names() const

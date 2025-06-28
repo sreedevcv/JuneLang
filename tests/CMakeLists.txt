@@ -13,7 +13,8 @@ target_link_libraries(interpreter_tests PRIVATE
 )
 
 add_executable(codegen_tests 
-    codegen/TestBasicExpr.cpp
+    codegen/TestCodeExec.cpp
+    codegen/TestFailing.cpp
 )
 
 target_link_libraries(codegen_tests PRIVATE 

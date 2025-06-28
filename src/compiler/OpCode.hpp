@@ -26,7 +26,8 @@ enum class OpCode {
     RETURN,
     PUSH,
     POP,
-    CALL
+    CALL,
+    HALT // For runtime error
 };
 
 enum class OperatorCategory {
