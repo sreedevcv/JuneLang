@@ -44,6 +44,7 @@ public:
         STRING,
         FLOAT,
         INT,
+        CHAR,
         IDENTIFIER,
         // Keywords
         AND,

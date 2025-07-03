@@ -1,5 +1,6 @@
 #include "Value.hpp"
 #include "Callable.hpp"
+#include "Utils.hpp"
 
 #include <cstdlib>
 #include <variant>
@@ -73,8 +74,11 @@ jl::Type jl::get_type(jl::Value& value)
         return Type::LIST;
     case 7:
         return Type::JNULL;
+    case 8:
+        return Type::CHAR;
     default:
-        std::exit(-1);
+        unimplemented();
+        std::exit(1);
     }
 }
 
@@ -115,7 +119,7 @@ bool jl::is::_exact_same(Value& ref1, Value& ref2)
         return true;
         break;
     default:
-        std::print("Unknow value type enum");
+        unimplemented();
         std::exit(2);
         break;
     }

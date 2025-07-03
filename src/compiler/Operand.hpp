@@ -14,6 +14,7 @@ enum class OperandType {
     NIL,
     BOOL,
     UNASSIGNED, // Not represend in Operand variant
+    CHAR,
 };
 
 struct TempVar {
@@ -22,7 +23,7 @@ struct TempVar {
 
 struct Nil { };
 
-using Operand = std::variant<int, double, TempVar, Nil, bool>;
+using Operand = std::variant<int, double, TempVar, Nil, bool, char>;
 
 std::string to_string(const Operand& operand);
 std::string to_string(const OperandType& operand_type);

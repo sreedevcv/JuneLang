@@ -45,7 +45,8 @@ using Value = Markable<std::variant<
     Callable*,
     Instance*,
     List,
-    Null>>;
+    Null,
+    char>>;
 
 enum class Type {
     NONE,
@@ -57,6 +58,7 @@ enum class Type {
     OBJ,
     LIST,
     JNULL,
+    CHAR,
 };
 
 Type get_type(Value& value);

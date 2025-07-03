@@ -35,7 +35,7 @@ compile(const char* source_code)
     REQUIRE(jl::ErrorHandler::has_error() == false);
 
     jl::CodeGenerator codegen(file_name);
-    const auto chunk_map =codegen.generate(stmts);
+    const auto chunk_map = codegen.generate(stmts);
 
     REQUIRE(jl::ErrorHandler::has_error() == false);
 
@@ -170,26 +170,77 @@ TEST_CASE("Empty function", "[Codegen]")
 )");
 }
 
+TEST_CASE("Recursive function", "[Codegen]")
+{
+    using namespace jl;
 
+    const auto [temp_vars, var_map] = compile(R"(
+        fun factorial(n: int): int [
+            if (n == 0) [
+                return 1;
+            ]
 
+            return n * factorial(n - 1);
+        ]
 
-// TEST_CASE("Recursive function", "[Codegen]")
-// {
-//     using namespace jl;
+        var a = factorial(4 + 1);
+)");
 
-//     const auto [temp_vars, var_map] = compile(R"(
-//         fun factorial(n: int): int [
-//             if (n == 0) [
-//                 return 1;
-//             ]
+    const auto a_value = temp_vars[var_map.at("a")];
 
-//             return factorial(n) * factorial(n - 1);
-//         ]
+    REQUIRE(std::get<int>(a_value) == 120);
+}
 
-//         var a = factorial(4 + 1);
-// )");
+TEST_CASE("Fibonacci function", "[Codegen]")
+{
+    using namespace jl;
 
-//     const auto a_value = temp_vars[var_map.at("a")];
+    const auto [temp_vars, var_map] = compile(R"(
+fun fibonacci(n: int): int [
+        var a = 0;
+        var b = 1;
 
-//     REQUIRE(std::get<int>(a_value) == 120);
-// }
+        if (n == 0 or n == 1) [
+                return n;
+        ]
+
+        for(var i = 0; i < n; i += 1) [
+                var c = a + b;
+                a = b;
+                b = c;
+        ]
+
+        return b;
+]
+
+var f = fibonacci(6);
+)");
+
+    const auto f_value = temp_vars[var_map.at("f")];
+
+    REQUIRE(std::get<int>(f_value) == 13);
+}
+
+TEST_CASE("Test Charachters", "[Codegen]")
+{
+    using namespace jl;
+
+    const auto [temp_vars, var_map] = compile(R"(
+        var a = 'a';
+        var b: char = '`';
+
+        fun test_char(): char [
+            return '+';
+        ]
+
+        var c = test_char();
+)");
+
+    const auto a_value = temp_vars[var_map.at("a")];
+    const auto b_value = temp_vars[var_map.at("b")];
+    const auto c_value = temp_vars[var_map.at("c")];
+
+    REQUIRE(std::get<char>(a_value) == 'a');
+    REQUIRE(std::get<char>(b_value) == '`');
+    REQUIRE(std::get<char>(c_value) == '+');
+}

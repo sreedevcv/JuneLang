@@ -39,7 +39,10 @@ std::string jl::to_string(const Operand& operand)
         return (std::get<bool>(operand) == true) ? "true" : "false";
     case OperandType::UNASSIGNED:
         return "UNKNOWN";
-        break;
+    case OperandType::CHAR: {
+        std::string ch { '\'', std::get<char>(operand), '\'' };
+        return ch;
+    }
     }
 
     unimplemented();
@@ -60,7 +63,7 @@ jl::OperandType jl::get_type(const Operand& operand)
     case 4:
         return OperandType::BOOL;
     case 5:
-        return OperandType::UNASSIGNED;
+        return OperandType::CHAR;
     }
 
     unimplemented();
@@ -82,6 +85,8 @@ std::string jl::to_string(const OperandType& type)
         return "BOOL";
     case OperandType::UNASSIGNED:
         return "UNASSIGNED";
+    case OperandType::CHAR:
+        return "CHAR";
     }
 
     unimplemented();
@@ -109,6 +114,8 @@ std::optional<jl::OperandType> jl::from_str(const std::string& type_name)
         return OperandType::BOOL;
     } else if (type_name == "nil") {
         return OperandType::NIL;
+    } else if (type_name == "char") {
+        return OperandType::CHAR;
     } else {
         return std::nullopt;
     }
@@ -127,6 +134,8 @@ jl::Operand jl::default_operand(OperandType type)
         return Nil {};
     case OperandType::BOOL:
         return bool {};
+    case jl::OperandType::CHAR:
+        return '\0';
     default:
         unimplemented();
         break;

@@ -15,10 +15,10 @@ include_directories("include")
 option(BUILD_JUNE_EDITOR "Build Editor")
 option(BUILD_TESTS "Build tests")
 
-set (BUILD_JUNE_EDITOR OFF)
-set (BUILD_TESTS ON)
+set(BUILD_JUNE_EDITOR OFF)
+set(BUILD_TESTS ON)
 
-if (BUILD_TESTS)
+if(BUILD_TESTS)
     enable_testing()
     list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
     set(NDEBUG ON)
@@ -26,7 +26,7 @@ endif()
 
 add_subdirectory(src)
 
-if (BUILD_JUNE_EDITOR)
+if(BUILD_JUNE_EDITOR)
     add_subdirectory(editor)
     add_executable(june
         main.cpp
@@ -40,6 +40,6 @@ else()
     target_link_libraries(june PRIVATE JuneInterpreter)
 endif()
 
-if (BUILD_TESTS)
+if(BUILD_TESTS)
     add_subdirectory(tests)
 endif()

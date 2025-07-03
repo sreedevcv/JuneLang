@@ -172,6 +172,10 @@ std::any jl::CodeGenerator::visit_literal_expr(Literal* expr)
     case Type::BOOL: {
         literal = std::get<bool>(expr->m_value->get());
     } break;
+    case Type::CHAR: {
+        literal = std::get<char>(expr->m_value->get());
+        break;
+    }
     default:
         unimplemented();
         break;

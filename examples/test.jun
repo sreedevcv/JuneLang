@@ -1,4 +1,8 @@
-fun hai() [
-        ]
+var a = 'a';
+var b: char = '`';
 
-        hai();
+fun test_char(): char [
+    return '+';
+]
+
+var ch = test_char();

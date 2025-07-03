@@ -134,6 +134,14 @@ void jl::Lexer::scan_token()
             add_token(Token::SLASH);
         }
         break;
+    case '\'': {
+        char ch = advance();
+        if (advance() != '\'') {
+            ErrorHandler::error(m_file_path, m_line, "Expected a  closing ' for a charachter", m_start);
+        } else {
+            add_token(Token::CHAR, new Value { ch });
+        }
+    } break;
     case '"':
         scan_string();
         break;

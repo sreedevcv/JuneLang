@@ -138,6 +138,9 @@ std::string jl::VariableManager::pretty_print(const Operand& operand) const
         case jl::OperandType::UNASSIGNED:
             return "U[" + std::to_string(var) + "]";
             break;
+        case OperandType::CHAR:
+            return "C[" + std::to_string(var) + "]";
+            break;
         }
     } break;
     case OperandType::INT:
@@ -145,7 +148,9 @@ std::string jl::VariableManager::pretty_print(const Operand& operand) const
     case OperandType::NIL:
     case OperandType::BOOL:
     case OperandType::UNASSIGNED:
+    case OperandType::CHAR:
         return to_string(operand);
+        break;
     }
 
     unimplemented();

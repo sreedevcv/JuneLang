@@ -1,6 +1,5 @@
 #include "CodeGenerator.hpp"
 #include "ErrorHandler.hpp"
-#include "Flatten.hpp"
 #include "Interpreter.hpp"
 #include "Lexer.hpp"
 #include "Operand.hpp"
@@ -10,7 +9,6 @@
 
 #include <cassert>
 #include <cstdlib>
-#include <iostream>
 #include <print>
 #include <string>
 

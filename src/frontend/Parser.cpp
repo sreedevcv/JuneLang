@@ -211,7 +211,7 @@ jl::Expr* jl::Parser::unary()
 
 jl::Expr* jl::Parser::primary()
 {
-    if (match({ Token::INT, Token::FLOAT, Token::STRING, Token::FALSE, Token::TRUE, Token::NULL_ })) {
+    if (match({ Token::INT, Token::FLOAT, Token::STRING, Token::FALSE, Token::TRUE, Token::NULL_, Token::CHAR })) {
         Value* value = previous().get_value();
         Expr* literal = new Literal(value); // Should copy or just take a reference(now using reference)
         m_allocated_refs.push_back(literal);
