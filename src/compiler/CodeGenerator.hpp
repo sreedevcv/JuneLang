@@ -6,9 +6,9 @@
 #include "Stmt.hpp"
 
 #include <any>
+#include <map>
 #include <stack>
 #include <string>
-#include <unordered_map>
 #include <vector>
 
 namespace jl {
@@ -17,7 +17,7 @@ public:
     CodeGenerator(std::string& file_name);
     virtual ~CodeGenerator();
 
-    const std::unordered_map<std::string, Chunk>& generate(std::vector<Stmt*> stmts);
+    const std::map<std::string, Chunk>& generate(std::vector<Stmt*> stmts);
 
     jl::Operand compile(Stmt* stmt);
     jl::Operand compile(Expr* stmt);
@@ -57,7 +57,7 @@ private:
 
     std::string m_file_name;
     Chunk* m_chunk;
-    std::unordered_map<std::string, Chunk> m_chunk_list;
+    std::map<std::string, Chunk> m_chunk_list;
     std::stack<Chunk*> m_func_stack;
 
     bool check_if_func_exists(const std::string& name) const;

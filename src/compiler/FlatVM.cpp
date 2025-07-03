@@ -1,6 +1,5 @@
-#include "VM.hpp"
+#include "FlatVM.hpp"
 
-#include <climits>
 #include <cstdint>
 #include <cstdlib>
 #include <functional>
@@ -11,6 +10,14 @@
 #include "OpCode.hpp"
 #include "Operand.hpp"
 #include "Utils.hpp"
+
+jl::FlatVM::FlatVM()
+{
+    m_reg_stack.push({});
+
+    m_registers = &m_reg_stack.top();
+    m_registers->resize(stack_size);
+}
 
 static const jl::Operand& get_temp_var_data(
     const jl::Operand& operand,
@@ -155,76 +162,53 @@ static const jl::Operand do_arithametic(
     return result;
 }
 
-std::pair<jl::VM::InterpretResult, std::vector<jl::Operand>> jl::VM::run(
-    const Chunk& chunk,
-    const std::map<std::string, Chunk>& chunk_map)
+std::pair<jl::FlatVM::InterpretResult, std::vector<jl::Operand>>
+jl::FlatVM::run(const std::vector<Ir>& irs)
 {
-    std::vector<Operand> temp_vars(chunk.get_max_allocated_temps());
-    const auto result = run(chunk, chunk_map, temp_vars);
-
-    return { result, temp_vars };
-}
-
-jl::VM::InterpretResult jl::VM::run(
-    const Chunk& chunk,
-    const std::map<std::string, Chunk>& chunk_map,
-    std::vector<Operand>& temp_vars)
-{
-    const auto& irs = chunk.get_ir();
-    const auto locations = fill_labels(irs, chunk.get_max_labels());
     uint32_t pc = 0;
 
     while (pc < irs.size()) {
         const auto& ir = irs[pc];
 
         if (ir.opcode() == OpCode::CALL) {
-            const auto& cir = ir.call();
-            const auto& func_chunk = chunk_map.at(cir.func_name);
-
-            std::vector<Operand> stack_vars { func_chunk.get_max_allocated_temps() };
-            for (int i = 0; i < cir.args.size(); i++) {
-                // First temp var will always be the fucntion itself
-                stack_vars[i + 1] = get_nested_data(cir.args[0], temp_vars);
-            }
-
-            run(func_chunk, chunk_map, stack_vars);
-            const auto ret_value = m_stack.top();
-            temp_vars[cir.dest.idx] = ret_value;
-            pc += 1;
+            m_reg_stack.push({});
+            m_registers = &m_reg_stack.top();
+            m_registers->resize(stack_size);
+            m_stack.push(static_cast<int>(pc + 1));
             continue;
         }
 
         switch (ir.type()) {
         case Ir::BINARY:
-            handle_binary_ir(ir, temp_vars);
+            handle_binary_ir(ir);
             pc += 1;
             break;
         case Ir::UNARY:
-            handle_unary_ir(ir, temp_vars);
+            handle_unary_ir(ir);
             pc += 1;
             break;
         case Ir::JUMP:
         case Ir::CONTROL:
-            pc = handle_control_ir(pc, ir, temp_vars, locations);
+            pc = handle_control_ir(pc, ir);
             break;
         default:
             unimplemented();
         }
     }
 
-    return InterpretResult::OK;
+    return { InterpretResult::OK, {} };
 }
 
-void jl::VM::handle_binary_ir(const Ir& ir, std::vector<Operand>& temp_vars)
+void jl::FlatVM::handle_binary_ir(const Ir& ir)
 {
     Operand result;
     const auto& binar_ir = ir.binary();
 
     const auto& left = jl::get_type(binar_ir.op1) == jl::OperandType::TEMP
-        ? get_temp_var_data(binar_ir.op1, temp_vars)
+        ? get_temp_var_data(binar_ir.op1, *m_registers)
         : binar_ir.op1;
     const auto& right = jl::get_type(binar_ir.op2) == jl::OperandType::TEMP
-        ? get_temp_var_data(binar_ir.op2, temp_vars)
+        ? get_temp_var_data(binar_ir.op2, *m_registers)
         : binar_ir.op2;
 
     const auto type1 = jl::get_type(left);
@@ -241,15 +225,15 @@ void jl::VM::handle_binary_ir(const Ir& ir, std::vector<Operand>& temp_vars)
         break;
     }
 
-    temp_vars[ir.dest().idx] = result;
+    m_registers->at(ir.dest().idx) = result;
 }
 
-void jl::VM::handle_unary_ir(const Ir& ir, std::vector<Operand>& temp_vars)
+void jl::FlatVM::handle_unary_ir(const Ir& ir)
 {
     Operand result;
     const auto& unary_ir = ir.unary();
     const auto operand = jl::get_type(unary_ir.operand) == jl::OperandType::TEMP
-        ? get_temp_var_data(unary_ir.operand, temp_vars)
+        ? get_temp_var_data(unary_ir.operand, *m_registers)
         : unary_ir.operand;
 
     switch (ir.opcode()) {
@@ -272,33 +256,12 @@ void jl::VM::handle_unary_ir(const Ir& ir, std::vector<Operand>& temp_vars)
         unimplemented();
     }
 
-    temp_vars[ir.dest().idx] = result;
+    m_registers->at(ir.dest().idx) = result;
 }
 
-std::vector<uint32_t> jl::VM::fill_labels(const std::vector<Ir>& irs, uint32_t max_labels) const
-{
-    if (max_labels == 0) {
-        return {};
-    }
-
-    std::vector<uint32_t> locations;
-    locations.resize(max_labels);
-
-    for (int i = 0; i < irs.size(); i++) {
-        const auto& ir = irs[i];
-
-        if (ir.opcode() == OpCode::LABEL) {
-            locations[std::get<int>(ir.control().data)] = i;
-        }
-    }
-
-    return locations;
-}
-
-uint32_t jl::VM::handle_control_ir(
+uint32_t jl::FlatVM::handle_control_ir(
     const uint32_t pc,
-    const Ir& ir, std::vector<Operand>& temp_vars,
-    const std::vector<uint32_t>& label_locations)
+    const Ir& ir)
 {
     switch (ir.opcode()) {
     case OpCode::LABEL:
@@ -308,39 +271,40 @@ uint32_t jl::VM::handle_control_ir(
         std::exit(1);
         break;
     case OpCode::JMP: {
-        const auto label = std::get<int>(ir.control().data);
-        return label_locations[label];
+        const auto loc = std::get<int>(ir.control().data);
+        return loc;
     } break;
     case OpCode::JMP_UNLESS: {
-        const auto condition = get_nested_data(ir.jump().data, temp_vars);
+        const auto condition = get_nested_data(ir.jump().data, *m_registers);
         // Evaluate and jump
         if (std::get<bool>(condition) == false) {
-            const auto label = std::get<int>(ir.jump().label);
-            return label_locations[label];
+            const auto loc = std::get<int>(ir.jump().label);
+            return loc;
         } else {
             return pc + 1;
         }
     } break;
-    // case OpCode::PUSH: {
-    //     const auto& operand = ir.control().data;
-    //     const auto& data = jl::get_type(operand) == jl::OperandType::TEMP
-    //         ? get_temp_var_data(operand, temp_vars)
-    //         : operand;
-    //     m_stack.push(data);
-    // } break;
-    // case OpCode::POP: {
-    //     const auto data = m_stack.top();
-    //     m_stack.pop();
-    //     const auto temp_var = std::get<TempVar>(ir.control().data);
-    //     temp_vars[temp_var.idx] = data;
-    // } break;
+    case OpCode::PUSH: {
+        const auto& operand = ir.control().data;
+        const auto& data = jl::get_type(operand) == jl::OperandType::TEMP
+            ? get_temp_var_data(operand, *m_registers)
+            : operand;
+        m_stack.push(data);
+    } break;
+    case OpCode::POP: {
+        const auto data = m_stack.top();
+        m_stack.pop();
+        const auto temp_var = std::get<TempVar>(ir.control().data);
+        m_registers->at(temp_var.idx) = data;
+    } break;
     case OpCode::RETURN: {
         const auto& operand = ir.control().data;
         const auto& data = jl::get_type(operand) == jl::OperandType::TEMP
-            ? get_temp_var_data(operand, temp_vars)
+            ? get_temp_var_data(operand, *m_registers)
             : operand;
-        m_stack.push(data);
-        return UINT_MAX;
+        // Put the return value in the first register
+        // *m_registers[0] = data;
+        ret_val = data;
     } break;
 
     default:

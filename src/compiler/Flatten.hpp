@@ -1,5 +1,6 @@
 #pragma once
 
+#include <map>
 #include <unordered_map>
 #include <vector>
 
@@ -7,5 +8,13 @@
 #include "Ir.hpp"
 
 namespace jl {
-std::vector<Ir> flatten(const std::unordered_map<std::string, Chunk>& chunks);
+std::pair<
+    std::vector<jl::Ir>,
+    std::vector<uint32_t>>
+flatten(const std::map<std::string, Chunk>& chunks);
+
+std::ostream& disassemble(
+    std::ostream& in,
+    const std::vector<Ir>& irs,
+    const std::vector<uint32_t>& lines);
 }

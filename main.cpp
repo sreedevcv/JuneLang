@@ -1,5 +1,6 @@
 #include "CodeGenerator.hpp"
 #include "ErrorHandler.hpp"
+#include "Flatten.hpp"
 #include "Interpreter.hpp"
 #include "Lexer.hpp"
 #include "Operand.hpp"
@@ -9,6 +10,7 @@
 
 #include <cassert>
 #include <cstdlib>
+#include <iostream>
 #include <print>
 #include <string>
 
@@ -50,7 +52,7 @@ int main(int argc, char const* argv[])
         std::exit(1);
     }
 
-    std::string file {argv[1]};
+    std::string file { argv[1] };
     jl::Lexer lexer(file);
 
     std::string file_name = "examples/EList.jun";
@@ -85,6 +87,11 @@ int main(int argc, char const* argv[])
     }
 
     codegen.disassemble();
+
+    std::println("_--------------------_____________-----______------_______-----_____--------");
+
+    // const auto [irs, lines] = jl::flatten(chunk_map);
+    // jl::disassemble(std::cout, irs, lines);
 
     const auto chunk = codegen.get_root_chunk();
     // std::println("{}", chunk.disassemble());

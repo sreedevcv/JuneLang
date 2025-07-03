@@ -10,6 +10,7 @@
 #include <format>
 #include <iomanip>
 #include <ostream>
+#include <utility>
 
 jl::Chunk::Chunk(std::string name)
     : m_name(std::move(name))
@@ -59,7 +60,7 @@ std::string jl::Chunk::disassemble() const
         out << std::setfill('0') << std::setw(4) << i;
 
         // Print destination and opcode
-        if (m_ir[i].type() == Ir::BINARY || m_ir[i].type() == Ir::UNARY) {
+        if (m_ir[i].type() == Ir::BINARY || m_ir[i].type() == Ir::UNARY || m_ir[i].type() == Ir::CALL) {
             out << std::setfill(' ') << std::setw(10) << m_var_manager.pretty_print(m_ir[i].dest());
             out << " : ";
             out << std::setfill(' ') << std::setw(10) << jl::to_string(m_ir[i].opcode());
@@ -83,6 +84,13 @@ std::string jl::Chunk::disassemble() const
         case Ir::JUMP:
             out << std::setfill(' ') << std::setw(10) << "{" << std::get<int>(m_ir[i].jump().label) << "}";
             out << std::setfill(' ') << std::setw(10) << m_var_manager.pretty_print(m_ir[i].jump().data);
+            break;
+        case Ir::CALL:
+            out << std::setfill(' ') << std::setw(10) << m_ir[i].call().func_name << "(";
+            for (const auto& arg : m_ir[i].call().args) {
+                out << (m_var_manager.pretty_print(arg)) << ",";
+            }
+            out << ")";
             break;
         default:
             unimplemented();
@@ -286,6 +294,26 @@ void jl::Chunk::write_jump(OpCode opcode, Operand data, Operand label, uint32_t 
     m_lines.push_back(line);
 }
 
+void jl::Chunk::write_call(
+    OpCode opcode,
+    Operand func_var,
+    std::string func_name,
+    TempVar dest,
+    std::vector<Operand>&& args,
+    uint32_t line)
+{
+    m_ir.push_back(Ir {
+        CallIr {
+            .opcode = opcode,
+            .func_var = func_var,
+            .func_name = std::move(func_name),
+            .args = std::move(args),
+            .dest = dest,
+        } });
+
+    m_lines.push_back(line);
+}
+
 const std::unordered_map<std::string, uint32_t>& jl::Chunk::get_variable_map() const
 {
     return m_var_manager.get_variable_map();
@@ -340,4 +368,9 @@ jl::TempVar jl::Chunk::create_temp_var(OperandType type)
 const std::vector<std::string>& jl::Chunk::get_input_variable_names() const
 {
     return m_inputs;
+}
+
+const std::vector<uint32_t> jl::Chunk::get_lines() const
+{
+    return m_lines;
 }

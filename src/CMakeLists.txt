@@ -21,6 +21,8 @@ add_library(JuneInterpreter
     compiler/Ir.cpp
     compiler/Operand.cpp
     compiler/VariableManager.cpp
+    compiler/Flatten.cpp
+    # compiler/FlatVM.cpp
 )
 
 target_link_libraries(
@@ -28,8 +30,8 @@ target_link_libraries(
     stdc++exp
 )
 
-target_include_directories(JuneInterpreter 
-    PUBLIC 
+target_include_directories(JuneInterpreter
+    PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}
     memory
     compiler

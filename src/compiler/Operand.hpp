@@ -28,26 +28,9 @@ std::string to_string(const Operand& operand);
 std::string to_string(const OperandType& operand_type);
 OperandType get_type(const Operand& operand);
 std::optional<OperandType> from_str(const std::string& type_name);
+Operand default_operand(OperandType type);
 
 bool is_number(const Operand& operand);
 bool is_number(const OperandType type);
-
-// inline DataType get_data_type(const Operand& operand)
-// {
-//     switch (get_type(operand)) {
-//     case OperandType::INT:
-//         return DataType::INT;
-//     case OperandType::FLOAT:
-//         return DataType::INT;
-//     case OperandType::TEMP:
-//         return std::get<TempVar>(operand).type;
-//     case OperandType::NIL:
-//         return DataType::NIL;
-//     case OperandType::BOOL:
-//     }
-
-//     unimplemented();
-//     return DataType::UNASSIGNED;
-// }
 
 }

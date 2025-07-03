@@ -28,7 +28,7 @@ jl::CodeGenerator::~CodeGenerator()
 {
 }
 
-const std::unordered_map<std::string, jl::Chunk>& jl::CodeGenerator::generate(std::vector<Stmt*> stmts)
+const std::map<std::string, jl::Chunk>& jl::CodeGenerator::generate(std::vector<Stmt*> stmts)
 {
     for (auto stmt : stmts) {
         compile(stmt);
@@ -264,8 +264,10 @@ std::any jl::CodeGenerator::visit_call_expr(Call* expr)
         return Operand { Nil {} };
     }
 
+    std::vector<Operand> args;
+
     // Compile all the function arguments
-    for (int i = expr->m_arguments.size() - 1; i >= 0; i--) {
+    for (int i = 0; i < expr->m_arguments.size(); i++) {
         auto arg = expr->m_arguments[i];
         const auto arg_var = compile(arg);
 
@@ -278,20 +280,19 @@ std::any jl::CodeGenerator::visit_call_expr(Call* expr)
             ErrorHandler::error(m_file_name, line, "Func argument type mismatch");
         }
 
-        m_chunk->write_control(OpCode::PUSH, arg_var, m_chunk->get_last_line());
+        args.push_back(arg_var);
     }
-
-    m_chunk->write_control(OpCode::CALL, func_temp_var, m_chunk->get_last_line());
 
     const auto ret_var = m_chunk->create_temp_var(func_chunk.return_type);
-    
-    if (func_chunk.return_type != OperandType::NIL) {
-        m_chunk->write_control(OpCode::POP, ret_var, m_chunk->get_last_line());
-    }
+    m_chunk->write_call(
+        OpCode::CALL,
+        func_temp_var,
+        *func_name,
+        ret_var,
+        std::move(args),
+        m_chunk->get_last_line());
 
-    // TODO: Type the ret_var with the return type of the function
-    // Not necessary i think, but test first
-    return Operand { ret_var };
+        return Operand { ret_var };
 }
 
 std::any jl::CodeGenerator::visit_get_expr(Get* expr) { }
@@ -302,7 +303,10 @@ std::any jl::CodeGenerator::visit_jlist_expr(JList* expr) { }
 std::any jl::CodeGenerator::visit_index_get_expr(IndexGet* expr) { }
 std::any jl::CodeGenerator::visit_index_set_expr(IndexSet* expr) { }
 
-///////////////////////////////////////////////////////
+/* ======================================================================================================================== */
+/* -----------------------------------------------------STMT--------------------------------------------------------------- */
+/* ======================================================================================================================== */
+
 /* Statements are meant to return nothing, they are self contained */
 
 std::any jl::CodeGenerator::visit_var_stmt(VarStmt* stmt)
@@ -472,21 +476,13 @@ std::any jl::CodeGenerator::visit_func_stmt(FuncStmt* stmt)
         parameter_vars.push_back(var);
     }
 
-    // Pop all function arg values from stack
-    for (const auto var : parameter_vars) {
-        m_chunk->write_control(OpCode::POP, var, m_chunk->get_last_line());
-    }
-
     // Compile the function body
     for (auto s : stmt->m_body) {
         compile(s);
     }
 
-    // Add a halt just in case the execution comes here without hitting a return
-    // to indicate a runtime error
-    if (return_type != OperandType::NIL) {
-        m_chunk->write_control(OpCode::HALT, Nil {}, m_chunk->get_last_line());
-    }
+    // Write a return statement if the last ir written is not a return
+    m_chunk->write_control(OpCode::RETURN, default_operand(return_type), m_chunk->get_last_line());
 
     pop_chunk();
 
@@ -518,10 +514,12 @@ std::any jl::CodeGenerator::visit_return_stmt(ReturnStmt* stmt)
             ErrorHandler::error(m_file_name, line, "Return value of function does not match declaration");
         }
 
-        m_chunk->write_control(OpCode::PUSH, ret_var, m_chunk->get_last_line());
-    }
+        // m_chunk->write_control(OpCode::PUSH, ret_var, m_chunk->get_last_line());
+        m_chunk->write_control(OpCode::RETURN, ret_var, m_chunk->get_last_line());
+    } else {
 
-    m_chunk->write_control(OpCode::RETURN, Nil {}, m_chunk->get_last_line());
+        m_chunk->write_control(OpCode::RETURN, Nil {}, m_chunk->get_last_line());
+    }
 
     return Operand { Nil {} };
 }

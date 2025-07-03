@@ -113,3 +113,24 @@ std::optional<jl::OperandType> jl::from_str(const std::string& type_name)
         return std::nullopt;
     }
 }
+
+jl::Operand jl::default_operand(OperandType type)
+{
+    switch (type) {
+    case OperandType::INT:
+        return int {};
+    case OperandType::FLOAT:
+        return double {};
+    case OperandType::TEMP:
+        return TempVar {};
+    case OperandType::NIL:
+        return Nil {};
+    case OperandType::BOOL:
+        return bool {};
+    default:
+        unimplemented();
+        break;
+    }
+
+    return Nil {};
+}

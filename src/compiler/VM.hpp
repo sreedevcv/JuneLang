@@ -3,6 +3,7 @@
 #include "Chunk.hpp"
 #include "Operand.hpp"
 #include <cstdint>
+#include <map>
 #include <stack>
 #include <vector>
 
@@ -18,10 +19,15 @@ public:
 
     std::pair<InterpretResult, std::vector<Operand>> run(
         const Chunk& chunk,
-        const std::unordered_map<std::string, Chunk>& chunk_map);
+        const std::map<std::string, Chunk>& chunk_map);
 
 private:
     std::stack<Operand> m_stack;
+
+    InterpretResult run(
+        const Chunk& chunk,
+        const std::map<std::string, Chunk>& chunk_map,
+        std::vector<Operand>& temp_vars);
 
     void handle_binary_ir(const Ir& ir, std::vector<Operand>& temp_vars);
     void handle_unary_ir(const Ir& ir, std::vector<Operand>& temp_vars);

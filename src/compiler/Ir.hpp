@@ -3,7 +3,9 @@
 #include "OpCode.hpp"
 #include "Operand.hpp"
 
+#include <string>
 #include <variant>
+#include <vector>
 
 namespace jl {
 
@@ -31,14 +33,23 @@ struct JumpIr {
     Operand label;
 };
 
+struct CallIr {
+    OpCode opcode;
+    Operand func_var;
+    std::string func_name;
+    std::vector<Operand> args;
+    TempVar dest;
+};
+
 struct Ir {
-    std::variant<UnaryIr, BinaryIr, ControlIr, JumpIr> data;
+    std::variant<UnaryIr, BinaryIr, ControlIr, JumpIr, CallIr> data;
 
     enum Type {
         UNARY,
         BINARY,
         CONTROL,
         JUMP,
+        CALL,
     };
 
     Type type() const;
@@ -48,6 +59,7 @@ struct Ir {
     const JumpIr& jump() const;
     const OpCode& opcode() const;
     const TempVar& dest() const;
+    const CallIr& call() const;
 };
 
 Ir::Type get_type(const Ir& ir);
