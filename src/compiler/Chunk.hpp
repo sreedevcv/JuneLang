@@ -38,7 +38,7 @@ public:
         TempVar dest,
         uint32_t line);
     void write_control(OpCode opcode, Operand data, uint32_t line);
-    void write_jump(OpCode opcode, Operand data, Operand label, uint32_t line);
+    void write_jump_or_store(OpCode opcode, Operand data, Operand target, uint32_t line);
     void write_call(
         OpCode opcode,
         Operand func_var,

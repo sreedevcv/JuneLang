@@ -234,7 +234,7 @@ uint32_t jl::VM::execute_ir(
 
         run(func_chunk, chunk_map, stack_vars, data_section);
         const auto ret_value = m_stack.top();
-        temp_vars[cir.dest.idx] = ret_value;
+        temp_vars[cir.return_var.idx] = ret_value;
         return pc + 1;
     }
 
@@ -245,9 +245,9 @@ uint32_t jl::VM::execute_ir(
     case Ir::UNARY:
         handle_unary_ir(ir, temp_vars, data_section);
         return pc + 1;
-    case Ir::JUMP:
+    case Ir::JUMP_STORE:
     case Ir::CONTROL:
-        return handle_control_ir(pc, ir, temp_vars, locations);
+        return handle_control_ir(pc, ir, temp_vars, locations, data_section);
     default:
         unimplemented();
     }
@@ -351,7 +351,8 @@ std::vector<uint32_t> jl::VM::fill_labels(const std::vector<Ir>& irs, uint32_t m
 uint32_t jl::VM::handle_control_ir(
     const uint32_t pc,
     const Ir& ir, std::vector<Operand>& temp_vars,
-    const std::vector<uint32_t>& label_locations)
+    const std::vector<uint32_t>& label_locations,
+    DataSection& data_section)
 {
     switch (ir.opcode()) {
     case OpCode::LABEL:
@@ -368,7 +369,7 @@ uint32_t jl::VM::handle_control_ir(
         const auto condition = get_nested_data(ir.jump().data, temp_vars);
         // Evaluate and jump
         if (std::get<bool>(condition) == false) {
-            const auto label = std::get<int>(ir.jump().label);
+            const auto label = std::get<int>(ir.jump().target);
             return label_locations[label];
         } else {
             return pc + 1;
@@ -395,7 +396,15 @@ uint32_t jl::VM::handle_control_ir(
         m_stack.push(data);
         return UINT_MAX;
     } break;
-
+    case OpCode::STORE: {
+        auto data = get_nested_data(ir.jump().data, temp_vars);
+        const auto addr = get_nested_data(ir.jump().target, temp_vars);
+        if (get_type(addr) == OperandType::CHAR_PTR) {
+            data_section.set_data(std::get<PtrVar>(addr).offset, std::get<char>(data));
+        } else {
+            unimplemented();
+        }
+    } break;
     default:
         unimplemented();
     }

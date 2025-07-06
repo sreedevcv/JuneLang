@@ -101,8 +101,12 @@ std::ostream& jl::Chunk::print_ir(std::ostream& out, const Ir& ir) const
     case Ir::CONTROL:
         out << std::setfill(' ') << std::setw(10) << "{" << to_string(ir.control().data) << "}";
         break;
-    case Ir::JUMP:
-        out << std::setfill(' ') << std::setw(10) << "{" << std::get<int>(ir.jump().label) << "}";
+    case Ir::JUMP_STORE:
+        if (ir.opcode() == OpCode::JMP_UNLESS)
+            out << std::setfill(' ') << std::setw(10) << "{" << std::get<int>(ir.jump().target) << "}";
+        else
+            out << std::setfill(' ') << std::setw(10) << m_var_manager.pretty_print(ir.jump().target);
+
         out << std::setfill(' ') << std::setw(10) << m_var_manager.pretty_print(ir.jump().data);
         break;
     case Ir::CALL:
@@ -303,13 +307,13 @@ void jl::Chunk::write_control(OpCode opcode, Operand data, uint32_t line)
     m_lines.push_back(line);
 }
 
-void jl::Chunk::write_jump(OpCode opcode, Operand data, Operand label, uint32_t line)
+void jl::Chunk::write_jump_or_store(OpCode opcode, Operand data, Operand target, uint32_t line)
 {
     m_ir.push_back(Ir {
-        JumpIr {
+        JumpStoreIr {
             .opcode = opcode,
             .data = data,
-            .label = label } });
+            .target = target } });
 
     m_lines.push_back(line);
 }
@@ -328,7 +332,7 @@ void jl::Chunk::write_call(
             .func_var = func_var,
             .func_name = std::move(func_name),
             .args = std::move(args),
-            .dest = dest,
+            .return_var = dest,
         } });
 
     m_lines.push_back(line);

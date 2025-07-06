@@ -13,7 +13,7 @@ jl::Ir::Type jl::get_type(const jl::Ir& ir)
     case 2:
         return jl::Ir::CONTROL;
     case 3:
-        return jl::Ir::JUMP;
+        return jl::Ir::JUMP_STORE;
     case 4:
         return jl::Ir::CALL;
     default:
@@ -43,9 +43,9 @@ const jl::ControlIr& jl::Ir::control() const
     return std::get<ControlIr>(data);
 }
 
-const jl::JumpIr& jl::Ir::jump() const
+const jl::JumpStoreIr& jl::Ir::jump() const
 {
-    return std::get<JumpIr>(data);
+    return std::get<JumpStoreIr>(data);
 }
 
 const jl::CallIr& jl::Ir::call() const
@@ -62,7 +62,7 @@ const jl::OpCode& jl::Ir::opcode() const
         return unary().opcode;
     case CONTROL:
         return control().opcode;
-    case JUMP:
+    case JUMP_STORE:
         return jump().opcode;
     case CALL:
         return call().opcode;
@@ -79,7 +79,7 @@ const jl::TempVar& jl::Ir::dest() const
     case UNARY:
         return unary().dest;
     case CALL:
-        return call().dest;
+        return call().return_var;
     default:
         unimplemented();
     }

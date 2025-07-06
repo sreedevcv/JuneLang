@@ -17,6 +17,12 @@ public:
         return data;
     }
 
+    template <typename T>
+    void set_data(ptr_type offset, T& data)
+    {
+        *(T*)(&m_data[offset]) = data;
+    }
+
 private:
     std::vector<uint8_t> m_data;
 };

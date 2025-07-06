@@ -55,7 +55,8 @@ private:
         const uint32_t pc,
         const Ir& ir,
         std::vector<Operand>& temp_vars,
-        const std::vector<uint32_t>& label_locations);
+        const std::vector<uint32_t>& label_locations,
+        DataSection& data_section);
     std::vector<uint32_t> fill_labels(const std::vector<Ir>& irs, uint32_t max_labels) const;
     void debug_print(
         const Chunk& chunk,

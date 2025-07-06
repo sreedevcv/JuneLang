@@ -27,10 +27,10 @@ struct ControlIr {
     Operand data;
 };
 
-struct JumpIr {
+struct JumpStoreIr {
     OpCode opcode;
     Operand data;
-    Operand label;
+    Operand target;
 };
 
 struct CallIr {
@@ -38,17 +38,17 @@ struct CallIr {
     Operand func_var;
     std::string func_name;
     std::vector<Operand> args;
-    TempVar dest;
+    TempVar return_var;
 };
 
 struct Ir {
-    std::variant<UnaryIr, BinaryIr, ControlIr, JumpIr, CallIr> data;
+    std::variant<UnaryIr, BinaryIr, ControlIr, JumpStoreIr, CallIr> data;
 
     enum Type {
         UNARY,
         BINARY,
         CONTROL,
-        JUMP,
+        JUMP_STORE,
         CALL,
     };
 
@@ -56,7 +56,7 @@ struct Ir {
     const BinaryIr& binary() const;
     const UnaryIr& unary() const;
     const ControlIr& control() const;
-    const JumpIr& jump() const;
+    const JumpStoreIr& jump() const;
     const OpCode& opcode() const;
     const TempVar& dest() const;
     const CallIr& call() const;

@@ -52,6 +52,8 @@ const char* jl::to_string(OpCode opcode)
         return "HALT";
     case OpCode::LOAD:
         return "LOAD";
+    case OpCode::STORE:
+        return "STORE";
         break;
     }
     unimplemented();
@@ -73,11 +75,11 @@ jl::OperatorCategory jl::get_category(const OpCode& opcode)
     case OpCode::LESS_EQUAL:
     case OpCode::EQUAL:
     case OpCode::NOT_EQUAL:
-    return OperatorCategory::COMPARISON;
+        return OperatorCategory::COMPARISON;
     case OpCode::NOT:
     case OpCode::AND:
     case OpCode::OR:
-    return OperatorCategory::BOOLEAN;
+        return OperatorCategory::BOOLEAN;
     case OpCode::MOVE:
     case OpCode::RETURN:
     case jl::OpCode::JMP_UNLESS:
@@ -88,6 +90,7 @@ jl::OperatorCategory jl::get_category(const OpCode& opcode)
     case jl::OpCode::CALL:
     case jl::OpCode::HALT:
     case jl::OpCode::LOAD:
+    case jl::OpCode::STORE:
         return OperatorCategory::OTHER;
         break;
     }

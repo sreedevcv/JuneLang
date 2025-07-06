@@ -282,3 +282,39 @@ TEST_CASE("Index Get: Frequency Count", "[Codegen]")
     REQUIRE(std::get<int>(f2_value) == 4);
     REQUIRE(std::get<int>(f3_value) == 0);
 }
+
+TEST_CASE("Index Set: Replace Char Count", "[Codegen]")
+{
+    using namespace jl;
+
+    const auto [temp_vars, var_map] = compile(R"(
+        fun replace_char(str: char_ptr, size: int, target: char, new_value: char): int [
+            var count = 0;
+
+            for (var i = 0; i < size; i += 1) [
+                if (str[i] == target) [
+                    str[i] = new_value;
+                    count += 1;
+                ]
+            ]
+
+            return count;
+        ]
+
+        var str = "haaai";
+        var count1 = replace_char(str, 5, 'a', 'e');
+        var count2 = replace_char(str, 5, 'a', 'e');
+
+        str[2] = 'a';
+
+        var count3 = replace_char(str, 5, 'a', 'e');
+)");
+
+    const auto count1_value = temp_vars[var_map.at("count1")];
+    const auto count2_value = temp_vars[var_map.at("count2")];
+    const auto count3_value = temp_vars[var_map.at("count3")];
+
+    REQUIRE(std::get<int>(count1_value) == 3);
+    REQUIRE(std::get<int>(count2_value) == 0);
+    REQUIRE(std::get<int>(count3_value) == 1);
+}

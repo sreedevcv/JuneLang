@@ -41,10 +41,10 @@ remove_labels(
         }
         // Backpatch JMPs
         if (ir.opcode() == jl::OpCode::JMP_UNLESS) {
-            const auto& current_label = ir.jump().label;
+            const auto& current_label = ir.jump().target;
             const int actual_loc = label_locs[std::get<int>(current_label)];
             auto new_ir = ir.jump();
-            new_ir.label = actual_loc;
+            new_ir.target = actual_loc;
             new_irs.push_back({ new_ir });
         } else if (ir.opcode() == jl::OpCode::JMP_UNLESS) {
             const auto& current_label = ir.control().data;
@@ -169,8 +169,8 @@ std::ostream& jl::disassemble(
         case Ir::CONTROL:
             out << std::setfill(' ') << std::setw(10) << "{" << to_string(irs[i].control().data) << "}";
             break;
-        case Ir::JUMP:
-            out << std::setfill(' ') << std::setw(10) << "{" << std::get<int>(irs[i].jump().label) << "}";
+        case Ir::JUMP_STORE:
+            out << std::setfill(' ') << std::setw(10) << "{" << std::get<int>(irs[i].jump().target) << "}";
             out << std::setfill(' ') << std::setw(10) << to_string(irs[i].jump().data);
             break;
         default:

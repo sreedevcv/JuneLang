@@ -332,12 +332,54 @@ std::any jl::CodeGenerator::visit_index_get_expr(IndexGet* expr)
     return Operand { result_var };
 }
 
+std::any jl::CodeGenerator::visit_index_set_expr(IndexSet* expr)
+{
+    const auto list_ptr = compile(expr->m_jlist);
+    const auto idx = compile(expr->m_index_expr);
+    const auto new_value = compile(expr->m_value_expr);
+
+    const auto idx_type = m_chunk->get_nested_type(idx);
+    const auto value_type = m_chunk->get_nested_type(new_value);
+    const auto list_type = m_chunk->get_nested_type(list_ptr);
+
+    if (list_type != OperandType::CHAR_PTR) {
+        ErrorHandler::error(
+            m_file_name,
+            expr->m_closing_bracket.get_line(),
+            "Attempting to index a non pointer!");
+        return Operand { Nil {} };
+    }
+
+    if (idx_type != OperandType::INT) {
+        ErrorHandler::error(
+            m_file_name,
+            expr->m_closing_bracket.get_line(),
+            "Attempting to index a pointer with a non-integer value!");
+        return Operand { Nil {} };
+    }
+
+    if (value_type != OperandType::CHAR) {
+        ErrorHandler::error(
+            m_file_name,
+            expr->m_closing_bracket.get_line(),
+            std::format("Cannot write a value of type {} to a pointer of type {} !",
+                to_string(value_type),
+                to_string(list_type))
+                .c_str());
+        return Operand { Nil {} };
+    }
+
+    // Calculate relative address
+    const auto addr = m_chunk->write(OpCode::ADD, list_ptr, idx, m_chunk->get_last_line());
+    m_chunk->write_jump_or_store(OpCode::STORE, new_value, addr, m_chunk->get_last_line());
+    return Operand { Nil {} };
+}
+
 std::any jl::CodeGenerator::visit_get_expr(Get* expr) { }
 std::any jl::CodeGenerator::visit_set_expr(Set* expr) { }
 std::any jl::CodeGenerator::visit_this_expr(This* expr) { }
 std::any jl::CodeGenerator::visit_super_expr(Super* expr) { }
 std::any jl::CodeGenerator::visit_jlist_expr(JList* expr) { }
-std::any jl::CodeGenerator::visit_index_set_expr(IndexSet* expr) { }
 
 /* ======================================================================================================================== */
 /* -----------------------------------------------------STMT--------------------------------------------------------------- */
@@ -402,7 +444,7 @@ std::any jl::CodeGenerator::visit_while_stmt(WhileStmt* stmt)
             "While loop condition doesn't evaluate to a bool!");
     }
     // Jmp to end if condition false
-    m_chunk->write_jump(
+    m_chunk->write_jump_or_store(
         OpCode::JMP_UNLESS,
         condition,
         loop_end_label,
@@ -434,7 +476,7 @@ std::any jl::CodeGenerator::visit_if_stmt(IfStmt* stmt)
     const auto else_label = m_chunk->create_new_label();
     const auto condition = compile(stmt->m_condition);
     // Jump to after if-block if condition fails
-    m_chunk->write_jump(OpCode::JMP_UNLESS, condition, else_label, m_chunk->get_last_line());
+    m_chunk->write_jump_or_store(OpCode::JMP_UNLESS, condition, else_label, m_chunk->get_last_line());
     // Compile if-block
     compile(stmt->m_then_stmt);
 

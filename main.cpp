@@ -62,7 +62,7 @@ int main(int argc, char const* argv[])
 
     codegen.disassemble();
 
-    std::println("_--------------------_____________-----______------_______-----_____--------");
+    std::println("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
 
     const auto chunk = codegen.get_root_chunk();
 

@@ -1,8 +1,9 @@
-fun find_frequency(str: char_ptr, size: int, target: char): int [
+fun replace_char(str: char_ptr, size: int, target: char, new_value: char): int [
     var count = 0;
 
     for (var i = 0; i < size; i += 1) [
         if (str[i] == target) [
+            str[i] = new_value;
             count += 1;
         ]
     ]
@@ -10,12 +11,10 @@ fun find_frequency(str: char_ptr, size: int, target: char): int [
     return count;
 ]
 
-var str = "Malayalam";
-var size = 9;
-var t1 = 'y';
-var t2 = 'a';
-var t3 = 'z';
+var str = "haaai";
+var count1 = replace_char(str, 5, 'a', 'e');
+var count2 = replace_char(str, 5, 'a', 'e');
 
-var f1 = find_frequency(str, size, t1);
-var f2 = find_frequency(str, size, t2);
-var f3 = find_frequency(str, size, t3);
+str[2] = 'a';
+
+var count3 = replace_char(str, 5, 'a', 'e');
