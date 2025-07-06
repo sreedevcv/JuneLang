@@ -19,6 +19,8 @@ public:
     Chunk(std::string name);
 
     std::string disassemble() const;
+    std::ostream& print_ir(std::ostream& out, const Ir& ir) const;
+
     TempVar write(OpCode opcode,
         Operand op1,
         Operand op2,

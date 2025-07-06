@@ -10,7 +10,9 @@
 #include <cstdint>
 #include <format>
 #include <iomanip>
+#include <iostream>
 #include <ostream>
+#include <print>
 #include <utility>
 
 jl::Chunk::Chunk(std::string name)
@@ -61,41 +63,7 @@ std::string jl::Chunk::disassemble() const
         out << std::setfill('0') << std::setw(4) << i;
 
         // Print destination and opcode
-        if (m_ir[i].type() == Ir::BINARY || m_ir[i].type() == Ir::UNARY || m_ir[i].type() == Ir::CALL) {
-            out << std::setfill(' ') << std::setw(10) << m_var_manager.pretty_print(m_ir[i].dest());
-            out << " : ";
-            out << std::setfill(' ') << std::setw(10) << jl::to_string(m_ir[i].opcode());
-        } else {
-            out << std::setfill(' ') << std::setw(10) << ' ';
-            out << "   ";
-            out << std::setfill(' ') << std::setw(10) << jl::to_string(m_ir[i].opcode());
-        }
-
-        switch (m_ir[i].type()) {
-        case Ir::BINARY:
-            out << std::setfill(' ') << std::setw(10) << m_var_manager.pretty_print(m_ir[i].binary().op1);
-            out << std::setfill(' ') << std::setw(10) << m_var_manager.pretty_print(m_ir[i].binary().op2);
-            break;
-        case Ir::UNARY:
-            out << std::setfill(' ') << std::setw(10) << m_var_manager.pretty_print(m_ir[i].unary().operand);
-            break;
-        case Ir::CONTROL:
-            out << std::setfill(' ') << std::setw(10) << "{" << to_string(m_ir[i].control().data) << "}";
-            break;
-        case Ir::JUMP:
-            out << std::setfill(' ') << std::setw(10) << "{" << std::get<int>(m_ir[i].jump().label) << "}";
-            out << std::setfill(' ') << std::setw(10) << m_var_manager.pretty_print(m_ir[i].jump().data);
-            break;
-        case Ir::CALL:
-            out << std::setfill(' ') << std::setw(10) << m_ir[i].call().func_name << "(";
-            for (const auto& arg : m_ir[i].call().args) {
-                out << (m_var_manager.pretty_print(arg)) << ",";
-            }
-            out << ")";
-            break;
-        default:
-            unimplemented();
-        }
+        print_ir(out, m_ir[i]);
         out << '\n';
     }
 
@@ -108,6 +76,47 @@ std::string jl::Chunk::disassemble() const
     // }
 
     return out.str();
+}
+
+std::ostream& jl::Chunk::print_ir(std::ostream& out, const Ir& ir) const
+{
+    if (ir.type() == Ir::BINARY || ir.type() == Ir::UNARY || ir.type() == Ir::CALL) {
+        out << std::setfill(' ') << std::setw(10) << m_var_manager.pretty_print(ir.dest());
+        out << " : ";
+        out << std::setfill(' ') << std::setw(10) << jl::to_string(ir.opcode());
+    } else {
+        out << std::setfill(' ') << std::setw(10) << ' ';
+        out << "   ";
+        out << std::setfill(' ') << std::setw(10) << jl::to_string(ir.opcode());
+    }
+
+    switch (ir.type()) {
+    case Ir::BINARY:
+        out << std::setfill(' ') << std::setw(10) << m_var_manager.pretty_print(ir.binary().op1);
+        out << std::setfill(' ') << std::setw(10) << m_var_manager.pretty_print(ir.binary().op2);
+        break;
+    case Ir::UNARY:
+        out << std::setfill(' ') << std::setw(10) << m_var_manager.pretty_print(ir.unary().operand);
+        break;
+    case Ir::CONTROL:
+        out << std::setfill(' ') << std::setw(10) << "{" << to_string(ir.control().data) << "}";
+        break;
+    case Ir::JUMP:
+        out << std::setfill(' ') << std::setw(10) << "{" << std::get<int>(ir.jump().label) << "}";
+        out << std::setfill(' ') << std::setw(10) << m_var_manager.pretty_print(ir.jump().data);
+        break;
+    case Ir::CALL:
+        out << '\t' << ir.call().func_name << "(";
+        for (const auto& arg : ir.call().args) {
+            out << (m_var_manager.pretty_print(arg)) << ",";
+        }
+        out << ")";
+        break;
+    default:
+        unimplemented();
+    }
+
+    return out;
 }
 
 void jl::Chunk::output_var_map(std::ostream& in) const
@@ -126,6 +135,8 @@ jl::OperandType jl::Chunk::handle_binary_type_inference(jl::Operand op1, jl::Ope
 
     // Handle error
     if (!inferred_type) {
+        std::println("{}", disassemble());
+
         ErrorHandler::error(
             m_file_name,
             line,
@@ -387,5 +398,5 @@ const std::vector<uint32_t> jl::Chunk::get_lines() const
 jl::PtrVar jl::Chunk::add_data(DataSection& ds, const std::string& data, OperandType type)
 {
     const auto offset = ds.add_data(data);
-    return PtrVar { .offset = offset, .type = type };
+    return PtrVar { .offset = offset };
 }

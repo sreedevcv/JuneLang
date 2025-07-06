@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <cstdlib>
 #include <functional>
+#include <iostream>
 #include <print>
 #include <vector>
 
@@ -54,9 +55,7 @@ static const jl::Operand execute_arithametic(
         const int& r = std::get<int>(op2);
 
         return jl::Operand { bin_oper(l, r) };
-
     } else if (jl::is_ptr(type1) || jl::is_ptr(type2)) {
-
         constexpr auto add_ptr = [](jl::OperandType type, const jl::Operand& op) {
             jl::ptr_type addr = 0;
             switch (type) {
@@ -77,9 +76,9 @@ static const jl::Operand execute_arithametic(
         const auto addr2 = add_ptr(type2, op2);
 
         return jl::Operand { jl::PtrVar { .offset = bin_oper(addr1, addr2) } };
-    } else {
-        const int& l = std::get<int>(op1);
-        const int& r = std::get<int>(op2);
+    } else if (type1 == jl::OperandType::CHAR && type2 == jl::OperandType::CHAR) {
+        const auto& l = std::get<char>(op1);
+        const auto& r = std::get<char>(op2);
 
         return jl::Operand { bin_oper(l, r) };
     }
@@ -197,7 +196,8 @@ std::pair<jl::VM::InterpretResult, std::vector<jl::Operand>> jl::VM::run(
 jl::VM::InterpretResult jl::VM::run(
     const Chunk& chunk,
     const std::map<std::string, Chunk>& chunk_map,
-    std::vector<Operand>& temp_vars, DataSection& data_section)
+    std::vector<Operand>& temp_vars,
+    DataSection& data_section)
 {
     const auto& irs = chunk.get_ir();
     const auto locations = fill_labels(irs, chunk.get_max_labels());
@@ -205,43 +205,54 @@ jl::VM::InterpretResult jl::VM::run(
 
     while (pc < irs.size()) {
         const auto& ir = irs[pc];
-
-        if (ir.opcode() == OpCode::CALL) {
-            const auto& cir = ir.call();
-            const auto& func_chunk = chunk_map.at(cir.func_name);
-
-            std::vector<Operand> stack_vars { func_chunk.get_max_allocated_temps() };
-            for (int i = 0; i < cir.args.size(); i++) {
-                // First temp var will always be the fucntion itself
-                stack_vars[i + 1] = get_nested_data(cir.args[0], temp_vars);
-            }
-
-            run(func_chunk, chunk_map, stack_vars, data_section);
-            const auto ret_value = m_stack.top();
-            temp_vars[cir.dest.idx] = ret_value;
-            pc += 1;
-            continue;
-        }
-
-        switch (ir.type()) {
-        case Ir::BINARY:
-            handle_binary_ir(ir, temp_vars);
-            pc += 1;
-            break;
-        case Ir::UNARY:
-            handle_unary_ir(ir, temp_vars, data_section);
-            pc += 1;
-            break;
-        case Ir::JUMP:
-        case Ir::CONTROL:
-            pc = handle_control_ir(pc, ir, temp_vars, locations);
-            break;
-        default:
-            unimplemented();
-        }
+        if (debug_run)
+            debug_print(chunk, pc, ir, temp_vars);
+        pc = execute_ir(ir, pc, chunk, chunk_map, temp_vars, locations, data_section);
     }
 
     return InterpretResult::OK;
+}
+
+uint32_t jl::VM::execute_ir(
+    Ir ir,
+    uint32_t pc,
+    const Chunk& chunk,
+    const std::map<std::string, Chunk>& chunk_map,
+    std::vector<Operand>& temp_vars,
+    const std::vector<uint32_t> locations,
+    DataSection& data_section)
+{
+    if (ir.opcode() == OpCode::CALL) {
+        const auto& cir = ir.call();
+        const auto& func_chunk = chunk_map.at(cir.func_name);
+
+        std::vector<Operand> stack_vars { func_chunk.get_max_allocated_temps() };
+        for (int i = 0; i < cir.args.size(); i++) {
+            // First temp var will always be the fucntion itself
+            stack_vars[i + 1] = get_nested_data(cir.args[i], temp_vars);
+        }
+
+        run(func_chunk, chunk_map, stack_vars, data_section);
+        const auto ret_value = m_stack.top();
+        temp_vars[cir.dest.idx] = ret_value;
+        return pc + 1;
+    }
+
+    switch (ir.type()) {
+    case Ir::BINARY:
+        handle_binary_ir(ir, temp_vars);
+        return pc + 1;
+    case Ir::UNARY:
+        handle_unary_ir(ir, temp_vars, data_section);
+        return pc + 1;
+    case Ir::JUMP:
+    case Ir::CONTROL:
+        return handle_control_ir(pc, ir, temp_vars, locations);
+    default:
+        unimplemented();
+    }
+
+    return pc + 1;
 }
 
 void jl::VM::handle_binary_ir(const Ir& ir, std::vector<Operand>& temp_vars)
@@ -390,4 +401,41 @@ uint32_t jl::VM::handle_control_ir(
     }
 
     return pc + 1;
+}
+
+std::pair<jl::VM::InterpretResult, std::vector<jl::Operand>> jl::VM::interactive_execute(
+    const Chunk& chunk,
+    const std::map<std::string, Chunk>& chunk_map,
+    DataSection& data_section)
+{
+    std::vector<Operand> temp_vars(chunk.get_max_allocated_temps());
+    debug_run = true;
+    const auto result = run(chunk, chunk_map, temp_vars, data_section);
+    return { result, temp_vars };
+}
+
+void jl::VM::debug_print(
+    const Chunk& chunk,
+    uint32_t pc,
+    const Ir& ir,
+    const std::vector<Operand>& temp_vars)
+{
+    std::cout << "================================================================================\n";
+
+    std::cout << pc << " >";
+    chunk.print_ir(std::cout, ir);
+    std::cout << '\n';
+
+    for (int i = 0; i < temp_vars.size(); i++) {
+        if (i % 8 == 0)
+            std::cout << '\n';
+
+        std::cout << i << ": ";
+        const auto& op = temp_vars[i];
+        std::cout << to_string(op) << "\t";
+    }
+    std::cout << '\n';
+
+    char enter;
+    std::cin.get();
 }

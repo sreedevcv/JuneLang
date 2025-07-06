@@ -1,5 +1,21 @@
-var a = "hai";
-var b = a;
-b = "hello";
-var c = b[4];
-var d  =c;
+fun find_frequency(str: char_ptr, size: int, target: char): int [
+    var count = 0;
+
+    for (var i = 0; i < size; i += 1) [
+        if (str[i] == target) [
+            count += 1;
+        ]
+    ]
+
+    return count;
+]
+
+var str = "Malayalam";
+var size = 9;
+var t1 = 'y';
+var t2 = 'a';
+var t3 = 'z';
+
+var f1 = find_frequency(str, size, t1);
+var f2 = find_frequency(str, size, t2);
+var f3 = find_frequency(str, size, t3);

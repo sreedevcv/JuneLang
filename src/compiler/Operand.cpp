@@ -107,8 +107,8 @@ std::optional<jl::OperandType> jl::from_str(const std::string& type_name)
         return OperandType::NIL;
     } else if (type_name == "char") {
         return OperandType::CHAR;
-    } else if (type_name == "char*") {
-        return OperandType::CHAR;
+    } else if (type_name == "char_ptr") {
+        return OperandType::CHAR_PTR;
     } else {
         return std::nullopt;
     }
@@ -122,7 +122,7 @@ jl::Operand jl::default_operand(OperandType type)
     case OperandType::FLOAT:
         return double {};
     case OperandType::TEMP:
-        return TempVar {};
+        return TempVar { 0 };
     case OperandType::NIL:
         return Nil {};
     case OperandType::BOOL:
@@ -132,7 +132,7 @@ jl::Operand jl::default_operand(OperandType type)
     case OperandType::UNASSIGNED:
         return Nil {};
     case OperandType::CHAR_PTR:
-        return PtrVar { .type = OperandType::CHAR_PTR };
+        return PtrVar {};
         break;
     }
 

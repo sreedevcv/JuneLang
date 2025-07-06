@@ -1,3 +1,4 @@
+#include "Operand.hpp"
 #include "VM.hpp"
 #include "catch2/catch_test_macros.hpp"
 
@@ -243,4 +244,41 @@ TEST_CASE("Test Charachters", "[Codegen]")
     REQUIRE(std::get<char>(a_value) == 'a');
     REQUIRE(std::get<char>(b_value) == '`');
     REQUIRE(std::get<char>(c_value) == '+');
+}
+
+TEST_CASE("Index Get: Frequency Count", "[Codegen]")
+{
+    using namespace jl;
+
+    const auto [temp_vars, var_map] = compile(R"(
+        fun find_frequency(str: char_ptr, size: int, target: char): int [
+            var count = 0;
+
+            for (var i = 0; i < size; i += 1) [
+                if (str[i] == target) [
+                    count += 1;
+                ]
+            ]
+
+            return count;
+        ]
+
+        var str = "Malayalam";
+        var size = 9;
+        var t1 = 'y';
+        var t2 = 'a';
+        var t3 = 'z';
+
+        var f1 = find_frequency(str, size, t1);
+        var f2 = find_frequency(str, size, t2);
+        var f3 = find_frequency(str, size, t3);
+)");
+
+    const auto f1_value = temp_vars[var_map.at("f1")];
+    const auto f2_value = temp_vars[var_map.at("f2")];
+    const auto f3_value = temp_vars[var_map.at("f3")];
+
+    REQUIRE(std::get<int>(f1_value) == 1);
+    REQUIRE(std::get<int>(f2_value) == 4);
+    REQUIRE(std::get<int>(f3_value) == 0);
 }

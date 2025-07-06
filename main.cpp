@@ -9,45 +9,21 @@
 
 #include <cassert>
 #include <cstdlib>
+#include <cstring>
 #include <print>
 #include <string>
 
 int main(int argc, char const* argv[])
 {
-    // !(12 + 24) - (4 * 45) / -12;
-    // !(3.5 and 4 or true )
-
-    //             var a = 3 < 5;
-    // var b = a and (5 == 4);
-    // [
-    //     var c = 3.0;
-    // ]
-
-    // var a: bool;
-    // a = false;
-
-    // fun hello(x: int, y: float, z: bool): bool [
-    //     var a = x + y;
-    //     if (z) [
-    //         var b: float = y;
-    //     ]
-
-    //     return z;
-    // ]
-
-    // fun hai(): int [
-    //     if (1 == 2) [
-    //         var d = 3;
-    //     ]
-
-    //     return hai();
-    // ]
-
-    // var x: bool = hello(1, 2.0, a);
+    bool is_interactive = false;
 
     if (argc < 2) {
         std::println("No file provided");
         std::exit(1);
+    }
+
+    if (argc >= 3 && std::strcmp(argv[2], "-i") == 0) {
+        is_interactive = true;
     }
 
     std::string file { argv[1] };
@@ -88,55 +64,16 @@ int main(int argc, char const* argv[])
 
     std::println("_--------------------_____________-----______------_______-----_____--------");
 
-    // const auto [irs, lines] = jl::flatten(chunk_map);
-    // jl::disassemble(std::cout, irs, lines);
-
     const auto chunk = codegen.get_root_chunk();
-    // std::println("{}", chunk.disassemble());
 
     jl::VM vm;
-    const auto [res, vars] = vm.run(chunk, chunk_map, data_section);
+    const auto [res, vars] = is_interactive
+        ? vm.interactive_execute(chunk, chunk_map, data_section)
+        : vm.run(chunk, chunk_map, data_section);
 
-    for (const auto& [name, idx] : chunk.get_variable_map()) {
-        std::println("{}\t{}", name, jl::to_string(vars[idx]));
+    for (const auto& [name, temp] : chunk.get_variable_map()) {
+        std::println("{}\t{}", name, jl::to_string(vars[temp]));
     }
 
     return 0;
 }
-
-/*
-        var a = {3, 5, 1, 2};
-
-        for (var item: a) [
-            if (item ) [
-                printEAKING";
-                break;
-            ]
-        ]
-
-        for (var i = 0; i < 9; i+=1) [
-            print i;
-
-            if (i == 5) [
-                break;
-            ]
-        ]
-
-        while (true) [
-            break;
-        ]
-
-        for (var i = 0; i < 10; i+=1) [
-            var line = "";
-
-            for (var j = 0; j < 10; j+=1) [
-                if (j > i) [
-                    break;
-                ]
-                line += str(j) + " ";
-            ]
-
-            print line;
-        ]
-
-*/

@@ -20,14 +20,12 @@ enum class OperandType {
 
 struct TempVar {
     uint32_t idx;
-    OperandType type;
 };
 
 using ptr_type = uint64_t;
 
 struct PtrVar {
     ptr_type offset;
-    OperandType type;
 };
 
 struct Nil { };

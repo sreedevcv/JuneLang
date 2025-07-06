@@ -37,7 +37,7 @@ jl::CodeGenerator::generate(std::vector<Stmt*> stmts)
     }
 
     m_chunk->write_control(OpCode::RETURN, Nil {}, m_chunk->get_last_line());
-    return {m_chunk_list, data_section};
+    return { m_chunk_list, data_section };
 }
 
 const jl::Chunk& jl::CodeGenerator::get_root_chunk() const

@@ -7,11 +7,10 @@
 jl::TempVar jl::VariableManager::create_temp_var(OperandType type)
 {
     const auto var = TempVar {
-        .idx = m_var_count++,
-        .type = type
+        m_var_count++,
     };
 
-    m_temp_vars.push_back(var);
+    m_var_types.push_back(type);
 
     return var;
 }
@@ -38,10 +37,8 @@ jl::TempVar jl::VariableManager::store_variable(const std::string& var_name, Ope
 std::optional<jl::TempVar> jl::VariableManager::look_up_variable(const std::string& var_name) const
 {
     if (m_variable_map.contains(var_name)) {
-        const auto idx = m_variable_map.at(var_name);
-        return TempVar {
-            .idx = idx,
-        };
+        return TempVar { m_variable_map.at(var_name) };
+
     } else {
         return std::nullopt;
     }
@@ -55,7 +52,7 @@ uint32_t jl::VariableManager::get_max_allocated_temps() const
 jl::OperandType jl::VariableManager::get_nested_type(const Operand& operand) const
 {
     return get_type(operand) == OperandType::TEMP
-        ? m_temp_vars[std::get<TempVar>(operand).idx].type
+        ? m_var_types[std::get<TempVar>(operand).idx]
         : get_type(operand);
 }
 
@@ -100,6 +97,8 @@ std::optional<jl::OperandType> jl::VariableManager::infer_type_for_binary(
     case OperatorCategory::COMPARISON:
         if (is_number(t1) && is_number(t2)) {
             return OperandType::BOOL;
+        } else if (t1 == t2) {
+            return OperandType::BOOL;
         }
         break;
     case OperatorCategory::BOOLEAN:
@@ -121,12 +120,12 @@ const std::unordered_map<std::string, uint32_t>& jl::VariableManager::get_variab
 
 void jl::VariableManager::set_var_data_type(uint32_t idx, OperandType type)
 {
-    m_temp_vars[idx].type = type;
+    m_var_types[idx] = type;
 }
 
 jl::OperandType jl::VariableManager::get_var_data_type(uint32_t idx) const
 {
-    return m_temp_vars[idx].type;
+    return m_var_types[idx];
 }
 
 std::string jl::VariableManager::pretty_print(const Operand& operand) const
@@ -134,7 +133,7 @@ std::string jl::VariableManager::pretty_print(const Operand& operand) const
     switch (get_type(operand)) {
     case OperandType::TEMP: {
         const auto var = std::get<TempVar>(operand).idx;
-        switch (m_temp_vars[var].type) {
+        switch (m_var_types[var]) {
         case jl::OperandType::INT:
             return "I[" + std::to_string(var) + "]";
         case jl::OperandType::FLOAT:
