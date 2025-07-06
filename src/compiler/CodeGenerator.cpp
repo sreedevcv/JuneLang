@@ -1,6 +1,7 @@
 #include "CodeGenerator.hpp"
 
 #include "Chunk.hpp"
+#include "DataSection.hpp"
 #include "ErrorHandler.hpp"
 #include "OpCode.hpp"
 #include "Operand.hpp"
@@ -28,14 +29,15 @@ jl::CodeGenerator::~CodeGenerator()
 {
 }
 
-const std::map<std::string, jl::Chunk>& jl::CodeGenerator::generate(std::vector<Stmt*> stmts)
+const std::pair<std::map<std::string, jl::Chunk>&, jl::DataSection&>
+jl::CodeGenerator::generate(std::vector<Stmt*> stmts)
 {
     for (auto stmt : stmts) {
         compile(stmt);
     }
 
     m_chunk->write_control(OpCode::RETURN, Nil {}, m_chunk->get_last_line());
-    return m_chunk_list;
+    return {m_chunk_list, data_section};
 }
 
 const jl::Chunk& jl::CodeGenerator::get_root_chunk() const
@@ -174,8 +176,11 @@ std::any jl::CodeGenerator::visit_literal_expr(Literal* expr)
     } break;
     case Type::CHAR: {
         literal = std::get<char>(expr->m_value->get());
-        break;
-    }
+    } break;
+    case Type::STR: {
+        const auto& str = std::get<std::string>(expr->m_value->get());
+        literal = m_chunk->add_data(data_section, str, OperandType::CHAR);
+    } break;
     default:
         unimplemented();
         break;
@@ -296,7 +301,35 @@ std::any jl::CodeGenerator::visit_call_expr(Call* expr)
         std::move(args),
         m_chunk->get_last_line());
 
-        return Operand { ret_var };
+    return Operand { ret_var };
+}
+
+std::any jl::CodeGenerator::visit_index_get_expr(IndexGet* expr)
+{
+    const auto list_ptr = compile(expr->m_jlist);
+    const auto idx = compile(expr->m_index_expr);
+
+    if (m_chunk->get_nested_type(list_ptr) != OperandType::CHAR_PTR) {
+        ErrorHandler::error(
+            m_file_name,
+            expr->m_closing_bracket.get_line(),
+            "Attempting to index a non pointer!");
+        return Operand { Nil {} };
+    }
+
+    if (m_chunk->get_nested_type(idx) != OperandType::INT) {
+        ErrorHandler::error(
+            m_file_name,
+            expr->m_closing_bracket.get_line(),
+            "Attempting to index a pointer with a non-integer value!");
+        return Operand { Nil {} };
+    }
+
+    // Calculate relative address
+    const auto addr = m_chunk->write(OpCode::ADD, list_ptr, idx, m_chunk->get_last_line());
+    const auto result_var = m_chunk->create_temp_var(OperandType::CHAR);
+    m_chunk->write_with_dest(OpCode::LOAD, addr, result_var, m_chunk->get_last_line());
+    return Operand { result_var };
 }
 
 std::any jl::CodeGenerator::visit_get_expr(Get* expr) { }
@@ -304,7 +337,6 @@ std::any jl::CodeGenerator::visit_set_expr(Set* expr) { }
 std::any jl::CodeGenerator::visit_this_expr(This* expr) { }
 std::any jl::CodeGenerator::visit_super_expr(Super* expr) { }
 std::any jl::CodeGenerator::visit_jlist_expr(JList* expr) { }
-std::any jl::CodeGenerator::visit_index_get_expr(IndexGet* expr) { }
 std::any jl::CodeGenerator::visit_index_set_expr(IndexSet* expr) { }
 
 /* ======================================================================================================================== */

@@ -30,7 +30,7 @@ public:
 private:
     static uint32_t constexpr max_data_types { 6 };
     uint32_t m_var_count { 0 };
-    std::vector<OperandType> m_types;
+    std::vector<TempVar> m_temp_vars;
     std::unordered_map<std::string, uint32_t> m_variable_map;
 };
 

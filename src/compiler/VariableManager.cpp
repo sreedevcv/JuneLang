@@ -6,11 +6,14 @@
 
 jl::TempVar jl::VariableManager::create_temp_var(OperandType type)
 {
-    m_types.push_back(type);
-
-    return TempVar {
+    const auto var = TempVar {
         .idx = m_var_count++,
+        .type = type
     };
+
+    m_temp_vars.push_back(var);
+
+    return var;
 }
 
 jl::TempVar jl::VariableManager::store_variable(const std::string& var_name, OperandType type)
@@ -52,7 +55,7 @@ uint32_t jl::VariableManager::get_max_allocated_temps() const
 jl::OperandType jl::VariableManager::get_nested_type(const Operand& operand) const
 {
     return get_type(operand) == OperandType::TEMP
-        ? m_types[std::get<TempVar>(operand).idx]
+        ? m_temp_vars[std::get<TempVar>(operand).idx].type
         : get_type(operand);
 }
 
@@ -84,6 +87,14 @@ std::optional<jl::OperandType> jl::VariableManager::infer_type_for_binary(
             } else {
                 return OperandType::INT;
             }
+        } else if (is_ptr(t1) && is_ptr(t2)) {
+            if (t1 == OperandType::INT) {
+                return t2;
+            } else if (t2 == OperandType::INT) {
+                return t1;
+            } else if (t1 == t2) {
+                return t1;
+            }
         }
         break;
     case OperatorCategory::COMPARISON:
@@ -110,12 +121,12 @@ const std::unordered_map<std::string, uint32_t>& jl::VariableManager::get_variab
 
 void jl::VariableManager::set_var_data_type(uint32_t idx, OperandType type)
 {
-    m_types[idx] = type;
+    m_temp_vars[idx].type = type;
 }
 
 jl::OperandType jl::VariableManager::get_var_data_type(uint32_t idx) const
 {
-    return m_types[idx];
+    return m_temp_vars[idx].type;
 }
 
 std::string jl::VariableManager::pretty_print(const Operand& operand) const
@@ -123,7 +134,7 @@ std::string jl::VariableManager::pretty_print(const Operand& operand) const
     switch (get_type(operand)) {
     case OperandType::TEMP: {
         const auto var = std::get<TempVar>(operand).idx;
-        switch (m_types[var]) {
+        switch (m_temp_vars[var].type) {
         case jl::OperandType::INT:
             return "I[" + std::to_string(var) + "]";
         case jl::OperandType::FLOAT:
@@ -141,6 +152,9 @@ std::string jl::VariableManager::pretty_print(const Operand& operand) const
         case OperandType::CHAR:
             return "C[" + std::to_string(var) + "]";
             break;
+        case OperandType::CHAR_PTR:
+            return "CP[" + std::to_string(var) + "]";
+            break;
         }
     } break;
     case OperandType::INT:
@@ -149,6 +163,7 @@ std::string jl::VariableManager::pretty_print(const Operand& operand) const
     case OperandType::BOOL:
     case OperandType::UNASSIGNED:
     case OperandType::CHAR:
+    case OperandType::CHAR_PTR:
         return to_string(operand);
         break;
     }

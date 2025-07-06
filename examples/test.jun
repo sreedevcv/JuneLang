@@ -1,8 +1,5 @@
-var a = 'a';
-var b: char = '`';
-
-fun test_char(): char [
-    return '+';
-]
-
-var ch = test_char();
+var a = "hai";
+var b = a;
+b = "hello";
+var c = b[4];
+var d  =c;

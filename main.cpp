@@ -78,7 +78,7 @@ int main(int argc, char const* argv[])
     }
 
     jl::CodeGenerator codegen(file_name);
-    const auto chunk_map = codegen.generate(stmts);
+    const auto& [chunk_map, data_section] = codegen.generate(stmts);
 
     if (jl::ErrorHandler::has_error()) {
         return 1;
@@ -95,7 +95,7 @@ int main(int argc, char const* argv[])
     // std::println("{}", chunk.disassemble());
 
     jl::VM vm;
-    const auto [res, vars] = vm.run(chunk, chunk_map);
+    const auto [res, vars] = vm.run(chunk, chunk_map, data_section);
 
     for (const auto& [name, idx] : chunk.get_variable_map()) {
         std::println("{}\t{}", name, jl::to_string(vars[idx]));

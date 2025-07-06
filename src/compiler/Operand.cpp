@@ -4,26 +4,6 @@
 #include <optional>
 #include <string>
 
-// static std::string to_string(const jl::TempVar& var)
-// {
-//     switch (var.type) {
-//     case jl::OperandType::INT:
-//         return "I[" + std::to_string(var.idx) + "]";
-//     case jl::OperandType::FLOAT:
-//         return "F[" + std::to_string(var.idx) + "]";
-//     case jl::OperandType::TEMP:
-//         // unimplemented();
-//         return "T[" + std::to_string(var.idx) + "]";
-//     case jl::OperandType::NIL:
-//         return "N[" + std::to_string(var.idx) + "]";
-//     case jl::OperandType::BOOL:
-//         return "B[" + std::to_string(var.idx) + "]";
-//     case jl::OperandType::UNASSIGNED:
-//         return "U[" + std::to_string(var.idx) + "]";
-//         break;
-//     }
-// }
-
 std::string jl::to_string(const Operand& operand)
 {
     switch (get_type(operand)) {
@@ -43,6 +23,8 @@ std::string jl::to_string(const Operand& operand)
         std::string ch { '\'', std::get<char>(operand), '\'' };
         return ch;
     }
+    case OperandType::CHAR_PTR:
+        return "C(" + std::to_string(std::get<PtrVar>(operand).offset) + ")";
     }
 
     unimplemented();
@@ -64,6 +46,8 @@ jl::OperandType jl::get_type(const Operand& operand)
         return OperandType::BOOL;
     case 5:
         return OperandType::CHAR;
+    case 6:
+        return OperandType::CHAR_PTR;
     }
 
     unimplemented();
@@ -87,6 +71,8 @@ std::string jl::to_string(const OperandType& type)
         return "UNASSIGNED";
     case OperandType::CHAR:
         return "CHAR";
+    case OperandType::CHAR_PTR:
+        return "CHAR_PTR";
     }
 
     unimplemented();
@@ -104,6 +90,11 @@ bool jl::is_number(const OperandType type)
     return type == OperandType::INT || type == OperandType::FLOAT;
 }
 
+bool jl::is_ptr(const OperandType type)
+{
+    return type == OperandType::CHAR_PTR || type == OperandType::INT;
+}
+
 std::optional<jl::OperandType> jl::from_str(const std::string& type_name)
 {
     if (type_name == "int") {
@@ -115,6 +106,8 @@ std::optional<jl::OperandType> jl::from_str(const std::string& type_name)
     } else if (type_name == "nil") {
         return OperandType::NIL;
     } else if (type_name == "char") {
+        return OperandType::CHAR;
+    } else if (type_name == "char*") {
         return OperandType::CHAR;
     } else {
         return std::nullopt;
@@ -136,10 +129,13 @@ jl::Operand jl::default_operand(OperandType type)
         return bool {};
     case jl::OperandType::CHAR:
         return '\0';
-    default:
-        unimplemented();
+    case OperandType::UNASSIGNED:
+        return Nil {};
+    case OperandType::CHAR_PTR:
+        return PtrVar { .type = OperandType::CHAR_PTR };
         break;
     }
 
+    unimplemented();
     return Nil {};
 }

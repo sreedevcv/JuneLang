@@ -6,6 +6,7 @@
 #include <unordered_map>
 #include <vector>
 
+#include "DataSection.hpp"
 #include "Ir.hpp"
 #include "OpCode.hpp"
 #include "Operand.hpp"
@@ -62,6 +63,7 @@ public:
     int32_t create_new_label();
     TempVar add_input_parameter(const std::string& name, OperandType type);
     TempVar create_temp_var(OperandType type);
+    PtrVar add_data(DataSection& ds, const std::string& data, OperandType type);
 
     std::string m_name;
     OperandType return_type { OperandType::UNASSIGNED };

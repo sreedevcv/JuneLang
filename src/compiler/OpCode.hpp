@@ -27,6 +27,7 @@ enum class OpCode {
     PUSH,
     POP,
     CALL,
+    LOAD,
     HALT // For runtime error
 };
 

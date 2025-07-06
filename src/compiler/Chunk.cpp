@@ -1,4 +1,5 @@
 #include "Chunk.hpp"
+
 #include "ErrorHandler.hpp"
 #include "Ir.hpp"
 #include "OpCode.hpp"
@@ -97,6 +98,14 @@ std::string jl::Chunk::disassemble() const
         }
         out << '\n';
     }
+
+    // out << "INPUTS: ";
+    // for (int i = 0; i < m_data.size(); i++) {
+    //     if (i % 20 == 0) {
+    //         out << '\n';
+    //     }
+    //     out << (uint8_t)m_data[i];
+    // }
 
     return out.str();
 }
@@ -247,7 +256,7 @@ void jl::Chunk::write_with_dest(
         } else if (dest_type == OperandType::NIL) {
             ErrorHandler::error(m_file_name, line, "Cannot use nil type in assignemnt");
             return;
-        } else if (dest_type != type) {
+        } else if (dest_type != type && opcode != OpCode::LOAD) {
             ErrorHandler::error(
                 m_file_name,
                 line,
@@ -373,4 +382,10 @@ const std::vector<std::string>& jl::Chunk::get_input_variable_names() const
 const std::vector<uint32_t> jl::Chunk::get_lines() const
 {
     return m_lines;
+}
+
+jl::PtrVar jl::Chunk::add_data(DataSection& ds, const std::string& data, OperandType type)
+{
+    const auto offset = ds.add_data(data);
+    return PtrVar { .offset = offset, .type = type };
 }

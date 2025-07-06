@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Chunk.hpp"
+#include "DataSection.hpp"
 #include "Expr.hpp"
 #include "Operand.hpp"
 #include "Stmt.hpp"
@@ -17,7 +18,7 @@ public:
     CodeGenerator(std::string& file_name);
     virtual ~CodeGenerator();
 
-    const std::map<std::string, Chunk>& generate(std::vector<Stmt*> stmts);
+    const std::pair<std::map<std::string, Chunk>&, DataSection&> generate(std::vector<Stmt*> stmts);
 
     jl::Operand compile(Stmt* stmt);
     jl::Operand compile(Expr* stmt);
@@ -59,6 +60,7 @@ private:
     Chunk* m_chunk;
     std::map<std::string, Chunk> m_chunk_list;
     std::stack<Chunk*> m_func_stack;
+    DataSection data_section;
 
     bool check_if_func_exists(const std::string& name) const;
     void push_chunk(Chunk&& chunk, const std::string& name);

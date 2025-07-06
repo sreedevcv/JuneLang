@@ -49,6 +49,34 @@ static const jl::Operand execute_arithametic(
             : std::get<int>(op2);
 
         return jl::Operand { bin_oper(l, r) };
+    } else if (type1 == jl::OperandType::INT && type2 == jl::OperandType::INT) {
+        const int& l = std::get<int>(op1);
+        const int& r = std::get<int>(op2);
+
+        return jl::Operand { bin_oper(l, r) };
+
+    } else if (jl::is_ptr(type1) || jl::is_ptr(type2)) {
+
+        constexpr auto add_ptr = [](jl::OperandType type, const jl::Operand& op) {
+            jl::ptr_type addr = 0;
+            switch (type) {
+            case jl::OperandType::CHAR_PTR:
+                addr += std::get<jl::PtrVar>(op).offset;
+                break;
+            case jl::OperandType::INT:
+                addr += std::get<int>(op);
+                break;
+            default:
+                unimplemented();
+            }
+
+            return addr;
+        };
+
+        const auto addr1 = add_ptr(type1, op1);
+        const auto addr2 = add_ptr(type2, op2);
+
+        return jl::Operand { jl::PtrVar { .offset = bin_oper(addr1, addr2) } };
     } else {
         const int& l = std::get<int>(op1);
         const int& r = std::get<int>(op2);
@@ -157,10 +185,11 @@ static const jl::Operand do_arithametic(
 
 std::pair<jl::VM::InterpretResult, std::vector<jl::Operand>> jl::VM::run(
     const Chunk& chunk,
-    const std::map<std::string, Chunk>& chunk_map)
+    const std::map<std::string, Chunk>& chunk_map,
+    DataSection& data_section)
 {
     std::vector<Operand> temp_vars(chunk.get_max_allocated_temps());
-    const auto result = run(chunk, chunk_map, temp_vars);
+    const auto result = run(chunk, chunk_map, temp_vars, data_section);
 
     return { result, temp_vars };
 }
@@ -168,7 +197,7 @@ std::pair<jl::VM::InterpretResult, std::vector<jl::Operand>> jl::VM::run(
 jl::VM::InterpretResult jl::VM::run(
     const Chunk& chunk,
     const std::map<std::string, Chunk>& chunk_map,
-    std::vector<Operand>& temp_vars)
+    std::vector<Operand>& temp_vars, DataSection& data_section)
 {
     const auto& irs = chunk.get_ir();
     const auto locations = fill_labels(irs, chunk.get_max_labels());
@@ -187,7 +216,7 @@ jl::VM::InterpretResult jl::VM::run(
                 stack_vars[i + 1] = get_nested_data(cir.args[0], temp_vars);
             }
 
-            run(func_chunk, chunk_map, stack_vars);
+            run(func_chunk, chunk_map, stack_vars, data_section);
             const auto ret_value = m_stack.top();
             temp_vars[cir.dest.idx] = ret_value;
             pc += 1;
@@ -200,7 +229,7 @@ jl::VM::InterpretResult jl::VM::run(
             pc += 1;
             break;
         case Ir::UNARY:
-            handle_unary_ir(ir, temp_vars);
+            handle_unary_ir(ir, temp_vars, data_section);
             pc += 1;
             break;
         case Ir::JUMP:
@@ -244,7 +273,10 @@ void jl::VM::handle_binary_ir(const Ir& ir, std::vector<Operand>& temp_vars)
     temp_vars[ir.dest().idx] = result;
 }
 
-void jl::VM::handle_unary_ir(const Ir& ir, std::vector<Operand>& temp_vars)
+void jl::VM::handle_unary_ir(
+    const Ir& ir,
+    std::vector<Operand>& temp_vars,
+    DataSection& data_section)
 {
     Operand result;
     const auto& unary_ir = ir.unary();
@@ -264,6 +296,16 @@ void jl::VM::handle_unary_ir(const Ir& ir, std::vector<Operand>& temp_vars)
             result = -1 * std::get<int>(operand);
         } else if (get_type(operand) == OperandType::FLOAT) {
             result = -1.0 * std::get<double>(operand);
+        } else {
+            unimplemented();
+        }
+    } break;
+    case jl::OpCode::LOAD: {
+        const auto& op = get_nested_data(operand, temp_vars);
+        if (get_type(op) == OperandType::CHAR_PTR) {
+            const auto offset = std::get<PtrVar>(op).offset;
+            const auto data = data_section.read_data<char>(offset);
+            result = Operand { data };
         } else {
             unimplemented();
         }

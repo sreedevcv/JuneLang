@@ -22,7 +22,7 @@ add_library(JuneInterpreter
     compiler/Operand.cpp
     compiler/VariableManager.cpp
     compiler/Flatten.cpp
-    # compiler/FlatVM.cpp
+    compiler/DataSection.cpp
 )
 
 target_link_libraries(
