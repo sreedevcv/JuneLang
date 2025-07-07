@@ -56,31 +56,25 @@ static const jl::Operand execute_arithametic(
 
         return jl::Operand { bin_oper(l, r) };
     } else if (jl::is_ptr(type1) || jl::is_ptr(type2)) {
-        constexpr auto add_ptr = [](jl::OperandType type, const jl::Operand& op) {
-            jl::ptr_type addr = 0;
-            switch (type) {
-            case jl::OperandType::CHAR_PTR:
-                addr += std::get<jl::PtrVar>(op).offset;
-                break;
-            case jl::OperandType::INT:
-                addr += std::get<int>(op);
-                break;
-            default:
-                unimplemented();
-            }
+        const jl::ptr_type addr1 = jl::is_pure_ptr(type1)
+            ? std::get<jl::PtrVar>(op1).offset
+            : std::get<int>(op1) * jl::size_of_type(*jl::from_ptr(type2));
 
-            return addr;
-        };
+        const auto addr2 = jl::is_pure_ptr(type2)
+            ? std::get<jl::PtrVar>(op2).offset
+            : std::get<int>(op2) * jl::size_of_type(*jl::from_ptr(type1));
 
-        const auto addr1 = add_ptr(type1, op1);
-        const auto addr2 = add_ptr(type2, op2);
+        const auto ptr_type = jl::is_pure_ptr(type1) ? type1 : type2;
 
-        return jl::Operand { jl::PtrVar { .offset = bin_oper(addr1, addr2) } };
+        return jl::Operand { jl::PtrVar { .offset = bin_oper(addr1, addr2), .type = ptr_type } };
     } else if (type1 == jl::OperandType::CHAR && type2 == jl::OperandType::CHAR) {
         const auto& l = std::get<char>(op1);
         const auto& r = std::get<char>(op2);
 
         return jl::Operand { bin_oper(l, r) };
+    } else {
+        unimplemented();
+        return jl::Operand {};
     }
 }
 
@@ -102,79 +96,42 @@ static const jl::Operand do_arithametic(
 {
     jl::Operand result;
     switch (opcode) {
-    case jl::OpCode::ADD: {
-        result = execute_arithametic(
-            op1,
-            op2,
-            std::plus<> {});
-    } break;
-    case jl::OpCode::MINUS: {
-        result = execute_arithametic(
-            op1,
-            op2,
-            std::minus<> {});
-    } break;
-    case jl::OpCode::STAR: {
-        result = execute_arithametic(
-            op1,
-            op2,
-            std::multiplies<> {});
-    } break;
-    case jl::OpCode::SLASH: {
-        result = execute_arithametic(
-            op1,
-            op2,
-            std::divides<> {});
-    } break;
-    case jl::OpCode::GREATER: {
-        result = execute_arithametic(
-            op1,
-            op2,
-            std::greater<> {});
-    } break;
-    case jl::OpCode::LESS: {
-        result = execute_arithametic(
-            op1,
-            op2,
-            std::less<> {});
-    } break;
-    case jl::OpCode::GREATER_EQUAL: {
-        result = execute_arithametic(
-            op1,
-            op2,
-            std::greater_equal<> {});
-    } break;
-    case jl::OpCode::LESS_EQUAL: {
-        result = execute_arithametic(
-            op1,
-            op2,
-            std::less_equal<> {});
-    } break;
-    case jl::OpCode::EQUAL: {
-        result = execute_arithametic(
-            op1,
-            op2,
-            std::equal_to<> {});
-    } break;
-    case jl::OpCode::NOT_EQUAL: {
-        result = execute_arithametic(
-            op1,
-            op2,
-            std::not_equal_to<> {});
-    } break;
-    case jl::OpCode::AND: {
-        result = execute_boolean(
-            op1,
-            op2,
-            std::logical_and<> {});
-    } break;
-    case jl::OpCode::OR: {
-        result = execute_boolean(
-            op1,
-            op2,
-            std::logical_or<> {});
-    } break;
-
+    case jl::OpCode::ADD:
+        result = execute_arithametic(op1, op2, std::plus<> {});
+        break;
+    case jl::OpCode::MINUS:
+        result = execute_arithametic(op1, op2, std::minus<> {});
+        break;
+    case jl::OpCode::STAR:
+        result = execute_arithametic(op1, op2, std::multiplies<> {});
+        break;
+    case jl::OpCode::SLASH:
+        result = execute_arithametic(op1, op2, std::divides<> {});
+        break;
+    case jl::OpCode::GREATER:
+        result = execute_arithametic(op1, op2, std::greater<> {});
+        break;
+    case jl::OpCode::LESS:
+        result = execute_arithametic(op1, op2, std::less<> {});
+        break;
+    case jl::OpCode::GREATER_EQUAL:
+        result = execute_arithametic(op1, op2, std::greater_equal<> {});
+        break;
+    case jl::OpCode::LESS_EQUAL:
+        result = execute_arithametic(op1, op2, std::less_equal<> {});
+        break;
+    case jl::OpCode::EQUAL:
+        result = execute_arithametic(op1, op2, std::equal_to<> {});
+        break;
+    case jl::OpCode::NOT_EQUAL:
+        result = execute_arithametic(op1, op2, std::not_equal_to<> {});
+        break;
+    case jl::OpCode::AND:
+        result = execute_boolean(op1, op2, std::logical_and<> {});
+        break;
+    case jl::OpCode::OR:
+        result = execute_boolean(op1, op2, std::logical_or<> {});
+        break;
     default:
         unimplemented();
     }
@@ -309,13 +266,30 @@ void jl::VM::handle_unary_ir(
     } break;
     case jl::OpCode::LOAD: {
         const auto& op = get_nested_data(operand, temp_vars);
-        if (get_type(op) == OperandType::CHAR_PTR) {
-            const auto offset = std::get<PtrVar>(op).offset;
+        const auto offset = std::get<PtrVar>(op).offset;
+
+        switch (get_type(op)) {
+        case OperandType::CHAR_PTR: {
             const auto data = data_section.read_data<char>(offset);
             result = Operand { data };
-        } else {
+        } break;
+        case OperandType::INT_PTR: {
+            const auto data = data_section.read_data<int_type>(offset);
+            result = Operand { data };
+        } break;
+        case OperandType::FLOAT_PTR: {
+            const auto data = data_section.read_data<float_type>(offset);
+            result = Operand { data };
+        } break;
+        case OperandType::BOOL_PTR: {
+            const auto data = data_section.read_data<bool>(offset);
+            result = Operand { data };
+        } break;
+        default:
             unimplemented();
+            break;
         }
+
     } break;
     default:
         unimplemented();
@@ -382,10 +356,23 @@ uint32_t jl::VM::handle_control_ir(
     case OpCode::STORE: {
         auto data = temp_vars[ir.jump().data.idx];
         const auto addr = get_nested_data(ir.jump().target, temp_vars);
-        if (get_type(addr) == OperandType::CHAR_PTR) {
+
+        switch (get_type(addr)) {
+        case OperandType::CHAR_PTR:
             data_section.set_data(std::get<PtrVar>(addr).offset, std::get<char>(data));
-        } else {
+            break;
+        case OperandType::INT_PTR:
+            data_section.set_data(std::get<PtrVar>(addr).offset, std::get<int_type>(data));
+            break;
+        case OperandType::FLOAT_PTR:
+            data_section.set_data(std::get<PtrVar>(addr).offset, std::get<float_type>(data));
+            break;
+        case OperandType::BOOL_PTR:
+            data_section.set_data(std::get<PtrVar>(addr).offset, std::get<bool>(data));
+            break;
+        default:
             unimplemented();
+            break;
         }
     } break;
     default:

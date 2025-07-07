@@ -1,3 +1,14 @@
-var a = 10 + 2;
-var b = (a * 2) - (3 + 1);
-var c = b / 10.0;
+var a = {1, 2, 3 + 1, 4, 5};
+a[4] = 8;
+var c = a[2];
+var b = a[4];
+
+var fa = {1.1, 2.4, 3.1 + 1.3, 4.0, 5.0};
+fa[4] = 8.0;
+var fc = fa[2];
+var fb = fa[4];
+
+var ba = {true, true, true, false, false};
+ba[4] = true;
+var bc = ba[2];
+var bb = ba[4];

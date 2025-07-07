@@ -85,6 +85,7 @@ std::optional<jl::OperandType> jl::VariableManager::infer_type_for_binary(
                 return OperandType::INT;
             }
         } else if (is_ptr(t1) && is_ptr(t2)) {
+            // Pointer arithmetics
             if (t1 == OperandType::INT) {
                 return t2;
             } else if (t2 == OperandType::INT) {
@@ -147,13 +148,18 @@ std::string jl::VariableManager::pretty_print(const Operand& operand) const
             return "B[" + std::to_string(var) + "]";
         case jl::OperandType::UNASSIGNED:
             return "U[" + std::to_string(var) + "]";
-            break;
         case OperandType::CHAR:
             return "C[" + std::to_string(var) + "]";
-            break;
         case OperandType::CHAR_PTR:
             return "CP[" + std::to_string(var) + "]";
-            break;
+        case OperandType::INT_PTR:
+            return "IP[" + std::to_string(var) + "]";
+        case OperandType::FLOAT_PTR:
+            return "FP[" + std::to_string(var) + "]";
+        case OperandType::BOOL_PTR:
+            return "BP[" + std::to_string(var) + "]";
+        case OperandType::PTR:
+            return "PP[" + std::to_string(var) + "]";
         }
     } break;
     case OperandType::INT:
@@ -163,6 +169,10 @@ std::string jl::VariableManager::pretty_print(const Operand& operand) const
     case OperandType::UNASSIGNED:
     case OperandType::CHAR:
     case OperandType::CHAR_PTR:
+    case OperandType::INT_PTR:
+    case OperandType::FLOAT_PTR:
+    case OperandType::BOOL_PTR:
+    case OperandType::PTR:
         return to_string(operand);
         break;
     }

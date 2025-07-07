@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstddef>
 #include <cstdint>
 #include <vector>
 
@@ -9,6 +10,8 @@ namespace jl {
 class DataSection {
 public:
     ptr_type add_data(const std::string& data);
+    ptr_type get_offset() const;
+    ptr_type add_data(size_t size);
 
     template <typename T>
     T read_data(ptr_type offset)

@@ -184,7 +184,7 @@ std::any jl::CodeGenerator::visit_literal_expr(Literal* expr)
     } break;
     case Type::STR: {
         const auto& str = std::get<std::string>(expr->m_value->get());
-        literal = m_chunk->add_data(data_section, str, OperandType::CHAR);
+        literal = m_chunk->add_data(data_section, str, OperandType::CHAR_PTR);
     } break;
     default:
         unimplemented();
@@ -290,10 +290,19 @@ std::any jl::CodeGenerator::visit_call_expr(Call* expr)
         // The data type should be same as function signature
         const auto& arg_name = func_inputs[i];
         const auto temp = *func_chunk.look_up_variable(arg_name);
-        const auto temp_operand = Operand { temp };
 
-        if (func_chunk.get_nested_type(temp_operand) != m_chunk->get_nested_type(arg_var)) {
-            ErrorHandler::error(m_file_name, line, "Func argument type mismatch");
+        const auto expected_type = func_chunk.get_nested_type(temp);
+        const auto actual_type = m_chunk->get_nested_type(arg_var);
+
+        if (expected_type != actual_type) {
+            ErrorHandler::error(
+                m_file_name,
+                line,
+                std::format("Func argument {} type mismatch. Expected {} found {}",
+                    i,
+                    to_string(expected_type),
+                    to_string(actual_type))
+                    .c_str());
         }
 
         args.push_back(arg_var);
@@ -315,8 +324,9 @@ std::any jl::CodeGenerator::visit_index_get_expr(IndexGet* expr)
 {
     const auto list_ptr = compile(expr->m_jlist);
     const auto idx = compile(expr->m_index_expr);
+    const auto list_ptr_type = m_chunk->get_nested_type(list_ptr);
 
-    if (m_chunk->get_nested_type(list_ptr) != OperandType::CHAR_PTR) {
+    if (!is_pure_ptr(list_ptr_type)) {
         ErrorHandler::error(
             m_file_name,
             expr->m_closing_bracket.get_line(),
@@ -334,7 +344,7 @@ std::any jl::CodeGenerator::visit_index_get_expr(IndexGet* expr)
 
     // Calculate relative address
     const auto addr = m_chunk->write(OpCode::ADD, list_ptr, idx, m_chunk->get_last_line());
-    const auto result_var = m_chunk->create_temp_var(OperandType::CHAR);
+    const auto result_var = m_chunk->create_temp_var(*from_ptr(list_ptr_type));
     m_chunk->write_with_dest(OpCode::LOAD, addr, result_var, m_chunk->get_last_line());
     return result_var;
 }
@@ -345,12 +355,12 @@ std::any jl::CodeGenerator::visit_index_set_expr(IndexSet* expr)
     const auto list_ptr = compile(expr->m_jlist);
     const auto idx = compile(expr->m_index_expr);
     const auto new_value = compile(expr->m_value_expr);
+    const auto list_ptr_type = m_chunk->get_nested_type(list_ptr);
 
     const auto idx_type = m_chunk->get_nested_type(idx);
     const auto value_type = m_chunk->get_nested_type(new_value);
-    const auto list_type = m_chunk->get_nested_type(list_ptr);
 
-    if (list_type != OperandType::CHAR_PTR) {
+    if (!is_pure_ptr(list_ptr_type)) {
         ErrorHandler::error(
             m_file_name,
             expr->m_closing_bracket.get_line(),
@@ -366,13 +376,13 @@ std::any jl::CodeGenerator::visit_index_set_expr(IndexSet* expr)
         return empty_var();
     }
 
-    if (value_type != OperandType::CHAR) {
+    if (value_type != *from_ptr(list_ptr_type)) {
         ErrorHandler::error(
             m_file_name,
             expr->m_closing_bracket.get_line(),
             std::format("Cannot write a value of type {} to a pointer of type {} !",
                 to_string(value_type),
-                to_string(list_type))
+                to_string(list_ptr_type))
                 .c_str());
         return empty_var();
     }
@@ -383,11 +393,63 @@ std::any jl::CodeGenerator::visit_index_set_expr(IndexSet* expr)
     return addr;
 }
 
+std::any jl::CodeGenerator::visit_jlist_expr(JList* expr)
+{
+    // Determine type of list
+    OperandType list_type;
+    if (expr->m_items.size() == 0) {
+        list_type = OperandType::UNASSIGNED;
+        unimplemented("Zero element arrays are not supported right now");
+    } else {
+
+        const auto first_ele = compile(expr->m_items[0]);
+        const auto first_ele_type = m_chunk->get_nested_type(first_ele);
+        const auto ptr_type = into_ptr(first_ele_type);
+        const auto list_start_offset = data_section.add_data(size_of_type(first_ele_type));
+
+        if (!ptr_type) {
+            ErrorHandler::error(m_file_name, m_chunk->get_last_line(), "Unsupported type(No ptr for this type available)");
+            return first_ele;
+        }
+
+        const auto list_var = m_chunk->create_ptr_var(*ptr_type, list_start_offset);
+
+        m_chunk->write_jump_or_store(
+            OpCode::STORE,
+            first_ele,
+            list_var,
+            m_chunk->get_last_line());
+
+        list_type = m_chunk->get_nested_type(first_ele);
+
+        for (int i = 1; i < expr->m_items.size(); i++) {
+            const auto ele = compile(expr->m_items[i]);
+
+            if (m_chunk->get_nested_type(ele) != list_type) {
+                ErrorHandler::error(m_file_name, m_chunk->get_last_line(), "List contains elements of different types");
+                continue;
+            }
+
+            const auto offset = data_section.add_data(size_of_type(first_ele_type));
+            const auto ele_ptr = m_chunk->create_ptr_var(*ptr_type, offset);
+
+            m_chunk->write_jump_or_store(
+                OpCode::STORE,
+                ele,
+                ele_ptr,
+                m_chunk->get_last_line());
+        }
+
+        return list_var;
+    }
+
+    return empty_var();
+}
+
 std::any jl::CodeGenerator::visit_get_expr(Get* expr) { }
 std::any jl::CodeGenerator::visit_set_expr(Set* expr) { }
 std::any jl::CodeGenerator::visit_this_expr(This* expr) { }
 std::any jl::CodeGenerator::visit_super_expr(Super* expr) { }
-std::any jl::CodeGenerator::visit_jlist_expr(JList* expr) { }
 
 /* ======================================================================================================================== */
 /* -----------------------------------------------------STMT--------------------------------------------------------------- */

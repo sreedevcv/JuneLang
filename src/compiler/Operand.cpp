@@ -25,6 +25,13 @@ std::string jl::to_string(const Operand& operand)
     }
     case OperandType::CHAR_PTR:
         return "C(" + std::to_string(std::get<PtrVar>(operand).offset) + ")";
+    case OperandType::INT_PTR:
+        return "I(" + std::to_string(std::get<PtrVar>(operand).offset) + ")";
+    case OperandType::FLOAT_PTR:
+        return "F(" + std::to_string(std::get<PtrVar>(operand).offset) + ")";
+    case OperandType::BOOL_PTR:
+        return "B(" + std::to_string(std::get<PtrVar>(operand).offset) + ")";
+        break;
     }
 
     unimplemented();
@@ -47,7 +54,7 @@ jl::OperandType jl::get_type(const Operand& operand)
     case 5:
         return OperandType::CHAR;
     case 6:
-        return OperandType::CHAR_PTR;
+        return std::get<PtrVar>(operand).type;
     }
 
     unimplemented();
@@ -73,6 +80,14 @@ std::string jl::to_string(const OperandType& type)
         return "CHAR";
     case OperandType::CHAR_PTR:
         return "CHAR_PTR";
+    case OperandType::BOOL_PTR:
+        return "BOOL_PTR";
+    case OperandType::INT_PTR:
+        return "INT_PTR";
+    case OperandType::FLOAT_PTR:
+        return "FLOAT_PTR";
+    case OperandType::PTR:
+        return "PTR";
     }
 
     unimplemented();
@@ -92,7 +107,19 @@ bool jl::is_number(const OperandType type)
 
 bool jl::is_ptr(const OperandType type)
 {
-    return type == OperandType::CHAR_PTR || type == OperandType::INT;
+    return type == OperandType::CHAR_PTR
+        || type == OperandType::INT
+        || type == OperandType::FLOAT_PTR
+        || type == OperandType::INT_PTR
+        || type == OperandType::BOOL_PTR;
+}
+
+bool jl::is_pure_ptr(const OperandType type)
+{
+    return type == OperandType::CHAR_PTR
+        || type == OperandType::FLOAT_PTR
+        || type == OperandType::INT_PTR
+        || type == OperandType::BOOL_PTR;
 }
 
 std::optional<jl::OperandType> jl::from_str(const std::string& type_name)
@@ -109,6 +136,12 @@ std::optional<jl::OperandType> jl::from_str(const std::string& type_name)
         return OperandType::CHAR;
     } else if (type_name == "char_ptr") {
         return OperandType::CHAR_PTR;
+    } else if (type_name == "float_ptr") {
+        return OperandType::FLOAT_PTR;
+    } else if (type_name == "int_ptr") {
+        return OperandType::INT_PTR;
+    } else if (type_name == "bool_ptr") {
+        return OperandType::BOOL_PTR;
     } else {
         return std::nullopt;
     }
@@ -132,10 +165,91 @@ jl::Operand jl::default_operand(OperandType type)
     case OperandType::UNASSIGNED:
         return Nil {};
     case OperandType::CHAR_PTR:
-        return PtrVar {};
+        return PtrVar { .offset = 0, .type = OperandType::CHAR_PTR };
+    case OperandType::BOOL_PTR:
+        return PtrVar { .offset = 0, .type = OperandType::BOOL_PTR };
+    case OperandType::INT_PTR:
+        return PtrVar { .offset = 0, .type = OperandType::INT_PTR };
+    case OperandType::FLOAT_PTR:
+        return PtrVar { .offset = 0, .type = OperandType::FLOAT_PTR };
         break;
     }
 
     unimplemented();
     return Nil {};
+}
+
+// Convert a primitive type to its ptr variant
+std::optional<jl::OperandType> jl::into_ptr(OperandType type)
+{
+    switch (type) {
+    case OperandType::CHAR:
+        return OperandType::CHAR_PTR;
+    case OperandType::INT:
+        return OperandType::INT_PTR;
+    case OperandType::FLOAT:
+        return OperandType::FLOAT_PTR;
+    case OperandType::BOOL:
+        return OperandType::BOOL_PTR;
+
+    case OperandType::TEMP:
+    case OperandType::NIL:
+    case OperandType::UNASSIGNED:
+    case OperandType::PTR:
+    case OperandType::CHAR_PTR:
+    case OperandType::INT_PTR:
+    case OperandType::FLOAT_PTR:
+    case OperandType::BOOL_PTR:
+        return std::nullopt;
+    }
+}
+
+// Convert a ptr type to its base variant
+std::optional<jl::OperandType> jl::from_ptr(OperandType type)
+{
+    switch (type) {
+    case OperandType::CHAR_PTR:
+        return OperandType::CHAR;
+    case OperandType::INT_PTR:
+        return OperandType::INT;
+    case OperandType::FLOAT_PTR:
+        return OperandType::FLOAT;
+    case OperandType::BOOL_PTR:
+        return OperandType::BOOL;
+
+    case OperandType::TEMP:
+    case OperandType::NIL:
+    case OperandType::UNASSIGNED:
+    case OperandType::PTR:
+    case OperandType::INT:
+    case OperandType::FLOAT:
+    case OperandType::BOOL:
+    case OperandType::CHAR:
+        return std::nullopt;
+    }
+}
+
+size_t jl::size_of_type(OperandType type)
+{
+    switch (type) {
+    case OperandType::TEMP:
+    case OperandType::NIL:
+    case OperandType::PTR:
+    case OperandType::UNASSIGNED:
+        unimplemented();
+
+    case OperandType::INT:
+        return sizeof(int_type);
+    case OperandType::FLOAT:
+        return sizeof(float_type);
+    case OperandType::BOOL:
+        return sizeof(bool);
+    case OperandType::CHAR:
+        return sizeof(char);
+    case OperandType::CHAR_PTR:
+    case OperandType::INT_PTR:
+    case OperandType::FLOAT_PTR:
+    case OperandType::BOOL_PTR:
+        return sizeof(ptr_type);
+    }
 }

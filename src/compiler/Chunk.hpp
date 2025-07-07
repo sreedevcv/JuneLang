@@ -64,12 +64,13 @@ public:
     const std::string& get_variable_name_from_temp_var(uint32_t idx) const;
     const std::unordered_map<std::string, uint32_t>& get_variable_map() const;
     const std::vector<std::string>& get_input_variable_names() const;
-
     OperandType get_nested_type(const Operand& operand) const;
-    int32_t create_new_label();
-    TempVar add_input_parameter(const std::string& name, OperandType type);
+
     TempVar create_temp_var(OperandType type);
-    PtrVar add_data(DataSection& ds, const std::string& data, OperandType type);
+    int32_t create_new_label();
+    TempVar create_ptr_var(OperandType type, ptr_type offset);
+    TempVar add_input_parameter(const std::string& name, OperandType type);
+    TempVar add_data(DataSection& ds, const std::string& data, OperandType type);
 
     std::string m_name;
     OperandType return_type { OperandType::UNASSIGNED };

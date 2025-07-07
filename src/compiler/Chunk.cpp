@@ -399,8 +399,20 @@ const std::vector<uint32_t> jl::Chunk::get_lines() const
     return m_lines;
 }
 
-jl::PtrVar jl::Chunk::add_data(DataSection& ds, const std::string& data, OperandType type)
+jl::TempVar jl::Chunk::add_data(DataSection& ds, const std::string& data, OperandType type)
 {
+    // FIXME: Change this to avoid useless tempvar creation
     const auto offset = ds.add_data(data);
-    return PtrVar { .offset = offset };
+    const auto ptr = PtrVar { .offset = offset, .type = type };
+    const auto ptr_var = create_temp_var(type);
+    write_with_dest(OpCode::MOVE, ptr, ptr_var, get_last_line());
+    return ptr_var;
+}
+
+jl::TempVar jl::Chunk::create_ptr_var(OperandType type, ptr_type offset)
+{
+    const auto ptr = PtrVar { .offset = offset, .type = type };
+    const auto ptr_var = create_temp_var(type);
+    write_with_dest(OpCode::MOVE, ptr, ptr_var, get_last_line());
+    return ptr_var;
 }
