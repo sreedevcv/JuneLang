@@ -1,7 +1,6 @@
 #pragma once
 
-#include <cstddef>
-#include <cstdint>
+#include <ostream>
 #include <vector>
 
 #include "Operand.hpp"
@@ -12,6 +11,8 @@ public:
     ptr_type add_data(const std::string& data);
     ptr_type get_offset() const;
     ptr_type add_data(size_t size);
+
+    std::ostream& disassemble(std::ostream& out);
 
     template <typename T>
     T read_data(ptr_type offset)

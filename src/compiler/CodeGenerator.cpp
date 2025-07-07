@@ -12,6 +12,7 @@
 
 #include <any>
 #include <cstdint>
+#include <iostream>
 #include <optional>
 #include <print>
 #include <string>
@@ -60,6 +61,9 @@ void jl::CodeGenerator::disassemble()
     for (const auto& [name, chunk] : m_chunk_list) {
         std::println("{}", chunk.disassemble());
     }
+
+    std::println("Memory:");
+    data_section.disassemble(std::cout);
 }
 
 jl::TempVar jl::CodeGenerator::empty_var()

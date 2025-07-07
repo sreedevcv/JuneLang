@@ -13,6 +13,7 @@
 #include <iostream>
 #include <ostream>
 #include <print>
+#include <string>
 #include <utility>
 
 jl::Chunk::Chunk(std::string name)
@@ -67,54 +68,50 @@ std::string jl::Chunk::disassemble() const
         out << '\n';
     }
 
-    // out << "INPUTS: ";
-    // for (int i = 0; i < m_data.size(); i++) {
-    //     if (i % 20 == 0) {
-    //         out << '\n';
-    //     }
-    //     out << (uint8_t)m_data[i];
-    // }
-
     return out.str();
 }
 
 std::ostream& jl::Chunk::print_ir(std::ostream& out, const Ir& ir) const
 {
     if (ir.type() == Ir::BINARY || ir.type() == Ir::UNARY || ir.type() == Ir::CALL) {
-        out << std::setfill(' ') << std::setw(10) << m_var_manager.pretty_print(ir.dest());
-        out << " : ";
-        out << std::setfill(' ') << std::setw(10) << jl::to_string(ir.opcode());
+        out << '\t';
+        out << std::left << std::setfill(' ') << std::setw(14) << jl::to_string(ir.opcode());
     } else {
-        out << std::setfill(' ') << std::setw(10) << ' ';
-        out << "   ";
-        out << std::setfill(' ') << std::setw(10) << jl::to_string(ir.opcode());
+        out << '\t';
+        out << std::left << std::setfill(' ') << std::setw(14) << jl::to_string(ir.opcode());
+    }
+
+    if (ir.type() == Ir::BINARY || ir.type() == Ir::UNARY || ir.type() == Ir::CALL) {
+        out << std::left << std::setfill(' ') << std::setw(10) << m_var_manager.pretty_print(ir.dest()) ;
+    } else {
+        out << std::left << std::setfill(' ') << std::setw(10) << ' ';
     }
 
     switch (ir.type()) {
     case Ir::BINARY:
-        out << std::setfill(' ') << std::setw(10) << m_var_manager.pretty_print(ir.binary().op1);
-        out << std::setfill(' ') << std::setw(10) << m_var_manager.pretty_print(ir.binary().op2);
+        out << std::left << std::setfill(' ') << std::setw(10) << m_var_manager.pretty_print(ir.binary().op1);
+        out << std::left << std::setfill(' ') << std::setw(10) << m_var_manager.pretty_print(ir.binary().op2);
         break;
     case Ir::UNARY:
-        out << std::setfill(' ') << std::setw(10) << m_var_manager.pretty_print(ir.unary().operand);
+        out << std::left << std::setfill(' ') << std::setw(10) << m_var_manager.pretty_print(ir.unary().operand);
         break;
     case Ir::CONTROL:
-        out << std::setfill(' ') << std::setw(10) << "{" << to_string(ir.control().data) << "}";
+        out << std::left << std::setfill(' ') << std::setw(10) << m_var_manager.pretty_print(ir.control().data);
         break;
     case Ir::JUMP_STORE:
         if (ir.opcode() == OpCode::JMP_UNLESS)
-            out << std::setfill(' ') << std::setw(10) << "{" << std::get<int>(ir.jump().target) << "}";
+            out << std::left << std::setfill(' ') << std::setw(10) << m_var_manager.pretty_print(ir.jump().target);
         else
-            out << std::setfill(' ') << std::setw(10) << m_var_manager.pretty_print(ir.jump().target);
+            out << std::left << std::setfill(' ') << std::setw(10) << m_var_manager.pretty_print(ir.jump().target);
 
-        out << std::setfill(' ') << std::setw(10) << m_var_manager.pretty_print(ir.jump().data);
+        out << std::left << std::setfill(' ') << std::setw(10) << m_var_manager.pretty_print(ir.jump().data);
         break;
     case Ir::CALL:
-        out << '\t' << ir.call().func_name << "(";
+        out << '\t' << ir.call().func_name << " (";
         for (const auto& arg : ir.call().args) {
-            out << (m_var_manager.pretty_print(arg)) << ",";
+            out << (m_var_manager.pretty_print(arg)) << " ";
         }
-        out << ")";
+        out << " )";
         break;
     default:
         unimplemented();

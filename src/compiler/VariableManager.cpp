@@ -163,6 +163,8 @@ std::string jl::VariableManager::pretty_print(const Operand& operand) const
         }
     } break;
     case OperandType::INT:
+        // Its a label;
+        // return "<" + std::to_string(std::get<int>(operand)) + ">";
     case OperandType::FLOAT:
     case OperandType::NIL:
     case OperandType::BOOL:

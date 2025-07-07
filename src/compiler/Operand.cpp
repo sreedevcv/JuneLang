@@ -32,6 +32,8 @@ std::string jl::to_string(const Operand& operand)
     case OperandType::BOOL_PTR:
         return "B(" + std::to_string(std::get<PtrVar>(operand).offset) + ")";
         break;
+    case OperandType::PTR:
+        break;
     }
 
     unimplemented();
@@ -172,6 +174,7 @@ jl::Operand jl::default_operand(OperandType type)
         return PtrVar { .offset = 0, .type = OperandType::INT_PTR };
     case OperandType::FLOAT_PTR:
         return PtrVar { .offset = 0, .type = OperandType::FLOAT_PTR };
+    case OperandType::PTR:
         break;
     }
 
