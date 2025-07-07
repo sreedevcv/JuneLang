@@ -11,8 +11,8 @@ namespace jl {
 
 struct BinaryIr {
     OpCode opcode;
-    Operand op1;
-    Operand op2;
+    TempVar op1;
+    TempVar op2;
     TempVar dest;
 };
 
@@ -29,15 +29,15 @@ struct ControlIr {
 
 struct JumpStoreIr {
     OpCode opcode;
-    Operand data;
+    TempVar data;
     Operand target;
 };
 
 struct CallIr {
     OpCode opcode;
-    Operand func_var;
+    TempVar func_var;
     std::string func_name;
-    std::vector<Operand> args;
+    std::vector<TempVar> args;
     TempVar return_var;
 };
 

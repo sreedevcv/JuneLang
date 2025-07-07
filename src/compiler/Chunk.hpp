@@ -21,30 +21,34 @@ public:
     std::string disassemble() const;
     std::ostream& print_ir(std::ostream& out, const Ir& ir) const;
 
-    TempVar write(OpCode opcode,
-        Operand op1,
-        Operand op2,
+    TempVar write(
+        OpCode opcode,
+        TempVar op1,
+        TempVar op2,
         uint32_t line);
-    void write_with_dest(OpCode opcode,
-        Operand op1,
-        Operand op2,
+    void write_with_dest(
+        OpCode opcode,
+        TempVar op1,
+        TempVar op2,
         TempVar dest,
         uint32_t line);
-    TempVar write(OpCode opcode,
+    TempVar write(
+        OpCode opcode,
         Operand operand,
         uint32_t line);
-    void write_with_dest(OpCode opcode,
+    void write_with_dest(
+        OpCode opcode,
         Operand operand,
         TempVar dest,
         uint32_t line);
     void write_control(OpCode opcode, Operand data, uint32_t line);
-    void write_jump_or_store(OpCode opcode, Operand data, Operand target, uint32_t line);
+    void write_jump_or_store(OpCode opcode, TempVar data, Operand target, uint32_t line);
     void write_call(
         OpCode opcode,
-        Operand func_var,
+        TempVar func_var,
         std::string func_name,
         TempVar dest,
-        std::vector<Operand>&& args,
+        std::vector<TempVar>&& args,
         uint32_t line);
 
     const std::vector<Ir>& get_ir() const;

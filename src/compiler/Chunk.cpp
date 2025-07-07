@@ -165,8 +165,8 @@ jl::OperandType jl::Chunk::handle_binary_type_inference(jl::Operand op1, jl::Ope
 
 jl::TempVar jl::Chunk::write(
     OpCode opcode,
-    Operand op1,
-    Operand op2,
+    TempVar op1,
+    TempVar op2,
     uint32_t line)
 {
     const auto inferred_type = handle_binary_type_inference(op1, op2, opcode, line);
@@ -186,8 +186,8 @@ jl::TempVar jl::Chunk::write(
 
 void jl::Chunk::write_with_dest(
     OpCode opcode,
-    Operand op1,
-    Operand op2,
+    TempVar op1,
+    TempVar op2,
     TempVar dest,
     uint32_t line)
 {
@@ -307,7 +307,7 @@ void jl::Chunk::write_control(OpCode opcode, Operand data, uint32_t line)
     m_lines.push_back(line);
 }
 
-void jl::Chunk::write_jump_or_store(OpCode opcode, Operand data, Operand target, uint32_t line)
+void jl::Chunk::write_jump_or_store(OpCode opcode, TempVar data, Operand target, uint32_t line)
 {
     m_ir.push_back(Ir {
         JumpStoreIr {
@@ -320,10 +320,10 @@ void jl::Chunk::write_jump_or_store(OpCode opcode, Operand data, Operand target,
 
 void jl::Chunk::write_call(
     OpCode opcode,
-    Operand func_var,
+    TempVar func_var,
     std::string func_name,
     TempVar dest,
-    std::vector<Operand>&& args,
+    std::vector<TempVar>&& args,
     uint32_t line)
 {
     m_ir.push_back(Ir {

@@ -45,14 +45,14 @@ const jl::Chunk& jl::CodeGenerator::get_root_chunk() const
     return m_chunk_list.at("__root__");
 }
 
-jl::Operand jl::CodeGenerator::compile(Stmt* stmt)
+jl::TempVar jl::CodeGenerator::compile(Stmt* stmt)
 {
-    return std::any_cast<Operand>(stmt->accept(*this));
+    return std::any_cast<TempVar>(stmt->accept(*this));
 }
 
-jl::Operand jl::CodeGenerator::compile(Expr* expr)
+jl::TempVar jl::CodeGenerator::compile(Expr* expr)
 {
-    return std::any_cast<Operand>(expr->accept(*this));
+    return std::any_cast<TempVar>((expr->accept(*this)));
 }
 
 void jl::CodeGenerator::disassemble()
@@ -60,6 +60,11 @@ void jl::CodeGenerator::disassemble()
     for (const auto& [name, chunk] : m_chunk_list) {
         std::println("{}", chunk.disassemble());
     }
+}
+
+jl::TempVar jl::CodeGenerator::empty_var()
+{
+    return m_chunk->create_temp_var(OperandType::NIL);
 }
 
 bool jl::CodeGenerator::check_if_func_exists(const std::string& name) const
@@ -132,7 +137,7 @@ std::any jl::CodeGenerator::visit_binary_expr(Binary* expr)
         break;
     }
 
-    return Operand { dest_var };
+    return dest_var;
 }
 
 std::any jl::CodeGenerator::visit_grouping_expr(Grouping* expr)
@@ -144,7 +149,7 @@ std::any jl::CodeGenerator::visit_unary_expr(Unary* expr)
 {
     auto val = compile(expr->m_expr);
     auto oper = expr->m_oper->get_tokentype();
-    Operand temp;
+    TempVar temp;
 
     switch (oper) {
     case Token::MINUS:
@@ -186,7 +191,9 @@ std::any jl::CodeGenerator::visit_literal_expr(Literal* expr)
         break;
     }
 
-    return literal;
+    TempVar var = m_chunk->write(OpCode::MOVE, literal, m_chunk->get_last_line());
+
+    return var;
 }
 
 std::any jl::CodeGenerator::visit_logical_expr(Logical* expr)
@@ -194,7 +201,7 @@ std::any jl::CodeGenerator::visit_logical_expr(Logical* expr)
     const auto l = compile(expr->m_left);
     const auto r = compile(expr->m_right);
     const auto oper = expr->m_oper.get_tokentype();
-    Operand temp;
+    TempVar temp;
 
     if (oper == Token::OR) {
         temp = m_chunk->write(OpCode::OR, l, r, expr->m_oper.get_line());
@@ -213,11 +220,11 @@ std::any jl::CodeGenerator::visit_variable_expr(Variable* expr)
     const auto temp_var = m_chunk->look_up_variable(var_name);
 
     if (temp_var) {
-        return Operand { *temp_var };
+        return *temp_var;
     } else {
         std::println("The variable({}) doesn't exist in this scope", var_name);
         unimplemented(); // Fix this after implementing function calls
-        return Operand { Nil {} };
+        return empty_var(); // Should return a TempVar instead of a literal
     }
 }
 
@@ -236,7 +243,7 @@ std::any jl::CodeGenerator::visit_assign_expr(Assign* expr)
 
     // For now return the dest_var
     // Not sure whether the return value will be used
-    return Operand { *dest_var };
+    return *dest_var;
 }
 
 std::any jl::CodeGenerator::visit_call_expr(Call* expr)
@@ -247,20 +254,20 @@ std::any jl::CodeGenerator::visit_call_expr(Call* expr)
     // Ensure that its a temp_var
     if (get_type(func_temp_var) != OperandType::TEMP) {
         ErrorHandler::error(m_file_name, line, "Only functions can be called");
-        return Operand { Nil {} };
+        return empty_var();
     }
 
     // Ensure temp-var is associated with a named function
     std::optional<std::string> func_name;
     for (const auto& [name, temp] : m_chunk->get_variable_map()) {
-        if (temp == std::get<TempVar>(func_temp_var).idx) {
+        if (temp == (func_temp_var).idx) {
             func_name = name;
         }
     }
 
     if (!func_name || !check_if_func_exists(*func_name)) {
         ErrorHandler::error(m_file_name, line, "No such function exists");
-        return Operand { Nil {} };
+        return empty_var();
     }
 
     // Get the function chunk
@@ -270,10 +277,10 @@ std::any jl::CodeGenerator::visit_call_expr(Call* expr)
     // Ensure whether the arity is same
     if (func_inputs.size() != expr->m_arguments.size()) {
         ErrorHandler::error(m_file_name, line, "No. of func arguments is wrong");
-        return Operand { Nil {} };
+        return empty_var();
     }
 
-    std::vector<Operand> args;
+    std::vector<TempVar> args;
 
     // Compile all the function arguments
     for (int i = 0; i < expr->m_arguments.size(); i++) {
@@ -301,7 +308,7 @@ std::any jl::CodeGenerator::visit_call_expr(Call* expr)
         std::move(args),
         m_chunk->get_last_line());
 
-    return Operand { ret_var };
+    return ret_var;
 }
 
 std::any jl::CodeGenerator::visit_index_get_expr(IndexGet* expr)
@@ -314,7 +321,7 @@ std::any jl::CodeGenerator::visit_index_get_expr(IndexGet* expr)
             m_file_name,
             expr->m_closing_bracket.get_line(),
             "Attempting to index a non pointer!");
-        return Operand { Nil {} };
+        return empty_var();
     }
 
     if (m_chunk->get_nested_type(idx) != OperandType::INT) {
@@ -322,16 +329,17 @@ std::any jl::CodeGenerator::visit_index_get_expr(IndexGet* expr)
             m_file_name,
             expr->m_closing_bracket.get_line(),
             "Attempting to index a pointer with a non-integer value!");
-        return Operand { Nil {} };
+        return empty_var();
     }
 
     // Calculate relative address
     const auto addr = m_chunk->write(OpCode::ADD, list_ptr, idx, m_chunk->get_last_line());
     const auto result_var = m_chunk->create_temp_var(OperandType::CHAR);
     m_chunk->write_with_dest(OpCode::LOAD, addr, result_var, m_chunk->get_last_line());
-    return Operand { result_var };
+    return result_var;
 }
 
+// Shouldn't this be a stmt?
 std::any jl::CodeGenerator::visit_index_set_expr(IndexSet* expr)
 {
     const auto list_ptr = compile(expr->m_jlist);
@@ -347,7 +355,7 @@ std::any jl::CodeGenerator::visit_index_set_expr(IndexSet* expr)
             m_file_name,
             expr->m_closing_bracket.get_line(),
             "Attempting to index a non pointer!");
-        return Operand { Nil {} };
+        return empty_var();
     }
 
     if (idx_type != OperandType::INT) {
@@ -355,7 +363,7 @@ std::any jl::CodeGenerator::visit_index_set_expr(IndexSet* expr)
             m_file_name,
             expr->m_closing_bracket.get_line(),
             "Attempting to index a pointer with a non-integer value!");
-        return Operand { Nil {} };
+        return empty_var();
     }
 
     if (value_type != OperandType::CHAR) {
@@ -366,13 +374,13 @@ std::any jl::CodeGenerator::visit_index_set_expr(IndexSet* expr)
                 to_string(value_type),
                 to_string(list_type))
                 .c_str());
-        return Operand { Nil {} };
+        return empty_var();
     }
 
     // Calculate relative address
     const auto addr = m_chunk->write(OpCode::ADD, list_ptr, idx, m_chunk->get_last_line());
     m_chunk->write_jump_or_store(OpCode::STORE, new_value, addr, m_chunk->get_last_line());
-    return Operand { Nil {} };
+    return addr;
 }
 
 std::any jl::CodeGenerator::visit_get_expr(Get* expr) { }
@@ -389,7 +397,7 @@ std::any jl::CodeGenerator::visit_jlist_expr(JList* expr) { }
 
 std::any jl::CodeGenerator::visit_var_stmt(VarStmt* stmt)
 {
-    Operand operand = Nil {};
+    Operand operand;
     if (stmt->m_initializer != nullptr) {
         operand = compile(stmt->m_initializer);
     }
@@ -409,7 +417,7 @@ std::any jl::CodeGenerator::visit_var_stmt(VarStmt* stmt)
         m_chunk->write_with_dest(OpCode::MOVE, operand, var, stmt->m_name.get_line());
     }
 
-    return Operand { var };
+    return var;
 }
 
 std::any jl::CodeGenerator::visit_expr_stmt(ExprStmt* stmt)
@@ -424,7 +432,7 @@ std::any jl::CodeGenerator::visit_block_stmt(BlockStmt* stmt)
         compile(s);
     }
 
-    return Operand { Nil {} };
+    return empty_var();
 }
 
 std::any jl::CodeGenerator::visit_while_stmt(WhileStmt* stmt)
@@ -464,11 +472,11 @@ std::any jl::CodeGenerator::visit_while_stmt(WhileStmt* stmt)
         loop_end_label,
         m_chunk->get_last_line());
 
-    return Operand { Nil {} };
+    return empty_var();
 }
 std::any jl::CodeGenerator::visit_empty_stmt(EmptyStmt* stmt)
 {
-    return Operand { Nil {} };
+    return empty_var();
 }
 
 std::any jl::CodeGenerator::visit_if_stmt(IfStmt* stmt)
@@ -495,7 +503,7 @@ std::any jl::CodeGenerator::visit_if_stmt(IfStmt* stmt)
         m_chunk->write_control(OpCode::LABEL, else_label, m_chunk->get_last_line());
     }
 
-    return Operand { Nil {} };
+    return empty_var();
 }
 
 std::any jl::CodeGenerator::visit_func_stmt(FuncStmt* stmt)
@@ -505,7 +513,7 @@ std::any jl::CodeGenerator::visit_func_stmt(FuncStmt* stmt)
             m_file_name,
             stmt->m_name.get_line(),
             "Functions with the same name!");
-        return Operand { Nil {} };
+        return empty_var();
     }
 
     // Retrieve return type
@@ -564,7 +572,7 @@ std::any jl::CodeGenerator::visit_func_stmt(FuncStmt* stmt)
 
     pop_chunk();
 
-    return Operand { Nil {} };
+    return empty_var();
 }
 
 std::any jl::CodeGenerator::visit_return_stmt(ReturnStmt* stmt)
@@ -575,13 +583,13 @@ std::any jl::CodeGenerator::visit_return_stmt(ReturnStmt* stmt)
     if (stmt->m_expr == nullptr && m_chunk->return_type != OperandType::NIL) {
         ErrorHandler::error(m_file_name, line, "Non-void function is not returning a value");
         m_chunk->write_control(OpCode::RETURN, Nil {}, line);
-        return Operand { Nil {} };
+        return empty_var();
     }
 
     // Cannot return a value but is still returning something
     if (stmt->m_expr != nullptr && m_chunk->return_type == OperandType::NIL) {
         ErrorHandler::error(m_file_name, line, "Void function cannot return a value");
-        return Operand { Nil {} };
+        return empty_var();
     }
 
     if (stmt->m_expr != nullptr) {
@@ -599,7 +607,7 @@ std::any jl::CodeGenerator::visit_return_stmt(ReturnStmt* stmt)
         m_chunk->write_control(OpCode::RETURN, Nil {}, m_chunk->get_last_line());
     }
 
-    return Operand { Nil {} };
+    return empty_var();
 }
 
 std::any jl::CodeGenerator::visit_print_stmt(PrintStmt* stmt) { }

@@ -20,8 +20,8 @@ public:
 
     const std::pair<std::map<std::string, Chunk>&, DataSection&> generate(std::vector<Stmt*> stmts);
 
-    jl::Operand compile(Stmt* stmt);
-    jl::Operand compile(Expr* stmt);
+    TempVar compile(Stmt* stmt);
+    TempVar compile(Expr* stmt);
 
     void disassemble();
     const Chunk& get_root_chunk() const;
@@ -62,6 +62,7 @@ private:
     std::stack<Chunk*> m_func_stack;
     DataSection data_section;
 
+    TempVar empty_var();
     bool check_if_func_exists(const std::string& name) const;
     void push_chunk(Chunk&& chunk, const std::string& name);
     void pop_chunk();

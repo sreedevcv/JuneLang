@@ -229,7 +229,7 @@ uint32_t jl::VM::execute_ir(
         std::vector<Operand> stack_vars { func_chunk.get_max_allocated_temps() };
         for (int i = 0; i < cir.args.size(); i++) {
             // First temp var will always be the fucntion itself
-            stack_vars[i + 1] = get_nested_data(cir.args[i], temp_vars);
+            stack_vars[i + 1] = temp_vars[cir.args[i].idx];
         }
 
         run(func_chunk, chunk_map, stack_vars, data_section);
@@ -260,12 +260,8 @@ void jl::VM::handle_binary_ir(const Ir& ir, std::vector<Operand>& temp_vars)
     Operand result;
     const auto& binar_ir = ir.binary();
 
-    const auto& left = jl::get_type(binar_ir.op1) == jl::OperandType::TEMP
-        ? get_temp_var_data(binar_ir.op1, temp_vars)
-        : binar_ir.op1;
-    const auto& right = jl::get_type(binar_ir.op2) == jl::OperandType::TEMP
-        ? get_temp_var_data(binar_ir.op2, temp_vars)
-        : binar_ir.op2;
+    const auto& left = temp_vars[binar_ir.op1.idx];
+    const auto& right = temp_vars[binar_ir.op2.idx];
 
     const auto type1 = jl::get_type(left);
     const auto type2 = jl::get_type(right);
@@ -366,7 +362,7 @@ uint32_t jl::VM::handle_control_ir(
         return label_locations[label];
     } break;
     case OpCode::JMP_UNLESS: {
-        const auto condition = get_nested_data(ir.jump().data, temp_vars);
+        const auto& condition = temp_vars[ir.jump().data.idx];
         // Evaluate and jump
         if (std::get<bool>(condition) == false) {
             const auto label = std::get<int>(ir.jump().target);
@@ -375,19 +371,6 @@ uint32_t jl::VM::handle_control_ir(
             return pc + 1;
         }
     } break;
-    // case OpCode::PUSH: {
-    //     const auto& operand = ir.control().data;
-    //     const auto& data = jl::get_type(operand) == jl::OperandType::TEMP
-    //         ? get_temp_var_data(operand, temp_vars)
-    //         : operand;
-    //     m_stack.push(data);
-    // } break;
-    // case OpCode::POP: {
-    //     const auto data = m_stack.top();
-    //     m_stack.pop();
-    //     const auto temp_var = std::get<TempVar>(ir.control().data);
-    //     temp_vars[temp_var.idx] = data;
-    // } break;
     case OpCode::RETURN: {
         const auto& operand = ir.control().data;
         const auto& data = jl::get_type(operand) == jl::OperandType::TEMP
@@ -397,7 +380,7 @@ uint32_t jl::VM::handle_control_ir(
         return UINT_MAX;
     } break;
     case OpCode::STORE: {
-        auto data = get_nested_data(ir.jump().data, temp_vars);
+        auto data = temp_vars[ir.jump().data.idx];
         const auto addr = get_nested_data(ir.jump().target, temp_vars);
         if (get_type(addr) == OperandType::CHAR_PTR) {
             data_section.set_data(std::get<PtrVar>(addr).offset, std::get<char>(data));
