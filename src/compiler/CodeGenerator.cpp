@@ -227,8 +227,8 @@ std::any jl::CodeGenerator::visit_variable_expr(Variable* expr)
         return *temp_var;
     } else {
         std::println("The variable({}) doesn't exist in this scope", var_name);
-        unimplemented(); // Fix this after implementing function calls
-        return empty_var(); // Should return a TempVar instead of a literal
+        ErrorHandler::error(m_file_name, expr->m_name.get_line(), "Use of unknow variable");
+        return empty_var();
     }
 }
 
@@ -479,11 +479,16 @@ std::any jl::CodeGenerator::visit_var_stmt(VarStmt* stmt)
     }
 
     auto var = m_chunk->store_variable(stmt->m_name.get_lexeme(), type_name);
-    if (stmt->m_initializer != nullptr) {
-        m_chunk->write_with_dest(OpCode::MOVE, operand, var, stmt->m_name.get_line());
+    if (!var) {
+        ErrorHandler::error(m_file_name, stmt->m_name.get_line(), "Redeclaration of a variable");
+        return empty_var();
     }
 
-    return var;
+    if (stmt->m_initializer != nullptr) {
+        m_chunk->write_with_dest(OpCode::MOVE, operand, *var, stmt->m_name.get_line());
+    }
+
+    return *var;
 }
 
 std::any jl::CodeGenerator::visit_expr_stmt(ExprStmt* stmt)
@@ -494,9 +499,13 @@ std::any jl::CodeGenerator::visit_expr_stmt(ExprStmt* stmt)
 
 std::any jl::CodeGenerator::visit_block_stmt(BlockStmt* stmt)
 {
+    m_chunk->push_block();
+
     for (auto s : stmt->m_statements) {
         compile(s);
     }
+
+    m_chunk->pop_block();
 
     return empty_var();
 }

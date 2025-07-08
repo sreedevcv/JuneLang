@@ -1,14 +1,15 @@
-#include "Operand.hpp"
-#include "VM.hpp"
 #include "catch2/catch_test_macros.hpp"
+
+#include <utility>
 
 #include "CodeGenerator.hpp"
 #include "ErrorHandler.hpp"
 #include "Interpreter.hpp"
 #include "Lexer.hpp"
+#include "Operand.hpp"
 #include "Parser.hpp"
 #include "Resolver.hpp"
-#include <utility>
+#include "VM.hpp"
 
 static std::pair<
     std::vector<jl::Operand>,
@@ -52,8 +53,8 @@ TEST_CASE("Expressions", "[Codegen]")
 {
     using namespace jl;
 
-    const auto [temp_vars, var_map] = compile(
-        R"( var a = 10 + 2;
+    const auto [temp_vars, var_map] = compile(R"(
+        var a = 10 + 2;
         var b = (a * 2) - (3 + 1);
         var c = b / 10.0;
 )");
@@ -100,10 +101,8 @@ TEST_CASE("For loop", "[Codegen]")
         ]
 )");
 
-    const auto i = temp_vars[var_map.at("i")];
     const auto sum = temp_vars[var_map.at("sum")];
 
-    REQUIRE(std::get<int>(i) == 11);
     REQUIRE(std::get<int>(sum) == 55);
 }
 
@@ -197,7 +196,7 @@ TEST_CASE("Fibonacci function", "[Codegen]")
     using namespace jl;
 
     const auto [temp_vars, var_map] = compile(R"(
-fun fibonacci(n: int): int [
+    fun fibonacci(n: int): int [
         var a = 0;
         var b = 1;
 
@@ -212,9 +211,9 @@ fun fibonacci(n: int): int [
         ]
 
         return b;
-]
+    ]
 
-var f = fibonacci(6);
+    var f = fibonacci(6);
 )");
 
     const auto f_value = temp_vars[var_map.at("f")];
@@ -317,4 +316,123 @@ TEST_CASE("Index Set: Replace Char Count", "[Codegen]")
     REQUIRE(std::get<int>(count1_value) == 3);
     REQUIRE(std::get<int>(count2_value) == 0);
     REQUIRE(std::get<int>(count3_value) == 1);
+}
+
+TEST_CASE("Pointer types", "[Codegen]")
+{
+    using namespace jl;
+
+    const auto [temp_vars, var_map] = compile(R"(
+        var ia = {1, 2, 3 + 1, 4, 5};
+        var ib = ia[2];
+        ia[4] = -1;
+        var ic = ia[4];
+
+        var fa = {1.0, 2.1, 3.2 + 1.0, 4.5, 5.6};
+        var fb = fa[2];
+        fa[4] = -1.0;
+        var fc = fa[4];
+
+        var ba = {true, true, true or false, false, false};
+        var bb = ba[2];
+        ba[4] = true;
+        var bc = ba[4];
+
+        var ca = {'1', 'a', 'g', '@', '5'};
+        var cb = ca[2];
+        ca[4] = '$';
+        var cc = ca[4];
+)");
+
+    const auto fb_value = temp_vars[var_map.at("fb")];
+    const auto fc_value = temp_vars[var_map.at("fc")];
+
+    const auto ib_value = temp_vars[var_map.at("ib")];
+    const auto ic_value = temp_vars[var_map.at("ic")];
+
+    const auto cb_value = temp_vars[var_map.at("cb")];
+    const auto cc_value = temp_vars[var_map.at("cc")];
+
+    const auto bb_value = temp_vars[var_map.at("bb")];
+    const auto bc_value = temp_vars[var_map.at("bc")];
+
+    REQUIRE(std::get<float_type>(fb_value) == 4.2);
+    REQUIRE(std::get<float_type>(fc_value) == -1.0);
+
+    REQUIRE(std::get<int_type>(ib_value) == 4);
+    REQUIRE(std::get<int_type>(ic_value) == -1);
+
+    REQUIRE(std::get<char>(cb_value) == 'g');
+    REQUIRE(std::get<char>(cc_value) == '$');
+
+    REQUIRE(std::get<bool>(bb_value) == true);
+    REQUIRE(std::get<bool>(bc_value) == true);
+}
+
+TEST_CASE("Int and Float Pointers in functions", "[Codegen]")
+{
+    using namespace jl;
+
+    const auto [temp_vars, var_map] = compile(R"(
+        var int_list = {1, 2, 3 + 1, 4, 5};
+
+        fun sum_int(list: int_ptr, size: int): int [
+            var s = 0;
+
+            for (var i = 0; i < size; i += 1) [
+                s += list[i];
+            ]
+
+            return s;
+        ]
+
+        var is = sum_int(int_list, 5);
+
+        //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+        var float_list = {1.0, 2.1, 3.2 + 1.0, 4.5, 5.6};
+
+        fun sum_float(list: float_ptr, size: int): float [
+            var s = 0.0;
+
+            for (var i = 0; i < size; i += 1) [
+                s += list[i];
+            ]
+
+            return s;
+        ]
+
+        var fs = sum_float(float_list, 5);
+)");
+
+    const auto is_value = temp_vars[var_map.at("is")];
+    const auto fs_value = temp_vars[var_map.at("fs")];
+
+    REQUIRE(std::get<float_type>(fs_value) == 17.4);
+    REQUIRE(std::get<int>(is_value) == 16);
+}
+
+TEST_CASE("Scoped variables", "[Codegen]")
+{
+    using namespace jl;
+
+    const auto [temp_vars, var_map] = compile(R"(
+        var a = 1;
+        var b = 1;
+
+        for (var i = 0; i < 10; i+=1) [
+            var a = 2;
+            if (a  == 1) [
+                var b = 2;
+            ]
+
+            b = a;
+        ]
+)");
+
+    const auto a_value = temp_vars[var_map.at("a")];
+    const auto b_value = temp_vars[var_map.at("b")];
+
+    REQUIRE(std::get<int>(a_value) == 1);
+    REQUIRE(std::get<int>(b_value) == 2);
 }

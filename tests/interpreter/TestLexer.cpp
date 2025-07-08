@@ -68,7 +68,7 @@ TEST_CASE("Lexer Keyword Scan", "[Lexer]")
     Lexer lexer(path);
     lexer.scan();
     std::vector<Token> scanned_tokens = lexer.get_tokens();
-    std::vector<Token::TokenType> expected_tokens = { Token::IDENTIFIER, Token::FOR, Token::IDENTIFIER, Token::IF, Token::AND, Token::IDENTIFIER, Token::OR, Token::IDENTIFIER, Token::NOT, Token::INT, Token::WHILE, Token::THEN, Token::END, Token::FLOAT, Token::TRUE, Token::IDENTIFIER, Token::IDENTIFIER, Token::FALSE, Token::LEFT_PAR, Token::RIGHT_PAR, Token::LEFT_BRACE, Token::RIGHT_BRACE, Token::RETURN, Token::VAR, Token::NULL_, Token::END_OF_FILE };
+    std::vector<Token::TokenType> expected_tokens = { Token::IDENTIFIER, Token::FOR, Token::IDENTIFIER, Token::IF, Token::AND, Token::IDENTIFIER, Token::OR, Token::IDENTIFIER, Token::NOT, Token::INT, Token::WHILE, Token::THEN, Token::FLOAT, Token::TRUE, Token::IDENTIFIER, Token::IDENTIFIER, Token::FALSE, Token::LEFT_PAR, Token::RIGHT_PAR, Token::LEFT_BRACE, Token::RIGHT_BRACE, Token::RETURN, Token::VAR, Token::NULL_, Token::END_OF_FILE };
 
     REQUIRE(scanned_tokens.size() == expected_tokens.size());
 

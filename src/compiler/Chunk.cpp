@@ -340,7 +340,7 @@ const std::unordered_map<std::string, uint32_t>& jl::Chunk::get_variable_map() c
     return m_var_manager.get_variable_map();
 }
 
-jl::TempVar jl::Chunk::store_variable(const std::string& var_name, OperandType type)
+std::optional<jl::TempVar> jl::Chunk::store_variable(const std::string& var_name, OperandType type)
 {
     return m_var_manager.store_variable(var_name, type);
 }
@@ -378,7 +378,7 @@ jl::OperandType jl::Chunk::get_nested_type(const Operand& operand) const
 jl::TempVar jl::Chunk::add_input_parameter(const std::string& name, OperandType type)
 {
     m_inputs.push_back(name);
-    return store_variable(name, type);
+    return *store_variable(name, type);
 }
 
 jl::TempVar jl::Chunk::create_temp_var(OperandType type)
@@ -412,4 +412,14 @@ jl::TempVar jl::Chunk::create_ptr_var(OperandType type, ptr_type offset)
     const auto ptr_var = create_temp_var(type);
     write_with_dest(OpCode::MOVE, ptr, ptr_var, get_last_line());
     return ptr_var;
+}
+
+void jl::Chunk::push_block()
+{
+    m_var_manager.push_block();
+}
+
+void jl::Chunk::pop_block()
+{
+    m_var_manager.pop_block();
 }

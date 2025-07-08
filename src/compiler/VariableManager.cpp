@@ -3,6 +3,22 @@
 #include "Operand.hpp"
 #include "Utils.hpp"
 #include <cstdint>
+#include <optional>
+
+jl::VariableManager::VariableManager()
+{
+    m_variable_map.push_back({});
+}
+
+void jl::VariableManager::push_block()
+{
+    m_variable_map.push_back({});
+}
+
+void jl::VariableManager::pop_block()
+{
+    m_variable_map.pop_back();
+}
 
 jl::TempVar jl::VariableManager::create_temp_var(OperandType type)
 {
@@ -15,33 +31,30 @@ jl::TempVar jl::VariableManager::create_temp_var(OperandType type)
     return var;
 }
 
-jl::TempVar jl::VariableManager::store_variable(const std::string& var_name, OperandType type)
+std::optional<jl::TempVar> jl::VariableManager::store_variable(const std::string& var_name, OperandType type)
 {
-    // TODO:: Return nullopt and handle redeclaration error
-    if (m_variable_map.contains(var_name)) {
-        // ErrorHandler::error(
-        //     m_file_name,
-        //     1,
-        //     std::format("Redeclaration of a variable: {}", var_name)
-        //         .c_str());
-
-        // For now we replace the existing varible with this one
+    if (m_variable_map.back().contains(var_name)) {
+        return std::nullopt;
     }
 
     TempVar var = create_temp_var(type);
-    m_variable_map.insert(std::pair { var_name, var.idx });
+    m_variable_map.back().insert(std::pair { var_name, var.idx });
 
     return var;
 }
 
 std::optional<jl::TempVar> jl::VariableManager::look_up_variable(const std::string& var_name) const
 {
-    if (m_variable_map.contains(var_name)) {
-        return TempVar { m_variable_map.at(var_name) };
+    // for (const auto& map : m_variable_map) {
+    for (auto it = m_variable_map.crbegin(); it != m_variable_map.crend(); it++) {
+        const auto& map = *it;
 
-    } else {
-        return std::nullopt;
+        if (map.contains(var_name)) {
+            return TempVar { map.at(var_name) };
+        }
     }
+
+    return std::nullopt;
 }
 
 uint32_t jl::VariableManager::get_max_allocated_temps() const
@@ -58,9 +71,11 @@ jl::OperandType jl::VariableManager::get_nested_type(const Operand& operand) con
 
 const std::string& jl::VariableManager::get_variable_name_from_temp_var(uint32_t idx) const
 {
-    for (const auto& [name, var] : m_variable_map) {
-        if (var == idx) {
-            return name;
+    for (const auto& map : m_variable_map) {
+        for (const auto& [name, var] : map) {
+            if (var == idx) {
+                return name;
+            }
         }
     }
 
@@ -116,7 +131,7 @@ std::optional<jl::OperandType> jl::VariableManager::infer_type_for_binary(
 
 const std::unordered_map<std::string, uint32_t>& jl::VariableManager::get_variable_map() const
 {
-    return m_variable_map;
+    return m_variable_map.back();
 }
 
 void jl::VariableManager::set_var_data_type(uint32_t idx, OperandType type)

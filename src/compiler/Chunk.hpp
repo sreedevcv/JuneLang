@@ -59,7 +59,7 @@ public:
     uint32_t get_last_line() const;
     int32_t get_max_labels() const;
 
-    TempVar store_variable(const std::string& var_name, OperandType type);
+    std::optional<TempVar> store_variable(const std::string& var_name, OperandType type);
     std::optional<TempVar> look_up_variable(const std::string& var_name) const;
     const std::string& get_variable_name_from_temp_var(uint32_t idx) const;
     const std::unordered_map<std::string, uint32_t>& get_variable_map() const;
@@ -71,6 +71,9 @@ public:
     TempVar create_ptr_var(OperandType type, ptr_type offset);
     TempVar add_input_parameter(const std::string& name, OperandType type);
     TempVar add_data(DataSection& ds, const std::string& data, OperandType type);
+
+    void push_block();
+    void pop_block();
 
     std::string m_name;
     OperandType return_type { OperandType::UNASSIGNED };

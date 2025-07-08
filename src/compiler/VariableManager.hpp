@@ -12,10 +12,15 @@ namespace jl {
 
 class VariableManager {
 public:
+    VariableManager();
+
+    void push_block();
+    void pop_block();
+
     uint32_t get_max_allocated_temps() const;
 
     TempVar create_temp_var(OperandType type);
-    TempVar store_variable(const std::string& var_name, OperandType type);
+    std::optional<TempVar> store_variable(const std::string& var_name, OperandType type);
 
     OperandType get_var_data_type(uint32_t idx) const;
     std::optional<TempVar> look_up_variable(const std::string& var_name) const;
@@ -34,7 +39,7 @@ private:
     static uint32_t constexpr max_data_types { 6 };
     uint32_t m_var_count { 0 };
     std::vector<OperandType> m_var_types;
-    std::unordered_map<std::string, uint32_t> m_variable_map;
+    std::vector<std::unordered_map<std::string, uint32_t>> m_variable_map;
 };
 
 }
