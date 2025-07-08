@@ -82,7 +82,7 @@ std::ostream& jl::Chunk::print_ir(std::ostream& out, const Ir& ir) const
     }
 
     if (ir.type() == Ir::BINARY || ir.type() == Ir::UNARY || ir.type() == Ir::CALL) {
-        out << std::left << std::setfill(' ') << std::setw(10) << m_var_manager.pretty_print(ir.dest()) ;
+        out << std::left << std::setfill(' ') << std::setw(10) << m_var_manager.pretty_print(ir.dest());
     } else {
         out << std::left << std::setfill(' ') << std::setw(10) << ' ';
     }
@@ -422,4 +422,9 @@ void jl::Chunk::push_block()
 void jl::Chunk::pop_block()
 {
     m_var_manager.pop_block();
+}
+
+void jl::Chunk::register_function(uint32_t temp_var, const std::string& name)
+{
+    m_registered_functions.push_back({ temp_var, name });
 }

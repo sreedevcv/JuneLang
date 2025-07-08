@@ -225,11 +225,43 @@ std::any jl::CodeGenerator::visit_variable_expr(Variable* expr)
 
     if (temp_var) {
         return *temp_var;
-    } else {
-        std::println("The variable({}) doesn't exist in this scope", var_name);
+    }
+
+    // Variable does not exist in this chunk
+    // Look for it in the __root__ chunk
+    const auto root_var = m_chunk_list.at("__root__").look_up_variable(var_name);
+
+    if (!root_var) {
         ErrorHandler::error(m_file_name, expr->m_name.get_line(), "Use of unknow variable");
         return empty_var();
     }
+
+    // Currently only functions are available from the __root__ scope
+    // If the temp_var is a function in the __root__ scope, then make it
+    // available in the current function scope
+
+    // Ensure that its a fucntion
+    std::optional<std::string> func_name;
+    for (const auto& [temp, name] : m_chunk_list.at("__root__").m_registered_functions) {
+        if (temp == (*root_var).idx) {
+            func_name = name;
+        }
+    }
+
+    if (!func_name || !check_if_func_exists(*func_name)) {
+        ErrorHandler::error(m_file_name, expr->m_name.get_line(), "Use of unknow variable");
+        return empty_var();
+    }
+
+    // Register this as a local named variable
+    const auto func_var = m_chunk->store_variable(*func_name, OperandType::TEMP);
+    m_chunk->register_function(func_var->idx, *func_name);
+
+    if (!func_var) {
+        ErrorHandler::error(m_file_name, expr->m_name.get_line(), "Local variable same as a function name");
+        return empty_var();
+    }
+    return *func_var;
 }
 
 std::any jl::CodeGenerator::visit_assign_expr(Assign* expr)
@@ -255,6 +287,7 @@ std::any jl::CodeGenerator::visit_call_expr(Call* expr)
     // Compile the callee
     const auto func_temp_var = compile(expr->m_callee);
     const auto line = expr->m_paren.get_line();
+
     // Ensure that its a temp_var
     if (get_type(func_temp_var) != OperandType::TEMP) {
         ErrorHandler::error(m_file_name, line, "Only functions can be called");
@@ -263,7 +296,7 @@ std::any jl::CodeGenerator::visit_call_expr(Call* expr)
 
     // Ensure temp-var is associated with a named function
     std::optional<std::string> func_name;
-    for (const auto& [name, temp] : m_chunk->get_variable_map()) {
+    for (const auto& [temp, name] : m_chunk->m_registered_functions) {
         if (temp == (func_temp_var).idx) {
             func_name = name;
         }
@@ -609,13 +642,15 @@ std::any jl::CodeGenerator::visit_func_stmt(FuncStmt* stmt)
     }
 
     // Store the function_name as a variable in the outer chunk
-    m_chunk->store_variable(stmt->m_name.get_lexeme(), return_type);
+    const auto outer_var = m_chunk->store_variable(stmt->m_name.get_lexeme(), return_type);
+    m_chunk->register_function(outer_var->idx, stmt->m_name.get_lexeme());
 
     Chunk chunk { stmt->m_name.get_lexeme() };
     push_chunk(std::move(chunk), stmt->m_name.get_lexeme());
 
     // Store the function_name as a variable in the new chunk also for recursion support
-    m_chunk->store_variable(stmt->m_name.get_lexeme(), return_type);
+    const auto func_var = m_chunk->store_variable(stmt->m_name.get_lexeme(), return_type);
+    m_chunk->register_function(func_var->idx, stmt->m_name.get_lexeme());
 
     // Store the return type
     m_chunk->return_type = return_type;

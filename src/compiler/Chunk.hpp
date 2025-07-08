@@ -4,6 +4,7 @@
 #include <ostream>
 #include <string>
 #include <unordered_map>
+#include <utility>
 #include <vector>
 
 #include "DataSection.hpp"
@@ -72,11 +73,13 @@ public:
     TempVar add_input_parameter(const std::string& name, OperandType type);
     TempVar add_data(DataSection& ds, const std::string& data, OperandType type);
 
+    void register_function(uint32_t temp_var, const std::string& name);
     void push_block();
     void pop_block();
 
     std::string m_name;
     OperandType return_type { OperandType::UNASSIGNED };
+    std::vector<std::pair<uint32_t, std::string>> m_registered_functions;
 
 private:
     std::string m_file_name { "test" };

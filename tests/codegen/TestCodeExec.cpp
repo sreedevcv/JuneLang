@@ -436,3 +436,21 @@ TEST_CASE("Scoped variables", "[Codegen]")
     REQUIRE(std::get<int>(a_value) == 1);
     REQUIRE(std::get<int>(b_value) == 2);
 }
+
+TEST_CASE("Calling Global Functions", "[Codegen]")
+{
+    using namespace jl;
+
+    const auto [temp_vars, var_map] = compile(R"(
+        fun a() [
+        ]
+
+        fun b() [
+            a();
+        ]
+
+        fun c() [
+            b();
+        ]
+)");
+}

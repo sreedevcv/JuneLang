@@ -1,0 +1,52 @@
+var list = {5, 1, 7, 3, 9, 0, 3, 4, 2, 8, 6};
+
+fun is_sorted(list: int_ptr, size: int): bool [
+    for (var i = 0; i < size - 1; i += 1) [
+        if (list[i] > list[i + 1]) [
+            return false;
+        ]
+    ]
+
+    return true;
+]
+
+fun swap(list: int_ptr, i: int, j: int) [
+    var temp = list[i];
+    list[i] = list[j];
+    list[j] = temp;
+]
+
+fun partition(list: int_ptr, start: int, end: int): int [
+    var pivot = list[end];
+    var limit = start - 1;
+
+    for (var i = start; i <= end - 1; i += 1) [
+        if (list[i] < pivot) [
+            limit += 1;
+            swap(list, i, limit);
+        ]
+    ]
+
+    swap(list, limit + 1, end);
+
+    return limit + 1;
+]
+
+fun __quickSortImpl(list: int_ptr, start: int, end: int) [
+    if (start < end) [
+        var pivot = partition(list, start, end);
+        __quickSortImpl(list, start, pivot - 1);
+        __quickSortImpl(list, pivot + 1, end);
+    ]
+]
+
+fun quickSort(list: int_ptr, size: int) [
+    __quickSortImpl(list, 0, size - 1);
+]
+
+quickSort(list, 10);
+
+var min = list[0];
+var max = list[9];
+
+var sorted = is_sorted(list, 10);

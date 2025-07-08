@@ -10,6 +10,7 @@
 #include <cassert>
 #include <cstdlib>
 #include <cstring>
+#include <iostream>
 #include <print>
 #include <string>
 
@@ -74,6 +75,8 @@ int main(int argc, char const* argv[])
     for (const auto& [name, temp] : chunk.get_variable_map()) {
         std::println("{}\t{}", name, jl::to_string(vars[temp]));
     }
+
+    data_section.disassemble(std::cout);
 
     return 0;
 }
