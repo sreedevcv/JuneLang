@@ -150,7 +150,6 @@ jl::Operand jl::CFFI::call(
     ffi_call(&cif, (void (*)())(func_ptr), ret_val, arg_values.data());
 
     // Convert the returned pointer back to an operand
-
     Operand ret;
 
     switch (return_type) {
@@ -181,8 +180,13 @@ jl::Operand jl::CFFI::call(
         break;
     }
 
-    // Delete the arg_values
-    // Delete the ret_val
+    // Delete allocated values
+    for (const auto ptr: arg_values) {
+        free(ptr);
+    }
+
+    free(ret_val);
+
 
     return ret;
 }

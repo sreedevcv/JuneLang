@@ -7,6 +7,7 @@ set(CMAKE_CXX_STANDARD 23)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 add_definitions(-DTEST_FILE_PATH="${CMAKE_SOURCE_DIR}/tests")
+add_definitions(-DEXAMPLES_FILE_PATH="${CMAKE_SOURCE_DIR}/examples")
 add_definitions(-DRES_PATH="${CMAKE_SOURCE_DIR}/res")
 
 include(FetchContent)
