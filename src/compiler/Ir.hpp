@@ -38,6 +38,7 @@ struct CallIr {
     TempVar func_var;
     std::string func_name;
     std::vector<TempVar> args;
+    bool is_extern;
     TempVar return_var;
 };
 

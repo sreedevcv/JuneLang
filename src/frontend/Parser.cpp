@@ -2,7 +2,9 @@
 
 #include "ErrorHandler.hpp"
 #include "Expr.hpp"
+#include "Stmt.hpp"
 #include "Token.hpp"
+#include "Value.hpp"
 
 jl::Parser::Parser(std::vector<Token>& tokens, std::string& file_name)
     : m_tokens(tokens)
@@ -457,6 +459,9 @@ jl::Stmt* jl::Parser::declaration()
             m_allocated_refs.push_back(empty);
             return empty;
         }
+        if (match({ Token::EXTERN })) {
+            return extern_declaration();
+        }
         return statement();
     } catch (const char* e) {
         synchronize();
@@ -606,39 +611,14 @@ jl::Stmt* jl::Parser::for_statement()
 
 jl::Stmt* jl::Parser::function(const char* kind)
 {
-    Token& name = consume(Token::IDENTIFIER, "Expeced a function name here");
+    FuncStmt* func = function_declaration();
 
-    consume(Token::LEFT_PAR, "Expected ( after fun name");
-    std::vector<Token*> parameters;
-    std::vector<Token*> data_types;
-
-    if (!check(Token::RIGHT_PAR)) {
-        do {
-            if (parameters.size() >= 255) {
-                ErrorHandler::error(m_file_name, "parsing", "function call", peek().get_line(), "Cannot have more than 255 parameters for a function", 0);
-            }
-
-            Token& param = consume(Token::IDENTIFIER, "Expected parameter name here");
-            consume(Token::COLON, "Expected a colon after parameter name");
-            Token& data_type = consume(Token::IDENTIFIER, "Expected data type here after :");
-
-            parameters.push_back(&param);
-            data_types.push_back(&data_type);
-
-        } while (match({ Token::COMMA }));
-    }
-
-    consume(Token::RIGHT_PAR, "Expected ) after function parameters");
-
-    Token* return_type = nullptr;
-    if (match({ Token::COLON })) {
-        return_type = &consume(Token::IDENTIFIER, "Expected return data type here after :");
-    }
     consume(Token::LEFT_SQUARE, "Expected [ before function body");
-
     std::vector<Stmt*> body = block();
-    Stmt* func = new FuncStmt(name, parameters, data_types, return_type, body);
-    m_allocated_refs.push_back(func);
+
+    func->m_body = body;
+    func->is_extern = false;
+
     return func;
 }
 
@@ -701,4 +681,53 @@ std::vector<jl::Stmt*> jl::Parser::block()
 
     consume(Token::RIGHT_SQUARE, "Expected ] after block");
     return statements;
+}
+
+jl::Stmt* jl::Parser::extern_declaration()
+{
+    Token& extern_token = previous();
+    Token& symbol_name = consume(Token::STRING, "Expected symbol name as str after `extern`");
+    consume(Token::AS, "Expected `as` after symbol name");
+    FuncStmt* june_func = function_declaration();
+    consume(Token::SEMI_COLON, "Expected ; after extern declaration");
+
+    Stmt* extern_stmt = new ExternStmt(extern_token, symbol_name, june_func);
+    m_allocated_refs.push_back(extern_stmt);
+    return extern_stmt;
+}
+
+jl::FuncStmt* jl::Parser::function_declaration()
+{
+    Token& name = consume(Token::IDENTIFIER, "Expeced a function name here");
+
+    consume(Token::LEFT_PAR, "Expected ( after fun name");
+    std::vector<Token*> parameters;
+    std::vector<Token*> data_types;
+
+    if (!check(Token::RIGHT_PAR)) {
+        do {
+            if (parameters.size() >= 255) {
+                ErrorHandler::error(m_file_name, "parsing", "function call", peek().get_line(), "Cannot have more than 255 parameters for a function", 0);
+            }
+
+            Token& param = consume(Token::IDENTIFIER, "Expected parameter name here");
+            consume(Token::COLON, "Expected a colon after parameter name");
+            Token& data_type = consume(Token::IDENTIFIER, "Expected data type here after :");
+
+            parameters.push_back(&param);
+            data_types.push_back(&data_type);
+
+        } while (match({ Token::COMMA }));
+    }
+
+    consume(Token::RIGHT_PAR, "Expected ) after function parameters");
+
+    Token* return_type = nullptr;
+    if (match({ Token::COLON })) {
+        return_type = &consume(Token::IDENTIFIER, "Expected return data type here after :");
+    }
+
+    FuncStmt* func = new FuncStmt(name, parameters, data_types, return_type);
+    m_allocated_refs.push_back(func);
+    return func;
 }

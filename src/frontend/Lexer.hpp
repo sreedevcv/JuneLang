@@ -51,9 +51,7 @@ private:
         { "then", Token::THEN },
         { "else", Token::ELSE },
         { "while", Token::WHILE },
-        // { "do", Token::DO },
         { "for", Token::FOR },
-        // { "end", Token::END },
         { "true", Token::TRUE },
         { "false", Token::FALSE },
         { "var", Token::VAR },
@@ -65,6 +63,8 @@ private:
         { "self", Token::THIS },
         { "super", Token::SUPER },
         { "break", Token::BREAK },
+        { "extern", Token::EXTERN },
+        { "as", Token::AS },
     };
 };
 } // namespace jl

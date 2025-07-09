@@ -59,19 +59,15 @@ void jl::MemoryPool::mark(Value* value)
     case Type::STR:
         break;
 
-    case Type::CALL:
-    {
+    case Type::CALL: {
         auto callable = std::get<Callable*>(value->get());
         mark(callable);
-    }
-        break;
+    } break;
 
-    case Type::OBJ:
-    {
+    case Type::OBJ: {
         auto instance = std::get<Instance*>(value->get());
         mark(instance);
-    }
-        break;
+    } break;
 
     case Type::LIST:
         // FIX::During change to Variant::initial version was getting std::vector<Expr*>&
@@ -82,6 +78,8 @@ void jl::MemoryPool::mark(Value* value)
         break;
 
     case Type::JNULL:
+        break;
+    case Type::CHAR:
         break;
     }
 }
@@ -343,6 +341,11 @@ std::any jl::MemoryPool::visit_for_each_stmt(ForEachStmt* stmt)
 }
 
 std::any jl::MemoryPool::visit_break_stmt(BreakStmt* stmt)
+{
+    return nullptr;
+}
+
+std::any jl::MemoryPool::visit_extern_stmt(ExternStmt* stmt)
 {
     return nullptr;
 }

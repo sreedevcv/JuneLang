@@ -1,10 +1,4 @@
+extern "puts" as puts(s: char_ptr);
+
 fun a() [
-]
-
-fun b() [
-    a();
-]
-
-fun c() [
-    b();
 ]

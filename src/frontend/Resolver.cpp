@@ -260,7 +260,7 @@ std::any jl::Resolver::visit_while_stmt(WhileStmt* stmt)
     resolve(stmt->m_condition);
 
     m_current_loop_type = LoopType::LOOP;
-        resolve(stmt->m_body);
+    resolve(stmt->m_body);
     m_current_loop_type = enclosing_loop_type;
 
     return nullptr;
@@ -329,7 +329,7 @@ std::any jl::Resolver::visit_class_stmt(ClassStmt* stmt)
 }
 
 std::any jl::Resolver::visit_for_each_stmt(ForEachStmt* stmt)
-{   
+{
     LoopType enclosing_loop_type = m_current_loop_type;
 
     begin_scope();
@@ -337,7 +337,7 @@ std::any jl::Resolver::visit_for_each_stmt(ForEachStmt* stmt)
     resolve(stmt->m_list_expr);
 
     m_current_loop_type = LoopType::LOOP;
-        resolve(stmt->m_body);
+    resolve(stmt->m_body);
     m_current_loop_type = enclosing_loop_type;
 
     end_scope();
@@ -349,5 +349,10 @@ std::any jl::Resolver::visit_break_stmt(BreakStmt* stmt)
     if (m_current_loop_type == LoopType::NONE) {
         ErrorHandler::error(m_file_name, "resolving", "break statement", stmt->m_break_token.get_line(), "Break statement should be inside a loop", 0);
     }
+    return nullptr;
+}
+
+std::any jl::Resolver::visit_extern_stmt(ExternStmt* stmt)
+{
     return nullptr;
 }

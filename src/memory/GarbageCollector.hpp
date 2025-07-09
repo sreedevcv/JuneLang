@@ -2,9 +2,6 @@
 
 #include "Environment.hpp"
 #include "MemoryPool.hpp"
-#include "DebugArena.hpp"
-
-#include <print>
 
 namespace jl {
 

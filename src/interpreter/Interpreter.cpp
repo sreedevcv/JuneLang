@@ -178,7 +178,6 @@ jl::Value* jl::Interpreter::look_up_variable(Token& name, Expr* expr)
     }
 }
 
-
 // --------------------------------------------------------------------------------
 // -------------------------------Expressions--------------------------------------
 // --------------------------------------------------------------------------------
@@ -523,7 +522,7 @@ std::any jl::Interpreter::visit_func_stmt(FuncStmt* stmt)
 
 std::any jl::Interpreter::visit_return_stmt(ReturnStmt* stmt)
 {
-    Value* value = m_gc.allocate<Value>(Null{});
+    Value* value = m_gc.allocate<Value>(Null {});
     if (stmt->m_expr != nullptr) {
         value = evaluate(stmt->m_expr);
     }
@@ -602,4 +601,8 @@ std::any jl::Interpreter::visit_for_each_stmt(ForEachStmt* stmt)
 std::any jl::Interpreter::visit_break_stmt(BreakStmt* stmt)
 {
     throw BreakThrow {};
+}
+
+std::any jl::Interpreter::visit_extern_stmt(ExternStmt* stmt)
+{
 }

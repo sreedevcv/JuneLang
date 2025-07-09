@@ -46,6 +46,8 @@ private:
     Stmt* return_statement();
     Stmt* class_declaration();
     Stmt* break_statement();
+    Stmt* extern_declaration();
+    FuncStmt* function_declaration();
     std::vector<Stmt*> block();
 
     void synchronize();

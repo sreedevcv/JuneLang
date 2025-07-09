@@ -19,6 +19,7 @@ class ReturnStmt;
 class ClassStmt;
 class ForEachStmt;
 class BreakStmt;
+class ExternStmt;
 
 class IStmtVisitor {
 public:
@@ -34,6 +35,7 @@ public:
     virtual std::any visit_class_stmt(ClassStmt* stmt) = 0;
     virtual std::any visit_for_each_stmt(ForEachStmt* stmt) = 0;
     virtual std::any visit_break_stmt(BreakStmt* stmt) = 0;
+    virtual std::any visit_extern_stmt(ExternStmt* stmt) = 0;
 };
 
 class Stmt : public Ref {
@@ -195,6 +197,7 @@ public:
     std::vector<Token*> m_data_types;
     Token* m_return_type;
     std::vector<Stmt*> m_body;
+    bool is_extern;
 
     inline FuncStmt(
         Token& name,
@@ -208,6 +211,20 @@ public:
         , m_return_type(return_type)
         , m_body(body)
     {
+        is_extern = false;
+    }
+
+    inline FuncStmt(
+        Token& name,
+        std::vector<Token*>& params,
+        std::vector<Token*> data_types,
+        Token* return_type)
+        : m_name(name)
+        , m_params(params)
+        , m_data_types(data_types)
+        , m_return_type(return_type)
+    {
+        is_extern = true;
     }
 
     inline virtual std::any accept(IStmtVisitor& visitor) override
@@ -308,6 +325,27 @@ public:
     inline virtual std::any accept(IStmtVisitor& visitor)
     {
         return visitor.visit_break_stmt(this);
+    }
+};
+
+class ExternStmt : public Stmt {
+public:
+    Token& m_extern_token;
+    Token& m_symbol_name;
+    FuncStmt* m_june_func;
+
+    inline ExternStmt(Token& extern_token, Token& symbol_name, FuncStmt* june_func)
+        : m_extern_token(extern_token)
+        , m_symbol_name(symbol_name)
+        , m_june_func(june_func)
+    {
+    }
+
+    virtual ~ExternStmt() = default;
+
+    inline virtual std::any accept(IStmtVisitor& visitor)
+    {
+        return visitor.visit_extern_stmt(this);
     }
 };
 

@@ -345,6 +345,7 @@ std::any jl::CodeGenerator::visit_call_expr(Call* expr)
         args.push_back(arg_var);
     }
 
+
     const auto ret_var = m_chunk->create_temp_var(func_chunk.return_type);
     m_chunk->write_call(
         OpCode::CALL,
@@ -352,6 +353,7 @@ std::any jl::CodeGenerator::visit_call_expr(Call* expr)
         *func_name,
         ret_var,
         std::move(args),
+    func_chunk.is_extern,
         m_chunk->get_last_line());
 
     return ret_var;
@@ -672,13 +674,19 @@ std::any jl::CodeGenerator::visit_func_stmt(FuncStmt* stmt)
         parameter_vars.push_back(var);
     }
 
-    // Compile the function body
-    for (auto s : stmt->m_body) {
-        compile(s);
-    }
+    if (stmt->is_extern) {
+        // Extern function declaration
+        m_chunk->is_extern = true;
+    } else {
+        // Normal june function
+        // Compile the function body
+        for (auto s : stmt->m_body) {
+            compile(s);
+        }
 
-    // Write a return statement if the last ir written is not a return
-    m_chunk->write_control(OpCode::RETURN, default_operand(return_type), m_chunk->get_last_line());
+        // Write a return statement if the last ir written is not a return
+        m_chunk->write_control(OpCode::RETURN, default_operand(return_type), m_chunk->get_last_line());
+    }
 
     pop_chunk();
 
@@ -717,6 +725,12 @@ std::any jl::CodeGenerator::visit_return_stmt(ReturnStmt* stmt)
         m_chunk->write_control(OpCode::RETURN, Nil {}, m_chunk->get_last_line());
     }
 
+    return empty_var();
+}
+
+std::any jl::CodeGenerator::visit_extern_stmt(ExternStmt* stmt)
+{
+    compile(stmt->m_june_func);
     return empty_var();
 }
 

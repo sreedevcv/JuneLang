@@ -50,6 +50,7 @@ public:
         std::string func_name,
         TempVar dest,
         std::vector<TempVar>&& args,
+        bool is_extern,
         uint32_t line);
 
     const std::vector<Ir>& get_ir() const;
@@ -80,6 +81,8 @@ public:
     std::string m_name;
     OperandType return_type { OperandType::UNASSIGNED };
     std::vector<std::pair<uint32_t, std::string>> m_registered_functions;
+    // Mark the chunk as an extern func or not
+    bool is_extern = false;
 
 private:
     std::string m_file_name { "test" };
