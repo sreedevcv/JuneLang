@@ -1,12 +1,14 @@
 #pragma once
 
-#include "Chunk.hpp"
-#include "DataSection.hpp"
-#include "Operand.hpp"
 #include <cstdint>
 #include <map>
 #include <stack>
 #include <vector>
+
+#include "CFFI.hpp"
+#include "Chunk.hpp"
+#include "DataSection.hpp"
+#include "Operand.hpp"
 
 namespace jl {
 
@@ -30,6 +32,9 @@ public:
 
 private:
     std::stack<Operand> m_stack;
+    bool debug_run = false;
+
+    CFFI m_ffi { "/lib64/libc.so.6" };
 
     InterpretResult run(
         const Chunk& chunk,
@@ -64,7 +69,12 @@ private:
         const Ir& ir,
         const std::vector<Operand>& temp_vars);
 
-    bool debug_run = false;
+    Operand run_function(
+        const CallIr& ir,
+        const Chunk& func_chunk,
+        const std::map<std::string, Chunk>& chunk_map,
+        DataSection& data_section,
+        const std::vector<Operand>& temp_vars);
 };
 
 }

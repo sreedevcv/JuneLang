@@ -23,11 +23,13 @@ add_library(JuneInterpreter
     compiler/VariableManager.cpp
     compiler/Flatten.cpp
     compiler/DataSection.cpp
+    compiler/CFFI.cpp
 )
 
 target_link_libraries(
     JuneInterpreter
     stdc++exp
+    ffi
 )
 
 target_include_directories(JuneInterpreter

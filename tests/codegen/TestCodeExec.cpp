@@ -454,3 +454,93 @@ TEST_CASE("Calling Global Functions", "[Codegen]")
         ]
 )");
 }
+
+TEST_CASE("QuickSort", "[Codegen]")
+{
+    using namespace jl;
+
+    const auto [temp_vars, var_map] = compile(R"(
+        var list = {5, 1, 7, 3, 9, 0, 3, 4, 2, 8, 6};
+
+        fun is_sorted(list: int_ptr, size: int): bool [
+            for (var i = 0; i < size - 1; i += 1) [
+                if (list[i] > list[i + 1]) [
+                    return false;
+                ]
+            ]
+
+            return true;
+        ]
+
+        fun swap(list: int_ptr, i: int, j: int) [
+            var temp = list[i];
+            list[i] = list[j];
+            list[j] = temp;
+        ]
+
+        fun partition(list: int_ptr, start: int, end: int): int [
+            var pivot = list[end];
+            var limit = start - 1;
+
+            for (var i = start; i <= end - 1; i += 1) [
+                if (list[i] < pivot) [
+                    limit += 1;
+                    swap(list, i, limit);
+                ]
+            ]
+
+            swap(list, limit + 1, end);
+
+            return limit + 1;
+        ]
+
+        fun __quickSortImpl(list: int_ptr, start: int, end: int) [
+            if (start < end) [
+                var pivot = partition(list, start, end);
+                __quickSortImpl(list, start, pivot - 1);
+                __quickSortImpl(list, pivot + 1, end);
+            ]
+        ]
+
+        fun quickSort(list: int_ptr, size: int) [
+            __quickSortImpl(list, 0, size - 1);
+        ]
+
+        quickSort(list, 10);
+
+        var min = list[0];
+        var max = list[9];
+
+        var sorted = is_sorted(list, 10);
+)");
+
+    const auto is_sorted = temp_vars[var_map.at("sorted")];
+
+    REQUIRE(std::get<bool>(is_sorted) == true);
+}
+
+
+TEST_CASE("C FFI", "[Codegen]")
+{
+    using namespace jl;
+
+    const auto [temp_vars, var_map] = compile(R"(
+        extern "puts" as puts(s: char_ptr);
+        extern "strcmp" as strCmp(s1: char_ptr, s2: char_ptr): int;
+        extern "atoi" as strToInt(str: char_ptr): int;
+
+        puts("Hello World");
+
+        var is_same1 = strCmp("Hello","Hai") == 0;
+        var is_same2 = strCmp("Hello","Hello") == 0;
+        var ten = strToInt("10");
+)");
+
+    const auto is_same1 = temp_vars[var_map.at("is_same1")];
+    const auto is_same2 = temp_vars[var_map.at("is_same2")];
+    const auto ten = temp_vars[var_map.at("ten")];
+
+    REQUIRE(std::get<bool>(is_same1) == false);
+    REQUIRE(std::get<bool>(is_same2) == true);
+    REQUIRE(std::get<int>(ten) == 10);
+}

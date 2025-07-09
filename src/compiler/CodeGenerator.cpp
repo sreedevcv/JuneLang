@@ -345,7 +345,6 @@ std::any jl::CodeGenerator::visit_call_expr(Call* expr)
         args.push_back(arg_var);
     }
 
-
     const auto ret_var = m_chunk->create_temp_var(func_chunk.return_type);
     m_chunk->write_call(
         OpCode::CALL,
@@ -353,7 +352,7 @@ std::any jl::CodeGenerator::visit_call_expr(Call* expr)
         *func_name,
         ret_var,
         std::move(args),
-    func_chunk.is_extern,
+        func_chunk.extern_symbol,
         m_chunk->get_last_line());
 
     return ret_var;
@@ -676,7 +675,6 @@ std::any jl::CodeGenerator::visit_func_stmt(FuncStmt* stmt)
 
     if (stmt->is_extern) {
         // Extern function declaration
-        m_chunk->is_extern = true;
     } else {
         // Normal june function
         // Compile the function body
@@ -731,6 +729,10 @@ std::any jl::CodeGenerator::visit_return_stmt(ReturnStmt* stmt)
 std::any jl::CodeGenerator::visit_extern_stmt(ExternStmt* stmt)
 {
     compile(stmt->m_june_func);
+    const auto& symbol_name = std::get<std::string>(stmt->m_symbol_name.get_value()->get());
+    // Get the just compiled function
+    auto& chunk = m_chunk_list.at(stmt->m_june_func->m_name.get_lexeme());
+    chunk.extern_symbol = symbol_name;
     return empty_var();
 }
 

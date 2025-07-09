@@ -3,6 +3,7 @@
 #include "OpCode.hpp"
 #include "Operand.hpp"
 
+#include <optional>
 #include <string>
 #include <variant>
 #include <vector>
@@ -38,7 +39,7 @@ struct CallIr {
     TempVar func_var;
     std::string func_name;
     std::vector<TempVar> args;
-    bool is_extern;
+    std::optional<std::string> extern_symbol;
     TempVar return_var;
 };
 

@@ -182,16 +182,7 @@ uint32_t jl::VM::execute_ir(
     if (ir.opcode() == OpCode::CALL) {
         const auto& cir = ir.call();
         const auto& func_chunk = chunk_map.at(cir.func_name);
-
-        std::vector<Operand> stack_vars { func_chunk.get_max_allocated_temps() };
-        for (int i = 0; i < cir.args.size(); i++) {
-            // First temp var will always be the fucntion itself
-            stack_vars[i + 1] = temp_vars[cir.args[i].idx];
-        }
-
-        run(func_chunk, chunk_map, stack_vars, data_section);
-        const auto ret_value = m_stack.top();
-        temp_vars[cir.return_var.idx] = ret_value;
+        temp_vars[cir.return_var.idx] = run_function(cir, func_chunk, chunk_map, data_section, temp_vars);
         return pc + 1;
     }
 
@@ -417,4 +408,38 @@ void jl::VM::debug_print(
 
     char enter;
     std::cin.get();
+}
+
+jl::Operand jl::VM::run_function(
+    const CallIr& ir,
+    const Chunk& func_chunk,
+    const std::map<std::string, Chunk>& chunk_map,
+    DataSection& data_section,
+    const std::vector<Operand>& temp_vars)
+{
+    if (!func_chunk.extern_symbol) {
+        std::vector<Operand> stack_vars { func_chunk.get_max_allocated_temps() };
+        for (int i = 0; i < ir.args.size(); i++) {
+            // First temp var will always be the fucntion itself
+            stack_vars[i + 1] = temp_vars[ir.args[i].idx];
+        }
+
+        run(func_chunk, chunk_map, stack_vars, data_section);
+        const auto ret_value = m_stack.top();
+
+        return ret_value;
+    } else {
+        std::vector<Operand> args;
+        for (int i = 0; i < ir.args.size(); i++) {
+            args.push_back(temp_vars[ir.args[i].idx]);
+        }
+
+        Operand ret_value = m_ffi.call(
+            *func_chunk.extern_symbol,
+            args,
+            func_chunk.return_type,
+            data_section.data());
+
+        return ret_value;
+    }
 }

@@ -1,0 +1,2 @@
+extern "puts" as puts(s: char_ptr);
+extern "strcmp" as strcmp(s1: char_ptr, s2: char_ptr): int;

@@ -13,6 +13,7 @@ public:
     ptr_type add_data(size_t size);
 
     std::ostream& disassemble(std::ostream& out);
+    void* data();
 
     template <typename T>
     T read_data(ptr_type offset)

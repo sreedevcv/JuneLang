@@ -61,9 +61,11 @@ int main(int argc, char const* argv[])
         return 1;
     }
 
+    std::println("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~DISASSEMBLY~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
+
     codegen.disassemble();
 
-    std::println("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
+    std::println("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~PROGRAM-OUTPUT~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
 
     const auto chunk = codegen.get_root_chunk();
 
@@ -71,6 +73,8 @@ int main(int argc, char const* argv[])
     const auto [res, vars] = is_interactive
         ? vm.interactive_execute(chunk, chunk_map, data_section)
         : vm.run(chunk, chunk_map, data_section);
+
+    std::println("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~LOCALS/DATA~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
 
     for (const auto& [name, temp] : chunk.get_variable_map()) {
         std::println("{}\t{}", name, jl::to_string(vars[temp]));

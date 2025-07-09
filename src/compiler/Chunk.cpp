@@ -321,7 +321,7 @@ void jl::Chunk::write_call(
     std::string func_name,
     TempVar dest,
     std::vector<TempVar>&& args,
-    bool is_extern,
+    std::optional<std::string> extern_symbol,
     uint32_t line)
 {
     m_ir.push_back(Ir {
@@ -330,7 +330,7 @@ void jl::Chunk::write_call(
             .func_var = func_var,
             .func_name = std::move(func_name),
             .args = std::move(args),
-            .is_extern = is_extern,
+            .extern_symbol = extern_symbol,
             .return_var = dest,
         } });
 

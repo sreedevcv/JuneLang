@@ -11,6 +11,8 @@ jl::ptr_type jl::DataSection::add_data(const std::string& data)
         m_data.push_back(c);
     }
 
+    m_data.push_back('\0');
+
     return offset;
 }
 
@@ -63,4 +65,9 @@ std::ostream& jl::DataSection::disassemble(std::ostream& out)
     }
 
     return out;
+}
+
+void* jl::DataSection::data()
+{
+    return m_data.data();
 }

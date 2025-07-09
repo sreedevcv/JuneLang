@@ -1,4 +1,9 @@
 extern "puts" as puts(s: char_ptr);
+extern "strcmp" as strCmp(s1: char_ptr, s2: char_ptr): int;
+extern "atoi" as strToInt(str: char_ptr): int;
 
-fun a() [
-]
+puts("Hello World");
+
+var is_same1 = strCmp("Hello","Hai") == 0;
+var is_same2 = strCmp("Hello","Hello") == 0;
+var ten = strToInt("10");
