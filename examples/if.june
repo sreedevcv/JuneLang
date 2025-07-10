@@ -1,11 +1,13 @@
-extern "puts" as puts(s: char_ptr);
-extern "gets" as gets(s: char_ptr);
-extern "atoi" as strToInt(str: char_ptr): int;
+extern "puts" as puts(s: [char]);
+extern "gets" as gets(s: [char]);
+extern "atoi" as strToInt(str: [char]): int;
 
-var age_str = "aaaaaaaaaaaa";
-gets(age_str);
+var ageStr: [char;10];
 
-var age = strToInt(age_str);
+puts("Enter your age:");
+gets(ageStr);
+
+var age = strToInt(ageStr);
 
 if (age < 18) [
     puts("You are not an adult :(");

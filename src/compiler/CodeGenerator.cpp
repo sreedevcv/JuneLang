@@ -497,7 +497,8 @@ std::any jl::CodeGenerator::visit_super_expr(Super* expr) { }
 
 std::any jl::CodeGenerator::visit_var_stmt(VarStmt* stmt)
 {
-    Operand operand;
+    std::optional<Operand> operand;
+    const auto last_offset = data_section.get_offset();
     if (stmt->m_initializer != nullptr) {
         operand = compile(stmt->m_initializer);
     }
@@ -507,6 +508,44 @@ std::any jl::CodeGenerator::visit_var_stmt(VarStmt* stmt)
         const auto type = from_typeinfo(*(stmt->m_data_type));
         if (type) {
             type_name = *type;
+
+            // Check if array, if so then allocate space for data
+            if (stmt->m_data_type->is_array) {
+                const auto current_offset = data_section.get_offset();
+                const int32_t total_allocated = current_offset - last_offset;
+                const auto request_space = stmt->m_data_type->size.value_or(0) * size_of_type(type_name);
+                int32_t space_to_allocate;
+
+                if (total_allocated > 0) {
+                    // RHS has allocated something
+                    space_to_allocate = stmt->m_data_type->size
+                        ? request_space - total_allocated
+                        : 0; // Just a slice declaration with the RHS already allocated Eg. var a: [char] = "hai";
+                } else {
+                    // RHS has allocated nothing
+                    space_to_allocate = request_space;
+
+                    // Eg: var a: [int;10];
+                    if (space_to_allocate > 0) {
+                        // Need to allocate all the data
+                        const auto list_start_offset = data_section.add_data(space_to_allocate);
+                        const auto list_var = m_chunk->create_ptr_var(type_name, list_start_offset);
+                        space_to_allocate = 0; // To prevent further allocation down the line
+                        operand = list_var;
+                    }
+                }
+
+                if (space_to_allocate > 0) {
+                    // Remaining allocation
+                    data_section.add_data(space_to_allocate);
+                } else if (space_to_allocate < 0) {
+                    ErrorHandler::error(
+                        m_file_name,
+                        stmt->m_name.get_line(),
+                        "Invalid array size. Check array size or elements in array");
+                }
+            }
+
         } else {
             ErrorHandler::error(m_file_name, stmt->m_name.get_line(), "Unknown data type");
         }
@@ -518,8 +557,8 @@ std::any jl::CodeGenerator::visit_var_stmt(VarStmt* stmt)
         return empty_var();
     }
 
-    if (stmt->m_initializer != nullptr) {
-        m_chunk->write_with_dest(OpCode::MOVE, operand, *var, stmt->m_name.get_line());
+    if (operand) {
+        m_chunk->write_with_dest(OpCode::MOVE, *operand, *var, stmt->m_name.get_line());
     }
 
     return *var;

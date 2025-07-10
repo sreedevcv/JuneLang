@@ -544,3 +544,20 @@ TEST_CASE("C FFI", "[Codegen]")
     REQUIRE(std::get<bool>(is_same2) == true);
     REQUIRE(std::get<int>(ten) == 10);
 }
+
+TEST_CASE("Typed array declaration", "[Codegen]")
+{
+    using namespace jl;
+
+    const auto [temp_vars, var_map] = compile(R"(
+        var str: [char; 20] = "Malayalam";
+
+        var a: [int; 10];
+
+        var b: [float; 1] = {1.0};
+
+        var bool = {true, false, true};
+
+        var c: [char] = {'1', 'a', 'k'};
+)");
+}

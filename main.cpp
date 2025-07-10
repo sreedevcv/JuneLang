@@ -27,10 +27,9 @@ int main(int argc, char const* argv[])
         is_interactive = true;
     }
 
-    std::string file { argv[1] };
-    jl::Lexer lexer(file);
+    std::string file_name { argv[1] };
+    jl::Lexer lexer(file_name);
 
-    std::string file_name = "examples/EList.jun";
 
     lexer.scan();
 

@@ -12,8 +12,10 @@ public:
     ptr_type get_offset() const;
     ptr_type add_data(size_t size);
 
+    std::optional<ptr_type> get_last_offset();
     std::ostream& disassemble(std::ostream& out);
     void* data();
+
 
     template <typename T>
     T read_data(ptr_type offset)
@@ -30,5 +32,6 @@ public:
 
 private:
     std::vector<uint8_t> m_data;
+    std::optional<ptr_type> m_last_offset;
 };
 }

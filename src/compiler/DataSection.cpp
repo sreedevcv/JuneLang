@@ -2,10 +2,12 @@
 
 #include <iomanip>
 #include <ios>
+#include <optional>
 
 jl::ptr_type jl::DataSection::add_data(const std::string& data)
 {
     const auto offset = m_data.size();
+    m_last_offset = offset;
 
     for (const auto c : data) {
         m_data.push_back(c);
@@ -24,6 +26,7 @@ jl::ptr_type jl::DataSection::get_offset() const
 jl::ptr_type jl::DataSection::add_data(size_t size)
 {
     const auto offset = m_data.size();
+    m_last_offset = offset;
 
     for (int i = 0; i < size; i++) {
         m_data.push_back(0);
@@ -70,4 +73,15 @@ std::ostream& jl::DataSection::disassemble(std::ostream& out)
 void* jl::DataSection::data()
 {
     return m_data.data();
+}
+
+std::optional<jl::ptr_type> jl::DataSection::get_last_offset()
+{
+    const auto ret = m_last_offset;
+
+    if (m_last_offset) {
+        m_last_offset = std::nullopt;
+    }
+
+    return ret;
 }

@@ -7,11 +7,7 @@
 #include "Lexer.hpp"
 #include "Parser.hpp"
 #include "Resolver.hpp"
-#include <utility>
 
-// static std::pair<
-//     std::vector<jl::Operand>,
-//     std::unordered_map<std::string, uint32_t>>
 void compile(const char* source_code)
 {
     using namespace jl;
@@ -171,3 +167,22 @@ TEST_CASE("Calling non function", "[Codegen Fail]")
 //         hai();
 // )");
 // }
+
+TEST_CASE("Incorrect array size 1", "[Codegen Fail]")
+{
+    using namespace jl;
+
+    compile(R"( 
+        var str: [char; 0] = "Malayalam";
+    )");
+}
+
+
+TEST_CASE("Incorrect array type 1", "[Codegen Fail]")
+{
+    using namespace jl;
+
+    compile(R"( 
+        var bool: [int; 3] = {true, false, true};
+    )");
+}

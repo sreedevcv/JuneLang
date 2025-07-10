@@ -750,7 +750,7 @@ std::optional<jl::TypeInfo> jl::Parser::parse_type_info()
             auto& type_name = consume(Token::IDENTIFIER, "Expected a data-type");
 
             if (match({ Token::SEMI_COLON })) {
-                auto& array_size = consume(Token::INT, "Expected a array size");
+                auto& array_size = consume(Token::INT, "Expected a non-negative array size");
                 consume(Token::RIGHT_SQUARE, "Expected ] after list type");
 
                 const auto size = std::get<int>(array_size.get_value()->get());
