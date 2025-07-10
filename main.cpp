@@ -1,3 +1,4 @@
+#include "ArgParser.hpp"
 #include "CodeGenerator.hpp"
 #include "ErrorHandler.hpp"
 #include "Interpreter.hpp"
@@ -8,28 +9,22 @@
 #include "VM.hpp"
 
 #include <cassert>
-#include <cstdlib>
-#include <cstring>
 #include <iostream>
 #include <print>
 #include <string>
 
 int main(int argc, char const* argv[])
 {
-    bool is_interactive = false;
 
-    if (argc < 2) {
-        std::println("No file provided");
-        std::exit(1);
-    }
+    jl::ArgParser args_parser(argc, argv);
+    const auto params = args_parser.parse();
 
-    if (argc >= 3 && std::strcmp(argv[2], "-i") == 0) {
-        is_interactive = true;
+    if (!params) {
+        return 0;
     }
 
     std::string file_name { argv[1] };
     jl::Lexer lexer(file_name);
-
 
     lexer.scan();
 
@@ -60,26 +55,28 @@ int main(int argc, char const* argv[])
         return 1;
     }
 
-    std::println("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~DISASSEMBLY~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
-
-    codegen.disassemble();
-
-    std::println("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~PROGRAM-OUTPUT~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
+    if (params->debug) {
+        std::println("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~DISASSEMBLY~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
+        codegen.disassemble();
+        std::println("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~PROGRAM-OUTPUT~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
+    }
 
     const auto chunk = codegen.get_root_chunk();
 
     jl::VM vm;
-    const auto [res, vars] = is_interactive
+    const auto [res, vars] = params->step_by_step
         ? vm.interactive_execute(chunk, chunk_map, data_section)
         : vm.run(chunk, chunk_map, data_section);
 
-    std::println("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~LOCALS/DATA~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
+    if (params->debug || params->step_by_step) {
+        std::println("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~LOCALS/DATA~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
 
-    for (const auto& [name, temp] : chunk.get_variable_map()) {
-        std::println("{}\t{}", name, jl::to_string(vars[temp]));
+        for (const auto& [name, temp] : chunk.get_variable_map()) {
+            std::println("{}\t{}", name, jl::to_string(vars[temp]));
+        }
+
+        data_section.disassemble(std::cout);
     }
-
-    data_section.disassemble(std::cout);
 
     return 0;
 }

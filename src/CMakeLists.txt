@@ -24,6 +24,7 @@ add_library(JuneInterpreter
     compiler/Flatten.cpp
     compiler/DataSection.cpp
     compiler/CFFI.cpp
+    ArgParser.cpp
 )
 
 target_link_libraries(

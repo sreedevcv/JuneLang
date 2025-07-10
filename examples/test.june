@@ -2,55 +2,23 @@ extern "puts" as puts(s: [char]);
 extern "gets" as gets(s: [char]);
 extern "atoi" as strToInt(str: [char]): int;
 extern "sprintf" as intToStr(str: [char], fmt: [char], num: int);
+extern "open" as openFile(path: [char], flags: int): int;
+extern "read" as readFile(fd: int, buff: [char], size: int): int;
 
-fun read_num(): int [
-    var input: [char; 10];
+var RD_ONLY = 0;
 
-    gets(input);
+var fd = openFile("../examples/if.june", 0);
 
-    var size = strToInt(input);
-    return size;
-]
-
-fun print_num(num: int) [
-    var output: [char; 10];
-    intToStr(output, "%d", num);
-    puts(output);
-]
-
-fun read_matrix(mat: [int], count: int) [
-    for (var i = 0; i < count; i += 1) [
-        mat[i] = read_num();
+if (fd > 0) [
+    var buff: [char; 100];
+    var bytesRead = readFile(fd, buff, 100);
+    
+    if (bytesRead > 0) [
+        puts(buff);
+        puts("Bytes read");
+        intToStr(buff, "%d", bytesRead);
+        puts(buff);
     ]
-]
-
-fun matrix_sum(mat1: [int], mat2: [int], result: [int], size: int) [
-    for (var i = 0; i  < `; i += 1) [
-        result[i] = mat1[i] + mat2[i];
-    ]
-]
-
-puts("Enter matrix size: ");
-var size = read_num();
-
-if (size <= 0) [
-    puts("Please enter a +ve number");
 ] else [
-    var total_nums_to_read = size * size;
-    var mat1: [int; 10];
-    var mat2: [int; 10];
-    var mat3: [int; 10];
-
-    puts("Enter 1st matrix");
-    read_matrix(mat1, total_nums_to_read);
-
-    puts("Enter 2nd matrix");
-    read_matrix(mat2, total_nums_to_read);
-
-    matrix_sum(mat1, mat2, mat3, size);
-
-    puts("Sum of matrices:");
-    for (var i = 0; i < total_nums_to_read; i += 1) [
-        print_num(mat3[i]);
-    ]
+    puts("Failed to read file");
 ]
