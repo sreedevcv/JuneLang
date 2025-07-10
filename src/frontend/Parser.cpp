@@ -4,7 +4,9 @@
 #include "Expr.hpp"
 #include "Stmt.hpp"
 #include "Token.hpp"
+#include "TypeInfo.hpp"
 #include "Value.hpp"
+#include <optional>
 
 jl::Parser::Parser(std::vector<Token>& tokens, std::string& file_name)
     : m_tokens(tokens)
@@ -494,9 +496,7 @@ jl::Stmt* jl::Parser::var_declaration(bool for_each)
     Token* type_name = nullptr;
 
     // Variable with type declaration
-    if (match({ Token::COLON })) {
-        type_name = &consume(Token::IDENTIFIER, "Expected a data-type");
-    }
+    auto type_info = parse_type_info();
 
     if (match({ Token::EQUAL })) {
         initializer = expression();
@@ -511,7 +511,7 @@ jl::Stmt* jl::Parser::var_declaration(bool for_each)
         consume(Token::SEMI_COLON, "Expected ; after variable declaration");
     }
 
-    Stmt* var = new VarStmt(name, initializer, type_name);
+    Stmt* var = new VarStmt(name, initializer, std::move(type_info));
     m_allocated_refs.push_back(var);
     return var;
 }
@@ -702,7 +702,7 @@ jl::FuncStmt* jl::Parser::function_declaration()
 
     consume(Token::LEFT_PAR, "Expected ( after fun name");
     std::vector<Token*> parameters;
-    std::vector<Token*> data_types;
+    std::vector<TypeInfo> data_types;
 
     if (!check(Token::RIGHT_PAR)) {
         do {
@@ -711,12 +711,16 @@ jl::FuncStmt* jl::Parser::function_declaration()
             }
 
             Token& param = consume(Token::IDENTIFIER, "Expected parameter name here");
-            consume(Token::COLON, "Expected a colon after parameter name");
-            Token& data_type = consume(Token::IDENTIFIER, "Expected data type here after :");
+
+            auto type_info = parse_type_info();
+
+            if (!type_info) {
+                ErrorHandler::error(m_file_name, name.get_line(), "Expected type after param name");
+                type_info = {};
+            }
 
             parameters.push_back(&param);
-            data_types.push_back(&data_type);
-
+            data_types.emplace_back(*type_info);
         } while (match({ Token::COMMA }));
     }
 
@@ -727,7 +731,43 @@ jl::FuncStmt* jl::Parser::function_declaration()
         return_type = &consume(Token::IDENTIFIER, "Expected return data type here after :");
     }
 
-    FuncStmt* func = new FuncStmt(name, parameters, data_types, return_type);
+    FuncStmt* func = new FuncStmt(name, parameters, std::move(data_types), return_type);
     m_allocated_refs.push_back(func);
     return func;
+}
+
+std::optional<jl::TypeInfo> jl::Parser::parse_type_info()
+{
+    if (match({ Token::COLON })) {
+        const auto& next = peek();
+
+        if (next.get_tokentype() == Token::IDENTIFIER) {
+            auto& type_name = consume(Token::IDENTIFIER, "Expected a data-type");
+            return TypeInfo { .name = type_name.get_lexeme(), .is_array = false };
+        } else if (next.get_tokentype() == Token::LEFT_SQUARE) {
+            consume(Token::LEFT_SQUARE, "Expected [");
+
+            auto& type_name = consume(Token::IDENTIFIER, "Expected a data-type");
+
+            if (match({ Token::SEMI_COLON })) {
+                auto& array_size = consume(Token::INT, "Expected a array size");
+                consume(Token::RIGHT_SQUARE, "Expected ] after list type");
+
+                const auto size = std::get<int>(array_size.get_value()->get());
+                return TypeInfo {
+                    .name = type_name.get_lexeme(),
+                    .is_array = true,
+                    .size = size,
+                };
+            }
+
+            consume(Token::RIGHT_SQUARE, "Expected ] after list type");
+            return TypeInfo {
+                .name = type_name.get_lexeme(),
+                .is_array = true,
+            };
+        }
+    }
+
+    return std::nullopt;
 }

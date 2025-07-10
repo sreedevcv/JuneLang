@@ -503,12 +503,12 @@ std::any jl::CodeGenerator::visit_var_stmt(VarStmt* stmt)
     }
 
     OperandType type_name = OperandType::UNASSIGNED;
-    if (stmt->m_data_type != nullptr) {
-        const auto type = from_str(stmt->m_data_type->get_lexeme());
+    if (stmt->m_data_type) {
+        const auto type = from_typeinfo(*(stmt->m_data_type));
         if (type) {
             type_name = *type;
         } else {
-            ErrorHandler::error(m_file_name, stmt->m_data_type->get_line(), "Unknown data type");
+            ErrorHandler::error(m_file_name, stmt->m_name.get_line(), "Unknown data type");
         }
     }
 
@@ -660,13 +660,13 @@ std::any jl::CodeGenerator::visit_func_stmt(FuncStmt* stmt)
 
     // Add function parameters to chunk
     for (int i = 0; i < stmt->m_params.size(); i++) {
-        const auto type = from_str(stmt->m_data_types[i]->get_lexeme());
+        const auto type = from_typeinfo(stmt->m_data_types[i]);
         auto param_type = OperandType::UNASSIGNED;
 
         if (type) {
             param_type = *type;
         } else {
-            ErrorHandler::error(m_file_name, stmt->m_data_types[i]->get_line(), "Unknown data type");
+            ErrorHandler::error(m_file_name, stmt->m_params[i]->get_line(), "Unknown data type");
         }
 
         const auto var = m_chunk->add_input_parameter(stmt->m_params[i]->get_lexeme(), param_type);

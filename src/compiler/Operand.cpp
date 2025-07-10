@@ -256,3 +256,34 @@ size_t jl::size_of_type(OperandType type)
         return sizeof(ptr_type);
     }
 }
+
+std::optional<jl::OperandType> jl::from_typeinfo(const TypeInfo& type_info)
+{
+    if (!type_info.is_array) {
+        if (type_info.name == "int") {
+            return OperandType::INT;
+        } else if (type_info.name == "float") {
+            return OperandType::FLOAT;
+        } else if (type_info.name == "bool") {
+            return OperandType::BOOL;
+        } else if (type_info.name == "nil") {
+            return OperandType::NIL;
+        } else if (type_info.name == "char") {
+            return OperandType::CHAR;
+        }
+    } else {
+        if (type_info.name == "int") {
+            return OperandType::INT_PTR;
+        } else if (type_info.name == "float") {
+            return OperandType::FLOAT_PTR;
+        } else if (type_info.name == "bool") {
+            return OperandType::BOOL_PTR;
+        } else if (type_info.name == "nil") {
+            return OperandType::PTR;
+        } else if (type_info.name == "char") {
+            return OperandType::CHAR_PTR;
+        }
+    }
+
+    return std::nullopt;
+}

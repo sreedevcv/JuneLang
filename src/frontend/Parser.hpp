@@ -3,6 +3,8 @@
 #include "Expr.hpp"
 #include "Stmt.hpp"
 #include "Token.hpp"
+#include "TypeInfo.hpp"
+
 #include <initializer_list>
 
 namespace jl {
@@ -59,5 +61,6 @@ private:
     Token& previous();
     Token& consume(Token::TokenType type, const char* msg);
     Expr* parse_list();
+    std::optional<TypeInfo> parse_type_info();
 };
 } // namespace jl

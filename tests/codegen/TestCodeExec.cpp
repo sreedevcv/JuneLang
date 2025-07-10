@@ -250,7 +250,7 @@ TEST_CASE("Index Get: Frequency Count", "[Codegen]")
     using namespace jl;
 
     const auto [temp_vars, var_map] = compile(R"(
-        fun find_frequency(str: char_ptr, size: int, target: char): int [
+        fun find_frequency(str: [char], size: int, target: char): int [
             var count = 0;
 
             for (var i = 0; i < size; i += 1) [
@@ -262,7 +262,7 @@ TEST_CASE("Index Get: Frequency Count", "[Codegen]")
             return count;
         ]
 
-        var str = "Malayalam";
+        var str: [char] = "Malayalam";
         var size = 9;
         var t1 = 'y';
         var t2 = 'a';
@@ -287,7 +287,7 @@ TEST_CASE("Index Set: Replace Char Count", "[Codegen]")
     using namespace jl;
 
     const auto [temp_vars, var_map] = compile(R"(
-        fun replace_char(str: char_ptr, size: int, target: char, new_value: char): int [
+        fun replace_char(str: [char], size: int, target: char, new_value: char): int [
             var count = 0;
 
             for (var i = 0; i < size; i += 1) [
@@ -376,7 +376,7 @@ TEST_CASE("Int and Float Pointers in functions", "[Codegen]")
     const auto [temp_vars, var_map] = compile(R"(
         var int_list = {1, 2, 3 + 1, 4, 5};
 
-        fun sum_int(list: int_ptr, size: int): int [
+        fun sum_int(list: [int], size: int): int [
             var s = 0;
 
             for (var i = 0; i < size; i += 1) [
@@ -392,7 +392,7 @@ TEST_CASE("Int and Float Pointers in functions", "[Codegen]")
 
         var float_list = {1.0, 2.1, 3.2 + 1.0, 4.5, 5.6};
 
-        fun sum_float(list: float_ptr, size: int): float [
+        fun sum_float(list: [float], size: int): float [
             var s = 0.0;
 
             for (var i = 0; i < size; i += 1) [
@@ -462,7 +462,7 @@ TEST_CASE("QuickSort", "[Codegen]")
     const auto [temp_vars, var_map] = compile(R"(
         var list = {5, 1, 7, 3, 9, 0, 3, 4, 2, 8, 6};
 
-        fun is_sorted(list: int_ptr, size: int): bool [
+        fun is_sorted(list: [int], size: int): bool [
             for (var i = 0; i < size - 1; i += 1) [
                 if (list[i] > list[i + 1]) [
                     return false;
@@ -472,13 +472,13 @@ TEST_CASE("QuickSort", "[Codegen]")
             return true;
         ]
 
-        fun swap(list: int_ptr, i: int, j: int) [
+        fun swap(list: [int], i: int, j: int) [
             var temp = list[i];
             list[i] = list[j];
             list[j] = temp;
         ]
 
-        fun partition(list: int_ptr, start: int, end: int): int [
+        fun partition(list: [int], start: int, end: int): int [
             var pivot = list[end];
             var limit = start - 1;
 
@@ -494,7 +494,7 @@ TEST_CASE("QuickSort", "[Codegen]")
             return limit + 1;
         ]
 
-        fun __quickSortImpl(list: int_ptr, start: int, end: int) [
+        fun __quickSortImpl(list: [int], start: int, end: int) [
             if (start < end) [
                 var pivot = partition(list, start, end);
                 __quickSortImpl(list, start, pivot - 1);
@@ -502,7 +502,7 @@ TEST_CASE("QuickSort", "[Codegen]")
             ]
         ]
 
-        fun quickSort(list: int_ptr, size: int) [
+        fun quickSort(list: [int], size: int) [
             __quickSortImpl(list, 0, size - 1);
         ]
 
@@ -525,9 +525,9 @@ TEST_CASE("C FFI", "[Codegen]")
     using namespace jl;
 
     const auto [temp_vars, var_map] = compile(R"(
-        extern "puts" as puts(s: char_ptr);
-        extern "strcmp" as strCmp(s1: char_ptr, s2: char_ptr): int;
-        extern "atoi" as strToInt(str: char_ptr): int;
+        extern "puts" as puts(s: [char]);
+        extern "strcmp" as strCmp(s1: [char], s2: [char]): int;
+        extern "atoi" as strToInt(str: [char]): int;
 
         puts("Hello World");
 

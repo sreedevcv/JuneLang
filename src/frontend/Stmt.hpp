@@ -3,6 +3,8 @@
 #include "Expr.hpp"
 #include "Ref.hpp"
 #include "Token.hpp"
+#include "TypeInfo.hpp"
+#include <optional>
 #include <vector>
 
 namespace jl {
@@ -88,12 +90,12 @@ class VarStmt : public Stmt {
 public:
     Token& m_name;
     Expr* m_initializer;
-    Token* m_data_type;
+    std::optional<TypeInfo> m_data_type;
 
-    inline VarStmt(Token& name, Expr* initializer, Token* data_type)
+    inline VarStmt(Token& name, Expr* initializer, std::optional<TypeInfo>&& data_type)
         : m_name(name)
         , m_initializer(initializer)
-        , m_data_type(data_type)
+        , m_data_type(std::move(data_type))
     {
     }
 
@@ -194,7 +196,7 @@ class FuncStmt : public Stmt {
 public:
     Token& m_name;
     std::vector<Token*> m_params; // Should i delete these??
-    std::vector<Token*> m_data_types;
+    std::vector<TypeInfo> m_data_types;
     Token* m_return_type;
     std::vector<Stmt*> m_body;
     bool is_extern;
@@ -202,12 +204,12 @@ public:
     inline FuncStmt(
         Token& name,
         std::vector<Token*>& params,
-        std::vector<Token*> data_types,
+        std::vector<TypeInfo> data_types,
         Token* return_type,
         std::vector<Stmt*>& body)
         : m_name(name)
         , m_params(params)
-        , m_data_types(data_types)
+        , m_data_types(std::move(data_types))
         , m_return_type(return_type)
         , m_body(body)
     {
@@ -217,11 +219,11 @@ public:
     inline FuncStmt(
         Token& name,
         std::vector<Token*>& params,
-        std::vector<Token*> data_types,
+        std::vector<TypeInfo> data_types,
         Token* return_type)
         : m_name(name)
         , m_params(params)
-        , m_data_types(data_types)
+        , m_data_types(std::move(data_types))
         , m_return_type(return_type)
     {
         is_extern = true;

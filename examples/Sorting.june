@@ -1,6 +1,6 @@
 var list = {5, 1, 7, 3, 9, 0, 3, 4, 2, 8, 6};
 
-fun is_sorted(list: int_ptr, size: int): bool [
+fun is_sorted(list: [int], size: int): bool [
     for (var i = 0; i < size - 1; i += 1) [
         if (list[i] > list[i + 1]) [
             return false;
@@ -10,13 +10,13 @@ fun is_sorted(list: int_ptr, size: int): bool [
     return true;
 ]
 
-fun swap(list: int_ptr, i: int, j: int) [
+fun swap(list: [int], i: int, j: int) [
     var temp = list[i];
     list[i] = list[j];
     list[j] = temp;
 ]
 
-fun partition(list: int_ptr, start: int, end: int): int [
+fun partition(list: [int], start: int, end: int): int [
     var pivot = list[end];
     var limit = start - 1;
 
@@ -32,7 +32,7 @@ fun partition(list: int_ptr, start: int, end: int): int [
     return limit + 1;
 ]
 
-fun __quickSortImpl(list: int_ptr, start: int, end: int) [
+fun __quickSortImpl(list: [int], start: int, end: int) [
     if (start < end) [
         var pivot = partition(list, start, end);
         __quickSortImpl(list, start, pivot - 1);
@@ -40,7 +40,7 @@ fun __quickSortImpl(list: int_ptr, start: int, end: int) [
     ]
 ]
 
-fun quickSort(list: int_ptr, size: int) [
+fun quickSort(list: [int], size: int) [
     __quickSortImpl(list, 0, size - 1);
 ]
 

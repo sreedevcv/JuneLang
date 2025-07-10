@@ -1,5 +1,6 @@
 #pragma once
 
+#include "TypeInfo.hpp"
 #include <cstddef>
 #include <cstdint>
 #include <optional>
@@ -44,6 +45,7 @@ std::string to_string(const Operand& operand);
 std::string to_string(const OperandType& operand_type);
 OperandType get_type(const Operand& operand);
 std::optional<OperandType> from_str(const std::string& type_name);
+std::optional<OperandType> from_typeinfo(const TypeInfo& type_info);
 Operand default_operand(OperandType type);
 
 bool is_number(const Operand& operand);

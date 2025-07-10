@@ -1,9 +1,13 @@
-extern "puts" as puts(s: char_ptr);
-extern "strcmp" as strCmp(s1: char_ptr, s2: char_ptr): int;
-extern "atoi" as strToInt(str: char_ptr): int;
+var int_list = {1, 2, 3 + 1, 4, 5};
 
-puts("Hello World");
+fun sum_int(list: [int], size: int): int [
+    var s = 0;
 
-var is_same1 = strCmp("Hello","Hai") == 0;
-var is_same2 = strCmp("Hello","Hello") == 0;
-var ten = strToInt("10");
+    for (var i = 0; i < size; i += 1) [
+        s += list[i];
+    ]
+
+    return s;
+]
+
+var is = sum_int(int_list, 5);
