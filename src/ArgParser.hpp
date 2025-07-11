@@ -12,8 +12,8 @@ public:
 
     struct Params {
         std::string file_name;
-        bool step_by_step;
-        bool debug;
+        bool step_by_step {false};
+        bool debug {false};
     };
 
     std::optional<Params> parse();

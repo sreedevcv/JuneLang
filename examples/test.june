@@ -1,24 +1,17 @@
 extern "puts" as puts(s: [char]);
-extern "gets" as gets(s: [char]);
 extern "atoi" as strToInt(str: [char]): int;
 extern "sprintf" as intToStr(str: [char], fmt: [char], num: int);
-extern "open" as openFile(path: [char], flags: int): int;
-extern "read" as readFile(fd: int, buff: [char], size: int): int;
 
-var RD_ONLY = 0;
-
-var fd = openFile("../examples/if.june", 0);
-
-if (fd > 0) [
-    var buff: [char; 100];
-    var bytesRead = readFile(fd, buff, 100);
-    
-    if (bytesRead > 0) [
-        puts(buff);
-        puts("Bytes read");
-        intToStr(buff, "%d", bytesRead);
-        puts(buff);
+fun fibonacci(n: int): int [
+    if (n == 0 or n == 1) [
+        return n;
     ]
-] else [
-    puts("Failed to read file");
+
+    return fibonacci(n - 1) + fibonacci(n - 2);
 ]
+
+var num = fibonacci(30);
+
+var buff: [char; 100];
+intToStr(buff, "%d", num);
+puts(buff);
