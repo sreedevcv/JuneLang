@@ -261,6 +261,11 @@ std::any jl::MemoryPool::visit_index_set_expr(IndexSet* expr)
     return nullptr;
 }
 
+std::any jl::MemoryPool::visit_type_cast_expr(TypeCast* stmt)
+{
+    return nullptr;
+}
+
 // Stmt Visitors
 
 std::any jl::MemoryPool::visit_print_stmt(PrintStmt* stmt)

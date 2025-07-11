@@ -27,6 +27,7 @@ private:
     Expr* comparison();
     Expr* term();
     Expr* factor();
+    Expr* type_cast();
     Expr* unary();
     Expr* primary();
     Expr* assignment();

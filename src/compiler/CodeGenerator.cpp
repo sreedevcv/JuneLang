@@ -498,6 +498,7 @@ std::any jl::CodeGenerator::visit_jlist_expr(JList* expr)
     return empty_var();
 }
 
+std::any jl::CodeGenerator::visit_type_cast_expr(TypeCast* stmt) { }
 std::any jl::CodeGenerator::visit_get_expr(Get* expr) { }
 std::any jl::CodeGenerator::visit_set_expr(Set* expr) { }
 std::any jl::CodeGenerator::visit_this_expr(This* expr) { }

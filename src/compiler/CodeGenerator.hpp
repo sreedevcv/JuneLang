@@ -42,6 +42,7 @@ private:
     std::any visit_jlist_expr(JList* expr) override;
     std::any visit_index_get_expr(IndexGet* expr) override;
     std::any visit_index_set_expr(IndexSet* expr) override;
+    std::any visit_type_cast_expr(TypeCast* expr) override;
 
     std::any visit_print_stmt(PrintStmt* stmt) override;
     std::any visit_expr_stmt(ExprStmt* stmt) override;

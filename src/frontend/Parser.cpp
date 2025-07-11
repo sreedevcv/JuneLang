@@ -178,7 +178,7 @@ jl::Expr* jl::Parser::term()
 {
     Expr* expr = factor();
 
-    while (match({ Token::MINUS, Token::PLUS, Token::PERCENT, Token::BIT_AND, Token::BIT_OR, Token::BIT_XOR })) {
+    while (match({ Token::MINUS, Token::PLUS, Token::BIT_AND, Token::BIT_OR, Token::BIT_XOR })) {
         Token& oper = previous();
         Expr* right = factor();
         expr = new Binary(expr, &oper, right);
@@ -189,12 +189,37 @@ jl::Expr* jl::Parser::term()
 
 jl::Expr* jl::Parser::factor()
 {
+    Expr* expr = type_cast();
+
+    while (match({ Token::SLASH, Token::STAR, Token::PERCENT })) {
+        Token& oper = previous();
+        Expr* right = type_cast();
+        expr = new Binary(expr, &oper, right);
+        m_allocated_refs.push_back(expr);
+    }
+    return expr;
+}
+
+jl::Expr* jl::Parser::type_cast()
+{
     Expr* expr = unary();
 
-    while (match({ Token::SLASH, Token::STAR })) {
+    while (match({ Token::AS })) {
         Token& oper = previous();
-        Expr* right = unary();
-        expr = new Binary(expr, &oper, right);
+        auto right = parse_type_info();
+
+        if (!right) {
+            ErrorHandler::error(
+                m_file_name,
+                "parsing",
+                "type cast expr",
+                oper.get_line(),
+                "Invalid data type",
+                0);
+            right = TypeInfo {};
+        }
+
+        expr = new TypeCast(expr, *right);
         m_allocated_refs.push_back(expr);
     }
     return expr;
@@ -250,7 +275,13 @@ jl::Expr* jl::Parser::primary()
         return parse_list();
     }
 
-    ErrorHandler::error(m_file_name, "parsing", "primary expression", peek().get_line(), std::string("Expected a expression here ").append(" but found ").append(peek().get_lexeme()).c_str(), 0);
+    ErrorHandler::error(
+        m_file_name,
+        "parsing",
+        "primary expression",
+        peek().get_line(),
+        std::string("Expected a expression here ").append(" but found ").append(peek().get_lexeme()).c_str(),
+        0);
     throw "parse-exception";
 }
 
@@ -279,7 +310,14 @@ jl::Expr* jl::Parser::assignment()
             return index_set;
         }
 
-        ErrorHandler::error(m_file_name, "parsing", "assignment", equals.get_line(), "Invalid assignment target, expected a variable", 0);
+        ErrorHandler::error(
+            m_file_name,
+            "parsing",
+            "assignment",
+            equals.get_line(),
+            "Invalid assignment target, expected a variable",
+            0);
+
     } else if (match({ Token::PLUS_EQUAL })) {
         return modify_and_assign(Token::PLUS, expr);
     } else if (match({ Token::MINUS_EQUAL })) {
@@ -354,7 +392,13 @@ jl::Expr* jl::Parser::finish_call(Expr* callee)
     if (!check(Token::RIGHT_PAR)) {
         do {
             if (arguments.size() > 255) {
-                ErrorHandler::error(m_file_name, "parsing", "function call", peek().get_line(), "Cannot have more than 255 args for a call", 0);
+                ErrorHandler::error(
+                    m_file_name,
+                    "parsing",
+                    "function call",
+                    peek().get_line(),
+                    "Cannot have more than 255 args for a call",
+                    0);
             }
             arguments.push_back(expression());
         } while (match({ Token::COMMA }));
@@ -407,7 +451,13 @@ jl::Expr* jl::Parser::modify_and_assign(Token::TokenType oper_type, Expr* expr)
         return index_set;
     }
 
-    ErrorHandler::error(m_file_name, "parsing", "add assignment", oper_equals.get_line(), "Invalid assignment target, expected a variable", 0);
+    ErrorHandler::error(
+        m_file_name,
+        "parsing",
+        "add assignment",
+        oper_equals.get_line(),
+        "Invalid assignment target, expected a variable",
+        0);
     return expr;
 }
 
@@ -496,7 +546,9 @@ jl::Stmt* jl::Parser::var_declaration(bool for_each)
     Token* type_name = nullptr;
 
     // Variable with type declaration
-    auto type_info = parse_type_info();
+    auto type_info = match({ Token::COLON })
+        ? parse_type_info()
+        : std::nullopt;
 
     if (match({ Token::EQUAL })) {
         initializer = expression();
@@ -504,7 +556,13 @@ jl::Stmt* jl::Parser::var_declaration(bool for_each)
 
     if (for_each) {
         if (!match({ Token::COLON, Token::SEMI_COLON })) {
-            ErrorHandler::error(m_file_name, "parsing", "for each loop", name.get_line(), "Varible declaration should be followed `:` or `;` in a for loop", 0);
+            ErrorHandler::error(
+                m_file_name,
+                "parsing",
+                "for each loop",
+                name.get_line(),
+                "Varible declaration should be followed `:` or `;` in a for loop",
+                0);
         }
         // consume(Token::COLON, "Expected : after variable declaration in for each loop");
     } else {
@@ -563,7 +621,13 @@ jl::Stmt* jl::Parser::for_statement()
     // For each loop
     if (previous().get_tokentype() == Token::COLON) {
         if (!declared_var) {
-            ErrorHandler::error(m_file_name, "parsing", "for each loop", previous().get_line(), "Varible declaration should precede `:` in a for each loop", 0);
+            ErrorHandler::error(
+                m_file_name,
+                "parsing",
+                "for each loop",
+                previous().get_line(),
+                "Varible declaration should precede `:` in a for each loop",
+                0);
         }
         // Use call() for now, change to maybe or_expr if errors occur
         Expr* list_expr = call();
@@ -707,11 +771,18 @@ jl::FuncStmt* jl::Parser::function_declaration()
     if (!check(Token::RIGHT_PAR)) {
         do {
             if (parameters.size() >= 255) {
-                ErrorHandler::error(m_file_name, "parsing", "function call", peek().get_line(), "Cannot have more than 255 parameters for a function", 0);
+                ErrorHandler::error(
+                    m_file_name,
+                    "parsing",
+                    "function call",
+                    peek().get_line(),
+                    "Cannot have more than 255 parameters for a function",
+                    0);
             }
 
             Token& param = consume(Token::IDENTIFIER, "Expected parameter name here");
 
+            consume(Token::COLON, "Expected : after param name");
             auto type_info = parse_type_info();
 
             if (!type_info) {
@@ -738,36 +809,36 @@ jl::FuncStmt* jl::Parser::function_declaration()
 
 std::optional<jl::TypeInfo> jl::Parser::parse_type_info()
 {
-    if (match({ Token::COLON })) {
-        const auto& next = peek();
+    // if (match({ Token::COLON })) {
+    const auto& next = peek();
 
-        if (next.get_tokentype() == Token::IDENTIFIER) {
-            auto& type_name = consume(Token::IDENTIFIER, "Expected a data-type");
-            return TypeInfo { .name = type_name.get_lexeme(), .is_array = false };
-        } else if (next.get_tokentype() == Token::LEFT_SQUARE) {
-            consume(Token::LEFT_SQUARE, "Expected [");
+    if (next.get_tokentype() == Token::IDENTIFIER) {
+        auto& type_name = consume(Token::IDENTIFIER, "Expected a data-type");
+        return TypeInfo { .name = type_name.get_lexeme(), .is_array = false };
+    } else if (next.get_tokentype() == Token::LEFT_SQUARE) {
+        consume(Token::LEFT_SQUARE, "Expected [");
 
-            auto& type_name = consume(Token::IDENTIFIER, "Expected a data-type");
+        auto& type_name = consume(Token::IDENTIFIER, "Expected a data-type");
 
-            if (match({ Token::SEMI_COLON })) {
-                auto& array_size = consume(Token::INT, "Expected a non-negative array size");
-                consume(Token::RIGHT_SQUARE, "Expected ] after list type");
-
-                const auto size = std::get<int>(array_size.get_value()->get());
-                return TypeInfo {
-                    .name = type_name.get_lexeme(),
-                    .is_array = true,
-                    .size = size,
-                };
-            }
-
+        if (match({ Token::SEMI_COLON })) {
+            auto& array_size = consume(Token::INT, "Expected a non-negative array size");
             consume(Token::RIGHT_SQUARE, "Expected ] after list type");
+
+            const auto size = std::get<int>(array_size.get_value()->get());
             return TypeInfo {
                 .name = type_name.get_lexeme(),
                 .is_array = true,
+                .size = size,
             };
         }
+
+        consume(Token::RIGHT_SQUARE, "Expected ] after list type");
+        return TypeInfo {
+            .name = type_name.get_lexeme(),
+            .is_array = true,
+        };
     }
+    // }
 
     return std::nullopt;
 }

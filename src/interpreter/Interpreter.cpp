@@ -442,6 +442,11 @@ std::any jl::Interpreter::visit_index_set_expr(IndexSet* expr)
     return overwriting_value;
 }
 
+std::any jl::Interpreter::visit_type_cast_expr(TypeCast* stmt)
+{
+    return m_gc.allocate<Value>(Value { Null {} });
+}
+
 // --------------------------------------------------------------------------------
 // -------------------------------Statements---------------------------------------
 // --------------------------------------------------------------------------------
@@ -605,4 +610,5 @@ std::any jl::Interpreter::visit_break_stmt(BreakStmt* stmt)
 
 std::any jl::Interpreter::visit_extern_stmt(ExternStmt* stmt)
 {
+    return m_gc.allocate<Value>(Value { Null {} });
 }

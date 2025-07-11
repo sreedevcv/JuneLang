@@ -204,6 +204,8 @@ std::any jl::Resolver::visit_index_set_expr(IndexSet* expr)
     return nullptr;
 }
 
+std::any jl::Resolver::visit_type_cast_expr(TypeCast* stmt) { return nullptr; }
+
 // --------------------------------------------------------------------------------
 // -------------------------------Statements---------------------------------------
 // --------------------------------------------------------------------------------

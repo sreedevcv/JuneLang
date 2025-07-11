@@ -4,6 +4,7 @@
 #include <vector>
 
 #include "Token.hpp"
+#include "TypeInfo.hpp"
 #include "Value.hpp"
 
 namespace jl {
@@ -23,6 +24,7 @@ class Super;
 class JList;
 class IndexGet;
 class IndexSet;
+class TypeCast;
 
 class IExprVisitor {
 public:
@@ -41,6 +43,7 @@ public:
     virtual std::any visit_jlist_expr(JList* expr) = 0;
     virtual std::any visit_index_get_expr(IndexGet* expr) = 0;
     virtual std::any visit_index_set_expr(IndexSet* expr) = 0;
+    virtual std::any visit_type_cast_expr(TypeCast* expr) = 0;
 };
 
 class Expr : public Ref {
@@ -376,79 +379,23 @@ public:
     virtual ~IndexSet() = default;
 };
 
-//----------------------------------------------------------------------------------------------------
-//----------------------------------------------------------------------------------------------------
-//----------------------------------------------------------------------------------------------------
+class TypeCast : public Expr {
+public:
+    Expr* m_left;
+    TypeInfo m_right;
 
-// class ParsetreePrinter : public IExprVisitor {
-// public:
-//     std::string context;
+    TypeCast(Expr* left, TypeInfo right)
+        : m_left(left)
+        , m_right(right)
+    {
+    }
 
-//     inline void visit_assign_expr(Assign* expr, void* context) override
-//     {
-//     }
-//     inline void visit_binary_expr(Binary* expr, void* context) override
-//     {
-//         parenthesize(expr->m_oper->get_lexeme(), { expr->m_left, expr->m_right });
-//     }
-//     inline void visit_grouping_expr(Grouping* expr, void* context) override
-//     {
-//         parenthesize("group", { expr->m_expr });
-//     }
-//     inline void visit_unary_expr(Unary* expr, void* context) override
-//     {
-//         parenthesize(expr->m_oper->get_lexeme(), { expr->m_expr });
-//     }
-//     inline void visit_variable_expr(Variable* expr, void* context) override
-//     {
-//         parenthesize(expr->m_name.get_lexeme(), {});
-//     }
-//     inline void visit_logical_expr(Logical* expr, void* context) override
-//     {
-//     }
-//     inline void visit_call_expr(Call* expr, void* context) override
-//     {
-//     }
-//     inline void visit_get_expr(Get* expr, void* context) override
-//     {
-//     }
-//     inline void visit_set_expr(Set* expr, void* context) override
-//     {
-//     }
-//     inline void visit_this_expr(This* expr, void* context) override
-//     {
-//     }
-//     inline void visit_super_expr(Super* expr, void* context) override
-//     {
-//     }
-//     inline void visit_literal_expr(Literal* expr, void* context) override
-//     {
-//         std::string* cntx = reinterpret_cast<std::string*>(context);
-//         if (is_int(*expr->m_value)) {
-//             cntx->append(std::to_string(std::get<int>(*expr->m_value)));
-//         } else if (is_float(*expr->m_value)) {
-//             cntx->append(std::to_string(std::get<double>(*(expr->m_value))));
-//         } else if (is_string(*expr->m_value)) {
-//             cntx->append(std::get<std::string>(*(expr->m_value)));
-//         } else {
-//         }
-//     }
+    inline virtual std::any accept(IExprVisitor& visitor)
+    {
+        return visitor.visit_type_cast_expr(this);
+    }
 
-//     inline void parenthesize(std::string name, std::vector<Expr*> exprs)
-//     {
-//         context.append("(");
-//         context.append(name);
-//         for (const auto exp : exprs) {
-//             context.append(" ");
-//             exp->accept(*this, &context);
-//         }
-//         context.append(")");
-//     }
+    virtual ~TypeCast() = default;
+};
 
-//     inline virtual void* get_expr_context() override
-//     {
-//         return &context;
-//     }
-// };
-
-} // namespace jl
+}
