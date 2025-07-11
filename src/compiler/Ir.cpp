@@ -69,6 +69,7 @@ const jl::OpCode& jl::Ir::opcode() const
     default:
         unimplemented();
     }
+    return binary().opcode;
 }
 
 const jl::TempVar& jl::Ir::dest() const
@@ -83,4 +84,5 @@ const jl::TempVar& jl::Ir::dest() const
     default:
         unimplemented();
     }
+    return binary().dest;
 }

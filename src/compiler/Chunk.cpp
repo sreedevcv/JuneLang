@@ -136,8 +136,6 @@ jl::OperandType jl::Chunk::handle_binary_type_inference(jl::Operand op1, jl::Ope
 
     // Handle error
     if (!inferred_type) {
-        std::println("{}", disassemble());
-
         ErrorHandler::error(
             m_file_name,
             line,

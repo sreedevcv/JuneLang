@@ -178,7 +178,7 @@ jl::Expr* jl::Parser::term()
 {
     Expr* expr = factor();
 
-    while (match({ Token::MINUS, Token::PLUS, Token::PERCENT })) {
+    while (match({ Token::MINUS, Token::PLUS, Token::PERCENT, Token::BIT_AND, Token::BIT_OR, Token::BIT_XOR })) {
         Token& oper = previous();
         Expr* right = factor();
         expr = new Binary(expr, &oper, right);
@@ -202,7 +202,7 @@ jl::Expr* jl::Parser::factor()
 
 jl::Expr* jl::Parser::unary()
 {
-    if (match({ Token::BANG, Token::MINUS })) {
+    if (match({ Token::BANG, Token::MINUS, Token::BIT_NOT })) {
         Token& oper = previous();
         Expr* right = unary();
         Expr* unary_epxr = new Unary(&oper, right);

@@ -17,7 +17,10 @@ enum class OpCode {
     NOT,
     AND,
     OR,
-
+    BIT_AND,
+    BIT_OR,
+    BIT_XOR,
+    BIT_NOT,
     //
     MOVE,
     LABEL,
@@ -36,6 +39,7 @@ enum class OperatorCategory {
     ARITHAMETIC,
     COMPARISON,
     BOOLEAN,
+    BITWISE_AND_MODULUS,
     OTHER,
 };
 

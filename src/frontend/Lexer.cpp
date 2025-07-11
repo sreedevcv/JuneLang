@@ -88,6 +88,18 @@ void jl::Lexer::scan_token()
     case '.':
         add_token(Token::DOT);
         break;
+    case '&':
+        add_token(Token::BIT_AND);
+        break;
+    case '|':
+        add_token(Token::BIT_OR);
+        break;
+    case '^':
+        add_token(Token::BIT_XOR);
+        break;
+    case '~':
+        add_token(Token::BIT_NOT);
+        break;
     case '\n':
         m_line++;
         break;

@@ -136,6 +136,16 @@ std::any jl::CodeGenerator::visit_binary_expr(Binary* expr)
     case Token::BANG_EQUAL: {
         dest_var = m_chunk->write(OpCode::NOT_EQUAL, l, r, line);
     } break;
+    case Token::BIT_AND: {
+        dest_var = m_chunk->write(OpCode::BIT_AND, l, r, line);
+    } break;
+    case Token::BIT_OR: {
+        dest_var = m_chunk->write(OpCode::BIT_OR, l, r, line);
+    } break;
+    case Token::BIT_XOR: {
+        dest_var = m_chunk->write(OpCode::BIT_XOR, l, r, line);
+    } break;
+
     default:
         unimplemented();
         break;
@@ -152,15 +162,19 @@ std::any jl::CodeGenerator::visit_grouping_expr(Grouping* expr)
 std::any jl::CodeGenerator::visit_unary_expr(Unary* expr)
 {
     auto val = compile(expr->m_expr);
-    auto oper = expr->m_oper->get_tokentype();
+    const auto oper = expr->m_oper->get_tokentype();
+    const auto line = expr->m_oper->get_line();
     TempVar temp;
 
     switch (oper) {
     case Token::MINUS:
-        temp = m_chunk->write(OpCode::MINUS, val, expr->m_oper->get_line());
+        temp = m_chunk->write(OpCode::MINUS, val, line);
         break;
     case Token::BANG:
-        temp = m_chunk->write(OpCode::NOT, val, expr->m_oper->get_line());
+        temp = m_chunk->write(OpCode::NOT, val, line);
+        break;
+    case Token::BIT_NOT:
+        temp = m_chunk->write(OpCode::BIT_NOT, val, line);
         break;
     default:
         unimplemented();

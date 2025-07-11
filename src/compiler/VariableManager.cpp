@@ -100,7 +100,7 @@ std::optional<jl::OperandType> jl::VariableManager::infer_type_for_binary(
                 return OperandType::INT;
             }
         } else if (is_ptr(t1) && is_ptr(t2)) {
-            // Pointer arithmetics
+            // Pointer arithmetics (for array indexing)
             if (t1 == OperandType::INT) {
                 return t2;
             } else if (t2 == OperandType::INT) {
@@ -120,6 +120,11 @@ std::optional<jl::OperandType> jl::VariableManager::infer_type_for_binary(
     case OperatorCategory::BOOLEAN:
         if (t1 == OperandType::BOOL && t2 == OperandType::BOOL) {
             return OperandType::BOOL;
+        }
+        break;
+    case OperatorCategory::BITWISE_AND_MODULUS:
+        if (t1 == OperandType::INT && t2 == OperandType::INT) {
+            return OperandType::INT;
         }
         break;
     case OperatorCategory::OTHER:

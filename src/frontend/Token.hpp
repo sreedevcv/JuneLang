@@ -40,6 +40,10 @@ public:
         GREATER_EQUAL,
         LESS_EQUAL,
         PERCENT_EQUAL,
+        BIT_AND,
+        BIT_OR,
+        BIT_XOR,
+        BIT_NOT,
         // Literals
         STRING,
         FLOAT,

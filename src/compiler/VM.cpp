@@ -33,6 +33,18 @@ static const jl::Operand& get_nested_data(
 }
 
 template <typename Op>
+static const jl::Operand execute_bitwise_and_modulus(
+    const jl::Operand& op1,
+    const jl::Operand& op2,
+    Op bin_oper)
+{
+    const int& l = std::get<int>(op1);
+    const int& r = std::get<int>(op2);
+
+    return jl::Operand { bin_oper(l, r) };
+}
+
+template <typename Op>
 static const jl::Operand execute_arithametic(
     const jl::Operand& op1,
     const jl::Operand& op2,
@@ -126,6 +138,18 @@ static const jl::Operand do_arithametic(
     case jl::OpCode::NOT_EQUAL:
         result = execute_arithametic(op1, op2, std::not_equal_to<> {});
         break;
+    case jl::OpCode::MODULUS:
+        result = execute_bitwise_and_modulus(op1, op2, std::modulus<> {});
+        break;
+    case jl::OpCode::BIT_AND:
+        result = execute_bitwise_and_modulus(op1, op2, std::bit_and<> {});
+        break;
+    case jl::OpCode::BIT_OR:
+        result = execute_bitwise_and_modulus(op1, op2, std::bit_or<> {});
+        break;
+    case jl::OpCode::BIT_XOR:
+        result = execute_bitwise_and_modulus(op1, op2, std::bit_xor<> {});
+        break;
     case jl::OpCode::AND:
         result = execute_boolean(op1, op2, std::logical_and<> {});
         break;
@@ -218,6 +242,7 @@ void jl::VM::handle_binary_ir(const Ir& ir, std::vector<Operand>& temp_vars)
     case jl::OperatorCategory::ARITHAMETIC:
     case jl::OperatorCategory::COMPARISON:
     case jl::OperatorCategory::BOOLEAN:
+    case OperatorCategory::BITWISE_AND_MODULUS:
         result = do_arithametic(left, right, binar_ir.opcode);
         break;
     case jl::OperatorCategory::OTHER:
@@ -254,6 +279,9 @@ void jl::VM::handle_unary_ir(
         } else {
             unimplemented();
         }
+    } break;
+    case jl::OpCode::BIT_NOT: {
+        result = ~std::get<int>(operand);
     } break;
     case jl::OpCode::LOAD: {
         const auto& op = get_nested_data(operand, temp_vars);

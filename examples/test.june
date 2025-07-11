@@ -1,17 +1,8 @@
-extern "puts" as puts(s: [char]);
-extern "atoi" as strToInt(str: [char]): int;
-extern "sprintf" as intToStr(str: [char], fmt: [char], num: int);
+var a = 2;
+var b = 1;
 
-fun fibonacci(n: int): int [
-    if (n == 0 or n == 1) [
-        return n;
-    ]
-
-    return fibonacci(n - 1) + fibonacci(n - 2);
-]
-
-var num = fibonacci(30);
-
-var buff: [char; 100];
-intToStr(buff, "%d", num);
-puts(buff);
+var c = a & b;
+var d = a | b;
+var e = 3 ^ 3;
+var f = ~2;
+var g = 11 % 2;
