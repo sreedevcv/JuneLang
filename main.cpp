@@ -63,10 +63,10 @@ int main(int argc, char const* argv[])
 
     auto chunk = codegen.get_root_chunk();
 
-    jl::VM vm;
+    jl::VM vm(chunk_map, (jl::ptr_type)data_section.data());
     const auto [res, vars] = params->step_by_step
-        ? vm.interactive_execute(chunk, chunk_map, data_section)
-        : vm.run(chunk, chunk_map, data_section);
+        ? vm.interactive_execute()
+        : vm.run();
 
     if (params->debug || params->step_by_step) {
         std::println("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~LOCALS/DATA~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");

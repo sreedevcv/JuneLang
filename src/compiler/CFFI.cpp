@@ -64,7 +64,7 @@ void* get_operand_data(const jl::Operand& operand)
         const auto op_data = std::get<char>(operand);
         *((char*)data) = op_data;
     } break;
-    case jl::OperandType::PTR:
+    case jl::OperandType::NIL_PTR:
     case jl::OperandType::CHAR_PTR:
     case jl::OperandType::INT_PTR:
     case jl::OperandType::FLOAT_PTR: {
@@ -174,7 +174,7 @@ jl::Operand jl::CFFI::call(
     case OperandType::INT_PTR:
     case OperandType::FLOAT_PTR:
     case OperandType::BOOL_PTR:
-    case OperandType::PTR:
+    case OperandType::NIL_PTR:
         ret = Operand { PtrVar { .offset = *(ptr_type*)ret_val, .type = return_type } };
         break;
     }

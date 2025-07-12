@@ -7,7 +7,6 @@
 
 #include "CFFI.hpp"
 #include "Chunk.hpp"
-#include "DataSection.hpp"
 #include "Operand.hpp"
 
 namespace jl {
@@ -20,17 +19,15 @@ public:
         RUNTIME_ERROR,
     };
 
-    std::pair<InterpretResult, std::vector<Operand>> run(
-        Chunk& chunk,
-        std::map<std::string, Chunk>& chunk_map,
-        DataSection& data_section);
+    VM(std::map<std::string, Chunk>& chunk_map, ptr_type data_address);
 
-    std::pair<InterpretResult, std::vector<Operand>> interactive_execute(
-        Chunk& chunk,
-        std::map<std::string, Chunk>& chunk_map,
-        DataSection& data_section);
+    std::pair<InterpretResult, std::vector<Operand>> run();
+
+    std::pair<InterpretResult, std::vector<Operand>> interactive_execute();
 
 private:
+    std::map<std::string, Chunk>& m_chunk_map;
+    ptr_type m_base_address;
     std::stack<Operand> m_stack;
     bool debug_run = false;
 
@@ -38,32 +35,26 @@ private:
 
     InterpretResult run(
         Chunk& chunk,
-        std::map<std::string, Chunk>& chunk_map,
-        std::vector<Operand>& temp_vars,
-        DataSection& data_section);
+        std::vector<Operand>& temp_vars);
 
     uint32_t execute_ir(
         Ir ir,
         uint32_t pc,
         Chunk& chunk,
-        std::map<std::string, Chunk>& chunk_map,
         std::vector<Operand>& temp_vars,
-        const std::vector<uint32_t> locations,
-        DataSection& data_section);
+        const std::vector<uint32_t> locations);
 
     void handle_binary_ir(const Ir& ir, std::vector<Operand>& temp_vars);
 
     void handle_unary_ir(
         const Ir& ir,
-        std::vector<Operand>& temp_vars,
-        DataSection& data_section);
+        std::vector<Operand>& temp_vars);
 
     uint32_t handle_control_ir(
         const uint32_t pc,
         const Ir& ir,
         std::vector<Operand>& temp_vars,
-        const std::vector<uint32_t>& label_locations,
-        DataSection& data_section);
+        const std::vector<uint32_t>& label_locations);
 
     void handle_type_cast(const Ir& ir, std::vector<Operand>& temp_vars);
 
@@ -78,11 +69,22 @@ private:
     Operand run_function(
         const CallIr& ir,
         Chunk& func_chunk,
-        std::map<std::string, Chunk>& chunk_map,
-        DataSection& data_section,
         const std::vector<Operand>& temp_vars);
 
     void patch_memmory_address(std::map<std::string, Chunk>& chunk_map, uint64_t base_address);
+
+    template <typename T>
+    static T read_data(ptr_type offset)
+    {
+        T data = *(T*)(offset);
+        return data;
+    }
+
+    template <typename T>
+    static void set_data(ptr_type offset, T& data)
+    {
+        *(T*)(offset) = data;
+    }
 };
 
 }

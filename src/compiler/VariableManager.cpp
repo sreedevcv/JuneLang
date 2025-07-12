@@ -178,7 +178,7 @@ std::string jl::VariableManager::pretty_print(const Operand& operand) const
             return "FP[" + std::to_string(var) + "]";
         case OperandType::BOOL_PTR:
             return "BP[" + std::to_string(var) + "]";
-        case OperandType::PTR:
+        case OperandType::NIL_PTR:
             return "PP[" + std::to_string(var) + "]";
         }
     } break;
@@ -194,7 +194,7 @@ std::string jl::VariableManager::pretty_print(const Operand& operand) const
     case OperandType::INT_PTR:
     case OperandType::FLOAT_PTR:
     case OperandType::BOOL_PTR:
-    case OperandType::PTR:
+    case OperandType::NIL_PTR:
         return to_string(operand);
         break;
     }
@@ -207,9 +207,9 @@ bool jl::VariableManager::check_type_cast(OperandType from, OperandType to)
 {
     if (is_number(from) && is_number(to))
         return true;
-    if (is_pure_ptr(from) && to == OperandType::PTR)
+    if (is_pure_ptr(from) && to == OperandType::NIL_PTR)
         return true;
-    if (is_pure_ptr(to) && from == OperandType::PTR)
+    if (is_pure_ptr(to) && from == OperandType::NIL_PTR)
         return true;
     if (is_number(from) && to == OperandType::CHAR)
         return true;

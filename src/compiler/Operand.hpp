@@ -21,7 +21,7 @@ enum class OperandType {
     INT_PTR,
     FLOAT_PTR,
     BOOL_PTR,
-    PTR
+    NIL_PTR
 };
 
 struct TempVar {

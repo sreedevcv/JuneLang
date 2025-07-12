@@ -16,20 +16,6 @@ public:
     std::ostream& disassemble(std::ostream& out);
     void* data();
 
-
-    template <typename T>
-    T read_data(ptr_type offset)
-    {
-        T data = *(T*)(offset);
-        return data;
-    }
-
-    template <typename T>
-    void set_data(ptr_type offset, T& data)
-    {
-        *(T*)(offset) = data;
-    }
-
 private:
     std::vector<uint8_t> m_data;
     std::optional<ptr_type> m_last_offset;

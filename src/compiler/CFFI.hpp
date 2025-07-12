@@ -36,7 +36,7 @@ private:
         { OperandType::CHAR_PTR, ffi_type_pointer },
         { OperandType::BOOL_PTR, ffi_type_pointer },
         { OperandType::FLOAT_PTR, ffi_type_pointer },
-        { OperandType::PTR, ffi_type_pointer },
+        { OperandType::NIL_PTR, ffi_type_pointer },
         { OperandType::NIL, ffi_type_void },
 
     };

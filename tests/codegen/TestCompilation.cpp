@@ -35,9 +35,9 @@ jl::VM::InterpretResult compile(std::string file_name)
 
     REQUIRE(ErrorHandler::has_error() == false);
 
-    VM vm;
+    VM vm(chunk_map, (ptr_type)data_section.data());
     auto chunk = codegen.get_root_chunk();
-    const auto [result, vars] = vm.run(chunk, chunk_map, data_section);
+    const auto [result, vars] = vm.run();
     return result;
 }
 

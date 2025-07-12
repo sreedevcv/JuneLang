@@ -31,7 +31,7 @@ std::string jl::to_string(const Operand& operand)
         return "F(" + std::to_string(std::get<PtrVar>(operand).offset) + ")";
     case OperandType::BOOL_PTR:
         return "B(" + std::to_string(std::get<PtrVar>(operand).offset) + ")";
-    case OperandType::PTR:
+    case OperandType::NIL_PTR:
         return "N(" + std::to_string(std::get<PtrVar>(operand).offset) + ")";
     }
 
@@ -87,7 +87,7 @@ std::string jl::to_string(const OperandType& type)
         return "INT_PTR";
     case OperandType::FLOAT_PTR:
         return "FLOAT_PTR";
-    case OperandType::PTR:
+    case OperandType::NIL_PTR:
         return "PTR";
     }
 
@@ -120,7 +120,7 @@ bool jl::is_pure_ptr(const OperandType type)
     return type == OperandType::CHAR_PTR
         || type == OperandType::FLOAT_PTR
         || type == OperandType::INT_PTR
-        || type == OperandType::PTR
+        || type == OperandType::NIL_PTR
         || type == OperandType::BOOL_PTR;
 }
 
@@ -174,7 +174,7 @@ jl::Operand jl::default_operand(OperandType type)
         return PtrVar { .offset = 0, .type = OperandType::INT_PTR };
     case OperandType::FLOAT_PTR:
         return PtrVar { .offset = 0, .type = OperandType::FLOAT_PTR };
-    case OperandType::PTR:
+    case OperandType::NIL_PTR:
         break;
     }
 
@@ -195,11 +195,11 @@ std::optional<jl::OperandType> jl::into_ptr(OperandType type)
     case OperandType::BOOL:
         return OperandType::BOOL_PTR;
     case OperandType::NIL:
-        return OperandType::PTR;
+        return OperandType::NIL_PTR;
 
     case OperandType::TEMP:
     case OperandType::UNASSIGNED:
-    case OperandType::PTR:
+    case OperandType::NIL_PTR:
     case OperandType::CHAR_PTR:
     case OperandType::INT_PTR:
     case OperandType::FLOAT_PTR:
@@ -220,7 +220,7 @@ std::optional<jl::OperandType> jl::from_ptr(OperandType type)
         return OperandType::FLOAT;
     case OperandType::BOOL_PTR:
         return OperandType::BOOL;
-    case OperandType::PTR:
+    case OperandType::NIL_PTR:
         return OperandType::NIL;
 
     case OperandType::TEMP:
@@ -251,7 +251,7 @@ size_t jl::size_of_type(OperandType type)
     case OperandType::CHAR:
         return sizeof(char);
     case OperandType::CHAR_PTR:
-    case OperandType::PTR:
+    case OperandType::NIL_PTR:
     case OperandType::INT_PTR:
     case OperandType::FLOAT_PTR:
     case OperandType::BOOL_PTR:
@@ -281,7 +281,7 @@ std::optional<jl::OperandType> jl::from_typeinfo(const TypeInfo& type_info)
         } else if (type_info.name == "bool") {
             return OperandType::BOOL_PTR;
         } else if (type_info.name == "nil") {
-            return OperandType::PTR;
+            return OperandType::NIL_PTR;
         } else if (type_info.name == "char") {
             return OperandType::CHAR_PTR;
         }

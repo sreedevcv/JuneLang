@@ -41,9 +41,9 @@ compile(const char* source_code)
 
     REQUIRE(jl::ErrorHandler::has_error() == false);
 
-    jl::VM vm;
+    jl::VM vm(chunk_map, (ptr_type)data_section.data());
     auto chunk = codegen.get_root_chunk();
-    const auto [status, temp_vars] = vm.run(chunk, chunk_map, data_section);
+    const auto [status, temp_vars] = vm.run();
     const auto var_map = chunk.get_variable_map();
 
     return { temp_vars, var_map };

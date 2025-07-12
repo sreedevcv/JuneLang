@@ -14,6 +14,12 @@
 #include "Operand.hpp"
 #include "Utils.hpp"
 
+jl::VM::VM(std::map<std::string, Chunk>& m_chunk_map, ptr_type data_address)
+    : m_chunk_map(m_chunk_map)
+    , m_base_address(data_address)
+{
+}
+
 static const jl::Operand& get_temp_var_data(
     const jl::Operand& operand,
     const std::vector<jl::Operand>& temp_vars)
@@ -164,24 +170,19 @@ static const jl::Operand do_arithametic(
     return result;
 }
 
-std::pair<jl::VM::InterpretResult, std::vector<jl::Operand>> jl::VM::run(
-    Chunk& chunk,
-    std::map<std::string, Chunk>& chunk_map,
-    DataSection& data_section)
+std::pair<jl::VM::InterpretResult, std::vector<jl::Operand>> jl::VM::run()
 {
-    std::vector<Operand> temp_vars(chunk.get_max_allocated_temps());
-    patch_memmory_address(chunk_map, (ptr_type)data_section.data());
-    auto root_chunk = chunk_map.at("__root__");
-    const auto result = run(root_chunk, chunk_map, temp_vars, data_section);
+    patch_memmory_address(m_chunk_map, m_base_address);
+    auto root_chunk = m_chunk_map.at("__root__");
+    std::vector<Operand> temp_vars(root_chunk.get_max_allocated_temps());
+    const auto result = run(root_chunk, temp_vars);
 
     return { result, temp_vars };
 }
 
 jl::VM::InterpretResult jl::VM::run(
     Chunk& chunk,
-    std::map<std::string, Chunk>& chunk_map,
-    std::vector<Operand>& temp_vars,
-    DataSection& data_section)
+    std::vector<Operand>& temp_vars)
 {
     const auto& irs = chunk.get_ir();
     const auto locations = fill_labels(irs, chunk.get_max_labels());
@@ -191,7 +192,7 @@ jl::VM::InterpretResult jl::VM::run(
         const auto& ir = irs[pc];
         if (debug_run)
             debug_print(chunk, pc, ir, temp_vars);
-        pc = execute_ir(ir, pc, chunk, chunk_map, temp_vars, locations, data_section);
+        pc = execute_ir(ir, pc, chunk, temp_vars, locations);
     }
 
     return InterpretResult::OK;
@@ -201,15 +202,13 @@ uint32_t jl::VM::execute_ir(
     Ir ir,
     uint32_t pc,
     Chunk& chunk,
-    std::map<std::string, Chunk>& chunk_map,
     std::vector<Operand>& temp_vars,
-    const std::vector<uint32_t> locations,
-    DataSection& data_section)
+    const std::vector<uint32_t> locations)
 {
     if (ir.opcode() == OpCode::CALL) {
         const auto& cir = ir.call();
-        auto& func_chunk = chunk_map.at(cir.func_name);
-        temp_vars[cir.return_var.idx] = run_function(cir, func_chunk, chunk_map, data_section, temp_vars);
+        auto& func_chunk = m_chunk_map.at(cir.func_name);
+        temp_vars[cir.return_var.idx] = run_function(cir, func_chunk, temp_vars);
         return pc + 1;
     }
 
@@ -218,11 +217,11 @@ uint32_t jl::VM::execute_ir(
         handle_binary_ir(ir, temp_vars);
         return pc + 1;
     case Ir::UNARY:
-        handle_unary_ir(ir, temp_vars, data_section);
+        handle_unary_ir(ir, temp_vars);
         return pc + 1;
     case Ir::JUMP_STORE:
     case Ir::CONTROL:
-        return handle_control_ir(pc, ir, temp_vars, locations, data_section);
+        return handle_control_ir(pc, ir, temp_vars, locations);
     case Ir::TYPE_CAST:
         handle_type_cast(ir, temp_vars);
         break;
@@ -259,10 +258,7 @@ void jl::VM::handle_binary_ir(const Ir& ir, std::vector<Operand>& temp_vars)
     temp_vars[ir.dest().idx] = result;
 }
 
-void jl::VM::handle_unary_ir(
-    const Ir& ir,
-    std::vector<Operand>& temp_vars,
-    DataSection& data_section)
+void jl::VM::handle_unary_ir(const Ir& ir, std::vector<Operand>& temp_vars)
 {
     Operand result;
     const auto& unary_ir = ir.unary();
@@ -295,19 +291,19 @@ void jl::VM::handle_unary_ir(
 
         switch (get_type(op)) {
         case OperandType::CHAR_PTR: {
-            const auto data = data_section.read_data<char>(offset);
+            const auto data = VM::read_data<char>(offset);
             result = Operand { data };
         } break;
         case OperandType::INT_PTR: {
-            const auto data = data_section.read_data<int_type>(offset);
+            const auto data = VM::read_data<int_type>(offset);
             result = Operand { data };
         } break;
         case OperandType::FLOAT_PTR: {
-            const auto data = data_section.read_data<float_type>(offset);
+            const auto data = VM::read_data<float_type>(offset);
             result = Operand { data };
         } break;
         case OperandType::BOOL_PTR: {
-            const auto data = data_section.read_data<bool>(offset);
+            const auto data = VM::read_data<bool>(offset);
             result = Operand { data };
         } break;
         default:
@@ -346,8 +342,7 @@ std::vector<uint32_t> jl::VM::fill_labels(const std::vector<Ir>& irs, uint32_t m
 uint32_t jl::VM::handle_control_ir(
     const uint32_t pc,
     const Ir& ir, std::vector<Operand>& temp_vars,
-    const std::vector<uint32_t>& label_locations,
-    DataSection& data_section)
+    const std::vector<uint32_t>& label_locations)
 {
     switch (ir.opcode()) {
     case OpCode::LABEL:
@@ -384,16 +379,16 @@ uint32_t jl::VM::handle_control_ir(
 
         switch (get_type(addr)) {
         case OperandType::CHAR_PTR:
-            data_section.set_data(std::get<PtrVar>(addr).offset, std::get<char>(data));
+            VM::set_data(std::get<PtrVar>(addr).offset, std::get<char>(data));
             break;
         case OperandType::INT_PTR:
-            data_section.set_data(std::get<PtrVar>(addr).offset, std::get<int_type>(data));
+            VM::set_data(std::get<PtrVar>(addr).offset, std::get<int_type>(data));
             break;
         case OperandType::FLOAT_PTR:
-            data_section.set_data(std::get<PtrVar>(addr).offset, std::get<float_type>(data));
+            VM::set_data(std::get<PtrVar>(addr).offset, std::get<float_type>(data));
             break;
         case OperandType::BOOL_PTR:
-            data_section.set_data(std::get<PtrVar>(addr).offset, std::get<bool>(data));
+            VM::set_data(std::get<PtrVar>(addr).offset, std::get<bool>(data));
             break;
         default:
             unimplemented();
@@ -407,15 +402,13 @@ uint32_t jl::VM::handle_control_ir(
     return pc + 1;
 }
 
-std::pair<jl::VM::InterpretResult, std::vector<jl::Operand>> jl::VM::interactive_execute(
-    Chunk& chunk,
-    std::map<std::string, Chunk>& chunk_map,
-    DataSection& data_section)
+std::pair<jl::VM::InterpretResult, std::vector<jl::Operand>> jl::VM::interactive_execute()
 {
-    std::vector<Operand> temp_vars(chunk.get_max_allocated_temps());
-    patch_memmory_address(chunk_map, (ptr_type)data_section.data());
     debug_run = true;
-    const auto result = run(chunk, chunk_map, temp_vars, data_section);
+    patch_memmory_address(m_chunk_map, m_base_address);
+    auto root_chunk = m_chunk_map.at("__root__");
+    std::vector<Operand> temp_vars(root_chunk.get_max_allocated_temps());
+    const auto result = run(root_chunk, temp_vars);
     return { result, temp_vars };
 }
 
@@ -448,8 +441,6 @@ void jl::VM::debug_print(
 jl::Operand jl::VM::run_function(
     const CallIr& ir,
     Chunk& func_chunk,
-    std::map<std::string, Chunk>& chunk_map,
-    DataSection& data_section,
     const std::vector<Operand>& temp_vars)
 {
     if (!func_chunk.extern_symbol) {
@@ -459,7 +450,7 @@ jl::Operand jl::VM::run_function(
             stack_vars[i + 1] = temp_vars[ir.args[i].idx];
         }
 
-        run(func_chunk, chunk_map, stack_vars, data_section);
+        run(func_chunk, stack_vars);
         const auto ret_value = m_stack.top();
 
         return ret_value;
@@ -518,7 +509,7 @@ void jl::VM::handle_type_cast(const Ir& ir, std::vector<Operand>& temp_vars)
     case OperandType::INT_PTR:
     case OperandType::FLOAT_PTR:
     case OperandType::BOOL_PTR:
-    case OperandType::PTR:
+    case OperandType::NIL_PTR:
         // No need for type casting, just return
         // TODO: Avoid writing this cast during code generation itself
         to = temp_vars[cir.source.idx];
@@ -531,26 +522,18 @@ void jl::VM::handle_type_cast(const Ir& ir, std::vector<Operand>& temp_vars)
     }
 }
 
-void jl::VM::patch_memmory_address(std::map<std::string, Chunk>& chunk_map, uint64_t base_address)
+void jl::VM::patch_memmory_address(std::map<std::string, Chunk>& m_chunk_map, uint64_t base_address)
 {
-    for (auto& [name, chunk] : chunk_map) {
+    // Add the base address to all operands in ir which is a pointer type
+    for (auto& [name, chunk] : m_chunk_map) {
         for (auto& ir : chunk.get_ir()) {
-            switch (ir.type()) {
-            case Ir::UNARY:
-                if (is_pure_ptr(get_type(ir.unary().operand))) {
-                    std::get<PtrVar>(std::get<UnaryIr>(ir.data).operand).offset += base_address;
-                }
-                break;
-            case Ir::JUMP_STORE:
-                if (is_pure_ptr(get_type(ir.jump().target))) {
-                    std::get<PtrVar>(std::get<JumpStoreIr>(ir.data).target).offset += base_address;
-                }
-                break;
-            case Ir::CONTROL:
-                if (is_pure_ptr(get_type(ir.control().data))) {
-                    std::get<PtrVar>(std::get<ControlIr>(ir.data).data).offset += base_address;
-                }
-                break;
+            const auto type = ir.type();
+            if (type == Ir::UNARY && is_pure_ptr(get_type(ir.unary().operand))) {
+                std::get<PtrVar>(std::get<UnaryIr>(ir.data).operand).offset += base_address;
+            } else if (type == Ir::JUMP_STORE && is_pure_ptr(get_type(ir.jump().target))) {
+                std::get<PtrVar>(std::get<JumpStoreIr>(ir.data).target).offset += base_address;
+            } else if (type == Ir::CONTROL && is_pure_ptr(get_type(ir.control().data))) {
+                std::get<PtrVar>(std::get<ControlIr>(ir.data).data).offset += base_address;
             }
         }
     }
