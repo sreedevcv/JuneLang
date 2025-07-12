@@ -35,6 +35,8 @@ public:
         const Operand& op2,
         OpCode opcode) const;
 
+    bool check_type_cast(OperandType from, OperandType to);
+
 private:
     static uint32_t constexpr max_data_types { 6 };
     uint32_t m_var_count { 0 };

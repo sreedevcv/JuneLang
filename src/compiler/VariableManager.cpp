@@ -202,3 +202,19 @@ std::string jl::VariableManager::pretty_print(const Operand& operand) const
     unimplemented();
     return "Unimplemented";
 }
+
+bool jl::VariableManager::check_type_cast(OperandType from, OperandType to)
+{
+    if (is_number(from) && is_number(to))
+        return true;
+    if (is_pure_ptr(from) && to == OperandType::PTR)
+        return true;
+    if (is_pure_ptr(to) && from == OperandType::PTR)
+        return true;
+    if (is_number(from) && to == OperandType::CHAR)
+        return true;
+    if (is_number(to) && from == OperandType::CHAR)
+        return true;
+
+    return false;
+}

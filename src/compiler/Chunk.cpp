@@ -72,7 +72,7 @@ std::string jl::Chunk::disassemble() const
 
 std::ostream& jl::Chunk::print_ir(std::ostream& out, const Ir& ir) const
 {
-    if (ir.type() == Ir::BINARY || ir.type() == Ir::UNARY || ir.type() == Ir::CALL) {
+    if (ir.type() == Ir::BINARY || ir.type() == Ir::UNARY || ir.type() == Ir::CALL || ir.type() == Ir::TYPE_CAST) {
         out << '\t';
         out << std::left << std::setfill(' ') << std::setw(14) << jl::to_string(ir.opcode());
     } else {
@@ -80,7 +80,7 @@ std::ostream& jl::Chunk::print_ir(std::ostream& out, const Ir& ir) const
         out << std::left << std::setfill(' ') << std::setw(14) << jl::to_string(ir.opcode());
     }
 
-    if (ir.type() == Ir::BINARY || ir.type() == Ir::UNARY || ir.type() == Ir::CALL) {
+    if (ir.type() == Ir::BINARY || ir.type() == Ir::UNARY || ir.type() == Ir::CALL || ir.type() == Ir::TYPE_CAST) {
         out << std::left << std::setfill(' ') << std::setw(10) << m_var_manager.pretty_print(ir.dest());
     } else {
         out << std::left << std::setfill(' ') << std::setw(10) << ' ';
@@ -111,6 +111,11 @@ std::ostream& jl::Chunk::print_ir(std::ostream& out, const Ir& ir) const
             out << (m_var_manager.pretty_print(arg)) << " ";
         }
         out << " )";
+        break;
+    case Ir::TYPE_CAST:
+        out << std::left << std::setfill(' ') << std::setw(10) << m_var_manager.pretty_print(ir.cast().source);
+        out << std::left << std::setfill(' ') << std::setw(10) << to_string(ir.cast().from);
+        out << std::left << std::setfill(' ') << std::setw(10) << to_string(ir.cast().to);
         break;
     default:
         unimplemented();
@@ -332,6 +337,32 @@ void jl::Chunk::write_call(
         } });
 
     m_lines.push_back(line);
+}
+
+jl::TempVar jl::Chunk::write_type_cast(
+    TempVar source,
+    OperandType from,
+    OperandType to,
+    uint32_t line)
+{
+    const auto dest = m_var_manager.create_temp_var(to);
+
+    if (!m_var_manager.check_type_cast(from, to)) {
+        ErrorHandler::error(m_file_name, line, "Type cast not allowed for these types");
+        return dest;
+    }
+
+    m_ir.push_back(Ir {
+        TypeCastIr {
+            .opcode = OpCode::TYPE_CAST,
+            .dest = dest,
+            .source = source,
+            .from = from,
+            .to = to,
+        } });
+
+    m_lines.push_back(line);
+    return dest;
 }
 
 const std::unordered_map<std::string, uint32_t>& jl::Chunk::get_variable_map() const

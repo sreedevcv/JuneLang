@@ -121,6 +121,7 @@ bool jl::is_pure_ptr(const OperandType type)
     return type == OperandType::CHAR_PTR
         || type == OperandType::FLOAT_PTR
         || type == OperandType::INT_PTR
+        || type == OperandType::PTR
         || type == OperandType::BOOL_PTR;
 }
 
@@ -194,9 +195,10 @@ std::optional<jl::OperandType> jl::into_ptr(OperandType type)
         return OperandType::FLOAT_PTR;
     case OperandType::BOOL:
         return OperandType::BOOL_PTR;
+    case OperandType::NIL:
+        return OperandType::PTR;
 
     case OperandType::TEMP:
-    case OperandType::NIL:
     case OperandType::UNASSIGNED:
     case OperandType::PTR:
     case OperandType::CHAR_PTR:
@@ -219,11 +221,12 @@ std::optional<jl::OperandType> jl::from_ptr(OperandType type)
         return OperandType::FLOAT;
     case OperandType::BOOL_PTR:
         return OperandType::BOOL;
+    case OperandType::PTR:
+        return OperandType::NIL;
 
     case OperandType::TEMP:
     case OperandType::NIL:
     case OperandType::UNASSIGNED:
-    case OperandType::PTR:
     case OperandType::INT:
     case OperandType::FLOAT:
     case OperandType::BOOL:
@@ -237,7 +240,6 @@ size_t jl::size_of_type(OperandType type)
     switch (type) {
     case OperandType::TEMP:
     case OperandType::NIL:
-    case OperandType::PTR:
     case OperandType::UNASSIGNED:
         unimplemented();
 
@@ -250,6 +252,7 @@ size_t jl::size_of_type(OperandType type)
     case OperandType::CHAR:
         return sizeof(char);
     case OperandType::CHAR_PTR:
+    case OperandType::PTR:
     case OperandType::INT_PTR:
     case OperandType::FLOAT_PTR:
     case OperandType::BOOL_PTR:

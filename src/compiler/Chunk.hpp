@@ -52,6 +52,11 @@ public:
         std::vector<TempVar>&& args,
         std::optional<std::string> extern_symbol,
         uint32_t line);
+    TempVar write_type_cast(
+        TempVar source,
+        OperandType from,
+        OperandType to,
+        uint32_t line);
 
     const std::vector<Ir>& get_ir() const;
     const std::vector<uint32_t> get_lines() const;

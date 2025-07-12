@@ -32,6 +32,7 @@ enum class OpCode {
     CALL,
     LOAD,
     STORE,
+    TYPE_CAST,
     HALT // For runtime error
 };
 

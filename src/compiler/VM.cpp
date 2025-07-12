@@ -6,6 +6,7 @@
 #include <functional>
 #include <iostream>
 #include <print>
+#include <type_traits>
 #include <vector>
 
 #include "Ir.hpp"
@@ -220,6 +221,9 @@ uint32_t jl::VM::execute_ir(
     case Ir::JUMP_STORE:
     case Ir::CONTROL:
         return handle_control_ir(pc, ir, temp_vars, locations, data_section);
+    case Ir::TYPE_CAST:
+        handle_type_cast(ir, temp_vars);
+        break;
     default:
         unimplemented();
     }
@@ -469,5 +473,57 @@ jl::Operand jl::VM::run_function(
             data_section.data());
 
         return ret_value;
+    }
+}
+
+template <typename T>
+T convert_variant(const jl::Operand& v)
+{
+    return std::visit([](auto&& arg) -> T {
+        if constexpr (std::is_convertible_v<decltype(arg), T>) {
+            return static_cast<T>(arg);
+        } else {
+            throw std::runtime_error("Conversion not supported for this type.");
+        }
+    },
+        v);
+}
+
+void jl::VM::handle_type_cast(const Ir& ir, std::vector<Operand>& temp_vars)
+{
+    if (ir.opcode() != OpCode::TYPE_CAST) {
+        unimplemented();
+    }
+
+    const auto cir = ir.cast();
+    Operand& from = temp_vars[cir.source.idx];
+    Operand& to = temp_vars[cir.dest.idx];
+
+    switch (cir.to) {
+    case OperandType::INT:
+        to = convert_variant<int_type>(from);
+        break;
+    case OperandType::FLOAT:
+        to = convert_variant<float_type>(from);
+        break;
+    case OperandType::BOOL:
+        to = convert_variant<bool>(from);
+        break;
+    case OperandType::CHAR:
+        to = convert_variant<char>(from);
+        break;
+    case OperandType::CHAR_PTR:
+    case OperandType::INT_PTR:
+    case OperandType::FLOAT_PTR:
+    case OperandType::BOOL_PTR:
+    case OperandType::PTR:
+        // No need for type casting, just return
+        // TODO: Avoid writing this cast during code generation itself
+        temp_vars[cir.dest.idx] = temp_vars[cir.source.idx];
+        return;
+    case OperandType::TEMP:
+    case OperandType::UNASSIGNED:
+    case OperandType::NIL:
+        unimplemented();
     }
 }

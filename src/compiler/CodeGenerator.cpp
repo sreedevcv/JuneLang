@@ -498,7 +498,21 @@ std::any jl::CodeGenerator::visit_jlist_expr(JList* expr)
     return empty_var();
 }
 
-std::any jl::CodeGenerator::visit_type_cast_expr(TypeCast* stmt) { }
+std::any jl::CodeGenerator::visit_type_cast_expr(TypeCast* expr)
+{
+    const auto left = compile(expr->m_left);
+    const auto type = from_typeinfo(expr->m_right);
+
+    if (!type) {
+        ErrorHandler::error(m_file_name, m_chunk->get_last_line(), "Unknown data type in type casting");
+        return empty_var();
+    }
+
+    const auto from = m_chunk->get_nested_type(left);
+    const auto dest_var = m_chunk->write_type_cast(left, from, *type, m_chunk->get_last_line());
+    return dest_var;
+}
+
 std::any jl::CodeGenerator::visit_get_expr(Get* expr) { }
 std::any jl::CodeGenerator::visit_set_expr(Set* expr) { }
 std::any jl::CodeGenerator::visit_this_expr(This* expr) { }

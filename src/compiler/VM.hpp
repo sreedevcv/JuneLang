@@ -52,17 +52,23 @@ private:
         DataSection& data_section);
 
     void handle_binary_ir(const Ir& ir, std::vector<Operand>& temp_vars);
+
     void handle_unary_ir(
         const Ir& ir,
         std::vector<Operand>& temp_vars,
         DataSection& data_section);
+
     uint32_t handle_control_ir(
         const uint32_t pc,
         const Ir& ir,
         std::vector<Operand>& temp_vars,
         const std::vector<uint32_t>& label_locations,
         DataSection& data_section);
+
+    void handle_type_cast(const Ir& ir, std::vector<Operand>& temp_vars);
+
     std::vector<uint32_t> fill_labels(const std::vector<Ir>& irs, uint32_t max_labels) const;
+
     void debug_print(
         const Chunk& chunk,
         uint32_t pc,

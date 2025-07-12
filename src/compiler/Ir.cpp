@@ -16,6 +16,8 @@ jl::Ir::Type jl::get_type(const jl::Ir& ir)
         return jl::Ir::JUMP_STORE;
     case 4:
         return jl::Ir::CALL;
+    case 5:
+        return jl::Ir::TYPE_CAST;
     default:
         unimplemented();
     }
@@ -53,6 +55,11 @@ const jl::CallIr& jl::Ir::call() const
     return std::get<CallIr>(data);
 }
 
+const jl::TypeCastIr& jl::Ir::cast() const
+{
+    return std::get<TypeCastIr>(data);
+}
+
 const jl::OpCode& jl::Ir::opcode() const
 {
     switch (type()) {
@@ -66,6 +73,8 @@ const jl::OpCode& jl::Ir::opcode() const
         return jump().opcode;
     case CALL:
         return call().opcode;
+    case TYPE_CAST:
+        return cast().opcode;
     default:
         unimplemented();
     }
@@ -81,6 +90,8 @@ const jl::TempVar& jl::Ir::dest() const
         return unary().dest;
     case CALL:
         return call().return_var;
+    case TYPE_CAST:
+        return cast().dest;
     default:
         unimplemented();
     }

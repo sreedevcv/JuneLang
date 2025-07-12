@@ -43,8 +43,16 @@ struct CallIr {
     TempVar return_var;
 };
 
+struct TypeCastIr {
+    OpCode opcode;
+    TempVar dest;
+    TempVar source;
+    OperandType from;
+    OperandType to;
+};
+
 struct Ir {
-    std::variant<UnaryIr, BinaryIr, ControlIr, JumpStoreIr, CallIr> data;
+    std::variant<UnaryIr, BinaryIr, ControlIr, JumpStoreIr, CallIr, TypeCastIr> data;
 
     enum Type {
         UNARY,
@@ -52,6 +60,7 @@ struct Ir {
         CONTROL,
         JUMP_STORE,
         CALL,
+        TYPE_CAST,
     };
 
     Type type() const;
@@ -62,6 +71,7 @@ struct Ir {
     const OpCode& opcode() const;
     const TempVar& dest() const;
     const CallIr& call() const;
+    const TypeCastIr& cast() const;
 };
 
 Ir::Type get_type(const Ir& ir);

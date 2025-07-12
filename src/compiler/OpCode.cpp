@@ -62,6 +62,8 @@ const char* jl::to_string(OpCode opcode)
         return "BIT_XOR";
     case OpCode::BIT_NOT:
         return "BIT_NOT";
+    case OpCode::TYPE_CAST:
+        return "TYPE_CAST";
     }
     unimplemented();
     return "UNKNOWN";
@@ -74,18 +76,18 @@ jl::OperatorCategory jl::get_category(const OpCode& opcode)
     case OpCode::MINUS:
     case OpCode::STAR:
     case OpCode::SLASH:
-    return OperatorCategory::ARITHAMETIC;
+        return OperatorCategory::ARITHAMETIC;
     case OpCode::GREATER:
     case OpCode::LESS:
     case OpCode::GREATER_EQUAL:
     case OpCode::LESS_EQUAL:
     case OpCode::EQUAL:
     case OpCode::NOT_EQUAL:
-    return OperatorCategory::COMPARISON;
+        return OperatorCategory::COMPARISON;
     case OpCode::NOT:
     case OpCode::AND:
     case OpCode::OR:
-    return OperatorCategory::BOOLEAN;
+        return OperatorCategory::BOOLEAN;
     case OpCode::BIT_AND:
     case OpCode::BIT_OR:
     case OpCode::MODULUS:
@@ -103,6 +105,7 @@ jl::OperatorCategory jl::get_category(const OpCode& opcode)
     case jl::OpCode::HALT:
     case jl::OpCode::LOAD:
     case jl::OpCode::STORE:
+    case OpCode::TYPE_CAST:
         return OperatorCategory::OTHER;
     }
 }
