@@ -21,13 +21,13 @@ public:
     };
 
     std::pair<InterpretResult, std::vector<Operand>> run(
-        const Chunk& chunk,
-        const std::map<std::string, Chunk>& chunk_map,
+        Chunk& chunk,
+        std::map<std::string, Chunk>& chunk_map,
         DataSection& data_section);
 
     std::pair<InterpretResult, std::vector<Operand>> interactive_execute(
-        const Chunk& chunk,
-        const std::map<std::string, Chunk>& chunk_map,
+        Chunk& chunk,
+        std::map<std::string, Chunk>& chunk_map,
         DataSection& data_section);
 
 private:
@@ -37,16 +37,16 @@ private:
     CFFI m_ffi { "/lib64/libc.so.6" };
 
     InterpretResult run(
-        const Chunk& chunk,
-        const std::map<std::string, Chunk>& chunk_map,
+        Chunk& chunk,
+        std::map<std::string, Chunk>& chunk_map,
         std::vector<Operand>& temp_vars,
         DataSection& data_section);
 
     uint32_t execute_ir(
         Ir ir,
         uint32_t pc,
-        const Chunk& chunk,
-        const std::map<std::string, Chunk>& chunk_map,
+        Chunk& chunk,
+        std::map<std::string, Chunk>& chunk_map,
         std::vector<Operand>& temp_vars,
         const std::vector<uint32_t> locations,
         DataSection& data_section);
@@ -77,10 +77,12 @@ private:
 
     Operand run_function(
         const CallIr& ir,
-        const Chunk& func_chunk,
-        const std::map<std::string, Chunk>& chunk_map,
+        Chunk& func_chunk,
+        std::map<std::string, Chunk>& chunk_map,
         DataSection& data_section,
         const std::vector<Operand>& temp_vars);
+
+    void patch_memmory_address(std::map<std::string, Chunk>& chunk_map, uint64_t base_address);
 };
 
 }

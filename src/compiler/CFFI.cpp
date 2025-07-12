@@ -29,7 +29,7 @@ jl::CFFI::~CFFI()
     }
 }
 
-void* get_operand_data(const jl::Operand& operand, void* data_section_offset)
+void* get_operand_data(const jl::Operand& operand)
 {
     const auto op_type = jl::get_type(operand);
     void* data;
@@ -38,7 +38,6 @@ void* get_operand_data(const jl::Operand& operand, void* data_section_offset)
     case jl::OperandType::BOOL_PTR:
     case jl::OperandType::TEMP:
     case jl::OperandType::UNASSIGNED:
-    case jl::OperandType::PTR:
         unimplemented();
         break;
     case jl::OperandType::INT: {
@@ -65,12 +64,13 @@ void* get_operand_data(const jl::Operand& operand, void* data_section_offset)
         const auto op_data = std::get<char>(operand);
         *((char*)data) = op_data;
     } break;
+    case jl::OperandType::PTR:
     case jl::OperandType::CHAR_PTR:
     case jl::OperandType::INT_PTR:
     case jl::OperandType::FLOAT_PTR: {
         const auto size = jl::size_of_type(op_type);
         data = malloc(size);
-        const uint64_t mem_offset = (uint64_t)(std::get<jl::PtrVar>(operand).offset + (uint8_t*)(data_section_offset));
+        const uint64_t mem_offset = (uint64_t)(std::get<jl::PtrVar>(operand).offset);
         *((uint64_t*)data) = mem_offset;
     } break;
     }
@@ -107,8 +107,7 @@ void* get_operand_data(const jl::Operand& operand, void* data_section_offset)
 jl::Operand jl::CFFI::call(
     const std::string& func_name,
     const std::span<Operand> args,
-    OperandType return_type,
-    void* data_section_offset)
+    OperandType return_type)
 {
     // Load function symbol
     void* func_ptr = dlsym(m_handle, func_name.c_str());
@@ -122,7 +121,7 @@ jl::Operand jl::CFFI::call(
     std::vector<void*> arg_values;
 
     for (auto& arg : args) {
-        arg_values.push_back(get_operand_data(arg, data_section_offset));
+        arg_values.push_back(get_operand_data(arg));
     }
 
     std::vector<ffi_type*> arg_types;
@@ -155,7 +154,6 @@ jl::Operand jl::CFFI::call(
     switch (return_type) {
     case OperandType::TEMP:
     case OperandType::UNASSIGNED:
-    case OperandType::PTR:
         unimplemented();
     case OperandType::NIL:
         ret = Operand { Nil {} };
@@ -176,17 +174,17 @@ jl::Operand jl::CFFI::call(
     case OperandType::INT_PTR:
     case OperandType::FLOAT_PTR:
     case OperandType::BOOL_PTR:
-        ret = Operand { PtrVar { *(ptr_type*)ret_val } };
+    case OperandType::PTR:
+        ret = Operand { PtrVar { .offset = *(ptr_type*)ret_val, .type = return_type } };
         break;
     }
 
     // Delete allocated values
-    for (const auto ptr: arg_values) {
+    for (const auto ptr : arg_values) {
         free(ptr);
     }
 
     free(ret_val);
-
 
     return ret;
 }

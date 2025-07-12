@@ -58,7 +58,7 @@ public:
         OperandType to,
         uint32_t line);
 
-    const std::vector<Ir>& get_ir() const;
+    std::vector<Ir>& get_ir();
     const std::vector<uint32_t> get_lines() const;
 
     uint32_t get_max_allocated_temps() const;

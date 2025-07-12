@@ -20,14 +20,14 @@ public:
     template <typename T>
     T read_data(ptr_type offset)
     {
-        T data = *(T*)(&m_data[offset]);
+        T data = *(T*)(offset);
         return data;
     }
 
     template <typename T>
     void set_data(ptr_type offset, T& data)
     {
-        *(T*)(&m_data[offset]) = data;
+        *(T*)(offset) = data;
     }
 
 private:

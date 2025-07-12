@@ -197,7 +197,7 @@ public:
     Token& m_name;
     std::vector<Token*> m_params; // Should i delete these??
     std::vector<TypeInfo> m_data_types;
-    Token* m_return_type;
+    std::optional<TypeInfo> m_return_type;
     std::vector<Stmt*> m_body;
     bool is_extern;
 
@@ -205,7 +205,7 @@ public:
         Token& name,
         std::vector<Token*>& params,
         std::vector<TypeInfo> data_types,
-        Token* return_type,
+        std::optional<TypeInfo> return_type,
         std::vector<Stmt*>& body)
         : m_name(name)
         , m_params(params)
@@ -220,7 +220,7 @@ public:
         Token& name,
         std::vector<Token*>& params,
         std::vector<TypeInfo> data_types,
-        Token* return_type)
+        std::optional<TypeInfo> return_type)
         : m_name(name)
         , m_params(params)
         , m_data_types(std::move(data_types))

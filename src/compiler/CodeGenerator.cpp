@@ -41,7 +41,7 @@ jl::CodeGenerator::generate(std::vector<Stmt*> stmts)
     return { m_chunk_list, data_section };
 }
 
-const jl::Chunk& jl::CodeGenerator::get_root_chunk() const
+jl::Chunk& jl::CodeGenerator::get_root_chunk()
 {
     return m_chunk_list.at("__root__");
 }
@@ -695,19 +695,20 @@ std::any jl::CodeGenerator::visit_func_stmt(FuncStmt* stmt)
 
     // Retrieve return type
     OperandType return_type;
-    if (stmt->m_return_type == nullptr) {
+    if (!stmt->m_return_type) {
         return_type = OperandType::NIL;
     } else {
-        const auto type = from_str(stmt->m_return_type->get_lexeme());
-        if (type) {
-            return_type = *type;
-        } else {
-            return_type = OperandType::NIL;
+        const auto type = from_typeinfo(*stmt->m_return_type)
+                              .value_or(OperandType::NIL);
+        if (type == OperandType::NIL) {
+            // could not map to known data type
             ErrorHandler::error(
                 m_file_name,
-                stmt->m_return_type->get_line(),
+                stmt->m_name.get_line(),
                 "Function has unkown return type!");
         }
+
+        return_type = type;
     }
 
     // Store the function_name as a variable in the outer chunk

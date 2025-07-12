@@ -24,7 +24,7 @@ public:
     TempVar compile(Expr* stmt);
 
     void disassemble();
-    const Chunk& get_root_chunk() const;
+    Chunk& get_root_chunk();
 
 private:
     std::any visit_assign_expr(Assign* expr) override;

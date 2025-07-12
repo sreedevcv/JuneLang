@@ -797,9 +797,12 @@ jl::FuncStmt* jl::Parser::function_declaration()
 
     consume(Token::RIGHT_PAR, "Expected ) after function parameters");
 
-    Token* return_type = nullptr;
+    std::optional<TypeInfo> return_type = std::nullopt;
     if (match({ Token::COLON })) {
-        return_type = &consume(Token::IDENTIFIER, "Expected return data type here after :");
+        return_type = parse_type_info();
+        if (!return_type) {
+            ErrorHandler::error(m_file_name, name.get_line(), "Expected return data type here after :");
+        }
     }
 
     FuncStmt* func = new FuncStmt(name, parameters, std::move(data_types), return_type);

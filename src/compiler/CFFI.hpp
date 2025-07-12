@@ -22,8 +22,7 @@ public:
     Operand call(
         const std::string& func_name,
         const std::span<Operand> args,
-        OperandType return_type,
-        void* data_section_offset);
+        OperandType return_type);
 
 private:
     std::string m_lib_path;
@@ -37,7 +36,9 @@ private:
         { OperandType::CHAR_PTR, ffi_type_pointer },
         { OperandType::BOOL_PTR, ffi_type_pointer },
         { OperandType::FLOAT_PTR, ffi_type_pointer },
-        { OperandType::NIL, ffi_type_pointer },
+        { OperandType::PTR, ffi_type_pointer },
+        { OperandType::NIL, ffi_type_void },
+
     };
 };
 }

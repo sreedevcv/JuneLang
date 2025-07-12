@@ -20,7 +20,7 @@ jl::Chunk::Chunk(std::string name)
 {
 }
 
-const std::vector<jl::Ir>& jl::Chunk::get_ir() const
+std::vector<jl::Ir>& jl::Chunk::get_ir()
 {
     return m_ir;
 }
@@ -275,7 +275,7 @@ void jl::Chunk::write_with_dest(
                 m_file_name,
                 line,
                 std::format(
-                    "Operand({}) and destination({}) types don't match",
+                    "Operand({}) and destination({}) types don't match. Try type casting if possible",
                     to_string(type),
                     to_string(dest_type))
                     .c_str());

@@ -21,7 +21,7 @@ add_library(JuneInterpreter
     compiler/Ir.cpp
     compiler/Operand.cpp
     compiler/VariableManager.cpp
-    compiler/Flatten.cpp
+    # compiler/Flatten.cpp
     compiler/DataSection.cpp
     compiler/CFFI.cpp
     ArgParser.cpp

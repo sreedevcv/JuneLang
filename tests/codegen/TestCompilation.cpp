@@ -36,7 +36,7 @@ jl::VM::InterpretResult compile(std::string file_name)
     REQUIRE(ErrorHandler::has_error() == false);
 
     VM vm;
-    const auto chunk = codegen.get_root_chunk();
+    auto chunk = codegen.get_root_chunk();
     const auto [result, vars] = vm.run(chunk, chunk_map, data_section);
     return result;
 }
@@ -46,7 +46,8 @@ TEST_CASE("Example Files", "[Execution]")
     const std::array<std::string, 4> file_paths = {
         "HelloWorld.june",
         "Sorting.june",
-        "C.june"
+        "C.june",
+        "Malloc.june",
     };
 
     for (const auto& path : file_paths) {

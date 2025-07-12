@@ -61,7 +61,7 @@ int main(int argc, char const* argv[])
         std::println("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~PROGRAM-OUTPUT~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
     }
 
-    const auto chunk = codegen.get_root_chunk();
+    auto chunk = codegen.get_root_chunk();
 
     jl::VM vm;
     const auto [res, vars] = params->step_by_step

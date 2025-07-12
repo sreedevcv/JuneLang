@@ -31,9 +31,8 @@ std::string jl::to_string(const Operand& operand)
         return "F(" + std::to_string(std::get<PtrVar>(operand).offset) + ")";
     case OperandType::BOOL_PTR:
         return "B(" + std::to_string(std::get<PtrVar>(operand).offset) + ")";
-        break;
     case OperandType::PTR:
-        break;
+        return "N(" + std::to_string(std::get<PtrVar>(operand).offset) + ")";
     }
 
     unimplemented();

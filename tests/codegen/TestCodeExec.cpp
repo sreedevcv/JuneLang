@@ -37,12 +37,12 @@ compile(const char* source_code)
     REQUIRE(jl::ErrorHandler::has_error() == false);
 
     jl::CodeGenerator codegen(file_name);
-    const auto [chunk_map, data_section] = codegen.generate(stmts);
+    auto [chunk_map, data_section] = codegen.generate(stmts);
 
     REQUIRE(jl::ErrorHandler::has_error() == false);
 
     jl::VM vm;
-    const auto chunk = codegen.get_root_chunk();
+    auto chunk = codegen.get_root_chunk();
     const auto [status, temp_vars] = vm.run(chunk, chunk_map, data_section);
     const auto var_map = chunk.get_variable_map();
 
