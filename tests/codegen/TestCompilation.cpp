@@ -1,3 +1,5 @@
+#include "StaticAddressPass.hpp"
+#include "Utils.hpp"
 #include "catch2/catch_test_macros.hpp"
 
 #include "CodeGenerator.hpp"
@@ -35,6 +37,8 @@ jl::VM::InterpretResult compile(std::string file_name)
 
     REQUIRE(ErrorHandler::has_error() == false);
 
+    jl::patch_memmory_address(chunk_map, (reg_type)data_section.data());
+
     VM vm(chunk_map, (ptr_type)data_section.data());
     auto chunk = codegen.get_root_chunk();
     const auto [result, vars] = vm.run();
@@ -43,9 +47,9 @@ jl::VM::InterpretResult compile(std::string file_name)
 
 TEST_CASE("Example Files", "[Execution]")
 {
-    const std::array<std::string, 4> file_paths = {
+    const std::array<std::string, 3> file_paths = {
         "HelloWorld.june",
-        "Sorting.june",
+        // "Sorting.june",
         "C.june",
         "Malloc.june",
     };

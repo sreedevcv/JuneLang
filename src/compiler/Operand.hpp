@@ -58,4 +58,54 @@ std::optional<OperandType> from_ptr(OperandType type);
 
 size_t size_of_type(OperandType type);
 
+//
+
+template <OperandType T>
+struct PrimitiveType { };
+
+template <>
+struct PrimitiveType<OperandType::INT> {
+    using type = int_type;
+};
+
+template <>
+struct PrimitiveType<OperandType::FLOAT> {
+    using type = float_type;
+};
+
+template <>
+struct PrimitiveType<OperandType::BOOL> {
+    using type = bool;
+};
+
+template <>
+struct PrimitiveType<OperandType::CHAR> {
+    using type = char;
+};
+
+template <>
+struct PrimitiveType<OperandType::NIL_PTR> {
+    using type = ptr_type;
+};
+
+template <>
+struct PrimitiveType<OperandType::BOOL_PTR> {
+    using type = ptr_type;
+};
+
+template <>
+struct PrimitiveType<OperandType::CHAR_PTR> {
+    using type = ptr_type;
+};
+
+template <>
+struct PrimitiveType<OperandType::INT_PTR> {
+    using type = ptr_type;
+};
+
+template <>
+struct PrimitiveType<OperandType::FLOAT_PTR> {
+    using type = ptr_type;
+};
+
 }

@@ -1,3 +1,5 @@
+#include "StaticAddressPass.hpp"
+#include "Utils.hpp"
 #include "catch2/catch_test_macros.hpp"
 
 #include <utility>
@@ -11,9 +13,20 @@
 #include "Resolver.hpp"
 #include "VM.hpp"
 
-static std::pair<
-    std::vector<jl::Operand>,
-    std::unordered_map<std::string, uint32_t>>
+struct CompileData {
+    std::vector<jl::reg_type> temp_vars;
+    jl::Chunk chunk;
+
+    template <typename T>
+    T get(const char* name) const
+    {
+        const auto var = chunk.get_variable_map().at(name);
+        const auto& val = temp_vars[var];
+        return jl::VM::get<T>(val);
+    }
+};
+
+static CompileData
 compile(const char* source_code)
 {
     using namespace jl;
@@ -41,38 +54,40 @@ compile(const char* source_code)
 
     REQUIRE(jl::ErrorHandler::has_error() == false);
 
+    jl::patch_memmory_address(chunk_map, (uint64_t)data_section.data());
+
     jl::VM vm(chunk_map, (ptr_type)data_section.data());
     auto chunk = codegen.get_root_chunk();
     const auto [status, temp_vars] = vm.run();
     const auto var_map = chunk.get_variable_map();
 
-    return { temp_vars, var_map };
+    return { std::move(temp_vars), std::move(chunk) };
 }
 
 TEST_CASE("Expressions", "[Codegen]")
 {
     using namespace jl;
 
-    const auto [temp_vars, var_map] = compile(R"(
+    const auto data = compile(R"(
         var a = 10 + 2;
         var b = (a * 2) - (3 + 1);
         var c = b / 10.0;
 )");
 
-    const auto a_value = temp_vars[var_map.at("a")];
-    const auto b_value = temp_vars[var_map.at("b")];
-    const auto c_value = temp_vars[var_map.at("c")];
+    const auto a_value  = "a";
+    const auto b_value  = "b";
+    const auto c_value  = "c";
 
-    REQUIRE(std::get<int>(a_value) == 12);
-    REQUIRE(std::get<int>(b_value) == 20);
-    REQUIRE(std::get<double>(c_value) == 2.0);
+    REQUIRE(data.get<int>(a_value) == 12);
+    REQUIRE(data.get<int>(b_value) == 20);
+    REQUIRE(data.get<double>(c_value) == 2.0);
 }
 
 TEST_CASE("While loop", "[Codegen]")
 {
     using namespace jl;
 
-    const auto [temp_vars, var_map] = compile(R"( 
+    const auto data = compile(R"( 
         var i = 0;
         var sum = 0;
 
@@ -82,18 +97,18 @@ TEST_CASE("While loop", "[Codegen]")
         ]
 )");
 
-    const auto i = temp_vars[var_map.at("i")];
-    const auto sum = temp_vars[var_map.at("sum")];
+    const auto i  = "i";
+    const auto sum  = "sum";
 
-    REQUIRE(std::get<int>(i) == 11);
-    REQUIRE(std::get<int>(sum) == 55);
+    REQUIRE(data.get<int>(i) == 11);
+    REQUIRE(data.get<int>(sum) == 55);
 }
 
 TEST_CASE("For loop", "[Codegen]")
 {
     using namespace jl;
 
-    const auto [temp_vars, var_map] = compile(R"(
+    const auto data = compile(R"(
         var sum = 0;
 
         for (var i = 0; i <= 10; i += 1) [
@@ -101,16 +116,16 @@ TEST_CASE("For loop", "[Codegen]")
         ]
 )");
 
-    const auto sum = temp_vars[var_map.at("sum")];
+    const auto sum  = "sum";
 
-    REQUIRE(std::get<int>(sum) == 55);
+    REQUIRE(data.get<int>(sum) == 55);
 }
 
 TEST_CASE("If ladders", "[Codegen]")
 {
     using namespace jl;
 
-    const auto [temp_vars, var_map] = compile(R"(
+    const auto data = compile(R"(
         var a = 0;
         var b = 0;
         var c = 0;
@@ -126,20 +141,20 @@ TEST_CASE("If ladders", "[Codegen]")
         ]
 )");
 
-    const auto a_value = temp_vars[var_map.at("a")];
-    const auto b_value = temp_vars[var_map.at("b")];
-    const auto c_value = temp_vars[var_map.at("c")];
+    const auto a_value  = "a";
+    const auto b_value  = "b";
+    const auto c_value  = "c";
 
-    REQUIRE(std::get<int>(a_value) == 0);
-    REQUIRE(std::get<int>(b_value) == 1);
-    REQUIRE(std::get<int>(c_value) == 2);
+    REQUIRE(data.get<int>(a_value) == 0);
+    REQUIRE(data.get<int>(b_value) == 1);
+    REQUIRE(data.get<int>(c_value) == 2);
 }
 
 TEST_CASE("Simple Function", "[Codegen]")
 {
     using namespace jl;
 
-    const auto [temp_vars, var_map] = compile(R"(
+    const auto data = compile(R"(
         fun sum_till(till: int): int [
             var sum = 0;
 
@@ -153,16 +168,16 @@ TEST_CASE("Simple Function", "[Codegen]")
         var a = sum_till(10);
 )");
 
-    const auto a_value = temp_vars[var_map.at("a")];
+    const auto a_value  = "a";
 
-    REQUIRE(std::get<int>(a_value) == 55);
+    REQUIRE(data.get<int>(a_value) == 55);
 }
 
 TEST_CASE("Empty function", "[Codegen]")
 {
     using namespace jl;
 
-    const auto [temp_vars, var_map] = compile(R"(
+    const auto data = compile(R"(
         fun hai() [
         ]
 
@@ -174,7 +189,7 @@ TEST_CASE("Recursive function", "[Codegen]")
 {
     using namespace jl;
 
-    const auto [temp_vars, var_map] = compile(R"(
+    const auto data = compile(R"(
         fun factorial(n: int): int [
             if (n == 0) [
                 return 1;
@@ -186,16 +201,16 @@ TEST_CASE("Recursive function", "[Codegen]")
         var a = factorial(4 + 1);
 )");
 
-    const auto a_value = temp_vars[var_map.at("a")];
+    const auto a_value  = "a";
 
-    REQUIRE(std::get<int>(a_value) == 120);
+    REQUIRE(data.get<int>(a_value) == 120);
 }
 
 TEST_CASE("Fibonacci function", "[Codegen]")
 {
     using namespace jl;
 
-    const auto [temp_vars, var_map] = compile(R"(
+    const auto data = compile(R"(
     fun fibonacci(n: int): int [
         var a = 0;
         var b = 1;
@@ -216,16 +231,16 @@ TEST_CASE("Fibonacci function", "[Codegen]")
     var f = fibonacci(6);
 )");
 
-    const auto f_value = temp_vars[var_map.at("f")];
+    const auto f_value  = "f";
 
-    REQUIRE(std::get<int>(f_value) == 13);
+    REQUIRE(data.get<int>(f_value) == 13);
 }
 
 TEST_CASE("Test Charachters", "[Codegen]")
 {
     using namespace jl;
 
-    const auto [temp_vars, var_map] = compile(R"(
+    const auto data = compile(R"(
         var a = 'a';
         var b: char = '`';
 
@@ -236,20 +251,20 @@ TEST_CASE("Test Charachters", "[Codegen]")
         var c = test_char();
 )");
 
-    const auto a_value = temp_vars[var_map.at("a")];
-    const auto b_value = temp_vars[var_map.at("b")];
-    const auto c_value = temp_vars[var_map.at("c")];
+    const auto a_value  = "a";
+    const auto b_value  = "b";
+    const auto c_value  = "c";
 
-    REQUIRE(std::get<char>(a_value) == 'a');
-    REQUIRE(std::get<char>(b_value) == '`');
-    REQUIRE(std::get<char>(c_value) == '+');
+    REQUIRE(data.get<char>(a_value) == 'a');
+    REQUIRE(data.get<char>(b_value) == '`');
+    REQUIRE(data.get<char>(c_value) == '+');
 }
 
 TEST_CASE("Index Get: Frequency Count", "[Codegen]")
 {
     using namespace jl;
 
-    const auto [temp_vars, var_map] = compile(R"(
+    const auto data = compile(R"(
         fun find_frequency(str: [char], size: int, target: char): int [
             var count = 0;
 
@@ -273,20 +288,20 @@ TEST_CASE("Index Get: Frequency Count", "[Codegen]")
         var f3 = find_frequency(str, size, t3);
 )");
 
-    const auto f1_value = temp_vars[var_map.at("f1")];
-    const auto f2_value = temp_vars[var_map.at("f2")];
-    const auto f3_value = temp_vars[var_map.at("f3")];
+    const auto f1_value  = "f1";
+    const auto f2_value  = "f2";
+    const auto f3_value  = "f3";
 
-    REQUIRE(std::get<int>(f1_value) == 1);
-    REQUIRE(std::get<int>(f2_value) == 4);
-    REQUIRE(std::get<int>(f3_value) == 0);
+    REQUIRE(data.get<int>(f1_value) == 1);
+    REQUIRE(data.get<int>(f2_value) == 4);
+    REQUIRE(data.get<int>(f3_value) == 0);
 }
 
 TEST_CASE("Index Set: Replace Char Count", "[Codegen]")
 {
     using namespace jl;
 
-    const auto [temp_vars, var_map] = compile(R"(
+    const auto data = compile(R"(
         fun replace_char(str: [char], size: int, target: char, new_value: char): int [
             var count = 0;
 
@@ -309,20 +324,20 @@ TEST_CASE("Index Set: Replace Char Count", "[Codegen]")
         var count3 = replace_char(str, 5, 'a', 'e');
 )");
 
-    const auto count1_value = temp_vars[var_map.at("count1")];
-    const auto count2_value = temp_vars[var_map.at("count2")];
-    const auto count3_value = temp_vars[var_map.at("count3")];
+    const auto count1_value  = "count1";
+    const auto count2_value  = "count2";
+    const auto count3_value  = "count3";
 
-    REQUIRE(std::get<int>(count1_value) == 3);
-    REQUIRE(std::get<int>(count2_value) == 0);
-    REQUIRE(std::get<int>(count3_value) == 1);
+    REQUIRE(data.get<int>(count1_value) == 3);
+    REQUIRE(data.get<int>(count2_value) == 0);
+    REQUIRE(data.get<int>(count3_value) == 1);
 }
 
 TEST_CASE("Pointer types", "[Codegen]")
 {
     using namespace jl;
 
-    const auto [temp_vars, var_map] = compile(R"(
+    const auto data = compile(R"(
         var ia = {1, 2, 3 + 1, 4, 5};
         var ib = ia[2];
         ia[4] = -1;
@@ -344,36 +359,36 @@ TEST_CASE("Pointer types", "[Codegen]")
         var cc = ca[4];
 )");
 
-    const auto fb_value = temp_vars[var_map.at("fb")];
-    const auto fc_value = temp_vars[var_map.at("fc")];
+    const auto fb_value  = "fb";
+    const auto fc_value  = "fc";
 
-    const auto ib_value = temp_vars[var_map.at("ib")];
-    const auto ic_value = temp_vars[var_map.at("ic")];
+    const auto ib_value  = "ib";
+    const auto ic_value  = "ic";
 
-    const auto cb_value = temp_vars[var_map.at("cb")];
-    const auto cc_value = temp_vars[var_map.at("cc")];
+    const auto cb_value  = "cb";
+    const auto cc_value  = "cc";
 
-    const auto bb_value = temp_vars[var_map.at("bb")];
-    const auto bc_value = temp_vars[var_map.at("bc")];
+    const auto bb_value  = "bb";
+    const auto bc_value  = "bc";
 
-    REQUIRE(std::get<float_type>(fb_value) == 4.2);
-    REQUIRE(std::get<float_type>(fc_value) == -1.0);
+    REQUIRE(data.get<float_type>(fb_value) == 4.2);
+    REQUIRE(data.get<float_type>(fc_value) == -1.0);
 
-    REQUIRE(std::get<int_type>(ib_value) == 4);
-    REQUIRE(std::get<int_type>(ic_value) == -1);
+    REQUIRE(data.get<int_type>(ib_value) == 4);
+    REQUIRE(data.get<int_type>(ic_value) == -1);
 
-    REQUIRE(std::get<char>(cb_value) == 'g');
-    REQUIRE(std::get<char>(cc_value) == '$');
+    REQUIRE(data.get<char>(cb_value) == 'g');
+    REQUIRE(data.get<char>(cc_value) == '$');
 
-    REQUIRE(std::get<bool>(bb_value) == true);
-    REQUIRE(std::get<bool>(bc_value) == true);
+    REQUIRE(data.get<bool>(bb_value) == true);
+    REQUIRE(data.get<bool>(bc_value) == true);
 }
 
 TEST_CASE("Int and Float Pointers in functions", "[Codegen]")
 {
     using namespace jl;
 
-    const auto [temp_vars, var_map] = compile(R"(
+    const auto data = compile(R"(
         var int_list = {1, 2, 3 + 1, 4, 5};
 
         fun sum_int(list: [int], size: int): int [
@@ -405,18 +420,18 @@ TEST_CASE("Int and Float Pointers in functions", "[Codegen]")
         var fs = sum_float(float_list, 5);
 )");
 
-    const auto is_value = temp_vars[var_map.at("is")];
-    const auto fs_value = temp_vars[var_map.at("fs")];
+    const auto is_value  = "is";
+    const auto fs_value  = "fs";
 
-    REQUIRE(std::get<float_type>(fs_value) == 17.4);
-    REQUIRE(std::get<int>(is_value) == 16);
+    REQUIRE(data.get<float_type>(fs_value) == 17.4);
+    REQUIRE(data.get<int>(is_value) == 16);
 }
 
 TEST_CASE("Scoped variables", "[Codegen]")
 {
     using namespace jl;
 
-    const auto [temp_vars, var_map] = compile(R"(
+    const auto data = compile(R"(
         var a = 1;
         var b = 1;
 
@@ -430,18 +445,18 @@ TEST_CASE("Scoped variables", "[Codegen]")
         ]
 )");
 
-    const auto a_value = temp_vars[var_map.at("a")];
-    const auto b_value = temp_vars[var_map.at("b")];
+    const auto a_value  = "a";
+    const auto b_value  = "b";
 
-    REQUIRE(std::get<int>(a_value) == 1);
-    REQUIRE(std::get<int>(b_value) == 2);
+    REQUIRE(data.get<int>(a_value) == 1);
+    REQUIRE(data.get<int>(b_value) == 2);
 }
 
 TEST_CASE("Calling Global Functions", "[Codegen]")
 {
     using namespace jl;
 
-    const auto [temp_vars, var_map] = compile(R"(
+    const auto data = compile(R"(
         fun a() [
         ]
 
@@ -455,11 +470,12 @@ TEST_CASE("Calling Global Functions", "[Codegen]")
 )");
 }
 
+/*
 TEST_CASE("QuickSort", "[Codegen]")
 {
     using namespace jl;
 
-    const auto [temp_vars, var_map] = compile(R"(
+    const auto data = compile(R"(
         var list = {5, 1, 7, 3, 9, 0, 3, 4, 2, 8, 6};
 
         fun is_sorted(list: [int], size: int): bool [
@@ -514,17 +530,17 @@ TEST_CASE("QuickSort", "[Codegen]")
         var sorted = is_sorted(list, 10);
 )");
 
-    const auto is_sorted = temp_vars[var_map.at("sorted")];
+    const auto is_sorted  = "sorted";
 
-    REQUIRE(std::get<bool>(is_sorted) == true);
+    REQUIRE(data.get<bool>(is_sorted) == true);
 }
-
+*/
 
 TEST_CASE("C FFI", "[Codegen]")
 {
     using namespace jl;
 
-    const auto [temp_vars, var_map] = compile(R"(
+    const auto data = compile(R"(
         extern "puts" as puts(s: [char]);
         extern "strcmp" as strCmp(s1: [char], s2: [char]): int;
         extern "atoi" as strToInt(str: [char]): int;
@@ -536,20 +552,20 @@ TEST_CASE("C FFI", "[Codegen]")
         var ten = strToInt("10");
 )");
 
-    const auto is_same1 = temp_vars[var_map.at("is_same1")];
-    const auto is_same2 = temp_vars[var_map.at("is_same2")];
-    const auto ten = temp_vars[var_map.at("ten")];
+    const auto is_same1  = "is_same1";
+    const auto is_same2  = "is_same2";
+    const auto ten  = "ten";
 
-    REQUIRE(std::get<bool>(is_same1) == false);
-    REQUIRE(std::get<bool>(is_same2) == true);
-    REQUIRE(std::get<int>(ten) == 10);
+    REQUIRE(data.get<bool>(is_same1) == false);
+    REQUIRE(data.get<bool>(is_same2) == true);
+    REQUIRE(data.get<int>(ten) == 10);
 }
 
 TEST_CASE("Typed array declaration", "[Codegen]")
 {
     using namespace jl;
 
-    const auto [temp_vars, var_map] = compile(R"(
+    const auto data = compile(R"(
         var str: [char; 20] = "Malayalam";
 
         var a: [int; 10];

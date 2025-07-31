@@ -96,9 +96,20 @@ void jl::CodeGenerator::pop_chunk()
 std::any jl::CodeGenerator::visit_binary_expr(Binary* expr)
 {
     const auto type = expr->m_oper->get_tokentype();
-    const auto l = compile(expr->m_left);
-    const auto r = compile(expr->m_right);
+    auto l = compile(expr->m_left);
+    auto r = compile(expr->m_right);
     const uint32_t line = expr->m_oper->get_line();
+
+    // Try upcasting int to float if both are numbers are of diff types
+    const auto t1 = m_chunk->get_nested_type(l);
+    const auto t2 = m_chunk->get_nested_type(r);
+
+    if (t1 == OperandType::INT && t2 == OperandType::FLOAT) {
+        l = m_chunk->write_type_cast(l, OperandType::INT, OperandType::FLOAT, line);
+    }
+    if (t1 == OperandType::FLOAT && t2 == OperandType::INT) {
+        r = m_chunk->write_type_cast(r, OperandType::INT, OperandType::FLOAT, line);
+    }
 
     TempVar dest_var;
 
@@ -167,9 +178,12 @@ std::any jl::CodeGenerator::visit_unary_expr(Unary* expr)
     TempVar temp;
 
     switch (oper) {
-    case Token::MINUS:
-        temp = m_chunk->write(OpCode::MINUS, val, line);
-        break;
+    case Token::MINUS: {
+        // TODO::Check type of val, if it is float make it be multiplied by float 1.0f
+        const auto one = m_chunk->write(OpCode::MOVE, Operand {(int)-1}, line);
+        temp = m_chunk->write(OpCode::STAR, one, val, line);
+        // temp = m_chunk->write(OpCode::MINUS, val, line);
+    } break;
     case Token::BANG:
         temp = m_chunk->write(OpCode::NOT, val, line);
         break;
@@ -394,10 +408,16 @@ std::any jl::CodeGenerator::visit_index_get_expr(IndexGet* expr)
         return empty_var();
     }
 
+    // Calulate offset
+    const auto ele_type = *from_ptr(list_ptr_type);
+    const auto oper_size = m_chunk->write(OpCode::MOVE, Operand { (int_type)size_of_type(ele_type) }, m_chunk->get_last_line());
+    const auto offset = m_chunk->write(OpCode::STAR, idx, oper_size, m_chunk->get_last_line());
+
     // Calculate relative address
-    const auto addr = m_chunk->write(OpCode::ADD, list_ptr, idx, m_chunk->get_last_line());
+    const auto addr = m_chunk->write(OpCode::ADD, list_ptr, offset, m_chunk->get_last_line());
     const auto result_var = m_chunk->create_temp_var(*from_ptr(list_ptr_type));
-    m_chunk->write_with_dest(OpCode::LOAD, addr, result_var, m_chunk->get_last_line());
+    // m_chunk->write_with_dest(OpCode::LOAD, addr, result_var, m_chunk->get_last_line());
+    m_chunk->write_load_store(OpCode::LOAD, addr, result_var, m_chunk->get_last_line());
     return result_var;
 }
 
@@ -439,9 +459,16 @@ std::any jl::CodeGenerator::visit_index_set_expr(IndexSet* expr)
         return empty_var();
     }
 
+    // Calulate offset
+    const auto ele_type = *from_ptr(list_ptr_type);
+    const auto oper_size = m_chunk->write(OpCode::MOVE, Operand { (int_type)size_of_type(ele_type) }, m_chunk->get_last_line());
+    const auto offset = m_chunk->write(OpCode::STAR, idx, oper_size, m_chunk->get_last_line());
+    // TODO:: Do a typecast here for int to ptr_var??
+
     // Calculate relative address
-    const auto addr = m_chunk->write(OpCode::ADD, list_ptr, idx, m_chunk->get_last_line());
-    m_chunk->write_jump_or_store(OpCode::STORE, new_value, addr, m_chunk->get_last_line());
+    const auto addr = m_chunk->write(OpCode::ADD, list_ptr, offset, m_chunk->get_last_line());
+    // m_chunk->write_jump_or_store(OpCode::STORE, new_value, addr, m_chunk->get_last_line());
+    m_chunk->write_load_store(OpCode::STORE, addr, new_value, m_chunk->get_last_line());
     return addr;
 }
 
@@ -466,10 +493,10 @@ std::any jl::CodeGenerator::visit_jlist_expr(JList* expr)
 
         const auto list_var = m_chunk->create_ptr_var(*ptr_type, list_start_offset);
 
-        m_chunk->write_jump_or_store(
+        m_chunk->write_load_store(
             OpCode::STORE,
-            first_ele,
             list_var,
+            first_ele,
             m_chunk->get_last_line());
 
         list_type = m_chunk->get_nested_type(first_ele);
@@ -485,10 +512,10 @@ std::any jl::CodeGenerator::visit_jlist_expr(JList* expr)
             const auto offset = data_section.add_data(size_of_type(first_ele_type));
             const auto ele_ptr = m_chunk->create_ptr_var(*ptr_type, offset);
 
-            m_chunk->write_jump_or_store(
+            m_chunk->write_load_store(
                 OpCode::STORE,
-                ele,
                 ele_ptr,
+                ele,
                 m_chunk->get_last_line());
         }
 

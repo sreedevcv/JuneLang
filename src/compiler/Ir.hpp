@@ -3,6 +3,7 @@
 #include "OpCode.hpp"
 #include "Operand.hpp"
 
+#include <cstdint>
 #include <optional>
 #include <string>
 #include <variant>
@@ -15,6 +16,7 @@ struct BinaryIr {
     TempVar op1;
     TempVar op2;
     TempVar dest;
+    OperandType type;
 };
 
 struct UnaryIr {
@@ -28,7 +30,7 @@ struct ControlIr {
     Operand data;
 };
 
-struct JumpStoreIr {
+struct JumpIr {
     OpCode opcode;
     TempVar data;
     Operand target;
@@ -51,8 +53,15 @@ struct TypeCastIr {
     OperandType to;
 };
 
+struct LoadStoreIr {
+    OpCode opcode;
+    TempVar addr;
+    TempVar reg;
+    uint32_t size;
+};
+
 struct Ir {
-    std::variant<UnaryIr, BinaryIr, ControlIr, JumpStoreIr, CallIr, TypeCastIr> data;
+    std::variant<UnaryIr, BinaryIr, ControlIr, JumpIr, CallIr, TypeCastIr, LoadStoreIr> data;
 
     enum Type {
         UNARY,
@@ -61,17 +70,19 @@ struct Ir {
         JUMP_STORE,
         CALL,
         TYPE_CAST,
+        LOAD_STORE,
     };
 
     Type type() const;
     const BinaryIr& binary() const;
     const UnaryIr& unary() const;
     const ControlIr& control() const;
-    const JumpStoreIr& jump() const;
+    const JumpIr& jump() const;
     const OpCode& opcode() const;
     const TempVar& dest() const;
     const CallIr& call() const;
     const TypeCastIr& cast() const;
+    const LoadStoreIr& load_store() const;
 };
 
 Ir::Type get_type(const Ir& ir);

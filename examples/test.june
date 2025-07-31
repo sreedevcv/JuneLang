@@ -1,19 +1,4 @@
-extern "malloc" as malloc(size: int): [nil];
-extern "free" as free(ptr: [nil]);
-extern "puts" as puts(s: [char]);
-extern "sprintf" as intToStr(str: [char], fmt: [char], num: int);
-
-var list: [int] = malloc(4 * 10) as [int];
-
-for (var i = 0; i < 10; i += 1) [
-    list[i] = i * i;
-]
-
-
-for (var i = 0; i < 10; i += 1) [
-    var buff: [char; 10];
-    intToStr(buff, "%d", list[i]);
-    puts(buff);
-]
-
-free(list as [nil]);
+var a = {1, 2, 3, 5};
+var b = a as [nil];
+var c = b as [float];
+var d = b[0];

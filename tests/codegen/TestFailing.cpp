@@ -1,4 +1,3 @@
-#include "VM.hpp"
 #include "catch2/catch_test_macros.hpp"
 
 #include "CodeGenerator.hpp"
@@ -34,13 +33,6 @@ void compile(const char* source_code)
     const auto chunk_map = codegen.generate(stmts);
 
     REQUIRE(jl::ErrorHandler::has_error() == true);
-
-    // jl::VM vm;
-    // const auto chunk = codegen.get_root_chunk();
-    // const auto [status, temp_vars] = vm.run(chunk, chunk_map);
-    // const auto var_map = chunk.get_variable_map();
-
-    // return { temp_vars, var_map };
 }
 
 TEST_CASE("Incorrect variable store", "[Codegen Fail]")

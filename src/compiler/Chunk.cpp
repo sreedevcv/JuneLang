@@ -20,7 +20,12 @@ jl::Chunk::Chunk(std::string name)
 {
 }
 
-std::vector<jl::Ir>& jl::Chunk::get_ir()
+const std::vector<jl::Ir>& jl::Chunk::get_ir() const
+{
+    return m_ir;
+}
+
+std::vector<jl::Ir>& jl::Chunk::get_ir_mut()
 {
     return m_ir;
 }
@@ -72,7 +77,7 @@ std::string jl::Chunk::disassemble() const
 
 std::ostream& jl::Chunk::print_ir(std::ostream& out, const Ir& ir) const
 {
-    if (ir.type() == Ir::BINARY || ir.type() == Ir::UNARY || ir.type() == Ir::CALL || ir.type() == Ir::TYPE_CAST) {
+    if (ir.type() == Ir::BINARY || ir.type() == Ir::UNARY || ir.type() == Ir::CALL || ir.type() == Ir::TYPE_CAST || ir.type() == Ir::LOAD_STORE) {
         out << '\t';
         out << std::left << std::setfill(' ') << std::setw(14) << jl::to_string(ir.opcode());
     } else {
@@ -116,6 +121,11 @@ std::ostream& jl::Chunk::print_ir(std::ostream& out, const Ir& ir) const
         out << std::left << std::setfill(' ') << std::setw(10) << m_var_manager.pretty_print(ir.cast().source);
         out << std::left << std::setfill(' ') << std::setw(10) << to_string(ir.cast().from);
         out << std::left << std::setfill(' ') << std::setw(10) << to_string(ir.cast().to);
+        break;
+    case Ir::LOAD_STORE:
+        out << std::left << std::setfill(' ') << std::setw(10) << "addr: " << m_var_manager.pretty_print(ir.load_store().addr);
+        out << std::left << std::setfill(' ') << std::setw(10) << " reg: " << m_var_manager.pretty_print(ir.load_store().reg);
+        out << std::left << std::setfill(' ') << std::setw(10) << "size: " << ir.load_store().size;
         break;
     default:
         unimplemented();
@@ -170,13 +180,31 @@ jl::TempVar jl::Chunk::write(
 {
     const auto inferred_type = handle_binary_type_inference(op1, op2, opcode, line);
     const auto dest = m_var_manager.create_temp_var(inferred_type);
+    auto type = OperandType::UNASSIGNED;
+
+    const auto t1 = get_nested_type(op1);
+    const auto t2 = get_nested_type(op2);
+
+    if (t1 == t2 && t2 == OperandType::FLOAT) {
+        type = OperandType::FLOAT;
+    } else if (t1 == t2 && t2 == OperandType::INT) {
+        type = OperandType::INT;
+    } else if (t1 == OperandType::FLOAT && t2 == OperandType::INT) {
+        // typecast t2 to int
+        op2 = write_type_cast(op2, OperandType::INT, OperandType::FLOAT, line);
+        type = OperandType::FLOAT;
+    } else if (t2 == OperandType::FLOAT && t1 == OperandType::INT) {
+        // typecast t1 to int
+        op1 = write_type_cast(op1, OperandType::INT, OperandType::FLOAT, line);
+        type = OperandType::FLOAT;
+    }
 
     m_ir.push_back(Ir { BinaryIr {
         opcode,
         op1,
         op2,
         dest,
-    } });
+        type } });
 
     m_lines.push_back(line);
 
@@ -209,12 +237,23 @@ void jl::Chunk::write_with_dest(
         return;
     }
 
+    auto type = OperandType::UNASSIGNED;
+
+    const auto t1 = get_nested_type(op1);
+    const auto t2 = get_nested_type(op2);
+
+    if (t1 == t2 && t2 == OperandType::FLOAT) {
+        type = OperandType::FLOAT;
+    } else {
+        type = OperandType::INT;
+    }
+
     m_ir.push_back(Ir { BinaryIr {
         opcode,
         op1,
         op2,
         dest,
-    } });
+        type } });
 
     m_lines.push_back(line);
 }
@@ -309,7 +348,7 @@ void jl::Chunk::write_control(OpCode opcode, Operand data, uint32_t line)
 void jl::Chunk::write_jump_or_store(OpCode opcode, TempVar data, Operand target, uint32_t line)
 {
     m_ir.push_back(Ir {
-        JumpStoreIr {
+        JumpIr {
             .opcode = opcode,
             .data = data,
             .target = target } });
@@ -363,6 +402,24 @@ jl::TempVar jl::Chunk::write_type_cast(
 
     m_lines.push_back(line);
     return dest;
+}
+
+void jl::Chunk::write_load_store(
+    OpCode opcode,
+    TempVar addr,
+    TempVar reg,
+    uint32_t line)
+{
+    const auto type = m_var_manager.get_var_data_type(reg.idx);
+    const auto size = size_of_type(type);
+
+    m_ir.push_back(Ir {
+        LoadStoreIr {
+            .opcode = opcode,
+            .addr = addr,
+            .reg = reg,
+            .size = static_cast<uint32_t>(size) } });
+    m_lines.push_back(line);
 }
 
 const std::unordered_map<std::string, uint32_t>& jl::Chunk::get_variable_map() const

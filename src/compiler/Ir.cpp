@@ -18,6 +18,8 @@ jl::Ir::Type jl::get_type(const jl::Ir& ir)
         return jl::Ir::CALL;
     case 5:
         return jl::Ir::TYPE_CAST;
+    case 6:
+        return jl::Ir::LOAD_STORE;
     default:
         unimplemented();
     }
@@ -45,9 +47,9 @@ const jl::ControlIr& jl::Ir::control() const
     return std::get<ControlIr>(data);
 }
 
-const jl::JumpStoreIr& jl::Ir::jump() const
+const jl::JumpIr& jl::Ir::jump() const
 {
-    return std::get<JumpStoreIr>(data);
+    return std::get<JumpIr>(data);
 }
 
 const jl::CallIr& jl::Ir::call() const
@@ -58,6 +60,11 @@ const jl::CallIr& jl::Ir::call() const
 const jl::TypeCastIr& jl::Ir::cast() const
 {
     return std::get<TypeCastIr>(data);
+}
+
+const jl::LoadStoreIr& jl::Ir::load_store() const
+{
+    return std::get<LoadStoreIr>(data);
 }
 
 const jl::OpCode& jl::Ir::opcode() const
@@ -75,6 +82,8 @@ const jl::OpCode& jl::Ir::opcode() const
         return call().opcode;
     case TYPE_CAST:
         return cast().opcode;
+    case LOAD_STORE:
+        return load_store().opcode;
     default:
         unimplemented();
     }

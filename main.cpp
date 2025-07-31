@@ -1,14 +1,13 @@
 #include "ArgParser.hpp"
 #include "CodeGenerator.hpp"
 #include "ErrorHandler.hpp"
-#include "Interpreter.hpp"
 #include "Lexer.hpp"
-#include "Operand.hpp"
 #include "Parser.hpp"
-#include "Resolver.hpp"
+#include "StaticAddressPass.hpp"
 #include "VM.hpp"
 
 #include <cassert>
+#include <cstdint>
 #include <iostream>
 #include <print>
 #include <string>
@@ -40,14 +39,6 @@ int main(int argc, char const* argv[])
         return 1;
     }
 
-    jl::Interpreter interpreter(file_name);
-    jl::Resolver resolver(interpreter, file_name);
-    resolver.resolve(stmts);
-
-    if (jl::ErrorHandler::has_error()) {
-        return 1;
-    }
-
     jl::CodeGenerator codegen(file_name);
     const auto& [chunk_map, data_section] = codegen.generate(stmts);
 
@@ -61,6 +52,7 @@ int main(int argc, char const* argv[])
         std::println("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~PROGRAM-OUTPUT~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
     }
 
+    jl::patch_memmory_address(chunk_map, (uint64_t)data_section.data());
     auto chunk = codegen.get_root_chunk();
 
     jl::VM vm(chunk_map, (jl::ptr_type)data_section.data());
@@ -72,7 +64,8 @@ int main(int argc, char const* argv[])
         std::println("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~LOCALS/DATA~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
 
         for (const auto& [name, temp] : chunk.get_variable_map()) {
-            std::println("{}\t{}", name, jl::to_string(vars[temp]));
+            const auto type = chunk.get_nested_type(jl::TempVar { temp });
+            std::println("{}\t{}", name, jl::VM::pretty_print(vars[temp], type));
         }
 
         data_section.disassemble(std::cout);

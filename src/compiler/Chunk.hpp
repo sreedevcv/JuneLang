@@ -58,7 +58,14 @@ public:
         OperandType to,
         uint32_t line);
 
-    std::vector<Ir>& get_ir();
+    void write_load_store(
+        OpCode opcode,
+        TempVar addr,
+        TempVar reg,
+        uint32_t line);
+
+    const std::vector<Ir>& get_ir() const;
+    std::vector<Ir>& get_ir_mut();
     const std::vector<uint32_t> get_lines() const;
 
     uint32_t get_max_allocated_temps() const;

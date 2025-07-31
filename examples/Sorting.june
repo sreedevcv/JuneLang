@@ -1,3 +1,17 @@
+extern "puts" as puts(s: [char]);
+extern "printf" as _printNum(fmt: [char], num: int);
+
+fun printNum(num: int) [
+    _printNum("%d ", num);
+]
+
+fun printList(list: [int], size: int) [
+    for (var i = 0; i < size; i += 1) [
+        printNum(list[i]);
+    ]
+    puts("");
+]
+
 fun is_sorted(list: [int], size: int): bool [
     for (var i = 0; i < size - 1; i += 1) [
         if (list[i] > list[i + 1]) [
@@ -18,8 +32,12 @@ fun partition(list: [int], start: int, end: int): int [
     var pivot = list[end];
     var limit = start - 1;
 
+    printNum(limit);
+    printNum(pivot);
+    puts("partition");
+
     for (var i = start; i <= end - 1; i += 1) [
-        if (list[i] < pivot) [
+        if (list[i] <= pivot) [
             limit += 1;
             swap(list, i, limit);
         ]
@@ -33,6 +51,12 @@ fun partition(list: [int], start: int, end: int): int [
 fun __quickSortImpl(list: [int], start: int, end: int) [
     if (start < end) [
         var pivot = partition(list, start, end);
+
+        printNum(start);
+        printNum(end);
+        printNum(pivot);
+        puts("__quickSortImpl");
+
         __quickSortImpl(list, start, pivot - 1);
         __quickSortImpl(list, pivot + 1, end);
     ]
@@ -49,4 +73,4 @@ quickSort(list, 10);
 var min = list[0];
 var max = list[9];
 
-var sorted = is_sorted(list, 10);
+// var sorted = is_sorted(list, 10);

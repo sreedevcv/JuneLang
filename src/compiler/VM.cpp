@@ -1,149 +1,178 @@
 #include "VM.hpp"
 
-#include <climits>
-#include <cstdint>
-#include <cstdlib>
 #include <functional>
 #include <iostream>
-#include <print>
-#include <type_traits>
-#include <vector>
+#include <utility>
 
 #include "Ir.hpp"
 #include "OpCode.hpp"
 #include "Operand.hpp"
 #include "Utils.hpp"
 
-jl::VM::VM(std::map<std::string, Chunk>& m_chunk_map, ptr_type data_address)
+template <typename FromType, typename ToType>
+static void typecast(jl::reg_type& from, jl::reg_type& to)
+{
+    FromType fdata;
+    ToType tdata;
+    std::memcpy(&fdata, &from, sizeof(FromType));
+    tdata = static_cast<ToType>(fdata);
+    std::memcpy(&to, &tdata, sizeof(ToType));
+}
+
+jl::VM::VM(const std::map<std::string, Chunk>& m_chunk_map, ptr_type data_address)
     : m_chunk_map(m_chunk_map)
     , m_base_address(data_address)
 {
+    // Prepare the dispatch table
+    const auto add_to_table = [&](OperandType t1, OperandType t2, casting_func_t f) {
+        m_dispatch_table[{ t1, t2 }] = f;
+    };
+
+#define ADD_TO_TABLE(FROM, TO) \
+    add_to_table(OperandType::FROM, OperandType::TO, typecast<PrimitiveType<OperandType::FROM>::type, PrimitiveType<OperandType::TO>::type>)
+
+    ADD_TO_TABLE(INT, FLOAT);
+    ADD_TO_TABLE(FLOAT, INT);
+
+    ADD_TO_TABLE(INT, CHAR);
+    ADD_TO_TABLE(CHAR, INT);
+
+    ADD_TO_TABLE(NIL_PTR, CHAR_PTR);
+    ADD_TO_TABLE(NIL_PTR, INT_PTR);
+    ADD_TO_TABLE(NIL_PTR, FLOAT_PTR);
+    ADD_TO_TABLE(NIL_PTR, BOOL_PTR);
+
+    ADD_TO_TABLE(CHAR_PTR, NIL_PTR);
+    ADD_TO_TABLE(INT_PTR, NIL_PTR);
+    ADD_TO_TABLE(FLOAT_PTR, NIL_PTR);
+    ADD_TO_TABLE(BOOL_PTR, NIL_PTR);
+#undef ADD_TO_TABLE
 }
 
-static const jl::Operand& get_temp_var_data(
-    const jl::Operand& operand,
-    const std::vector<jl::Operand>& temp_vars)
+template <typename T>
+static jl::reg_type store_in_reg(T& data)
 {
-    const auto var = std::get<jl::TempVar>(operand);
-    return temp_vars[var.idx];
+    jl::reg_type reg;
+    std::memcpy(&reg, &data, sizeof(T));
+    return reg;
 }
 
-static const jl::Operand& get_nested_data(
-    const jl::Operand& operand,
-    const std::vector<jl::Operand>& temp_vars)
+static jl::reg_type extract_data(const jl::Operand& op)
 {
-    if (jl::get_type(operand) == jl::OperandType::TEMP) {
-        return get_temp_var_data(operand, temp_vars);
-    } else {
-        return operand;
-    }
-}
-
-template <typename Op>
-static const jl::Operand execute_bitwise_and_modulus(
-    const jl::Operand& op1,
-    const jl::Operand& op2,
-    Op bin_oper)
-{
-    const int& l = std::get<int>(op1);
-    const int& r = std::get<int>(op2);
-
-    return jl::Operand { bin_oper(l, r) };
-}
-
-template <typename Op>
-static const jl::Operand execute_arithametic(
-    const jl::Operand& op1,
-    const jl::Operand& op2,
-    Op bin_oper)
-{
-    const auto type1 = jl::get_type(op1);
-    const auto type2 = jl::get_type(op2);
-
-    if (type1 == jl::OperandType::FLOAT || type2 == jl::OperandType::FLOAT) {
-        const double& l = type1 == jl::OperandType::FLOAT
-            ? std::get<double>(op1)
-            : std::get<int>(op1);
-        const double& r = type2 == jl::OperandType::FLOAT
-            ? std::get<double>(op2)
-            : std::get<int>(op2);
-
-        return jl::Operand { bin_oper(l, r) };
-    } else if (type1 == jl::OperandType::INT && type2 == jl::OperandType::INT) {
-        const int& l = std::get<int>(op1);
-        const int& r = std::get<int>(op2);
-
-        return jl::Operand { bin_oper(l, r) };
-    } else if (jl::is_ptr(type1) || jl::is_ptr(type2)) {
-        const jl::ptr_type addr1 = jl::is_pure_ptr(type1)
-            ? std::get<jl::PtrVar>(op1).offset
-            : std::get<int>(op1) * jl::size_of_type(*jl::from_ptr(type2));
-
-        const auto addr2 = jl::is_pure_ptr(type2)
-            ? std::get<jl::PtrVar>(op2).offset
-            : std::get<int>(op2) * jl::size_of_type(*jl::from_ptr(type1));
-
-        const auto ptr_type = jl::is_pure_ptr(type1) ? type1 : type2;
-
-        return jl::Operand { jl::PtrVar { .offset = bin_oper(addr1, addr2), .type = ptr_type } };
-    } else if (type1 == jl::OperandType::CHAR && type2 == jl::OperandType::CHAR) {
-        const auto& l = std::get<char>(op1);
-        const auto& r = std::get<char>(op2);
-
-        return jl::Operand { bin_oper(l, r) };
-    } else {
+    switch (jl::get_type(op)) {
+    case jl::OperandType::TEMP:
+    case jl::OperandType::UNASSIGNED:
         unimplemented();
-        return jl::Operand {};
+    case jl::OperandType::NIL:
+        return 0;
+    case jl::OperandType::INT:
+        return store_in_reg(std::get<jl::int_type>(op));
+    case jl::OperandType::FLOAT:
+        return store_in_reg(std::get<jl::float_type>(op));
+    case jl::OperandType::BOOL:
+        return store_in_reg(std::get<bool>(op));
+    case jl::OperandType::CHAR:
+        return store_in_reg(std::get<char>(op));
+    case jl::OperandType::CHAR_PTR:
+    case jl::OperandType::INT_PTR:
+    case jl::OperandType::FLOAT_PTR:
+    case jl::OperandType::BOOL_PTR:
+    case jl::OperandType::NIL_PTR:
+        return store_in_reg(std::get<jl::PtrVar>(op).offset);
+    }
+    unimplemented();
+    return 0;
+}
+
+static jl::reg_type nested_extract(const jl::Operand& operand, const std::vector<jl::reg_type>& temp_vars)
+{
+    return jl::get_type(operand) == jl::OperandType::TEMP
+        ? temp_vars[std::get<jl::TempVar>(operand).idx]
+        : extract_data(operand);
+}
+
+template <typename Op>
+static const jl::reg_type execute_bitwise_and_modulus(
+    const jl::reg_type& op1,
+    const jl::reg_type& op2,
+    Op bin_oper)
+{
+    return bin_oper(op1, op2);
+}
+
+// TODO::Make sure both operands are int or float before arithametics
+template <typename Op>
+static const jl::reg_type execute_arithametic(
+    const jl::reg_type& op1,
+    const jl::reg_type& op2,
+    bool is_float,
+    Op bin_oper)
+{
+    if (is_float) {
+        jl::float_type f1 = jl::VM::get<jl::float_type>(op1);
+        jl::float_type f2 = jl::VM::get<jl::float_type>(op2);
+        jl::reg_type reg;
+        jl::float_type result = bin_oper(f1, f2);
+
+        std::memcpy(&reg, &result, sizeof(jl::float_type));
+        return reg;
+    } else {
+        return bin_oper(op1, op2);
     }
 }
 
 template <typename Op>
-static const jl::Operand execute_boolean(
-    const jl::Operand& op1,
-    const jl::Operand& op2,
+static const jl::reg_type execute_boolean(
+    const jl::reg_type& op1,
+    const jl::reg_type& op2,
     Op bin_oper)
 {
-    const auto l = std::get<bool>(op1);
-    const auto r = std::get<bool>(op2);
-    return jl::Operand { bin_oper(l, r) };
+    return bin_oper(op1, op2);
 }
 
-static const jl::Operand do_arithametic(
-    const jl::Operand& op1,
-    const jl::Operand& op2,
+static const jl::reg_type do_arithametic(
+    const jl::reg_type& op1,
+    const jl::reg_type& op2,
+    const jl::OperandType operation_type,
     jl::OpCode opcode)
 {
-    jl::Operand result;
+    jl::reg_type result;
+    bool is_float = false;
+
+    if (operation_type == jl::OperandType::FLOAT) {
+        is_float = true;
+    }
+
     switch (opcode) {
     case jl::OpCode::ADD:
-        result = execute_arithametic(op1, op2, std::plus<> {});
+        result = execute_arithametic(op1, op2, is_float, std::plus<> {});
         break;
     case jl::OpCode::MINUS:
-        result = execute_arithametic(op1, op2, std::minus<> {});
+        result = execute_arithametic(op1, op2, is_float, std::minus<> {});
         break;
     case jl::OpCode::STAR:
-        result = execute_arithametic(op1, op2, std::multiplies<> {});
+        result = execute_arithametic(op1, op2, is_float, std::multiplies<> {});
         break;
     case jl::OpCode::SLASH:
-        result = execute_arithametic(op1, op2, std::divides<> {});
+        result = execute_arithametic(op1, op2, is_float, std::divides<> {});
         break;
     case jl::OpCode::GREATER:
-        result = execute_arithametic(op1, op2, std::greater<> {});
+        result = execute_arithametic(op1, op2, is_float, std::greater<> {});
         break;
     case jl::OpCode::LESS:
-        result = execute_arithametic(op1, op2, std::less<> {});
+        result = execute_arithametic(op1, op2, is_float, std::less<> {});
         break;
     case jl::OpCode::GREATER_EQUAL:
-        result = execute_arithametic(op1, op2, std::greater_equal<> {});
+        result = execute_arithametic(op1, op2, is_float, std::greater_equal<> {});
         break;
     case jl::OpCode::LESS_EQUAL:
-        result = execute_arithametic(op1, op2, std::less_equal<> {});
+        result = execute_arithametic(op1, op2, is_float, std::less_equal<> {});
         break;
     case jl::OpCode::EQUAL:
-        result = execute_arithametic(op1, op2, std::equal_to<> {});
+        result = execute_arithametic(op1, op2, is_float, std::equal_to<> {});
         break;
     case jl::OpCode::NOT_EQUAL:
-        result = execute_arithametic(op1, op2, std::not_equal_to<> {});
+        result = execute_arithametic(op1, op2, is_float, std::not_equal_to<> {});
         break;
     case jl::OpCode::MODULUS:
         result = execute_bitwise_and_modulus(op1, op2, std::modulus<> {});
@@ -170,19 +199,18 @@ static const jl::Operand do_arithametic(
     return result;
 }
 
-std::pair<jl::VM::InterpretResult, std::vector<jl::Operand>> jl::VM::run()
+std::pair<jl::VM::InterpretResult, std::vector<jl::reg_type>> jl::VM::run()
 {
-    patch_memmory_address(m_chunk_map, m_base_address);
     auto root_chunk = m_chunk_map.at("__root__");
-    std::vector<Operand> temp_vars(root_chunk.get_max_allocated_temps());
+    std::vector<reg_type> temp_vars(root_chunk.get_max_allocated_temps());
     const auto result = run(root_chunk, temp_vars);
 
     return { result, temp_vars };
 }
 
 jl::VM::InterpretResult jl::VM::run(
-    Chunk& chunk,
-    std::vector<Operand>& temp_vars)
+    const Chunk& chunk,
+    std::vector<reg_type>& temp_vars)
 {
     const auto& irs = chunk.get_ir();
     const auto locations = fill_labels(irs, chunk.get_max_labels());
@@ -201,14 +229,14 @@ jl::VM::InterpretResult jl::VM::run(
 uint32_t jl::VM::execute_ir(
     Ir ir,
     uint32_t pc,
-    Chunk& chunk,
-    std::vector<Operand>& temp_vars,
+    const Chunk& chunk,
+    std::vector<reg_type>& temp_vars,
     const std::vector<uint32_t> locations)
 {
     if (ir.opcode() == OpCode::CALL) {
         const auto& cir = ir.call();
         auto& func_chunk = m_chunk_map.at(cir.func_name);
-        temp_vars[cir.return_var.idx] = run_function(cir, func_chunk, temp_vars);
+        temp_vars[cir.return_var.idx] = run_function(cir, chunk, func_chunk, temp_vars);
         return pc + 1;
     }
 
@@ -225,6 +253,9 @@ uint32_t jl::VM::execute_ir(
     case Ir::TYPE_CAST:
         handle_type_cast(ir, temp_vars);
         break;
+    case Ir::LOAD_STORE:
+        handle_load_store(ir, temp_vars);
+        break;
     default:
         unimplemented();
     }
@@ -232,23 +263,20 @@ uint32_t jl::VM::execute_ir(
     return pc + 1;
 }
 
-void jl::VM::handle_binary_ir(const Ir& ir, std::vector<Operand>& temp_vars)
+void jl::VM::handle_binary_ir(const Ir& ir, std::vector<reg_type>& temp_vars)
 {
-    Operand result;
+    reg_type result;
     const auto& binar_ir = ir.binary();
 
     const auto& left = temp_vars[binar_ir.op1.idx];
     const auto& right = temp_vars[binar_ir.op2.idx];
-
-    const auto type1 = jl::get_type(left);
-    const auto type2 = jl::get_type(right);
 
     switch (jl::get_category(binar_ir.opcode)) {
     case jl::OperatorCategory::ARITHAMETIC:
     case jl::OperatorCategory::COMPARISON:
     case jl::OperatorCategory::BOOLEAN:
     case OperatorCategory::BITWISE_AND_MODULUS:
-        result = do_arithametic(left, right, binar_ir.opcode);
+        result = do_arithametic(left, right, binar_ir.type, binar_ir.opcode);
         break;
     case jl::OperatorCategory::OTHER:
         unimplemented();
@@ -258,59 +286,25 @@ void jl::VM::handle_binary_ir(const Ir& ir, std::vector<Operand>& temp_vars)
     temp_vars[ir.dest().idx] = result;
 }
 
-void jl::VM::handle_unary_ir(const Ir& ir, std::vector<Operand>& temp_vars)
+void jl::VM::handle_unary_ir(const Ir& ir, std::vector<reg_type>& temp_vars)
 {
-    Operand result;
+    reg_type result;
     const auto& unary_ir = ir.unary();
-    const auto operand = jl::get_type(unary_ir.operand) == jl::OperandType::TEMP
-        ? get_temp_var_data(unary_ir.operand, temp_vars)
-        : unary_ir.operand;
+    const auto operand = nested_extract(unary_ir.operand, temp_vars);
 
     switch (ir.opcode()) {
     case OpCode::MOVE: {
         result = operand;
     } break;
     case jl::OpCode::NOT: {
-        result = !std::get<bool>(operand);
+        result = !(operand);
     } break;
     case jl::OpCode::MINUS: {
-        if (get_type(operand) == OperandType::INT) {
-            result = -1 * std::get<int>(operand);
-        } else if (get_type(operand) == OperandType::FLOAT) {
-            result = -1.0 * std::get<double>(operand);
-        } else {
-            unimplemented();
-        }
+        // TODO::Remove this, no longer needed as codegen converts it to binary
+        result = -1 * operand;
     } break;
     case jl::OpCode::BIT_NOT: {
-        result = ~std::get<int>(operand);
-    } break;
-    case jl::OpCode::LOAD: {
-        const auto& op = get_nested_data(operand, temp_vars);
-        const auto offset = std::get<PtrVar>(op).offset;
-
-        switch (get_type(op)) {
-        case OperandType::CHAR_PTR: {
-            const auto data = VM::read_data<char>(offset);
-            result = Operand { data };
-        } break;
-        case OperandType::INT_PTR: {
-            const auto data = VM::read_data<int_type>(offset);
-            result = Operand { data };
-        } break;
-        case OperandType::FLOAT_PTR: {
-            const auto data = VM::read_data<float_type>(offset);
-            result = Operand { data };
-        } break;
-        case OperandType::BOOL_PTR: {
-            const auto data = VM::read_data<bool>(offset);
-            result = Operand { data };
-        } break;
-        default:
-            unimplemented();
-            break;
-        }
-
+        result = ~operand;
     } break;
     default:
         unimplemented();
@@ -341,7 +335,8 @@ std::vector<uint32_t> jl::VM::fill_labels(const std::vector<Ir>& irs, uint32_t m
 
 uint32_t jl::VM::handle_control_ir(
     const uint32_t pc,
-    const Ir& ir, std::vector<Operand>& temp_vars,
+    const Ir& ir,
+    std::vector<reg_type>& temp_vars,
     const std::vector<uint32_t>& label_locations)
 {
     switch (ir.opcode()) {
@@ -358,7 +353,7 @@ uint32_t jl::VM::handle_control_ir(
     case OpCode::JMP_UNLESS: {
         const auto& condition = temp_vars[ir.jump().data.idx];
         // Evaluate and jump
-        if (std::get<bool>(condition) == false) {
+        if (condition == false) {
             const auto label = std::get<int>(ir.jump().target);
             return label_locations[label];
         } else {
@@ -367,33 +362,10 @@ uint32_t jl::VM::handle_control_ir(
     } break;
     case OpCode::RETURN: {
         const auto& operand = ir.control().data;
-        const auto& data = jl::get_type(operand) == jl::OperandType::TEMP
-            ? get_temp_var_data(operand, temp_vars)
-            : operand;
+        const auto& data = nested_extract(operand, temp_vars);
+        ;
         m_stack.push(data);
         return UINT_MAX;
-    } break;
-    case OpCode::STORE: {
-        auto data = temp_vars[ir.jump().data.idx];
-        const auto addr = get_nested_data(ir.jump().target, temp_vars);
-
-        switch (get_type(addr)) {
-        case OperandType::CHAR_PTR:
-            VM::set_data(std::get<PtrVar>(addr).offset, std::get<char>(data));
-            break;
-        case OperandType::INT_PTR:
-            VM::set_data(std::get<PtrVar>(addr).offset, std::get<int_type>(data));
-            break;
-        case OperandType::FLOAT_PTR:
-            VM::set_data(std::get<PtrVar>(addr).offset, std::get<float_type>(data));
-            break;
-        case OperandType::BOOL_PTR:
-            VM::set_data(std::get<PtrVar>(addr).offset, std::get<bool>(data));
-            break;
-        default:
-            unimplemented();
-            break;
-        }
     } break;
     default:
         unimplemented();
@@ -402,12 +374,36 @@ uint32_t jl::VM::handle_control_ir(
     return pc + 1;
 }
 
-std::pair<jl::VM::InterpretResult, std::vector<jl::Operand>> jl::VM::interactive_execute()
+uint64_t read_bytes_to_uint64_le(const void* ptr, size_t size)
+{
+    uint64_t temp = 0;
+    std::memcpy(&temp, ptr, size); // copies up to 8 bytes into temp
+    return temp;
+}
+
+void write_bytes_from_uint64_le(void* ptr, uint64_t val, size_t size)
+{
+    memcpy(ptr, &val, size);
+}
+
+void jl::VM::handle_load_store(const Ir& ir, std::vector<reg_type>& temp_vars)
+{
+    const auto ls_ir = ir.load_store();
+    const auto addr = temp_vars[ls_ir.addr.idx];
+
+    if (ls_ir.opcode == OpCode::LOAD) {
+        temp_vars[ls_ir.reg.idx] = read_bytes_to_uint64_le((char*)(addr), ls_ir.size);
+    } else {
+        // This should be a store
+        write_bytes_from_uint64_le((char*)(addr), temp_vars[ls_ir.reg.idx], ls_ir.size);
+    }
+}
+
+std::pair<jl::VM::InterpretResult, std::vector<jl::reg_type>> jl::VM::interactive_execute()
 {
     debug_run = true;
-    patch_memmory_address(m_chunk_map, m_base_address);
     auto root_chunk = m_chunk_map.at("__root__");
-    std::vector<Operand> temp_vars(root_chunk.get_max_allocated_temps());
+    std::vector<reg_type> temp_vars(root_chunk.get_max_allocated_temps());
     const auto result = run(root_chunk, temp_vars);
     return { result, temp_vars };
 }
@@ -416,7 +412,7 @@ void jl::VM::debug_print(
     const Chunk& chunk,
     uint32_t pc,
     const Ir& ir,
-    const std::vector<Operand>& temp_vars)
+    const std::vector<reg_type>& temp_vars)
 {
     std::cout << "================================================================================\n";
 
@@ -428,9 +424,9 @@ void jl::VM::debug_print(
         if (i % 8 == 0)
             std::cout << '\n';
 
-        std::cout << i << ": ";
+        std::cout << i << ": [";
         const auto& op = temp_vars[i];
-        std::cout << to_string(op) << "\t";
+        std::cout << pretty_print(op, chunk.get_nested_type(TempVar { static_cast<uint32_t>(i) })) << "]\t";
     }
     std::cout << '\n';
 
@@ -438,13 +434,14 @@ void jl::VM::debug_print(
     std::cin.get();
 }
 
-jl::Operand jl::VM::run_function(
+jl::reg_type jl::VM::run_function(
     const CallIr& ir,
-    Chunk& func_chunk,
-    const std::vector<Operand>& temp_vars)
+    const Chunk& curr_chunk,
+    const Chunk& func_chunk,
+    const std::vector<reg_type>& temp_vars)
 {
     if (!func_chunk.extern_symbol) {
-        std::vector<Operand> stack_vars { func_chunk.get_max_allocated_temps() };
+        std::vector<reg_type> stack_vars(func_chunk.get_max_allocated_temps());
         for (int i = 0; i < ir.args.size(); i++) {
             // First temp var will always be the fucntion itself
             stack_vars[i + 1] = temp_vars[ir.args[i].idx];
@@ -455,12 +452,13 @@ jl::Operand jl::VM::run_function(
 
         return ret_value;
     } else {
-        std::vector<Operand> args;
+        std::vector<std::pair<reg_type, OperandType>> args;
         for (int i = 0; i < ir.args.size(); i++) {
-            args.push_back(temp_vars[ir.args[i].idx]);
+            const auto type = curr_chunk.get_nested_type(TempVar { ir.args[i].idx });
+            args.push_back({ temp_vars[ir.args[i].idx], type });
         }
 
-        Operand ret_value = m_ffi.call(
+        reg_type ret_value = m_ffi.call(
             *func_chunk.extern_symbol,
             args,
             func_chunk.return_type);
@@ -482,59 +480,23 @@ T convert_variant(const jl::Operand& v)
         v);
 }
 
-void jl::VM::handle_type_cast(const Ir& ir, std::vector<Operand>& temp_vars)
+void jl::VM::handle_type_cast(const Ir& ir, std::vector<reg_type>& temp_vars)
 {
     if (ir.opcode() != OpCode::TYPE_CAST) {
         unimplemented();
     }
 
     const auto cir = ir.cast();
-    Operand& from = temp_vars[cir.source.idx];
-    Operand& to = temp_vars[cir.dest.idx];
+    auto& from = temp_vars[cir.source.idx];
+    auto& to = temp_vars[cir.dest.idx];
 
-    switch (cir.to) {
-    case OperandType::INT:
-        to = convert_variant<int_type>(from);
-        break;
-    case OperandType::FLOAT:
-        to = convert_variant<float_type>(from);
-        break;
-    case OperandType::BOOL:
-        to = convert_variant<bool>(from);
-        break;
-    case OperandType::CHAR:
-        to = convert_variant<char>(from);
-        break;
-    case OperandType::CHAR_PTR:
-    case OperandType::INT_PTR:
-    case OperandType::FLOAT_PTR:
-    case OperandType::BOOL_PTR:
-    case OperandType::NIL_PTR:
-        // No need for type casting, just return
-        // TODO: Avoid writing this cast during code generation itself
-        to = temp_vars[cir.source.idx];
-        std::get<PtrVar>(to).type = cir.to;
-        return;
-    case OperandType::TEMP:
-    case OperandType::UNASSIGNED:
-    case OperandType::NIL:
-        unimplemented();
-    }
-}
-
-void jl::VM::patch_memmory_address(std::map<std::string, Chunk>& m_chunk_map, uint64_t base_address)
-{
-    // Add the base address to all operands in ir which is a pointer type
-    for (auto& [name, chunk] : m_chunk_map) {
-        for (auto& ir : chunk.get_ir()) {
-            const auto type = ir.type();
-            if (type == Ir::UNARY && is_pure_ptr(get_type(ir.unary().operand))) {
-                std::get<PtrVar>(std::get<UnaryIr>(ir.data).operand).offset += base_address;
-            } else if (type == Ir::JUMP_STORE && is_pure_ptr(get_type(ir.jump().target))) {
-                std::get<PtrVar>(std::get<JumpStoreIr>(ir.data).target).offset += base_address;
-            } else if (type == Ir::CONTROL && is_pure_ptr(get_type(ir.control().data))) {
-                std::get<PtrVar>(std::get<ControlIr>(ir.data).data).offset += base_address;
-            }
+    if (cir.from == cir.to) {
+        to = from;
+    } else {
+        if (m_dispatch_table.contains({ cir.from, cir.to })) {
+            m_dispatch_table[{ cir.from, cir.to }](from, to);
+        } else {
+            unimplemented();
         }
     }
 }

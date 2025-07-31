@@ -1,12 +1,12 @@
 #pragma once
 
-#include <ffi-x86_64.h>
 #include <ffi.h>
-#include <span>
 #include <string>
 #include <unordered_map>
+#include <vector>
 
 #include "Operand.hpp"
+#include "Utils.hpp"
 
 namespace jl {
 class CFFI {
@@ -19,9 +19,9 @@ public:
     CFFI& operator=(const CFFI& cffi) = delete;
     CFFI& operator=(CFFI&& cffi) = delete;
 
-    Operand call(
+    jl::reg_type call(
         const std::string& func_name,
-        const std::span<Operand> args,
+        const std::vector<std::pair<reg_type, OperandType>>& args,
         OperandType return_type);
 
 private:
@@ -38,7 +38,6 @@ private:
         { OperandType::FLOAT_PTR, ffi_type_pointer },
         { OperandType::NIL_PTR, ffi_type_pointer },
         { OperandType::NIL, ffi_type_void },
-
     };
 };
 }
