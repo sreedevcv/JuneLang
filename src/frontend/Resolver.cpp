@@ -2,16 +2,15 @@
 
 #include "ErrorHandler.hpp"
 
-jl::Resolver::Resolver(Interpreter& interpreter, std::string& file_name)
-    : m_interpreter(interpreter)
-    , m_file_name(file_name)
+jl::Resolver::Resolver(std::string& file_name)
+    : m_file_name(file_name)
 {
 }
 
-void jl::Resolver::resolve(std::vector<Stmt*>& statements)
+void jl::Resolver::resolve(std::vector<std::unique_ptr<Stmt>>& statements)
 {
-    for (Stmt* stmt : statements) {
-        resolve(stmt);
+    for (auto& stmt : statements) {
+        resolve(stmt.get());
     }
 }
 
@@ -29,7 +28,6 @@ void jl::Resolver::resolve_local(Expr* expr, Token& name)
 {
     for (int i = m_scopes.size() - 1; i >= 0; i--) {
         if (m_scopes[i].contains(name.get_lexeme())) {
-            m_interpreter.resolve(expr, m_scopes.size() - i - 1);
             return;
         }
     }
@@ -92,27 +90,27 @@ void jl::Resolver::define(Token& name)
 
 std::any jl::Resolver::visit_assign_expr(Assign* expr)
 {
-    resolve(expr->m_expr);
+    resolve(expr->m_expr.get());
     resolve_local(expr, expr->m_token);
     return nullptr;
 }
 
 std::any jl::Resolver::visit_binary_expr(Binary* expr)
 {
-    resolve(expr->m_left);
-    resolve(expr->m_right);
+    resolve(expr->m_left.get());
+    resolve(expr->m_right.get());
     return nullptr;
 }
 
 std::any jl::Resolver::visit_grouping_expr(Grouping* expr)
 {
-    resolve(expr->m_expr);
+    resolve(expr->m_expr.get());
     return nullptr;
 }
 
 std::any jl::Resolver::visit_unary_expr(Unary* expr)
 {
-    resolve(expr->m_expr);
+    resolve(expr->m_expr.get());
     return nullptr;
 }
 
@@ -133,31 +131,31 @@ std::any jl::Resolver::visit_variable_expr(Variable* expr)
 
 std::any jl::Resolver::visit_logical_expr(Logical* expr)
 {
-    resolve(expr->m_left);
-    resolve(expr->m_right);
+    resolve(expr->m_left.get());
+    resolve(expr->m_right.get());
     return nullptr;
 }
 
 std::any jl::Resolver::visit_call_expr(Call* expr)
 {
-    resolve(expr->m_callee);
+    resolve(expr->m_callee.get());
 
-    for (Expr* arg : expr->m_arguments) {
-        resolve(arg);
+    for (auto& arg : expr->m_arguments) {
+        resolve(arg.get());
     }
     return nullptr;
 }
 
 std::any jl::Resolver::visit_get_expr(Get* expr)
 {
-    resolve(expr->m_object);
+    resolve(expr->m_object.get());
     return nullptr;
 }
 
 std::any jl::Resolver::visit_set_expr(Set* expr)
 {
-    resolve(expr->m_object);
-    resolve(expr->m_value);
+    resolve(expr->m_object.get());
+    resolve(expr->m_value.get());
     return nullptr;
 }
 
@@ -183,24 +181,24 @@ std::any jl::Resolver::visit_super_expr(Super* expr)
 
 std::any jl::Resolver::visit_jlist_expr(JList* expr)
 {
-    for (Expr* item : expr->m_items) {
-        resolve(item);
+    for (auto& item : expr->m_items) {
+        resolve(item.get());
     }
     return nullptr;
 }
 
 std::any jl::Resolver::visit_index_get_expr(IndexGet* expr)
 {
-    resolve(expr->m_jlist);
-    resolve(expr->m_index_expr);
+    resolve(expr->m_jlist.get());
+    resolve(expr->m_index_expr.get());
     return nullptr;
 }
 
 std::any jl::Resolver::visit_index_set_expr(IndexSet* expr)
 {
-    resolve(expr->m_jlist);
-    resolve(expr->m_index_expr);
-    resolve(expr->m_value_expr);
+    resolve(expr->m_jlist.get());
+    resolve(expr->m_index_expr.get());
+    resolve(expr->m_value_expr.get());
     return nullptr;
 }
 
@@ -212,13 +210,13 @@ std::any jl::Resolver::visit_type_cast_expr(TypeCast* stmt) { return nullptr; }
 
 std::any jl::Resolver::visit_print_stmt(PrintStmt* stmt)
 {
-    resolve(stmt->m_expr);
+    resolve(stmt->m_expr.get());
     return nullptr;
 }
 
 std::any jl::Resolver::visit_expr_stmt(ExprStmt* stmt)
 {
-    resolve(stmt->m_expr);
+    resolve(stmt->m_expr.get());
     return nullptr;
 }
 
@@ -226,7 +224,7 @@ std::any jl::Resolver::visit_var_stmt(VarStmt* stmt)
 {
     declare(stmt->m_name);
     if (stmt->m_initializer != nullptr) {
-        resolve(stmt->m_initializer);
+        resolve(stmt->m_initializer->get());
     }
     define(stmt->m_name);
     return nullptr;
@@ -247,10 +245,10 @@ std::any jl::Resolver::visit_empty_stmt(EmptyStmt* stmt)
 
 std::any jl::Resolver::visit_if_stmt(IfStmt* stmt)
 {
-    resolve(stmt->m_condition);
-    resolve(stmt->m_then_stmt);
+    resolve(stmt->m_condition.get());
+    resolve(stmt->m_then_stmt.get());
     if (stmt->m_else_stmt != nullptr) {
-        resolve(stmt->m_else_stmt);
+        resolve(stmt->m_else_stmt->get());
     }
     return nullptr;
 }
@@ -259,10 +257,10 @@ std::any jl::Resolver::visit_while_stmt(WhileStmt* stmt)
 {
     LoopType enclosing_loop_type = m_current_loop_type;
 
-    resolve(stmt->m_condition);
+    resolve(stmt->m_condition.get());
 
     m_current_loop_type = LoopType::LOOP;
-    resolve(stmt->m_body);
+    resolve(stmt->m_body.get());
     m_current_loop_type = enclosing_loop_type;
 
     return nullptr;
@@ -286,7 +284,7 @@ std::any jl::Resolver::visit_return_stmt(ReturnStmt* stmt)
         if (m_current_function_type == FunctionType::INITIALIZER) {
             ErrorHandler::error(m_file_name, "resolving", "return", stmt->m_keyword.get_line(), "Can't return a value from an initializer", 0);
         }
-        resolve(stmt->m_expr);
+        resolve(stmt->m_expr->get());
     }
     return nullptr;
 }
@@ -305,7 +303,7 @@ std::any jl::Resolver::visit_class_stmt(ClassStmt* stmt)
 
     if (stmt->m_super_class != nullptr) {
         m_current_class_type = ClassType::SUBCLASS;
-        resolve(stmt->m_super_class);
+        resolve(stmt->m_super_class.get());
         begin_scope();
         m_scopes.back()[Token::global_super_lexeme] = true;
     }
@@ -313,12 +311,12 @@ std::any jl::Resolver::visit_class_stmt(ClassStmt* stmt)
     begin_scope();
     m_scopes.back()[Token::global_this_lexeme] = true;
 
-    for (FuncStmt* method : stmt->m_methods) {
+    for (auto& method : stmt->m_methods) {
         FunctionType declaration = FunctionType::METHOD;
         if (method->m_name.get_lexeme() == "init") {
             declaration = FunctionType::INITIALIZER;
         }
-        resolve_function(method, declaration);
+        resolve_function(method.get(), declaration);
     }
 
     end_scope();
@@ -335,11 +333,11 @@ std::any jl::Resolver::visit_for_each_stmt(ForEachStmt* stmt)
     LoopType enclosing_loop_type = m_current_loop_type;
 
     begin_scope();
-    resolve(stmt->m_var_declaration);
-    resolve(stmt->m_list_expr);
+    resolve(stmt->m_var_declaration.get());
+    resolve(stmt->m_list_expr.get());
 
     m_current_loop_type = LoopType::LOOP;
-    resolve(stmt->m_body);
+    resolve(stmt->m_body.get());
     m_current_loop_type = enclosing_loop_type;
 
     end_scope();

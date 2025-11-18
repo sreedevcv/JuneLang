@@ -1,6 +1,8 @@
 #pragma once
 
 #include <any>
+#include <memory>
+#include <utility>
 #include <vector>
 
 #include "Token.hpp"
@@ -52,14 +54,31 @@ public:
     virtual ~Expr() = default;
 };
 
+class Variable : public Expr {
+public:
+    Token m_name;
+
+    inline Variable(Token& name)
+        : m_name(std::move(name))
+    {
+    }
+
+    inline virtual std::any accept(IExprVisitor& visitor) override
+    {
+        return visitor.visit_variable_expr(this);
+    }
+
+    virtual ~Variable() = default;
+};
+
 class Assign : public Expr {
 public:
-    Expr* m_expr;
-    Token& m_token;
+    std::unique_ptr<Expr> m_expr;
+    Token m_token;
 
-    inline Assign(Expr* expr, Token& token)
-        : m_expr(expr)
-        , m_token(token)
+    inline Assign(std::unique_ptr<Expr> expr, Token& token)
+        : m_expr(std::move(expr))
+        , m_token(std::move(token))
     {
     }
 
@@ -68,22 +87,19 @@ public:
         return visitor.visit_assign_expr(this);
     }
 
-    virtual ~Assign()
-    {
-        // delete m_expr;
-    }
+    virtual ~Assign() = default;
 };
 
 class Binary : public Expr {
 public:
-    Expr* m_left;
-    Token* m_oper;
-    Expr* m_right;
+    std::unique_ptr<Expr> m_left;
+    Token m_oper;
+    std::unique_ptr<Expr> m_right;
 
-    inline Binary(Expr* left, Token* oper, Expr* right)
-        : m_left(left)
-        , m_right(right)
-        , m_oper(oper)
+    inline Binary(std::unique_ptr<Expr> left, Token& oper, std::unique_ptr<Expr> right)
+        : m_left(std::move(left))
+        , m_right(std::move(right))
+        , m_oper(std::move(oper))
     {
     }
 
@@ -92,19 +108,15 @@ public:
         return visitor.visit_binary_expr(this);
     }
 
-    virtual ~Binary()
-    {
-        // delete m_left;
-        // delete m_right;
-    }
+    virtual ~Binary() = default;
 };
 
 class Grouping : public Expr {
 public:
-    Expr* m_expr;
+    std::unique_ptr<Expr> m_expr;
 
-    inline Grouping(Expr* expr)
-        : m_expr(expr)
+    inline Grouping(std::unique_ptr<Expr> expr)
+        : m_expr(std::move(expr))
     {
     }
     inline virtual std::any accept(IExprVisitor& visitor) override
@@ -112,14 +124,12 @@ public:
         return visitor.visit_grouping_expr(this);
     }
 
-    virtual ~Grouping()
-    {
-        // delete m_expr;
-    }
+    virtual ~Grouping() = default;
 };
 
 class Literal : public Expr {
 public:
+    // TODO::Why a pointer
     Value* m_value;
 
     inline Literal(Value* value)
@@ -132,20 +142,17 @@ public:
         return visitor.visit_literal_expr(this);
     }
 
-    virtual ~Literal()
-    {
-        // delete m_value;
-    }
+    virtual ~Literal() = default;
 };
 
 class Unary : public Expr {
 public:
-    Expr* m_expr;
-    Token* m_oper;
+    std::unique_ptr<Expr> m_expr;
+    Token m_oper;
 
-    inline Unary(Token* oper, Expr* expr)
-        : m_expr(expr)
-        , m_oper(oper)
+    inline Unary(Token oper, std::unique_ptr<Expr> expr)
+        : m_expr(std::move(expr))
+        , m_oper(std::move(oper))
     {
     }
 
@@ -154,40 +161,19 @@ public:
         return visitor.visit_unary_expr(this);
     }
 
-    virtual ~Unary()
-    {
-        // delete m_expr;
-        // delete m_oper;
-    }
-};
-
-class Variable : public Expr {
-public:
-    Token& m_name;
-
-    inline Variable(Token& name)
-        : m_name(name)
-    {
-    }
-
-    inline virtual std::any accept(IExprVisitor& visitor) override
-    {
-        return visitor.visit_variable_expr(this);
-    }
-
-    virtual ~Variable() = default;
+    virtual ~Unary() = default;
 };
 
 class Logical : public Expr {
 public:
-    Expr* m_left;
-    Token& m_oper;
-    Expr* m_right;
+    std::unique_ptr<Expr> m_left;
+    Token m_oper;
+    std::unique_ptr<Expr> m_right;
 
-    inline Logical(Expr* left, Token& oper, Expr* right)
-        : m_left(left)
-        , m_oper(oper)
-        , m_right(right)
+    inline Logical(std::unique_ptr<Expr> left, Token& oper, std::unique_ptr<Expr> right)
+        : m_left(std::move(left))
+        , m_oper(std::move(oper))
+        , m_right(std::move(right))
     {
     }
 
@@ -196,23 +182,19 @@ public:
         return visitor.visit_logical_expr(this);
     }
 
-    virtual ~Logical()
-    {
-        // delete m_left;
-        // delete m_right;
-    }
+    virtual ~Logical() = default;
 };
 
 class Call : public Expr {
 public:
-    Expr* m_callee;
-    Token& m_paren;
-    std::vector<Expr*> m_arguments;
+    std::unique_ptr<Expr> m_callee;
+    Token m_paren;
+    std::vector<std::unique_ptr<Expr>> m_arguments;
 
-    inline Call(Expr* callee, Token& paren, std::vector<Expr*>& arguments)
-        : m_callee(callee)
-        , m_paren(paren)
-        , m_arguments(arguments)
+    inline Call(std::unique_ptr<Expr> callee, Token& paren, std::vector<std::unique_ptr<Expr>> arguments)
+        : m_callee(std::move(callee))
+        , m_paren(std::move(paren))
+        , m_arguments(std::move(arguments))
     {
     }
 
@@ -221,24 +203,17 @@ public:
         return visitor.visit_call_expr(this);
     }
 
-    virtual ~Call()
-    {
-        // delete m_callee;
-        // for (auto exp: m_arguments)
-        // {
-        //     delete exp;
-        // }
-    }
+    virtual ~Call() = default;
 };
 
 class Get : public Expr {
 public:
-    Token& m_name;
-    Expr* m_object;
+    Token m_name;
+    std::unique_ptr<Expr> m_object;
 
-    inline Get(Token& name, Expr* expr)
-        : m_name(name)
-        , m_object(expr)
+    inline Get(Token& name, std::unique_ptr<Expr> expr)
+        : m_name(std::move(name))
+        , m_object(std::move(expr))
     {
     }
 
@@ -247,22 +222,19 @@ public:
         return visitor.visit_get_expr(this);
     }
 
-    virtual ~Get()
-    {
-        // delete m_object;
-    }
+    virtual ~Get() = default;
 };
 
 class Set : public Expr {
 public:
-    Token& m_name;
-    Expr* m_object;
-    Expr* m_value;
+    Token m_name;
+    std::unique_ptr<Expr> m_object;
+    std::unique_ptr<Expr> m_value;
 
-    inline Set(Token& name, Expr* expr, Expr* value)
-        : m_name(name)
-        , m_object(expr)
-        , m_value(value)
+    inline Set(Token& name, std::unique_ptr<Expr> expr, std::unique_ptr<Expr> value)
+        : m_name(std::move(name))
+        , m_object(std::move(expr))
+        , m_value(std::move(value))
     {
     }
 
@@ -271,19 +243,15 @@ public:
         return visitor.visit_set_expr(this);
     }
 
-    virtual ~Set()
-    {
-        // delete m_object;
-        // delete m_value;
-    }
+    virtual ~Set() = default;
 };
 
 class This : public Expr {
 public:
-    Token& m_keyword;
+    Token m_keyword;
 
     inline This(Token& keyword)
-        : m_keyword(keyword)
+        : m_keyword(std::move(keyword))
     {
     }
 
@@ -297,12 +265,12 @@ public:
 
 class Super : public Expr {
 public:
-    Token& m_keyword;
-    Token& m_method;
+    Token m_keyword;
+    Token m_method;
 
     inline Super(Token& keyword, Token& method)
-        : m_keyword(keyword)
-        , m_method(method)
+        : m_keyword(std::move(keyword))
+        , m_method(std::move(method))
     {
     }
 
@@ -316,13 +284,9 @@ public:
 
 class JList : public Expr {
 public:
-    std::vector<Expr*> m_items;
+    std::vector<std::unique_ptr<Expr>> m_items;
 
-    inline JList(std::vector<Expr*>& items)
-        : m_items(items)
-    {
-    }
-    inline JList(std::vector<Expr*>&& items)
+    inline JList(std::vector<std::unique_ptr<Expr>> items)
         : m_items(std::move(items))
     {
     }
@@ -337,14 +301,14 @@ public:
 
 class IndexGet : public Expr {
 public:
-    Expr* m_jlist;
-    Expr* m_index_expr;
-    Token& m_closing_bracket;
+    std::unique_ptr<Expr> m_jlist;
+    std::unique_ptr<Expr> m_index_expr;
+    Token m_closing_bracket;
 
-    inline IndexGet(Expr* jlist, Expr* index_expr, Token& closing_bracket)
-        : m_jlist(jlist)
-        , m_index_expr(index_expr)
-        , m_closing_bracket(closing_bracket)
+    inline IndexGet(std::unique_ptr<Expr> jlist, std::unique_ptr<Expr> index_expr, Token& closing_bracket)
+        : m_jlist(std::move(jlist))
+        , m_index_expr(std::move(index_expr))
+        , m_closing_bracket(std::move(closing_bracket))
     {
     }
 
@@ -358,16 +322,16 @@ public:
 
 class IndexSet : public Expr {
 public:
-    Expr* m_jlist;
-    Expr* m_index_expr;
-    Expr* m_value_expr;
-    Token& m_closing_bracket;
+    std::unique_ptr<Expr> m_jlist;
+    std::unique_ptr<Expr> m_index_expr;
+    std::unique_ptr<Expr> m_value_expr;
+    Token m_closing_bracket;
 
-    inline IndexSet(Expr* jlist, Expr* index_expr, Expr* value_expr, Token& closing_bracket)
-        : m_jlist(jlist)
-        , m_index_expr(index_expr)
-        , m_value_expr(value_expr)
-        , m_closing_bracket(closing_bracket)
+    inline IndexSet(std::unique_ptr<Expr> jlist, std::unique_ptr<Expr> index_expr, std::unique_ptr<Expr> value_expr, Token& closing_bracket)
+        : m_jlist(std::move(jlist))
+        , m_index_expr(std::move(index_expr))
+        , m_value_expr(std::move(value_expr))
+        , m_closing_bracket(std::move(closing_bracket))
     {
     }
 
@@ -381,11 +345,11 @@ public:
 
 class TypeCast : public Expr {
 public:
-    Expr* m_left;
+    std::unique_ptr<Expr> m_left;
     TypeInfo m_right;
 
-    TypeCast(Expr* left, TypeInfo right)
-        : m_left(left)
+    TypeCast(std::unique_ptr<Expr> left, TypeInfo right)
+        : m_left(std::move(left))
         , m_right(right)
     {
     }

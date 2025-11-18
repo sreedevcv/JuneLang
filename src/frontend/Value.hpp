@@ -8,8 +8,6 @@
 
 namespace jl {
 
-class Instance;
-class Callable;
 class Expr;
 
 template <typename T>
@@ -42,8 +40,6 @@ using Value = Markable<std::variant<
     double,
     bool,
     std::string,
-    Callable*,
-    Instance*,
     List,
     Null,
     char>>;
@@ -54,8 +50,6 @@ enum class Type {
     FLOAT,
     STR,
     BOOL,
-    CALL,
-    OBJ,
     LIST,
     JNULL,
     CHAR,
@@ -70,8 +64,6 @@ namespace is {
     bool _float(Value& ref);
     bool _bool(Value& ref);
     bool _str(Value& ref);
-    bool _callable(Value& ref);
-    bool _obj(Value& ref);
     bool _list(Value& ref);
     bool _number(Value& ref);
     bool _null(Value& ref);

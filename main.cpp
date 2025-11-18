@@ -1,9 +1,7 @@
 #include "ArgParser.hpp"
-#include "CodeGenerator.hpp"
 #include "ErrorHandler.hpp"
 #include "Lexer.hpp"
 #include "Parser.hpp"
-#include "StaticAddressPass.hpp"
 #include "VM.hpp"
 
 #include <cassert>
@@ -15,16 +13,21 @@
 int main(int argc, char const* argv[])
 {
 
-    jl::ArgParser args_parser(argc, argv);
-    const auto params = args_parser.parse();
+    // jl::ArgParser args_parser(argc, argv);
+    // const auto params = args_parser.parse();
 
-    if (!params) {
-        return 0;
-    }
+    // if (!params) {
+    //     return 0;
+    // }
 
-    std::string file_name { argv[1] };
-    jl::Lexer lexer(file_name);
+    // std::string file_name { argv[1] };
+    //     jl::Lexer lexer(file_name);
 
+    std::string file_name("test.june");
+
+    jl::Lexer lexer(R"(
+        1
+    )");
     lexer.scan();
 
     if (jl::ErrorHandler::has_error()) {
@@ -33,14 +36,9 @@ int main(int argc, char const* argv[])
 
     auto tokens = lexer.get_tokens();
     jl::Parser parser(tokens, file_name);
-    auto stmts = parser.parseStatements();
+    // auto stmts = parser.parseStatements();
 
-    if (jl::ErrorHandler::has_error()) {
-        return 1;
-    }
-
-    jl::CodeGenerator codegen(file_name);
-    const auto& [chunk_map, data_section] = codegen.generate(stmts);
+    auto expr = parser.parse();
 
     if (jl::ErrorHandler::has_error()) {
         return 1;

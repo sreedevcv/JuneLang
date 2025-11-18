@@ -1,5 +1,5 @@
 #include "Value.hpp"
-#include "Callable.hpp"
+#include "Expr.hpp"
 #include "Utils.hpp"
 
 #include <cstdlib>
@@ -23,16 +23,6 @@ bool jl::is::_bool(Value& ref)
 bool jl::is::_str(Value& ref)
 {
     return ref.get().index() == 3;
-}
-
-bool jl::is::_callable(Value& ref)
-{
-    return ref.get().index() == 4;
-}
-
-bool jl::is::_obj(Value& ref)
-{
-    return ref.get().index() == 5;
 }
 
 bool jl::is::_list(Value& ref)
@@ -66,10 +56,6 @@ jl::Type jl::get_type(jl::Value& value)
         return Type::BOOL;
     case 3:
         return Type::STR;
-    case 4:
-        return Type::CALL;
-    case 5:
-        return Type::OBJ;
     case 6:
         return Type::LIST;
     case 7:
@@ -106,12 +92,6 @@ bool jl::is::_exact_same(Value& ref1, Value& ref2)
     case Type::STR:
         return std::get<std::string>(ref1.get()) == std::get<std::string>(ref2.get());
         break;
-    case Type::CALL:
-        return std::get<Callable*>(ref1.get()) == std::get<Callable*>(ref2.get());
-        break;
-    case Type::OBJ:
-        return std::get<Instance*>(ref1.get()) == std::get<Instance*>(ref2.get());
-        break;
     case Type::LIST:
         return std::get<List>(ref1.get()) == std::get<List>(ref2.get());
         break;
@@ -137,11 +117,6 @@ std::string jl::stringify(Value* value)
         return std::to_string(std::get<double>(value->get()));
     } else if (is::_str(*value)) {
         return std::get<std::string>(value->get());
-    } else if (is::_obj(*value)) {
-        return std::get<Instance*>(value->get())->to_string();
-    } else if (is::_callable(*value)) {
-        return std::get<Callable*>(value->get())->to_string();
-    } else if (is::_list(*value)) {
         std::string list = "[";
         for (auto& expr : std::get<std::vector<Expr*>>(value->get())) {
             if (dynamic_cast<Literal*>(expr)) {

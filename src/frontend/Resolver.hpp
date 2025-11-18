@@ -1,19 +1,20 @@
 #pragma once
 
 #include <map>
+#include <memory>
 
 #include "Expr.hpp"
-#include "Interpreter.hpp"
+// #include "Interpreter.hpp"
 #include "Stmt.hpp"
 
 namespace jl {
 
 class Resolver : public IExprVisitor, public IStmtVisitor {
 public:
-    Resolver(Interpreter& interpreter, std::string& file_name);
+    Resolver(std::string& file_name);
     ~Resolver() = default;
 
-    void resolve(std::vector<Stmt*>& statements);
+    void resolve(std::vector<std::unique_ptr<Stmt>>& statements);
 
     enum class FunctionType {
         NONE,
@@ -36,7 +37,6 @@ public:
 private:
     using Scope = std::map<std::string, bool>;
 
-    Interpreter& m_interpreter;
     std::vector<Scope> m_scopes;
     std::string& m_file_name;
     FunctionType m_current_function_type = FunctionType::NONE;
