@@ -1,5 +1,6 @@
 #include "Token.hpp"
 #include "Value.hpp"
+#include <utility>
 
 jl::Value jl::Token::global_true_constant = jl::Value { true };
 jl::Value jl::Token::global_false_constant = jl::Value { false };
@@ -11,14 +12,15 @@ jl::Token::Token(TokenType type, std::string& lexeme, int line)
     : m_type(type)
     , m_lexeme(lexeme)
     , m_line(line)
-    , m_value(nullptr)
 {
 }
 
-jl::Token::Token(TokenType type, std::string& lexeme, int line, Value* value)
-    : Token(type, lexeme, line)
+jl::Token::Token(TokenType type, std::string& lexeme, int line, Value value)
+    : m_type(type)
+    , m_lexeme(lexeme)
+    , m_line(line)
+    , m_value(std::move(value))
 {
-    m_value = value;
 }
 
 jl::Token::~Token()
@@ -35,7 +37,7 @@ std::string& jl::Token::get_lexeme()
     return m_lexeme;
 }
 
-jl::Value* jl::Token::get_value() const
+jl::Value jl::Token::get_value() const
 {
     return m_value;
 }

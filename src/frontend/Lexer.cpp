@@ -29,13 +29,6 @@ jl::Lexer::Lexer(std::string& file_path)
     m_source = ss.str();
 }
 
-jl::Lexer::~Lexer()
-{
-    for (auto ref : m_allocated_refs) {
-        delete ref;
-    }
-}
-
 void jl::Lexer::scan()
 {
     while (!is_at_end()) {
@@ -151,7 +144,7 @@ void jl::Lexer::scan_token()
         if (advance() != '\'') {
             ErrorHandler::error(m_file_path, m_line, "Expected a  closing ' for a charachter", m_start);
         } else {
-            add_token(Token::CHAR, new Value { ch });
+            add_token(Token::CHAR, Value { ch });
         }
     } break;
     case '"':
@@ -181,7 +174,7 @@ void jl::Lexer::add_token(Token::TokenType type)
     m_tokens.push_back(Token(type, lexeme, m_line));
 }
 
-void jl::Lexer::add_token(Token::TokenType type, Value* value)
+void jl::Lexer::add_token(Token::TokenType type, Value value)
 {
     std::string lexeme = m_source.substr(m_start, m_current - m_start);
     m_tokens.push_back(Token(type, lexeme, m_line, value));
@@ -223,9 +216,8 @@ void jl::Lexer::scan_string()
 
     advance(); // Read the ending '"'
     std::string value = m_source.substr(m_start + 1, (m_current - 1) - (m_start + 1));
-    Value* str = new Value { value }; // FIXME::memory leak!
-    m_allocated_refs.push_back(str);
-    add_token(Token::STRING, str);
+    Value str = std::move(value); // FIXME::memory leak!
+    add_token(Token::STRING, std::move(str));
 }
 
 bool jl::Lexer::is_digit(char c)
@@ -254,15 +246,11 @@ void jl::Lexer::scan_number()
         }
     }
 
-    Value* val;
     if (is_float) {
-        val = new Value { std::stod(m_source.substr(m_start, m_current - m_start)) };
-        add_token(Token::FLOAT, val);
+        add_token(Token::FLOAT, std::stod(m_source.substr(m_start, m_current - m_start)));
     } else {
-        val = new Value { std::stoi(m_source.substr(m_start, m_current - m_start)) };
-        add_token(Token::INT, val);
+        add_token(Token::INT, std::stoi(m_source.substr(m_start, m_current - m_start)));
     }
-    m_allocated_refs.push_back(val);
 }
 
 char jl::Lexer::peek_next()
@@ -291,22 +279,16 @@ void jl::Lexer::scan_identifier()
     }
 
     std::string lexeme = m_source.substr(m_start, m_current - m_start);
-    Value* val;
+    Value val;
 
     // FIXME:: Leaks!!!
     if (m_reserved_words.contains(lexeme)) {
         if (lexeme == "true") {
-            val = new Value { true };
-            add_token(Token::TRUE, val);
-            m_allocated_refs.push_back(val);
+            add_token(Token::TRUE, true);
         } else if (lexeme == "false") {
-            val = new Value { false };
-            add_token(Token::FALSE, val);
-            m_allocated_refs.push_back(val);
+            add_token(Token::FALSE, false);
         } else if (lexeme == "null") {
-            val = new Value { Null {} };
-            add_token(Token::NULL_, val);
-            m_allocated_refs.push_back(val);
+            add_token(Token::NULL_, Null {});
         } else {
             add_token(m_reserved_words[lexeme]);
         }

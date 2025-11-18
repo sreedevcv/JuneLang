@@ -7,27 +7,27 @@
 
 bool jl::is::_int(Value& ref)
 {
-    return ref.get().index() == 0;
+    return ref.index() == 0;
 }
 
 bool jl::is::_float(Value& ref)
 {
-    return ref.get().index() == 1;
+    return ref.index() == 1;
 }
 
 bool jl::is::_bool(Value& ref)
 {
-    return ref.get().index() == 2;
+    return ref.index() == 2;
 }
 
 bool jl::is::_str(Value& ref)
 {
-    return ref.get().index() == 3;
+    return ref.index() == 3;
 }
 
 bool jl::is::_list(Value& ref)
 {
-    return ref.get().index() == 6;
+    return ref.index() == 6;
 }
 
 bool jl::is::_number(Value& ref)
@@ -37,17 +37,17 @@ bool jl::is::_number(Value& ref)
 
 bool jl::is::_null(Value& ref)
 {
-    return ref.get().index() == 7;
+    return ref.index() == 7;
 }
 
 bool jl::is::_same(Value& ref1, Value& ref2)
 {
-    return ref1.get().index() == ref2.get().index();
+    return ref1.index() == ref2.index();
 }
 
 jl::Type jl::get_type(jl::Value& value)
 {
-    switch (value.get().index()) {
+    switch (value.index()) {
     case 0:
         return Type::INT;
     case 1:
@@ -70,9 +70,9 @@ jl::Type jl::get_type(jl::Value& value)
 
 bool jl::is::_exact_same(Value& ref1, Value& ref2)
 {
-    const auto idx1 = ref1.get().index();
+    const auto idx1 = ref1.index();
 
-    if (idx1 != ref2.get().index()) {
+    if (idx1 != ref2.index()) {
         return false;
     }
 
@@ -81,19 +81,19 @@ bool jl::is::_exact_same(Value& ref1, Value& ref2)
         return true;
         break;
     case Type::INT:
-        return std::get<int>(ref1.get()) == std::get<int>(ref2.get());
+        return std::get<int>(ref1) == std::get<int>(ref2);
         break;
     case Type::FLOAT:
-        return std::get<double>(ref1.get()) == std::get<double>(ref2.get());
+        return std::get<double>(ref1) == std::get<double>(ref2);
         break;
     case Type::BOOL:
-        return std::get<bool>(ref1.get()) == std::get<bool>(ref2.get());
+        return std::get<bool>(ref1) == std::get<bool>(ref2);
         break;
     case Type::STR:
-        return std::get<std::string>(ref1.get()) == std::get<std::string>(ref2.get());
+        return std::get<std::string>(ref1) == std::get<std::string>(ref2);
         break;
     case Type::LIST:
-        return std::get<List>(ref1.get()) == std::get<List>(ref2.get());
+        return std::get<List>(ref1) == std::get<List>(ref2);
         break;
     case Type::JNULL:
         return true;
@@ -105,22 +105,23 @@ bool jl::is::_exact_same(Value& ref1, Value& ref2)
     }
 }
 
+// TODO::Change the argument to take const ref instead of a pointer
 std::string jl::stringify(Value* value)
 {
     if (is::_null(*value)) {
         return "null";
     } else if (is::_bool(*value)) {
-        return std::get<bool>(value->get()) ? "true" : "false";
+        return std::get<bool>(*value) ? "true" : "false";
     } else if (is::_int(*value)) {
-        return std::to_string(std::get<int>(value->get()));
+        return std::to_string(std::get<int>(*value));
     } else if (is::_float(*value)) {
-        return std::to_string(std::get<double>(value->get()));
+        return std::to_string(std::get<double>(*value));
     } else if (is::_str(*value)) {
-        return std::get<std::string>(value->get());
+        return std::get<std::string>(*value);
         std::string list = "[";
-        for (auto& expr : std::get<std::vector<Expr*>>(value->get())) {
+        for (auto& expr : std::get<std::vector<Expr*>>(*value)) {
             if (dynamic_cast<Literal*>(expr)) {
-                list.append(stringify(static_cast<Literal*>(expr)->m_value)); // NOTE::Problem to pass address og no-gc allocated Jlvalue here??
+                list.append(stringify(&static_cast<Literal*>(expr)->m_value)); // NOTE::Problem to pass address og no-gc allocated Jlvalue here??
             } else {
                 list.append("`expr`");
             }

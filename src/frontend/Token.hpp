@@ -5,7 +5,7 @@
 #include "Value.hpp"
 
 namespace jl {
-class Token : public Ref {
+class Token {
 public:
     enum TokenType {
         // Single Charachter
@@ -75,12 +75,12 @@ public:
     };
 
     Token(TokenType type, std::string& lexeme, int line);
-    Token(TokenType type, std::string& lexeme, int line, Value* value);
+    Token(TokenType type, std::string& lexeme, int line, Value value);
     ~Token();
 
     TokenType get_tokentype() const;
     std::string& get_lexeme();
-    Value* get_value() const;
+    Value get_value() const;
     int get_line() const;
 
     static Value global_true_constant;
@@ -94,7 +94,7 @@ private:
     TokenType m_type;
     std::string m_lexeme;
     int m_line;
-    Value* m_value;
+    Value m_value;
 };
 
 } // namespace jl

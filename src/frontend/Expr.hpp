@@ -48,7 +48,7 @@ public:
     virtual std::any visit_type_cast_expr(TypeCast* expr) = 0;
 };
 
-class Expr : public Ref {
+class Expr {
 public:
     virtual std::any accept(IExprVisitor& visitor) = 0;
     virtual ~Expr() = default;
@@ -129,11 +129,10 @@ public:
 
 class Literal : public Expr {
 public:
-    // TODO::Why a pointer
-    Value* m_value;
+    Value m_value;
 
-    inline Literal(Value* value)
-        : m_value(value)
+    inline Literal(Value& value)
+        : m_value(std::move(value))
     {
     }
 

@@ -1,8 +1,6 @@
 #pragma once
 
-#include "Ref.hpp"
 #include <string>
-#include <utility>
 #include <variant>
 #include <vector>
 
@@ -10,39 +8,18 @@ namespace jl {
 
 class Expr;
 
-template <typename T>
-struct Markable : Ref {
-    T m_value;
-
-    template <typename... Args>
-    Markable(Args&&... args)
-        : m_value { std::forward<Args...>(args)... }
-    {
-    }
-
-    T& get()
-    {
-        return m_value;
-    }
-
-    T get_copy()
-    {
-        return m_value;
-    }
-};
-
 struct Null { };
 
 using List = std::vector<Expr*>;
 
-using Value = Markable<std::variant<
+using Value = std::variant<
     int,
     double,
     bool,
     std::string,
     List,
     Null,
-    char>>;
+    char>;
 
 enum class Type {
     NONE,

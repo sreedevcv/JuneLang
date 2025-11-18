@@ -1,7 +1,6 @@
 #pragma once
 
 #include "Expr.hpp"
-#include "Ref.hpp"
 #include "Token.hpp"
 #include "TypeInfo.hpp"
 
@@ -42,7 +41,7 @@ public:
     virtual std::any visit_extern_stmt(ExternStmt* stmt) = 0;
 };
 
-class Stmt : public Ref {
+class Stmt {
 public:
     virtual std::any accept(IStmtVisitor& visitor) = 0;
     virtual ~Stmt() = default;

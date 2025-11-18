@@ -4,6 +4,7 @@
 #include <unordered_map>
 #include <vector>
 
+#include "Value.hpp"
 #include "Token.hpp"
 
 namespace jl {
@@ -11,20 +12,18 @@ class Lexer {
 public:
     Lexer(const char* source);
     Lexer(std::string& file_path);
-    ~Lexer();
+
     void scan();
     std::vector<Token> get_tokens();
 
 private:
     std::string m_file_path;
     std::vector<Token> m_tokens;
-    std::vector<Value*> m_allocated_refs;
     std::string m_source;
 
     int m_line = 1;
     int m_current = 0;
     int m_start = 0;
-    // int m_file_size = 0;
 
     bool match(char expected);
     bool is_at_end();
@@ -37,7 +36,7 @@ private:
     char peek_next();
 
     void add_token(Token::TokenType type);
-    void add_token(Token::TokenType type, Value* value);
+    void add_token(Token::TokenType type, Value value);
     void scan_token();
     void scan_string();
     void scan_number();

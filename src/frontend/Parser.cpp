@@ -235,8 +235,8 @@ std::unique_ptr<jl::Expr> jl::Parser::unary()
 std::unique_ptr<jl::Expr> jl::Parser::primary()
 {
     if (match({ Token::INT, Token::FLOAT, Token::STRING, Token::FALSE, Token::TRUE, Token::NULL_, Token::CHAR })) {
-        Value* value = previous().get_value();
-        auto literal = std::make_unique<Literal>(value); // Should copy or just take a reference(now using reference)
+        Value value = previous().get_value();
+        auto literal = std::make_unique<Literal>(value);
         return literal;
     }
     if (match({ Token::THIS })) {
@@ -625,7 +625,8 @@ std::unique_ptr<jl::Stmt> jl::Parser::for_statement()
             body = std::make_unique<BlockStmt>(std::move(stmts));
         }
         if (condition) {
-            condition = std::make_unique<Literal>(&Token::global_true_constant);
+            auto true_val = Token::global_true_constant;
+            condition = std::make_unique<Literal>(true_val);
             body = std::make_unique<WhileStmt>(std::move(*condition), std::move(body));
         }
 
@@ -787,7 +788,7 @@ std::optional<jl::TypeInfo> jl::Parser::parse_type_info()
             auto& array_size = consume(Token::INT, "Expected a non-negative array size");
             consume(Token::RIGHT_SQUARE, "Expected ] after list type");
 
-            const auto size = std::get<int>(array_size.get_value()->get());
+            const auto size = std::get<int>(array_size.get_value());
             return TypeInfo {
                 .name = type_name.get_lexeme(),
                 .is_array = true,
