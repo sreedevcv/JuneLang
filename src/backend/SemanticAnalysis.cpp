@@ -1,0 +1,521 @@
+#include "SemanticAnalysis.hpp"
+
+#include "ErrorHandler.hpp"
+#include "Stmt.hpp"
+#include "Token.hpp"
+#include "Utils.hpp"
+#include "Value.hpp"
+#include "backend/types/Type.hpp"
+#include <any>
+#include <format>
+#include <memory>
+#include <optional>
+#include <utility>
+
+bool validate_ptr_arithmetic(jl::Binary* expr, const jl::type::Type* left, const jl::type::Type* right, std::string m_file_name);
+bool are_pointers(jl::type::Type* left, jl::type::Type* right);
+bool is_valid_pointer_operand(jl::type::Type* t);
+std::pair<jl::type::Builtin::Primitive, jl::type::Builtin::Primitive> apply_numeric_promotion(jl::Binary* expr, jl::type::Builtin* left, jl::type::Builtin* right);
+bool is_float_allowed_op(jl::Token::TokenType t);
+bool is_boolean_operator(jl::Token::TokenType t);
+
+jl::SemanticAnalyzer::SemanticAnalyzer(std::string& file_name)
+    : m_file_name(file_name)
+{
+    m_symbol_table.push_back({});
+}
+
+bool jl::SemanticAnalyzer::type_check(Expr* expr)
+{
+    return std::any_cast<bool>(expr->accept(*this));
+}
+
+bool jl::SemanticAnalyzer::type_check(Stmt* stmt)
+{
+    return std::any_cast<bool>(stmt->accept(*this));
+}
+
+bool jl::SemanticAnalyzer::type_check(const std::vector<std::unique_ptr<Stmt>>& stmts)
+{
+    bool result = true;
+
+    for (const auto& stmt : stmts) {
+        result &= type_check(stmt.get());
+    }
+
+    return result;
+}
+
+bool jl::SemanticAnalyzer::is_defined(const std::string& name)
+{
+    for (int32_t i = m_symbol_table.size() - 1; i >= 0; i--) {
+        const auto& map = m_symbol_table[i];
+
+        if (map.contains(name)) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+std::optional<std::unique_ptr<jl::type::Type>>& jl::SemanticAnalyzer::get_variable_type(const std::string& name)
+{
+    for (uint32_t i = m_symbol_table.size() - 1; i >= 0; i--) {
+        auto& map = m_symbol_table[i];
+
+        if (map.contains(name)) {
+            return map.at(name);
+        }
+    }
+}
+
+bool jl::SemanticAnalyzer::define_variable(const std::string& name, std::optional<std::unique_ptr<type::Type>> type)
+{
+    if (m_symbol_table.back().contains(name)) {
+        return false;
+    }
+
+    m_symbol_table.back().insert({ name, std::move(type) });
+
+    return true;
+}
+
+// -----------------------------------EXPR----------------------------------
+
+std::any jl::SemanticAnalyzer::visit_binary_expr(Binary* expr)
+{
+    // If  type checking failed, return
+    if (!type_check(expr->m_left.get()) || !type_check(expr->m_right.get())) {
+        return false;
+    }
+
+    const auto left_type = expr->m_left.get()->m_type.get();
+    const auto right_type = expr->m_right.get()->m_type.get();
+
+    if (are_pointers(left_type, right_type)) {
+        return validate_ptr_arithmetic(expr, left_type, right_type, m_file_name);
+    }
+
+    // Check both are numbers
+    if (!type::is_number(left_type) || !type::is_number(right_type)) {
+        ErrorHandler::error(
+            m_file_name,
+            expr->m_oper.get_line(),
+            std::format("Left: {} and right: {} operands are not numbers", left_type->to_str(), right_type->to_str()).c_str());
+        return false;
+    }
+
+    const auto left = dynamic_cast<type::Builtin*>(left_type);
+    const auto right = dynamic_cast<type::Builtin*>(right_type);
+
+    auto [l_type, r_type] = apply_numeric_promotion(expr, left, right);
+
+    if (is_boolean_operator(expr->m_oper.get_tokentype())) {
+        expr->m_type = std::make_unique<type::Builtin>(type::Builtin::BOOL);
+    } else {
+        // Both l_type and t_type are not the same, so just assign one
+        expr->m_type = std::make_unique<type::Builtin>(l_type);
+    }
+
+    // If both are floats only certain types of opers are allowed
+    if (l_type == type::Builtin::FLOAT && r_type == type::Builtin::FLOAT) {
+        if (!is_float_allowed_op(expr->m_oper.get_tokentype())) {
+            ErrorHandler::error(
+                m_file_name,
+                expr->m_oper.get_line(),
+                std::format("Operation {} is not allowed for floats", expr->m_oper.get_lexeme()).c_str());
+            return false;
+        }
+    }
+
+    return true;
+}
+
+std::any jl::SemanticAnalyzer::visit_grouping_expr(Grouping* expr)
+{
+    const auto res = type_check(expr->m_expr.get());
+    if (res) {
+        expr->m_type = expr->m_expr->m_type->clone();
+    }
+    return res;
+}
+
+std::any jl::SemanticAnalyzer::visit_unary_expr(Unary* expr)
+{
+    if (!type_check(expr->m_expr.get())) {
+        return false;
+    }
+
+    const auto& type = expr->m_expr->m_type.get();
+
+    switch (expr->m_oper.get_tokentype()) {
+    case Token::MINUS: {
+        if (type::is_number(type) || type->m_kind == type::Type::PTR) {
+            expr->m_type = type->clone();
+            return true;
+        }
+    } break;
+    case Token::BANG:
+        if (type->m_kind == type::Type::BUILTIN && static_cast<type::Builtin*>(type)->m_primitive == type::Builtin::BOOL) {
+            expr->m_type = type->clone();
+            return true;
+        }
+        break;
+    case Token::BIT_NOT:
+        if (type->m_kind == type::Type::BUILTIN && static_cast<type::Builtin*>(type)->m_primitive == type::Builtin::INT) {
+            expr->m_type = type->clone();
+            return true;
+        }
+        break;
+    default:
+        break;
+    }
+
+    ErrorHandler::error(
+        m_file_name,
+        expr->m_oper.get_line(),
+        std::format("Operation '{}' not permitted for type: {}", expr->m_oper.get_lexeme(), expr->m_expr->m_type->to_str()).c_str());
+    return false;
+}
+
+std::any jl::SemanticAnalyzer::visit_literal_expr(Literal* expr)
+{
+    auto& value = expr->m_value;
+
+    switch (get_type(value)) {
+    case Type::INT:
+        expr->m_type = std::make_unique<type::Builtin>(type::Builtin::INT);
+        return true;
+    case Type::FLOAT:
+        expr->m_type = std::make_unique<type::Builtin>(type::Builtin::FLOAT);
+        return true;
+    case Type::BOOL:
+        expr->m_type = std::make_unique<type::Builtin>(type::Builtin::BOOL);
+        return true;
+    case Type::CHAR:
+        expr->m_type = std::make_unique<type::Builtin>(type::Builtin::CHAR);
+        return true;
+    case Type::STR:
+    case Type::JNULL:
+    // TODO: Create a pointer literal of value of zero
+    default:
+        unimplemented();
+        break;
+    }
+
+    return false;
+}
+
+std::any jl::SemanticAnalyzer::visit_logical_expr(Logical* expr)
+{
+    if (!type_check(expr->m_left.get()) || !type_check(expr->m_right.get())) {
+        return false;
+    }
+
+    const auto left = expr->m_left.get()->m_type.get();
+    const auto right = expr->m_right.get()->m_type.get();
+
+    if (!is_boolean(left) || !is_boolean(right)) {
+        ErrorHandler::error(m_file_name, expr->m_oper.get_line(),
+            std::format("Operation: {} is only permitted for booleans, here right: {} and left: {}",
+                expr->m_oper.get_lexeme(),
+                right->to_str(),
+                left->to_str())
+                .c_str());
+        return false;
+    }
+
+    expr->m_type = left->clone();
+    return true;
+}
+
+std::any jl::SemanticAnalyzer::visit_variable_expr(Variable* expr)
+{
+    if (!is_defined(expr->m_name.get_lexeme())) {
+        ErrorHandler::error(m_file_name, expr->m_name.get_line(),
+            std::format("Variable {} is undefined", expr->m_name.get_lexeme()).c_str());
+        return false;
+    }
+
+    auto& type = get_variable_type(expr->m_name.get_lexeme());
+
+    if (!type) {
+        ErrorHandler::error(m_file_name, expr->m_name.get_line(),
+            std::format("Variable {} is uninitialized", expr->m_name.get_lexeme()).c_str());
+        return false;
+    }
+
+    expr->m_type = type.value().get()->clone();
+
+    return true;
+}
+
+std::any jl::SemanticAnalyzer::visit_assign_expr(Assign* expr)
+{
+    if (!type_check(expr->m_expr.get()))
+        return false;
+
+    if (!is_defined(expr->m_token.get_lexeme())) {
+        ErrorHandler::error(m_file_name, expr->m_token.get_line(),
+            std::format("Variable {} is undefined", expr->m_token.get_lexeme()).c_str());
+        return false;
+    }
+
+    auto& type = get_variable_type(expr->m_token.get_lexeme());
+
+    if (!type) {
+        // Variable is untyped as of now
+        type = expr->m_expr->m_type.get()->clone();
+        expr->m_type = type.value().get()->clone();
+        return true;
+    }
+
+    if (type.value()->equals(expr->m_expr.get()->m_type.get())) {
+        expr->m_type = type.value().get()->clone();
+        return true;
+    }
+
+    // Variable and expr types do not match
+    ErrorHandler::error(m_file_name, expr->m_token.get_line(),
+        std::format("Variable {} of type {} cannot be assigned value of type {}",
+            expr->m_token.get_lexeme(), type.value()->to_str(),
+            expr->m_expr->m_type.get()->to_str())
+            .c_str());
+    return false;
+}
+
+std::any jl::SemanticAnalyzer::visit_call_expr(Call* expr) { }
+std::any jl::SemanticAnalyzer::visit_get_expr(Get* expr) { }
+std::any jl::SemanticAnalyzer::visit_set_expr(Set* expr) { }
+std::any jl::SemanticAnalyzer::visit_this_expr(This* expr) { }
+std::any jl::SemanticAnalyzer::visit_super_expr(Super* expr) { }
+std::any jl::SemanticAnalyzer::visit_jlist_expr(JList* expr) { }
+std::any jl::SemanticAnalyzer::visit_index_get_expr(IndexGet* expr) { }
+std::any jl::SemanticAnalyzer::visit_index_set_expr(IndexSet* expr) { }
+std::any jl::SemanticAnalyzer::visit_type_cast_expr(TypeCast* expr) { }
+
+// -----------------------------------STMT---------------------------------
+
+std::any jl::SemanticAnalyzer::visit_expr_stmt(ExprStmt* stmt)
+{
+    return type_check(stmt->m_expr.get());
+}
+
+std::any jl::SemanticAnalyzer::visit_var_stmt(VarStmt* stmt)
+{
+    std::optional<std::unique_ptr<type::Type>> final_type;
+
+    if (stmt->m_initializer) {
+        auto expr = stmt->m_initializer.value().get();
+        if (!type_check(expr))
+            return false;
+
+        if (stmt->m_data_type) {
+            auto type = type::from_type_info(*stmt->m_data_type);
+
+            if (!type->get()->equals(expr->m_type.get())) {
+                ErrorHandler::error(m_file_name, stmt->m_name.get_line(),
+                    std::format("Variable {} of type {} cannot be assigned value of type {}",
+                        stmt->m_name.get_lexeme(), type.value()->to_str(),
+                        expr->m_type.get()->to_str())
+                        .c_str());
+                return false;
+            }
+        }
+
+        final_type = expr->m_type->clone();
+    } else {
+        final_type = std::nullopt;
+    }
+
+    if (!define_variable(stmt->m_name.get_lexeme(), std::move(final_type))) {
+        ErrorHandler::error(m_file_name, stmt->m_name.get_line(),
+            std::format("Redefinition of variable {}", stmt->m_name.get_lexeme()).c_str());
+        return false;
+    }
+
+    return true;
+}
+
+std::any jl::SemanticAnalyzer::visit_empty_stmt(EmptyStmt* stmt)
+{
+    return true;
+}
+
+std::any jl::SemanticAnalyzer::visit_block_stmt(BlockStmt* stmt)
+{
+    m_symbol_table.push_back({});
+    const auto res = type_check(stmt->m_statements);
+    m_symbol_table.pop_back();
+    return res;
+}
+
+std::any jl::SemanticAnalyzer::visit_if_stmt(IfStmt* stmt)
+{
+    auto result = true;
+    result &= type_check(stmt->m_condition.get());
+
+    if (result && !type::is_boolean(stmt->m_condition->m_type.get())) {
+        ErrorHandler::error(m_file_name, stmt->m_if_keyword.get_line(),
+            std::format("Condition of if statement should be bool, but found {}", stmt->m_condition->m_type->to_str()).c_str());
+        result = false;
+    }
+
+    result &= type_check(stmt->m_then_stmt.get());
+    if (stmt->m_else_stmt) {
+        result &= type_check(stmt->m_else_stmt.value().get());
+    }
+
+    return result;
+}
+
+std::any jl::SemanticAnalyzer::visit_print_stmt(PrintStmt* stmt) { }
+std::any jl::SemanticAnalyzer::visit_while_stmt(WhileStmt* stmt) { }
+std::any jl::SemanticAnalyzer::visit_func_stmt(FuncStmt* stmt) { }
+std::any jl::SemanticAnalyzer::visit_return_stmt(ReturnStmt* stmt) { }
+std::any jl::SemanticAnalyzer::visit_class_stmt(ClassStmt* stmt) { }
+std::any jl::SemanticAnalyzer::visit_for_each_stmt(ForEachStmt* stmt) { }
+std::any jl::SemanticAnalyzer::visit_break_stmt(BreakStmt* stmt) { }
+std::any jl::SemanticAnalyzer::visit_extern_stmt(ExternStmt* stmt) { }
+
+bool are_pointers(jl::type::Type* left, jl::type::Type* right)
+{
+    if (left->m_kind == jl::type::Type::PTR || right->m_kind == jl::type::Type::PTR) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+bool validate_ptr_arithmetic(jl::Binary* expr, const jl::type::Type* left, const jl::type::Type* right, std::string m_file_name)
+{
+    using namespace jl;
+    unimplemented("Incomplete Pointer arithametics");
+    // Typecast the non pointer to a pointer
+    if (left->m_kind != type::Type::PTR) {
+        if (left->m_kind != type::Type::BUILTIN) {
+            ErrorHandler::error(
+                m_file_name,
+                expr->m_oper.get_line(),
+                std::format("Operation: {} is not permitted for Right: {} (is a pointer) but left: {} (not a pointer)",
+                    expr->m_oper.get_lexeme(),
+                    right->to_str(),
+                    left->to_str())
+                    .c_str());
+            return false;
+        } else if (static_cast<const type::Builtin*>(left)->m_primitive != type::Builtin::INT) {
+            ErrorHandler::error(
+                m_file_name,
+                expr->m_oper.get_line(),
+                std::format("Operation: {} is not permitted for Right: {} (is a pointer) but left: {} (not a int)",
+                    expr->m_oper.get_lexeme(),
+                    right->to_str(),
+                    left->to_str())
+                    .c_str());
+            return false;
+        } else {
+            // expr->m_left->m_cast_to = std::make_unique<type::Pointer>(static_cast<type::Pointer>(right).m_pointee);
+            // TODO::Create a copy method for Type
+        }
+    }
+
+    if (right->m_kind != type::Type::PTR) {
+        if (right->m_kind != type::Type::BUILTIN) {
+            ErrorHandler::error(
+                m_file_name,
+                expr->m_oper.get_line(),
+                std::format("Operation: {} is not permitted for left: {} (is a pointer) and right: {} (not a pointer)",
+                    expr->m_oper.get_lexeme(),
+                    left->to_str(),
+                    right->to_str())
+                    .c_str());
+            return false;
+        } else if (static_cast<const type::Builtin*>(right)->m_primitive != type::Builtin::INT) {
+            ErrorHandler::error(
+                m_file_name,
+                expr->m_oper.get_line(),
+                std::format("Operation: {} is not permitted for left: {} (is a pointer) and right: {} (not a int)",
+                    expr->m_oper.get_lexeme(),
+                    left->to_str(),
+                    right->to_str())
+                    .c_str());
+            return false;
+        } else {
+            // expr->m_left->m_cast_to = std::make_unique<type::Pointer>(static_cast<type::Pointer>(right_type).m_pointee);
+        }
+
+        // expr->m_type =
+    }
+
+    return true;
+}
+
+std::pair<jl::type::Builtin::Primitive, jl::type::Builtin::Primitive> apply_numeric_promotion(
+    jl::Binary* expr,
+    jl::type::Builtin* left,
+    jl::type::Builtin* right)
+{
+    using namespace jl;
+
+    auto l_type = left->m_primitive;
+    auto r_type = right->m_primitive;
+
+    if (l_type == type::Builtin::FLOAT && r_type == type::Builtin::INT) {
+        expr->m_right->m_cast_to = std::make_unique<type::Builtin>(type::Builtin::FLOAT);
+        r_type = type::Builtin::FLOAT;
+    } else if (left->m_primitive == type::Builtin::INT && r_type == type::Builtin::FLOAT) {
+        expr->m_left->m_cast_to = std::make_unique<type::Builtin>(type::Builtin::FLOAT);
+        l_type = type::Builtin::FLOAT;
+    }
+
+    return { l_type, r_type };
+}
+
+bool is_float_allowed_op(jl::Token::TokenType t)
+{
+    using namespace jl;
+    switch (t) {
+    case Token::PLUS:
+    case Token::MINUS:
+    case Token::STAR:
+    case Token::SLASH:
+    case Token::GREATER:
+    case Token::LESS:
+    case Token::GREATER_EQUAL:
+    case Token::LESS_EQUAL:
+    case Token::EQUAL_EQUAL:
+    case Token::BANG_EQUAL:
+        return true;
+    case Token::PERCENT:
+    case Token::BIT_AND:
+    case Token::BIT_OR:
+    case Token::BIT_XOR:
+    default:
+        return false;
+    }
+}
+
+bool is_boolean_operator(jl::Token::TokenType t)
+{
+    using namespace jl;
+    switch (t) {
+    case Token::PLUS:
+    case Token::MINUS:
+    case Token::STAR:
+    case Token::SLASH:
+    case Token::PERCENT:
+    case Token::BIT_AND:
+    case Token::BIT_OR:
+    case Token::BIT_XOR:
+        return false;
+    case Token::GREATER:
+    case Token::LESS:
+    case Token::GREATER_EQUAL:
+    case Token::LESS_EQUAL:
+    case Token::EQUAL_EQUAL:
+    case Token::BANG_EQUAL:
+    default:
+        return true;
+    }
+}

@@ -4,7 +4,6 @@
 
 #include "CodeGenerator.hpp"
 #include "ErrorHandler.hpp"
-#include "Interpreter.hpp"
 #include "Lexer.hpp"
 #include "Parser.hpp"
 #include "Resolver.hpp"
@@ -26,8 +25,7 @@ jl::VM::InterpretResult compile(std::string file_name)
 
     REQUIRE(ErrorHandler::has_error() == false);
 
-    Interpreter interpreter(file_name);
-    Resolver resolver(interpreter, file_name);
+    Resolver resolver(file_name);
     resolver.resolve(stmts);
 
     REQUIRE(ErrorHandler::has_error() == false);

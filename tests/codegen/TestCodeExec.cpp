@@ -1,3 +1,4 @@
+#include "IROptimizer.hpp"
 #include "StaticAddressPass.hpp"
 #include "Utils.hpp"
 #include "catch2/catch_test_macros.hpp"
@@ -6,7 +7,6 @@
 
 #include "CodeGenerator.hpp"
 #include "ErrorHandler.hpp"
-#include "Interpreter.hpp"
 #include "Lexer.hpp"
 #include "Operand.hpp"
 #include "Parser.hpp"
@@ -26,8 +26,7 @@ struct CompileData {
     }
 };
 
-static CompileData
-compile(const char* source_code)
+static CompileData compile(const char* source_code)
 {
     using namespace jl;
 
@@ -43,8 +42,7 @@ compile(const char* source_code)
 
     REQUIRE(jl::ErrorHandler::has_error() == false);
 
-    jl::Interpreter interpreter(file_name);
-    jl::Resolver resolver(interpreter, file_name);
+    jl::Resolver resolver(file_name);
     resolver.resolve(stmts);
 
     REQUIRE(jl::ErrorHandler::has_error() == false);
@@ -54,9 +52,12 @@ compile(const char* source_code)
 
     REQUIRE(jl::ErrorHandler::has_error() == false);
 
-    jl::patch_memmory_address(chunk_map, (uint64_t)data_section.data());
+    jl::IROptimizer optmizier(chunk_map);
+    auto optmized_chunks = optmizier.optimize();
 
-    jl::VM vm(chunk_map, (ptr_type)data_section.data());
+    jl::patch_memmory_address(optmized_chunks, (uint64_t)data_section.data());
+
+    jl::VM vm(optmized_chunks, (ptr_type)data_section.data());
     auto chunk = codegen.get_root_chunk();
     const auto [status, temp_vars] = vm.run();
     const auto var_map = chunk.get_variable_map();
@@ -74,9 +75,9 @@ TEST_CASE("Expressions", "[Codegen]")
         var c = b / 10.0;
 )");
 
-    const auto a_value  = "a";
-    const auto b_value  = "b";
-    const auto c_value  = "c";
+    const auto a_value = "a";
+    const auto b_value = "b";
+    const auto c_value = "c";
 
     REQUIRE(data.get<int>(a_value) == 12);
     REQUIRE(data.get<int>(b_value) == 20);
@@ -87,7 +88,7 @@ TEST_CASE("While loop", "[Codegen]")
 {
     using namespace jl;
 
-    const auto data = compile(R"( 
+    const auto data = compile(R"(
         var i = 0;
         var sum = 0;
 
@@ -97,8 +98,8 @@ TEST_CASE("While loop", "[Codegen]")
         ]
 )");
 
-    const auto i  = "i";
-    const auto sum  = "sum";
+    const auto i = "i";
+    const auto sum = "sum";
 
     REQUIRE(data.get<int>(i) == 11);
     REQUIRE(data.get<int>(sum) == 55);
@@ -116,7 +117,7 @@ TEST_CASE("For loop", "[Codegen]")
         ]
 )");
 
-    const auto sum  = "sum";
+    const auto sum = "sum";
 
     REQUIRE(data.get<int>(sum) == 55);
 }
@@ -130,20 +131,20 @@ TEST_CASE("If ladders", "[Codegen]")
         var b = 0;
         var c = 0;
 
-        for (var i = 0; i < 3; i += 1) [            
+        for (var i = 0; i < 3; i += 1) [
             if (i == 0) [
                 a = i;
             ] else if (i == 1) [
-                b = i; 
+                b = i;
             ] else [
-                c = i; 
+                c = i;
             ]
         ]
 )");
 
-    const auto a_value  = "a";
-    const auto b_value  = "b";
-    const auto c_value  = "c";
+    const auto a_value = "a";
+    const auto b_value = "b";
+    const auto c_value = "c";
 
     REQUIRE(data.get<int>(a_value) == 0);
     REQUIRE(data.get<int>(b_value) == 1);
@@ -168,7 +169,7 @@ TEST_CASE("Simple Function", "[Codegen]")
         var a = sum_till(10);
 )");
 
-    const auto a_value  = "a";
+    const auto a_value = "a";
 
     REQUIRE(data.get<int>(a_value) == 55);
 }
@@ -201,7 +202,7 @@ TEST_CASE("Recursive function", "[Codegen]")
         var a = factorial(4 + 1);
 )");
 
-    const auto a_value  = "a";
+    const auto a_value = "a";
 
     REQUIRE(data.get<int>(a_value) == 120);
 }
@@ -231,7 +232,7 @@ TEST_CASE("Fibonacci function", "[Codegen]")
     var f = fibonacci(6);
 )");
 
-    const auto f_value  = "f";
+    const auto f_value = "f";
 
     REQUIRE(data.get<int>(f_value) == 13);
 }
@@ -251,9 +252,9 @@ TEST_CASE("Test Charachters", "[Codegen]")
         var c = test_char();
 )");
 
-    const auto a_value  = "a";
-    const auto b_value  = "b";
-    const auto c_value  = "c";
+    const auto a_value = "a";
+    const auto b_value = "b";
+    const auto c_value = "c";
 
     REQUIRE(data.get<char>(a_value) == 'a');
     REQUIRE(data.get<char>(b_value) == '`');
@@ -288,9 +289,9 @@ TEST_CASE("Index Get: Frequency Count", "[Codegen]")
         var f3 = find_frequency(str, size, t3);
 )");
 
-    const auto f1_value  = "f1";
-    const auto f2_value  = "f2";
-    const auto f3_value  = "f3";
+    const auto f1_value = "f1";
+    const auto f2_value = "f2";
+    const auto f3_value = "f3";
 
     REQUIRE(data.get<int>(f1_value) == 1);
     REQUIRE(data.get<int>(f2_value) == 4);
@@ -324,9 +325,9 @@ TEST_CASE("Index Set: Replace Char Count", "[Codegen]")
         var count3 = replace_char(str, 5, 'a', 'e');
 )");
 
-    const auto count1_value  = "count1";
-    const auto count2_value  = "count2";
-    const auto count3_value  = "count3";
+    const auto count1_value = "count1";
+    const auto count2_value = "count2";
+    const auto count3_value = "count3";
 
     REQUIRE(data.get<int>(count1_value) == 3);
     REQUIRE(data.get<int>(count2_value) == 0);
@@ -359,17 +360,17 @@ TEST_CASE("Pointer types", "[Codegen]")
         var cc = ca[4];
 )");
 
-    const auto fb_value  = "fb";
-    const auto fc_value  = "fc";
+    const auto fb_value = "fb";
+    const auto fc_value = "fc";
 
-    const auto ib_value  = "ib";
-    const auto ic_value  = "ic";
+    const auto ib_value = "ib";
+    const auto ic_value = "ic";
 
-    const auto cb_value  = "cb";
-    const auto cc_value  = "cc";
+    const auto cb_value = "cb";
+    const auto cc_value = "cc";
 
-    const auto bb_value  = "bb";
-    const auto bc_value  = "bc";
+    const auto bb_value = "bb";
+    const auto bc_value = "bc";
 
     REQUIRE(data.get<float_type>(fb_value) == 4.2);
     REQUIRE(data.get<float_type>(fc_value) == -1.0);
@@ -420,8 +421,8 @@ TEST_CASE("Int and Float Pointers in functions", "[Codegen]")
         var fs = sum_float(float_list, 5);
 )");
 
-    const auto is_value  = "is";
-    const auto fs_value  = "fs";
+    const auto is_value = "is";
+    const auto fs_value = "fs";
 
     REQUIRE(data.get<float_type>(fs_value) == 17.4);
     REQUIRE(data.get<int>(is_value) == 16);
@@ -445,8 +446,8 @@ TEST_CASE("Scoped variables", "[Codegen]")
         ]
 )");
 
-    const auto a_value  = "a";
-    const auto b_value  = "b";
+    const auto a_value = "a";
+    const auto b_value = "b";
 
     REQUIRE(data.get<int>(a_value) == 1);
     REQUIRE(data.get<int>(b_value) == 2);
@@ -552,9 +553,9 @@ TEST_CASE("C FFI", "[Codegen]")
         var ten = strToInt("10");
 )");
 
-    const auto is_same1  = "is_same1";
-    const auto is_same2  = "is_same2";
-    const auto ten  = "ten";
+    const auto is_same1 = "is_same1";
+    const auto is_same2 = "is_same2";
+    const auto ten = "ten";
 
     REQUIRE(data.get<bool>(is_same1) == false);
     REQUIRE(data.get<bool>(is_same2) == true);

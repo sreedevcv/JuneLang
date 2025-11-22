@@ -4,6 +4,7 @@
 #include "Token.hpp"
 #include "TypeInfo.hpp"
 
+#include <memory>
 #include <optional>
 #include <utility>
 #include <vector>
@@ -136,11 +137,17 @@ public:
     std::unique_ptr<Expr> m_condition;
     std::unique_ptr<Stmt> m_then_stmt;
     std::optional<std::unique_ptr<Stmt>> m_else_stmt;
+    Token m_if_keyword;
 
-    inline IfStmt(std::unique_ptr<Expr> condition, std::unique_ptr<Stmt> then_stmt, std::optional<std::unique_ptr<Stmt>> else_stmt)
+    inline IfStmt(
+        std::unique_ptr<Expr> condition,
+        std::unique_ptr<Stmt> then_stmt,
+        std::optional<std::unique_ptr<Stmt>> else_stmt,
+        Token if_keyword)
         : m_condition(std::move(condition))
         , m_then_stmt(std::move(then_stmt))
         , m_else_stmt(std::move(else_stmt))
+        , m_if_keyword(std::move(if_keyword))
     {
     }
 

@@ -2,7 +2,6 @@
 
 #include "CodeGenerator.hpp"
 #include "ErrorHandler.hpp"
-#include "Interpreter.hpp"
 #include "Lexer.hpp"
 #include "Parser.hpp"
 #include "Resolver.hpp"
@@ -23,8 +22,7 @@ void compile(const char* source_code)
 
     REQUIRE(jl::ErrorHandler::has_error() == false);
 
-    jl::Interpreter interpreter(file_name);
-    jl::Resolver resolver(interpreter, file_name);
+    jl::Resolver resolver(file_name);
     resolver.resolve(stmts);
 
     REQUIRE(jl::ErrorHandler::has_error() == false);
@@ -39,7 +37,7 @@ TEST_CASE("Incorrect variable store", "[Codegen Fail]")
 {
     using namespace jl;
 
-    compile(R"( 
+    compile(R"(
         fun hai(): int [
             if (1 == 2) [
                 var d = 3;
@@ -47,7 +45,7 @@ TEST_CASE("Incorrect variable store", "[Codegen Fail]")
 
             return hai();
         ]
-        
+
         var b: bool = hai();
 )");
 }
@@ -56,7 +54,7 @@ TEST_CASE("Storing return val of void func", "[Codegen Fail]")
 {
     using namespace jl;
 
-    compile(R"( 
+    compile(R"(
         fun hai() [
             if (1 == 2) [
                 var d = 3;
@@ -64,7 +62,7 @@ TEST_CASE("Storing return val of void func", "[Codegen Fail]")
 
             return hai();
         ]
-        
+
         var b: bool = hai();
 )");
 }
@@ -73,7 +71,7 @@ TEST_CASE("Incorrect arity(None)", "[Codegen Fail]")
 {
     using namespace jl;
 
-    compile(R"( 
+    compile(R"(
         fun hai(a: int, b: float, c: bool): bool [
             if (1 == 2) [
                 var d = 3;
@@ -81,7 +79,7 @@ TEST_CASE("Incorrect arity(None)", "[Codegen Fail]")
 
             return hai();
         ]
-        
+
         var b: bool = hai();
 )");
 }
@@ -90,7 +88,7 @@ TEST_CASE("Incorrect arity(Less)", "[Codegen Fail]")
 {
     using namespace jl;
 
-    compile(R"( 
+    compile(R"(
         fun hai(a: int, b: float, c: bool): bool [
             if (1 == 2) [
                 var d = 3;
@@ -98,7 +96,7 @@ TEST_CASE("Incorrect arity(Less)", "[Codegen Fail]")
 
             return hai();
         ]
-        
+
         var b: bool = hai(5 + 1);
 )");
 }
@@ -107,7 +105,7 @@ TEST_CASE("Incorrect arity(More)", "[Codegen Fail]")
 {
     using namespace jl;
 
-    compile(R"( 
+    compile(R"(
         fun hai(a: int, b: float, c: bool): bool [
             if (1 == 2) [
                 var d = 3;
@@ -115,7 +113,7 @@ TEST_CASE("Incorrect arity(More)", "[Codegen Fail]")
 
             return hai();
         ]
-        
+
         var b: bool = hai(5 + 1, 1.2, false, 67);
 )");
 }
@@ -124,7 +122,7 @@ TEST_CASE("Wrong types", "[Codegen Fail]")
 {
     using namespace jl;
 
-    compile(R"( 
+    compile(R"(
         fun hai(a: int, b: float, c: bool): bool [
             if (1 == 2) [
                 var d = 3;
@@ -132,7 +130,7 @@ TEST_CASE("Wrong types", "[Codegen Fail]")
 
             return true;
         ]
-        
+
         var b: bool = hai(5 + 1, 1, false);
 )");
 }
@@ -141,7 +139,7 @@ TEST_CASE("Calling non function", "[Codegen Fail]")
 {
     using namespace jl;
 
-    compile(R"( 
+    compile(R"(
         var a = 10;
         var b = a(1, 2);
 )");
@@ -164,17 +162,16 @@ TEST_CASE("Incorrect array size 1", "[Codegen Fail]")
 {
     using namespace jl;
 
-    compile(R"( 
+    compile(R"(
         var str: [char; 0] = "Malayalam";
     )");
 }
-
 
 TEST_CASE("Incorrect array type 1", "[Codegen Fail]")
 {
     using namespace jl;
 
-    compile(R"( 
+    compile(R"(
         var bool: [int; 3] = {true, false, true};
     )");
 }

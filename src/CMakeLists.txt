@@ -7,6 +7,7 @@ add_library(JuneInterpreter
     # frontend/Callable.cpp
     frontend/Resolver.cpp
     frontend/StreamHandler.cpp
+    frontend/ASTPrinter.cpp
     # interpreter/Interpreter.cpp
     # interpreter/Environment.cpp
     # interpreter/NativeFunctions.cpp
@@ -26,6 +27,23 @@ add_library(JuneInterpreter
     # compiler/StaticAddressPass.cpp
     # compiler/IROptimizer.cpp
     ArgParser.cpp
+
+
+    backend/Block.cpp
+    backend/FuncBlock.cpp
+    backend/CodeGen.cpp
+    backend/LiteralValue.cpp
+    backend/SemanticAnalysis.cpp
+
+
+    backend/ir/IR.cpp
+    backend/ir/Move.cpp
+    backend/ir/InitLiteral.cpp
+
+    backend/value/Integer.cpp
+    backend/value/Variable.cpp
+
+    backend/types/Type.cpp
 )
 
 target_link_libraries(

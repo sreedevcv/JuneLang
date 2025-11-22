@@ -56,11 +56,11 @@ jl::Type jl::get_type(jl::Value& value)
         return Type::BOOL;
     case 3:
         return Type::STR;
-    case 6:
+    case 4:
         return Type::LIST;
-    case 7:
+    case 5:
         return Type::JNULL;
-    case 8:
+    case 6:
         return Type::CHAR;
     default:
         unimplemented();

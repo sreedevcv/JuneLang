@@ -1,0 +1,61 @@
+#pragma once
+
+#include "Expr.hpp"
+#include "Stmt.hpp"
+#include "Value.hpp"
+#include "backend/FuncBlock.hpp"
+#include "backend/LiteralValue.hpp"
+#include "backend/ir/InitLiteral.hpp"
+
+namespace jl {
+class CodeGen : IExprVisitor, IStmtVisitor {
+public:
+    CodeGen();
+
+    FuncBlock generate(Expr* expr);
+
+private:
+    FuncBlock m_block;
+
+    template <typename T>
+    std::shared_ptr<jl::value::Variable> add_literal_ir(Value value)
+    {
+        auto val = std::get<T>(value);
+        auto literal = std::make_unique<LiteralValue>(val);
+        auto var = m_block.create_varaible();
+        m_block.add_ir<ir::InitLiteral>(std::move(literal), var, m_block.get_last_line());
+        return var;
+    }
+
+    std::any visit_assign_expr(Assign* expr) override;
+    std::any visit_binary_expr(Binary* expr) override;
+    std::any visit_grouping_expr(Grouping* expr) override;
+    std::any visit_unary_expr(Unary* expr) override;
+    std::any visit_literal_expr(Literal* expr) override;
+    std::any visit_variable_expr(Variable* expr) override;
+    std::any visit_logical_expr(Logical* expr) override;
+    std::any visit_call_expr(Call* expr) override;
+    std::any visit_get_expr(Get* expr) override;
+    std::any visit_set_expr(Set* expr) override;
+    std::any visit_this_expr(This* expr) override;
+    std::any visit_super_expr(Super* expr) override;
+    std::any visit_jlist_expr(JList* expr) override;
+    std::any visit_index_get_expr(IndexGet* expr) override;
+    std::any visit_index_set_expr(IndexSet* expr) override;
+    std::any visit_type_cast_expr(TypeCast* expr) override;
+
+    std::any visit_print_stmt(PrintStmt* stmt) override;
+    std::any visit_expr_stmt(ExprStmt* stmt) override;
+    std::any visit_var_stmt(VarStmt* stmt) override;
+    std::any visit_block_stmt(BlockStmt* stmt) override;
+    std::any visit_empty_stmt(EmptyStmt* stmt) override;
+    std::any visit_if_stmt(IfStmt* stmt) override;
+    std::any visit_while_stmt(WhileStmt* stmt) override;
+    std::any visit_func_stmt(FuncStmt* stmt) override;
+    std::any visit_return_stmt(ReturnStmt* stmt) override;
+    std::any visit_class_stmt(ClassStmt* stmt) override;
+    std::any visit_for_each_stmt(ForEachStmt* stmt) override;
+    std::any visit_break_stmt(BreakStmt* stmt) override;
+    std::any visit_extern_stmt(ExternStmt* stmt) override;
+};
+}

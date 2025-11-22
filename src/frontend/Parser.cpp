@@ -403,7 +403,7 @@ std::unique_ptr<jl::Expr> jl::Parser::modify_and_assign(Token::TokenType oper_ty
 
     if (dynamic_cast<Variable*>(expr.get())) {
         Token& name = static_cast<Variable*>(expr.get())->m_name;
-        Token oper_token =  Token(oper_type, previous().get_lexeme(), previous().get_line());
+        Token oper_token = Token(oper_type, previous().get_lexeme(), previous().get_line());
         auto oper = std::make_unique<Binary>(std::move(expr), oper_token, std::move(value));
         auto assign = std::make_unique<Assign>(std::move(oper), name);
         return assign;
@@ -545,7 +545,7 @@ std::unique_ptr<jl::Stmt> jl::Parser::var_declaration(bool for_each)
 
 std::unique_ptr<jl::Stmt> jl::Parser::if_stmt()
 {
-    consume(Token::LEFT_PAR, "Expected ( after if keyword");
+    auto left_par = consume(Token::LEFT_PAR, "Expected ( after if keyword");
     auto condition = expression();
     consume(Token::RIGHT_PAR, "Expected ) after onditions in a if block");
     auto then_branch = statement();
@@ -556,7 +556,9 @@ std::unique_ptr<jl::Stmt> jl::Parser::if_stmt()
         else_branch = statement();
     }
 
-    auto if_stmt = std::make_unique<IfStmt>(std::move(condition), std::move(then_branch), std::move(else_branch));
+    auto if_stmt = std::make_unique<IfStmt>(
+        std::move(condition), std::move(then_branch),
+        std::move(else_branch), std::move(left_par));
     return if_stmt;
 }
 
@@ -768,7 +770,7 @@ std::unique_ptr<jl::FuncStmt> jl::Parser::function_declaration()
         }
     }
 
-    auto func = std::make_unique< FuncStmt>(name, parameters, std::move(data_types), return_type);
+    auto func = std::make_unique<FuncStmt>(name, parameters, std::move(data_types), return_type);
     return func;
 }
 
