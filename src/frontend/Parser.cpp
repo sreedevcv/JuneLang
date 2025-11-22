@@ -9,6 +9,7 @@
 
 #include <memory>
 #include <optional>
+#include <print>
 #include <utility>
 
 jl::Parser::Parser(std::vector<Token>& tokens, std::string& file_name)
@@ -403,7 +404,7 @@ std::unique_ptr<jl::Expr> jl::Parser::modify_and_assign(Token::TokenType oper_ty
 
     if (dynamic_cast<Variable*>(expr.get())) {
         Token& name = static_cast<Variable*>(expr.get())->m_name;
-        Token oper_token = Token(oper_type, previous().get_lexeme(), previous().get_line());
+        Token oper_token = Token(oper_type, m_tokens[m_current - 2].get_lexeme(), m_tokens[m_current - 2].get_line());
         auto oper = std::make_unique<Binary>(std::move(expr), oper_token, std::move(value));
         auto assign = std::make_unique<Assign>(std::move(oper), name);
         return assign;
@@ -564,17 +565,17 @@ std::unique_ptr<jl::Stmt> jl::Parser::if_stmt()
 
 std::unique_ptr<jl::Stmt> jl::Parser::while_statement()
 {
-    consume(Token::LEFT_PAR, "Expected ( after while keyword");
+    auto left_par = consume(Token::LEFT_PAR, "Expected ( after while keyword");
     auto condition = expression();
     consume(Token::RIGHT_PAR, "Expected ) after onditions in a while block");
     auto body = statement();
-    auto while_stmt = std::make_unique<WhileStmt>(std::move(condition), std::move(body));
+    auto while_stmt = std::make_unique<WhileStmt>(std::move(condition), std::move(body), std::move(left_par));
     return while_stmt;
 }
 
 std::unique_ptr<jl::Stmt> jl::Parser::for_statement()
 {
-    consume(Token::LEFT_PAR, "Expected ( after for keyword");
+    auto left_par = consume(Token::LEFT_PAR, "Expected ( after for keyword");
     std::optional<std::unique_ptr<Stmt>> initializer = std::nullopt;
     bool declared_var = false;
 
@@ -626,16 +627,17 @@ std::unique_ptr<jl::Stmt> jl::Parser::for_statement()
             stmts.push_back(std::move(expr_stmt));
             body = std::make_unique<BlockStmt>(std::move(stmts));
         }
-        if (condition) {
+        if (!condition) {
             auto true_val = Token::global_true_constant;
             condition = std::make_unique<Literal>(true_val);
-            body = std::make_unique<WhileStmt>(std::move(*condition), std::move(body));
         }
 
-        if (initializer != nullptr) {
+        body = std::make_unique<WhileStmt>(std::move(*condition), std::move(body), std::move(left_par));
+
+        if (initializer) {
             std::vector<std::unique_ptr<Stmt>> stmts;
-            stmts.push_back(std::move(body));
             stmts.push_back(std::move(*initializer));
+            stmts.push_back(std::move(body));
             body = std::make_unique<BlockStmt>(std::move(stmts));
         }
 
@@ -691,6 +693,8 @@ std::unique_ptr<jl::Stmt> jl::Parser::class_declaration()
     // Stmt* class_stmt = std::make_unique<ClassStmt>(name, super_class, methods);
     // m_allocated_refs.push_back(class_stmt);
     // return class_stmt;
+
+    return nullptr;
 }
 
 std::unique_ptr<jl::Stmt> jl::Parser::break_statement()

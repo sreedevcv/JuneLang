@@ -163,10 +163,12 @@ class WhileStmt : public Stmt {
 public:
     std::unique_ptr<Expr> m_condition;
     std::unique_ptr<Stmt> m_body;
+    Token m_left_par;
 
-    inline WhileStmt(std::unique_ptr<Expr> condition, std::unique_ptr<Stmt> body)
+    inline WhileStmt(std::unique_ptr<Expr> condition, std::unique_ptr<Stmt> body, Token left_par)
         : m_condition(std::move(condition))
         , m_body(std::move(body))
+        , m_left_par(std::move(left_par))
     {
     }
 

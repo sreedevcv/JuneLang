@@ -2,6 +2,7 @@
 
 #include "TypeInfo.hpp"
 #include <memory>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -16,7 +17,10 @@ namespace type {
 
         Kind m_kind;
 
-        Type(Kind kind);
+        constexpr Type(Kind kind)
+            : m_kind(kind)
+        {
+        }
         virtual ~Type() = default;
         virtual bool equals(const Type* type) const = 0;
         virtual std::string to_str() const = 0;
@@ -29,11 +33,16 @@ namespace type {
             FLOAT,
             BOOL,
             CHAR,
+            VOID,
         };
 
         Primitive m_primitive;
 
-        Builtin(Primitive primitive);
+        constexpr Builtin(Primitive primitive)
+            : Type(Kind::BUILTIN)
+            , m_primitive(primitive)
+        {
+        }
         virtual ~Builtin() = default;
 
         bool equals(const Type* type) const override;
@@ -53,15 +62,19 @@ namespace type {
     };
 
     struct Func : Type {
-        std::unique_ptr<Type> m_out;
-        std::vector<std::unique_ptr<Type>> m_in;
+        std::unique_ptr<Type> m_return_type;
+        std::vector<std::unique_ptr<Type>> m_param_types;
 
-        Func(std::unique_ptr<Type> out, std::vector<std::unique_ptr<Type>> in);
+        Func(std::unique_ptr<Type> return_type, std::vector<std::unique_ptr<Type>> in);
         virtual ~Func() = default;
 
         bool equals(const Type* type) const override;
         std::string to_str() const override;
         std::unique_ptr<Type> clone() const override;
+    };
+
+    struct List : Type {
+        std::unique_ptr<Type> type;
     };
 
     bool is_number(const Type* t);

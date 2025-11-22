@@ -7,6 +7,7 @@
 
 #include <memory>
 #include <optional>
+#include <stack>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -23,6 +24,8 @@ public:
 private:
     std::string m_file_name = "KLKLKL";
     std::vector<std::unordered_map<std::string, std::optional<std::unique_ptr<type::Type>>>> m_symbol_table;
+    std::stack<const type::Type*> m_func_types;
+
 
     bool is_defined(const std::string& name);
     std::optional<std::unique_ptr<type::Type>>& get_variable_type(const std::string& name);

@@ -4,16 +4,16 @@
 #include <optional>
 #include <utility>
 
-jl::type::Type::Type(Kind kind)
-    : m_kind(kind)
-{
-}
+// constexpr jl::type::Type::Type(Kind kind)
+//     : m_kind(kind)
+// {
+// }
 
-jl::type::Builtin::Builtin(Primitive primitive)
-    : Type(Kind::BUILTIN)
-    , m_primitive(primitive)
-{
-}
+// constexpr jl::type::Builtin::Builtin(Primitive primitive)
+//     : Type(Kind::BUILTIN)
+//     , m_primitive(primitive)
+// {
+// }
 
 bool jl::type::Builtin::equals(const Type* type) const
 {
@@ -33,6 +33,8 @@ std::string jl::type::Builtin::to_str() const
         return "bool";
     case CHAR:
         return "char";
+    case VOID:
+        return "void";
     default:
         unimplemented();
         break;
@@ -68,10 +70,10 @@ std::unique_ptr<jl::type::Type> jl::type::Pointer::clone() const
     return std::make_unique<Pointer>(std::unique_ptr<Type>(m_pointee.get()->clone()));
 }
 
-jl::type::Func::Func(std::unique_ptr<Type> out, std::vector<std::unique_ptr<Type>> in)
+jl::type::Func::Func(std::unique_ptr<Type> return_type, std::vector<std::unique_ptr<Type>> param_types)
     : Type(Kind::FUNC)
-    , m_out(std::move(out))
-    , m_in(std::move(in))
+    , m_return_type(std::move(return_type))
+    , m_param_types(std::move(param_types))
 {
 }
 
@@ -79,33 +81,46 @@ bool jl::type::Func::equals(const Type* type) const
 {
     if (type->m_kind != Kind::FUNC)
         return false;
+
     auto func = static_cast<const Func*>(type);
-    if (func->m_in.size() != m_in.size())
+
+    if (func->m_param_types.size() != m_param_types.size())
         return false;
 
-    for (auto i = 0; i < m_in.size(); i++) {
-        if (!func->m_in[i]->equals(m_in[i].get())) {
+    for (auto i = 0; i < m_param_types.size(); i++) {
+        if (!func->m_param_types[i]->equals(m_param_types[i].get())) {
             return false;
         }
     }
 
-    return m_out->equals(func->m_out.get());
+    return m_return_type.get()->equals(func->m_return_type.get());
 }
 
 std::string jl::type::Func::to_str() const
 {
-    return "Func";
+    std::string str = "Fun(";
+    for (int i = 0; i < static_cast<int>(m_param_types.size()) - 1; i++) {
+        str += m_param_types[i]->to_str() + ", ";
+    }
+
+    if (m_param_types.size() > 0) {
+        str += m_param_types.back()->to_str();
+    }
+
+    str += ") -> " + m_return_type.get()->to_str();
+
+    return str;
 }
 
 std::unique_ptr<jl::type::Type> jl::type::Func::clone() const
 {
     std::vector<std::unique_ptr<Type>> in;
 
-    for (const auto& type : m_in) {
+    for (const auto& type : m_param_types) {
         in.push_back(std::unique_ptr<Type>(type->clone()));
     }
 
-    return std::make_unique<Func>(std::unique_ptr<Type>(m_out.get()->clone()), std::move(in));
+    return std::make_unique<Func>(m_return_type.get()->clone(), std::move(in));
 }
 
 bool jl::type::is_number(const Type* t)
