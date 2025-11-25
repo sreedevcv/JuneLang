@@ -205,14 +205,21 @@ std::any jl::ASTPrinter::visit_call_expr(Call* expr)
     return {};
 }
 
-std::any jl::ASTPrinter::visit_get_expr(Get* expr) { }
-std::any jl::ASTPrinter::visit_set_expr(Set* expr) { }
-std::any jl::ASTPrinter::visit_this_expr(This* expr) { }
-std::any jl::ASTPrinter::visit_super_expr(Super* expr) { }
-std::any jl::ASTPrinter::visit_jlist_expr(JList* expr) { }
-std::any jl::ASTPrinter::visit_index_get_expr(IndexGet* expr) { }
-std::any jl::ASTPrinter::visit_index_set_expr(IndexSet* expr) { }
-std::any jl::ASTPrinter::visit_type_cast_expr(TypeCast* expr) { }
+std::any jl::ASTPrinter::visit_jlist_expr(JList* expr)
+{
+    spacer();
+    stream << "List: ";
+    print_node_type(expr, stream);
+    stream << " {\n";
+}
+
+std::any jl::ASTPrinter::visit_get_expr(Get* expr) { return {}; }
+std::any jl::ASTPrinter::visit_set_expr(Set* expr) { return {}; }
+std::any jl::ASTPrinter::visit_this_expr(This* expr) { return {}; }
+std::any jl::ASTPrinter::visit_super_expr(Super* expr) { return {}; }
+std::any jl::ASTPrinter::visit_index_get_expr(IndexGet* expr) { return {}; }
+std::any jl::ASTPrinter::visit_index_set_expr(IndexSet* expr) { return {}; }
+std::any jl::ASTPrinter::visit_type_cast_expr(TypeCast* expr) { return {}; }
 
 // -----------------------------------STMT---------------------------------
 
@@ -340,8 +347,8 @@ std::any jl::ASTPrinter::visit_return_stmt(ReturnStmt* stmt)
     return {};
 }
 
-std::any jl::ASTPrinter::visit_print_stmt(PrintStmt* stmt) { }
-std::any jl::ASTPrinter::visit_class_stmt(ClassStmt* stmt) { }
-std::any jl::ASTPrinter::visit_for_each_stmt(ForEachStmt* stmt) { }
-std::any jl::ASTPrinter::visit_break_stmt(BreakStmt* stmt) { }
-std::any jl::ASTPrinter::visit_extern_stmt(ExternStmt* stmt) { }
+std::any jl::ASTPrinter::visit_print_stmt(PrintStmt* stmt) { return {}; }
+std::any jl::ASTPrinter::visit_class_stmt(ClassStmt* stmt) { return {}; }
+std::any jl::ASTPrinter::visit_for_each_stmt(ForEachStmt* stmt) { return {}; }
+std::any jl::ASTPrinter::visit_break_stmt(BreakStmt* stmt) { return {}; }
+std::any jl::ASTPrinter::visit_extern_stmt(ExternStmt* stmt) { return {}; }

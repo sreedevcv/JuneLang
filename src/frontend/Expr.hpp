@@ -1,6 +1,7 @@
 #pragma once
 
 #include <any>
+#include <cstdint>
 #include <memory>
 #include <optional>
 #include <utility>
@@ -289,9 +290,13 @@ public:
 class JList : public Expr {
 public:
     std::vector<std::unique_ptr<Expr>> m_items;
+    Token m_right_brace;
+    // During type checking, this field will be set if more elements than declared should be allocated
+    std::optional<uint32_t> m_extra_item_count = std::nullopt;
 
-    inline JList(std::vector<std::unique_ptr<Expr>> items)
+    inline JList(std::vector<std::unique_ptr<Expr>> items, Token right_brace)
         : m_items(std::move(items))
+        , m_right_brace(std::move(right_brace))
     {
     }
 

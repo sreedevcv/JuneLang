@@ -1,6 +1,7 @@
 #include "SemanticAnalysis.hpp"
 
 #include "ErrorHandler.hpp"
+#include "Expr.hpp"
 #include "Stmt.hpp"
 #include "Token.hpp"
 #include "Utils.hpp"
@@ -10,6 +11,7 @@
 #include <format>
 #include <memory>
 #include <optional>
+#include <utility>
 #include <vector>
 
 bool validate_ptr_arithmetic(jl::Binary* expr, const jl::type::Type* left, const jl::type::Type* right, std::string m_file_name);
@@ -300,6 +302,7 @@ std::any jl::SemanticAnalyzer::visit_call_expr(Call* expr)
 
     const auto type = expr->m_callee.get()->m_type.get();
 
+    // If parsed variable is not a function
     if (type->m_kind != type::Type::FUNC) {
         ErrorHandler::error(m_file_name, expr->m_paren.get_line(),
             std::format("Only functions can be called, found type: {}", type->to_str()).c_str());
@@ -308,6 +311,7 @@ std::any jl::SemanticAnalyzer::visit_call_expr(Call* expr)
 
     const auto func = static_cast<const type::Func*>(type);
 
+    // No. of arguments differ
     if (func->m_param_types.size() != expr->m_arguments.size()) {
         ErrorHandler::error(m_file_name, expr->m_paren.get_line(),
             std::format("Expected {} arguments but found type: {}", func->m_param_types.size(), expr->m_arguments.size()).c_str());
@@ -321,6 +325,7 @@ std::any jl::SemanticAnalyzer::visit_call_expr(Call* expr)
             return false;
         }
 
+        // Types of declared param and argument differ
         if (!func->m_param_types[i]->equals(arg->m_type.get())) {
             ErrorHandler::error(m_file_name, expr->m_paren.get_line(),
                 std::format("Expected argument {} to be of type {}  but found type: {}",
@@ -335,14 +340,47 @@ std::any jl::SemanticAnalyzer::visit_call_expr(Call* expr)
     return true;
 }
 
-std::any jl::SemanticAnalyzer::visit_get_expr(Get* expr) { }
-std::any jl::SemanticAnalyzer::visit_set_expr(Set* expr) { }
-std::any jl::SemanticAnalyzer::visit_this_expr(This* expr) { }
-std::any jl::SemanticAnalyzer::visit_super_expr(Super* expr) { }
-std::any jl::SemanticAnalyzer::visit_jlist_expr(JList* expr) { }
-std::any jl::SemanticAnalyzer::visit_index_get_expr(IndexGet* expr) { }
-std::any jl::SemanticAnalyzer::visit_index_set_expr(IndexSet* expr) { }
-std::any jl::SemanticAnalyzer::visit_type_cast_expr(TypeCast* expr) { }
+std::any jl::SemanticAnalyzer::visit_jlist_expr(JList* expr)
+{
+    if (expr->m_items.empty()) {
+        ErrorHandler::error(m_file_name, expr->m_right_brace.get_line(), "Empty lists are not allowed");
+        return false;
+    }
+
+    // Find the type of the first element
+    if (!type_check(expr->m_items.front().get())) {
+        return false;
+    }
+
+    auto list_type = std::make_unique<type::List>(expr->m_items.front()->m_type->clone(), expr->m_items.size());
+
+    for (int i = 1; i < expr->m_items.size(); i++) {
+        auto item = expr->m_items[i].get();
+        if (!type_check(item)) {
+            return false;
+        }
+
+        // Make sure following elements have the same type as the first element
+        if (!item->m_type->equals(list_type->m_elem_type.get())) {
+            ErrorHandler::error(m_file_name, expr->m_right_brace.get_line(),
+                std::format("Item at index {} is of type: {} but list is of type: {}",
+                    i + 1, item->m_type->to_str(), list_type->m_elem_type->to_str())
+                    .c_str());
+            return false;
+        }
+    }
+
+    expr->m_type = std::move(list_type);
+    return true;
+}
+
+std::any jl::SemanticAnalyzer::visit_get_expr(Get* expr) { return false; }
+std::any jl::SemanticAnalyzer::visit_set_expr(Set* expr) { return false; }
+std::any jl::SemanticAnalyzer::visit_this_expr(This* expr) { return false; }
+std::any jl::SemanticAnalyzer::visit_super_expr(Super* expr) { return false; }
+std::any jl::SemanticAnalyzer::visit_index_get_expr(IndexGet* expr) { return false; }
+std::any jl::SemanticAnalyzer::visit_index_set_expr(IndexSet* expr) { return false; }
+std::any jl::SemanticAnalyzer::visit_type_cast_expr(TypeCast* expr) { return false; }
 
 // -----------------------------------STMT---------------------------------
 
@@ -363,17 +401,47 @@ std::any jl::SemanticAnalyzer::visit_var_stmt(VarStmt* stmt)
         if (stmt->m_data_type) {
             auto type = type::from_type_info(*stmt->m_data_type);
 
+            // Check whether the type exits
+            if (!type) {
+                ErrorHandler::error(m_file_name, stmt->m_name.get_line(),
+                    std::format("Unrecognized type in var declaration: {}", stmt->m_data_type.value().name).c_str());
+                return false;
+            }
+
+            // Handle array initializations
+            if (type->get()->m_kind == type::Type::LIST && expr->m_type->m_kind == type::Type::LIST) {
+                auto lhs = static_cast<type::List*>(type->get());
+                auto rhs = static_cast<type::List*>(expr->m_type.get());
+
+                // Nothing to do, everything is correct
+                if (!lhs->m_elem_type->equals(rhs->m_elem_type.get())) {
+                    goto error;
+                }
+
+                if (lhs->m_count < rhs->m_count) {
+                    ErrorHandler::error(m_file_name, stmt->m_name.get_line(),
+                        std::format("Array initializer has {} items which is more than the declared {} items", rhs->m_count, lhs->m_count).c_str());
+                    return false;
+                } else if (lhs->m_count > rhs->m_count) {
+                    // Allocate more space
+                    static_cast<JList*>(expr)->m_extra_item_count = lhs->m_count - rhs->m_count;
+                }
+            }
+
+            // Check whether the defined RHS type and parsed LHS types are the same
             if (!type->get()->equals(expr->m_type.get())) {
+            error:
                 ErrorHandler::error(m_file_name, stmt->m_name.get_line(),
                     std::format("Variable {} of type {} cannot be assigned value of type {}",
                         stmt->m_name.get_lexeme(), type.value()->to_str(),
-                        expr->m_type.get()->to_str())
+                        expr->m_type->to_str())
                         .c_str());
                 return false;
             }
         }
 
-        if (expr->m_type.get()->equals(&void_val)) {
+        // If RHS is of type void
+        if (expr->m_type->equals(&void_val)) {
             ErrorHandler::error(m_file_name, stmt->m_name.get_line(), "Assignments involving void values are not allowed");
             return false;
         }
@@ -383,6 +451,7 @@ std::any jl::SemanticAnalyzer::visit_var_stmt(VarStmt* stmt)
         final_type = std::nullopt;
     }
 
+    // If another variable of same name already exists in the current scope
     if (!define_variable(stmt->m_name.get_lexeme(), std::move(final_type))) {
         ErrorHandler::error(m_file_name, stmt->m_name.get_line(),
             std::format("Redefinition of variable {}", stmt->m_name.get_lexeme()).c_str());
@@ -463,13 +532,14 @@ std::any jl::SemanticAnalyzer::visit_func_stmt(FuncStmt* stmt)
         param_types.push_back(std::move(*type));
     }
 
+    // Find the return type
     std::unique_ptr<type::Type> return_type;
     if (stmt->m_return_type) {
         auto type = type::from_type_info(*stmt->m_return_type);
 
         if (!type) {
             ErrorHandler::error(m_file_name, stmt->m_name.get_line(),
-                std::format("Dunction {} has unrecognized return type {} ",
+                std::format("Function {} has unrecognized return type {} ",
                     stmt->m_name.get_lexeme(), stmt->m_return_type->name)
                     .c_str());
             result = false;
@@ -480,6 +550,7 @@ std::any jl::SemanticAnalyzer::visit_func_stmt(FuncStmt* stmt)
         return_type = std::make_unique<type::Builtin>(type::Builtin::VOID);
     }
 
+    // Create the fucntion type
     auto func_type = std::make_unique<type::Func>(std::move(return_type), std::move(param_types));
     if (is_defined(stmt->m_name.get_lexeme())) {
         ErrorHandler::error(m_file_name, stmt->m_name.get_line(),
@@ -487,6 +558,7 @@ std::any jl::SemanticAnalyzer::visit_func_stmt(FuncStmt* stmt)
         return false;
     }
 
+    // Store it in a stack to track inside which function we are currently in, useful for type checkinf return stmts
     m_func_types.push(func_type.get());
     // Define the function in the previous block
     m_symbol_table[m_symbol_table.size() - 2].insert({ stmt->m_name.get_lexeme(), std::move(func_type) });
@@ -508,6 +580,7 @@ std::any jl::SemanticAnalyzer::visit_return_stmt(ReturnStmt* stmt)
 
     const type::Type* return_type;
 
+    // Get the return type
     if (stmt->m_expr) {
         if (!type_check(stmt->m_expr->get()))
             return false;
@@ -516,6 +589,7 @@ std::any jl::SemanticAnalyzer::visit_return_stmt(ReturnStmt* stmt)
         return_type = &void_val;
     }
 
+    // Defined and parsed types differ
     if (!m_func_types.top()->equals(return_type)) {
         ErrorHandler::error(m_file_name, stmt->m_keyword.get_line(),
             std::format("Expedted return type: {}, but found: {}",
@@ -527,11 +601,11 @@ std::any jl::SemanticAnalyzer::visit_return_stmt(ReturnStmt* stmt)
     return true;
 }
 
-std::any jl::SemanticAnalyzer::visit_print_stmt(PrintStmt* stmt) { }
-std::any jl::SemanticAnalyzer::visit_class_stmt(ClassStmt* stmt) { }
-std::any jl::SemanticAnalyzer::visit_for_each_stmt(ForEachStmt* stmt) { }
-std::any jl::SemanticAnalyzer::visit_break_stmt(BreakStmt* stmt) { }
-std::any jl::SemanticAnalyzer::visit_extern_stmt(ExternStmt* stmt) { }
+std::any jl::SemanticAnalyzer::visit_print_stmt(PrintStmt* stmt) { return false; }
+std::any jl::SemanticAnalyzer::visit_class_stmt(ClassStmt* stmt) { return false; }
+std::any jl::SemanticAnalyzer::visit_for_each_stmt(ForEachStmt* stmt) { return false; }
+std::any jl::SemanticAnalyzer::visit_break_stmt(BreakStmt* stmt) { return false; }
+std::any jl::SemanticAnalyzer::visit_extern_stmt(ExternStmt* stmt) { return false; }
 
 //--------------------------------------------------------------------------------------------------
 

@@ -134,8 +134,8 @@ std::unique_ptr<jl::Expr> jl::Parser::parse_list()
         }
     }
 
-    consume(Token::RIGHT_BRACE, "Lists should end with '}'");
-    auto jlist = std::make_unique<JList>(std::move(list));
+    auto right_brace = consume(Token::RIGHT_BRACE, "Lists should end with '}'");
+    auto jlist = std::make_unique<JList>(std::move(list), std::move(right_brace));
     return jlist;
 }
 

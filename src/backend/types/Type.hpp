@@ -12,7 +12,8 @@ namespace type {
         enum Kind {
             BUILTIN,
             PTR,
-            FUNC
+            FUNC,
+            LIST,
         };
 
         Kind m_kind;
@@ -74,7 +75,14 @@ namespace type {
     };
 
     struct List : Type {
-        std::unique_ptr<Type> type;
+        std::unique_ptr<Type> m_elem_type;
+        uint32_t m_count;
+
+        List(std::unique_ptr<Type> melem_type, uint32_t count);
+        virtual ~List() = default;
+        bool equals(const Type* type) const override;
+        std::string to_str() const override;
+        std::unique_ptr<Type> clone() const override;
     };
 
     bool is_number(const Type* t);

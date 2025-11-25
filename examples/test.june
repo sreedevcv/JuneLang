@@ -33,21 +33,26 @@
 var x = 3.0;
 
 
-fun test(a: int, b: char): float [
-	var c = a;
-	c = 1.0;
 
-	var e:  float = x;
 
-	return b;
-]
+// fun test(a: int, b: char): float [
+// 	var c = a;
+// 	c = 1.0;
 
-test(1, 2);
-var a: bool = test(1, '2');
+// 	var e:  float = x;
 
-fun none() [
+// 	return b;
+// ]
 
-	return 3;
-]
+// test(1, 2);
+// var a: bool = test(1, '2');
 
-var c = none();
+// fun none() [
+
+// 	return 3;
+// ]
+
+// var c = none();
+
+
+var a = {1, 2, 3};

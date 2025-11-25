@@ -2,6 +2,7 @@
 #include "Utils.hpp"
 #include <memory>
 #include <optional>
+#include <string>
 #include <utility>
 
 // constexpr jl::type::Type::Type(Kind kind)
@@ -123,6 +124,35 @@ std::unique_ptr<jl::type::Type> jl::type::Func::clone() const
     return std::make_unique<Func>(m_return_type.get()->clone(), std::move(in));
 }
 
+jl::type::List::List(std::unique_ptr<Type> elem_type, uint32_t count)
+    : Type(LIST)
+    , m_elem_type(std::move(elem_type))
+    , m_count(count)
+{
+}
+
+bool jl::type::List::equals(const Type* type) const
+{
+    if (type->m_kind != LIST) {
+        return false;
+    }
+
+    auto list = static_cast<const List*>(type);
+
+    return list->m_count == m_count
+        && list->m_elem_type->equals(m_elem_type.get());
+}
+
+std::string jl::type::List::to_str() const
+{
+    return "[" + m_elem_type->to_str() + "; " + std::to_string(m_count) + "]";
+}
+
+std::unique_ptr<jl::type::Type> jl::type::List::clone() const
+{
+    return std::make_unique<List>(m_elem_type->clone(), m_count);
+}
+
 bool jl::type::is_number(const Type* t)
 {
     if (t->m_kind == Type::BUILTIN) {
@@ -136,17 +166,26 @@ bool jl::type::is_number(const Type* t)
 std::optional<std::unique_ptr<jl::type::Type>> jl::type::from_type_info(const TypeInfo& type_info)
 {
     // TODO::For arrays create a new Type
+
+    std::unique_ptr<Type> t;
     if (type_info.name == "int") {
-        return std::make_unique<Builtin>(Builtin::INT);
+        t = std::make_unique<Builtin>(Builtin::INT);
     } else if (type_info.name == "float") {
-        return std::make_unique<Builtin>(Builtin::FLOAT);
+        t = std::make_unique<Builtin>(Builtin::FLOAT);
     } else if (type_info.name == "bool") {
-        return std::make_unique<Builtin>(Builtin::BOOL);
+        t = std::make_unique<Builtin>(Builtin::BOOL);
     } else if (type_info.name == "char") {
-        return std::make_unique<Builtin>(Builtin::CHAR);
+        t = std::make_unique<Builtin>(Builtin::CHAR);
+    } else {
+        return std::nullopt;
     }
 
-    return std::nullopt;
+    if (type_info.is_array) {
+        // TODO:: This will throw if pointers come
+        return std::make_unique<List>(std::move(t), type_info.size.value());
+    } else {
+        return t;
+    }
 }
 
 bool jl::type::is_boolean(const jl::type::Type* t)
