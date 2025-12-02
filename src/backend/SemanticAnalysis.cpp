@@ -21,7 +21,8 @@ std::pair<jl::type::Builtin::Primitive, jl::type::Builtin::Primitive> apply_nume
 bool is_float_allowed_op(jl::Token::TokenType t);
 bool is_boolean_operator(jl::Token::TokenType t);
 
-constexpr auto void_val = jl::type::Builtin(jl::type::Builtin::VOID);
+constexpr auto VOID_CONSTANT = jl::type::Builtin(jl::type::Builtin::VOID);
+constexpr auto INT_CONSTANT = jl::type::Builtin(jl::type::Builtin::INT);
 
 jl::SemanticAnalyzer::SemanticAnalyzer(std::string& file_name)
     : m_file_name(file_name)
@@ -267,7 +268,7 @@ std::any jl::SemanticAnalyzer::visit_assign_expr(Assign* expr)
     }
 
     auto& type = get_variable_type(expr->m_token.get_lexeme());
-    if (expr->m_expr->m_type.get()->equals(&void_val) || (type && type->get()->equals(&void_val))) {
+    if (expr->m_expr->m_type.get()->equals(&VOID_CONSTANT) || (type && type->get()->equals(&VOID_CONSTANT))) {
         ErrorHandler::error(m_file_name, expr->m_token.get_line(),
             "Assignments involving void values are not allowed");
         return false;
@@ -374,12 +375,62 @@ std::any jl::SemanticAnalyzer::visit_jlist_expr(JList* expr)
     return true;
 }
 
+std::any jl::SemanticAnalyzer::visit_index_get_expr(IndexGet* expr)
+{
+    if (!type_check(expr->m_jlist.get()) || !type_check(expr->m_index_expr.get())) {
+        // Component type check failed
+        return false;
+    } else if (expr->m_jlist.get()->m_type->m_kind != type::Type::LIST) {
+        // Variable/Value not a list, so cannot be indexed
+        ErrorHandler::error(m_file_name, expr->m_closing_bracket.get_line(),
+            std::format("Cannot index into a value of type: {}", expr->m_jlist->m_type->to_str()).c_str());
+        return false;
+    } else if (!expr->m_index_expr->m_type->equals(&INT_CONSTANT)) {
+        // Attempted to index with a non int value
+        ErrorHandler::error(m_file_name, expr->m_closing_bracket.get_line(),
+            std::format("Cannot index into a list with value of type: {}, only ints are allowed", expr->m_index_expr->m_type->to_str()).c_str());
+        return false;
+    } else {
+        // All type checks are correct
+        expr->m_type = static_cast<type::List*>(expr->m_jlist->m_type.get())->m_elem_type->clone();
+        return true;
+    }
+}
+
+std::any jl::SemanticAnalyzer::visit_index_set_expr(IndexSet* expr)
+{
+    if (!type_check(expr->m_jlist.get()) || !type_check(expr->m_index_expr.get()) || !type_check(expr->m_value_expr.get())) {
+        // Component type check failed
+        return false;
+    } else if (expr->m_jlist.get()->m_type->m_kind != type::Type::LIST) {
+        // Variable/Value not a list, so cannot be indexed
+        ErrorHandler::error(m_file_name, expr->m_closing_bracket.get_line(),
+            std::format("Cannot index into a value of type: {}", expr->m_jlist->m_type->to_str()).c_str());
+        return false;
+    } else if (!expr->m_index_expr->m_type->equals(&INT_CONSTANT)) {
+        // Attempted to index with a non int value
+        ErrorHandler::error(m_file_name, expr->m_closing_bracket.get_line(),
+            std::format("Cannot index into a list with value of type: {}, only ints are allowed", expr->m_index_expr->m_type->to_str()).c_str());
+        return false;
+    } else if (!expr->m_value_expr->m_type->equals(expr->m_jlist->m_type.get())) {
+        // LHS and RHS dont match
+        ErrorHandler::error(m_file_name, expr->m_closing_bracket.get_line(),
+            std::format("Cannot assign value of type: {} to list of type: {}",
+                expr->m_value_expr->m_type->to_str(),
+                expr->m_jlist->m_type->to_str())
+                .c_str());
+        return false;
+    } else {
+        // All type checks are correct
+        expr->m_type = static_cast<type::List*>(expr->m_jlist->m_type.get())->m_elem_type->clone();
+        return true;
+    }
+}
+
 std::any jl::SemanticAnalyzer::visit_get_expr(Get* expr) { return false; }
 std::any jl::SemanticAnalyzer::visit_set_expr(Set* expr) { return false; }
 std::any jl::SemanticAnalyzer::visit_this_expr(This* expr) { return false; }
 std::any jl::SemanticAnalyzer::visit_super_expr(Super* expr) { return false; }
-std::any jl::SemanticAnalyzer::visit_index_get_expr(IndexGet* expr) { return false; }
-std::any jl::SemanticAnalyzer::visit_index_set_expr(IndexSet* expr) { return false; }
 std::any jl::SemanticAnalyzer::visit_type_cast_expr(TypeCast* expr) { return false; }
 
 // -----------------------------------STMT---------------------------------
@@ -394,8 +445,8 @@ std::any jl::SemanticAnalyzer::visit_var_stmt(VarStmt* stmt)
     std::optional<std::unique_ptr<type::Type>> final_type;
 
     if (stmt->m_initializer) {
-        auto expr = stmt->m_initializer.value().get();
-        if (!type_check(expr))
+        auto rhs_expr = stmt->m_initializer.value().get();
+        if (!type_check(rhs_expr))
             return false;
 
         if (stmt->m_data_type) {
@@ -409,9 +460,9 @@ std::any jl::SemanticAnalyzer::visit_var_stmt(VarStmt* stmt)
             }
 
             // Handle array initializations
-            if (type->get()->m_kind == type::Type::LIST && expr->m_type->m_kind == type::Type::LIST) {
+            if (type->get()->m_kind == type::Type::LIST && rhs_expr->m_type->m_kind == type::Type::LIST) {
                 auto lhs = static_cast<type::List*>(type->get());
-                auto rhs = static_cast<type::List*>(expr->m_type.get());
+                auto rhs = static_cast<type::List*>(rhs_expr->m_type.get());
 
                 // Nothing to do, everything is correct
                 if (!lhs->m_elem_type->equals(rhs->m_elem_type.get())) {
@@ -424,29 +475,27 @@ std::any jl::SemanticAnalyzer::visit_var_stmt(VarStmt* stmt)
                     return false;
                 } else if (lhs->m_count > rhs->m_count) {
                     // Allocate more space
-                    static_cast<JList*>(expr)->m_extra_item_count = lhs->m_count - rhs->m_count;
+                    static_cast<JList*>(rhs_expr)->m_extra_item_count = lhs->m_count - rhs->m_count;
                 }
-            }
-
-            // Check whether the defined RHS type and parsed LHS types are the same
-            if (!type->get()->equals(expr->m_type.get())) {
+            } else if (!type->get()->equals(rhs_expr->m_type.get())) {
+                // Check whether the defined RHS type and parsed LHS types are the same for all non list types
             error:
                 ErrorHandler::error(m_file_name, stmt->m_name.get_line(),
-                    std::format("Variable {} of type {} cannot be assigned value of type {}",
+                    std::format("During var intialization variable {} of type {} cannot be assigned value of type {}",
                         stmt->m_name.get_lexeme(), type.value()->to_str(),
-                        expr->m_type->to_str())
+                        rhs_expr->m_type->to_str())
                         .c_str());
                 return false;
             }
         }
 
         // If RHS is of type void
-        if (expr->m_type->equals(&void_val)) {
+        if (rhs_expr->m_type->equals(&VOID_CONSTANT)) {
             ErrorHandler::error(m_file_name, stmt->m_name.get_line(), "Assignments involving void values are not allowed");
             return false;
         }
 
-        final_type = expr->m_type->clone();
+        final_type = rhs_expr->m_type->clone();
     } else {
         final_type = std::nullopt;
     }
@@ -586,7 +635,7 @@ std::any jl::SemanticAnalyzer::visit_return_stmt(ReturnStmt* stmt)
             return false;
         return_type = stmt->m_expr->get()->m_type.get();
     } else {
-        return_type = &void_val;
+        return_type = &VOID_CONSTANT;
     }
 
     // Defined and parsed types differ

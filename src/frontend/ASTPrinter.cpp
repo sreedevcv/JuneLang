@@ -12,13 +12,13 @@
 void print_node_type(jl::Expr* expr, std::ostream& stream)
 {
     if (expr->m_type.get() != nullptr) {
-        stream << "[" << expr->m_type->to_str();
+        stream << "(" << expr->m_type->to_str();
 
         if (expr->m_cast_to) {
             stream << ":" << (*expr->m_cast_to)->to_str();
         }
 
-        stream << "] ";
+        stream << ") ";
     }
 }
 
@@ -26,10 +26,10 @@ void print_type_info(const jl::TypeInfo& type_info, std::ostream& stream)
 {
     stream << type_info.name;
     if (type_info.is_array) {
-        stream << "[";
+        stream << "(";
         if (type_info.size)
             stream << std::to_string(*type_info.size);
-        stream << "]";
+        stream << ")";
     }
 }
 
@@ -173,11 +173,9 @@ std::any jl::ASTPrinter::visit_logical_expr(Logical* expr)
 std::any jl::ASTPrinter::visit_variable_expr(Variable* expr)
 {
     spacer();
-    stream << "VarRef " << expr->m_name.get_lexeme() << " ";
+    stream << "VarRef \"" << expr->m_name.get_lexeme() << "\" ";
     print_node_type(expr, stream);
-    stream << "  {\n";
-    spacer();
-    stream << "}\n";
+    stream << "\n";
     return {};
 }
 
@@ -189,7 +187,7 @@ std::any jl::ASTPrinter::visit_call_expr(Call* expr)
     stream << " {\n";
 
     spacer();
-    stream << "Func name: \n";
+    stream << "Name: \n";
 
     traverse(expr->m_callee.get());
 
@@ -211,14 +209,64 @@ std::any jl::ASTPrinter::visit_jlist_expr(JList* expr)
     stream << "List: ";
     print_node_type(expr, stream);
     stream << " {\n";
+
+    for (auto& e : expr->m_items) {
+        traverse(e.get());
+    }
+
+    spacer();
+    stream << "}\n";
+    return {};
+}
+
+std::any jl::ASTPrinter::visit_index_get_expr(IndexGet* expr)
+{
+    spacer();
+    stream << "Index Get: ";
+    print_node_type(expr, stream);
+    stream << " {\n";
+
+    spacer();
+    stream << "Expr: \n";
+    traverse(expr->m_jlist.get());
+
+    spacer();
+    stream << "Get Expr: \n";
+    traverse(expr->m_index_expr.get());
+
+    spacer();
+    stream << "}\n";
+    return {};
+}
+
+std::any jl::ASTPrinter::visit_index_set_expr(IndexSet* expr)
+{
+    spacer();
+    stream << "Index Set: ";
+    print_node_type(expr, stream);
+    stream << " {\n";
+
+    spacer();
+    stream << "Expr: \n";
+    traverse(expr->m_jlist.get());
+
+    spacer();
+    stream << "Set Expr: \n";
+    traverse(expr->m_index_expr.get());
+
+    spacer();
+    stream << "Value Expr: \n";
+    traverse(expr->m_value_expr.get());
+
+    spacer();
+    stream << "}\n";
+    return {};
 }
 
 std::any jl::ASTPrinter::visit_get_expr(Get* expr) { return {}; }
 std::any jl::ASTPrinter::visit_set_expr(Set* expr) { return {}; }
 std::any jl::ASTPrinter::visit_this_expr(This* expr) { return {}; }
 std::any jl::ASTPrinter::visit_super_expr(Super* expr) { return {}; }
-std::any jl::ASTPrinter::visit_index_get_expr(IndexGet* expr) { return {}; }
-std::any jl::ASTPrinter::visit_index_set_expr(IndexSet* expr) { return {}; }
 std::any jl::ASTPrinter::visit_type_cast_expr(TypeCast* expr) { return {}; }
 
 // -----------------------------------STMT---------------------------------

@@ -30,7 +30,7 @@
 // 	var c = i;
 // ]
 
-var x = 3.0;
+// var x = 3.0;
 
 
 
@@ -55,4 +55,11 @@ var x = 3.0;
 // var c = none();
 
 
-var a = {1, 2, 3};
+fun t(): float []
+
+var a: [int; 7] = { 1, 2, 3, 5,};
+
+
+// var c = t['c'];
+
+t[5] = t();
