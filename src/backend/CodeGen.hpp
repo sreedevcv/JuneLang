@@ -16,6 +16,7 @@ public:
     CodeGen();
 
     FuncBlock generate(Expr* expr);
+    FuncBlock generate(std::vector<std::unique_ptr<jl::Stmt>>& stmts);
 
 private:
     Block m_block;

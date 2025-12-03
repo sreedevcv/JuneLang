@@ -22,7 +22,7 @@ namespace ir {
             Operation operation,
             uint32_t line);
 
-        virtual ~Unary() = default;
+        ~Unary() = default;
 
         std::string to_str() const;
 

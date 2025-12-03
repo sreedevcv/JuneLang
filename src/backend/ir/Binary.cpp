@@ -7,6 +7,7 @@ jl::ir::Binary::Binary(
     Operation operation,
     uint32_t line)
     : IR(line)
+    , m_dest(dest)
     , m_operand_a(operand_a)
     , m_operand_b(operand_b)
     , m_operation(operation)
@@ -44,5 +45,9 @@ std::string jl::ir::Binary::to_str() const
         return m_dest->to_str() + " = " + m_operand_a->to_str() + " | " + m_operand_b->to_str();
     case BIT_XOR:
         return m_dest->to_str() + " = " + m_operand_a->to_str() + " ^ " + m_operand_b->to_str();
+    case LOG_AND:
+        return m_dest->to_str() + " = " + m_operand_a->to_str() + " && " + m_operand_b->to_str();
+    case LOG_OR:
+        return m_dest->to_str() + " = " + m_operand_a->to_str() + " || " + m_operand_b->to_str();
     }
 }

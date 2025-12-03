@@ -7,6 +7,7 @@
 #include "backend/SemanticAnalysis.hpp"
 
 #include <cassert>
+#include <iostream>
 #include <ostream>
 #include <print>
 #include <string>
@@ -33,9 +34,9 @@ int main(int argc, char const* argv[])
 
     auto tokens = lexer.get_tokens();
     jl::Parser parser(tokens, file_name);
-    // auto stmts = parser.parseStatements();
-
     auto stmts = parser.parseStatements();
+
+    // auto exprs = parser.parse();
 
     if (jl::ErrorHandler::has_error()) {
         return 1;
@@ -45,9 +46,17 @@ int main(int argc, char const* argv[])
     std::cout << printer.print(stmts).str() << std::endl;
 
     jl::SemanticAnalyzer sm(file_name);
-    std::println("Type check FINAL result: {}", sm.type_check(stmts));
+    // std::println("Type check FINAL result: {}", );
 
-    std::cout << printer.print(stmts).str() << std::endl;
+    if (sm.type_check(stmts)) {
+        std::println("{}", printer.print(stmts).str());
+
+        jl::CodeGen cg;
+        const auto block = cg.generate(stmts);
+        block.stream(std::cout);
+    } else {
+        std::println("Type check Failed");
+    }
 
     // jl::CodeGen code_gen;
     // code_gen.generate(expr.get());

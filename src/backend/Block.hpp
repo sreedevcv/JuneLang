@@ -24,7 +24,7 @@ public:
 
     Block* create_block(uint32_t id);
 
-    std::shared_ptr<value::Variable> create_varaible();
+    std::shared_ptr<value::Variable> create_varaible(value::Variable::Storage type = value::Variable::TEMP);
 
     std::shared_ptr<value::Variable> create_named_variable(const std::string& name);
 

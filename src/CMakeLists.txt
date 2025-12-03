@@ -39,6 +39,9 @@ add_library(JuneInterpreter
     backend/ir/IR.cpp
     backend/ir/Move.cpp
     backend/ir/InitLiteral.cpp
+    backend/ir/TypeCast.cpp
+    backend/ir/Unary.cpp
+    backend/ir/Binary.cpp
 
     backend/value/Integer.cpp
     backend/value/Variable.cpp

@@ -18,5 +18,5 @@ jl::ir::TypeCast::TypeCast(
 
 std::string jl::ir::TypeCast::to_str() const
 {
-    return "cast " + m_from.get()->to_str() + " to " + m_to->to_str();
+    return m_dest->to_str() + " = (" + m_from.get()->to_str() + " to " + m_to->to_str() + ") " + m_source->to_str();
 }

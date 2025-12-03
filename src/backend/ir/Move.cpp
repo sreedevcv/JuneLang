@@ -1,9 +1,10 @@
 #include "Move.hpp"
 
 #include "backend/ir/IR.hpp"
+#include <memory>
 
 jl::ir::Move::Move(
-    std::unique_ptr<value::Variable> source,
+    std::shared_ptr<value::Variable> source,
     std::shared_ptr<value::Variable> dest,
     uint32_t line)
     : IR(line)

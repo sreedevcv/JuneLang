@@ -1,7 +1,6 @@
 #include "FuncBlock.hpp"
 #include "backend/ir/IR.hpp"
 
-#include <algorithm>
 #include <memory>
 #include <utility>
 #include <vector>

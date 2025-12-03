@@ -11,19 +11,21 @@ jl::Block::Block(const Block* parent, uint32_t id)
 
 jl::Block* jl::Block::create_block(uint32_t id)
 {
-    auto block = std::make_unique<Block>(this, id);
-    auto ref = block.get();
-    return ref;
+    // auto block = std::make_unique<Block>(this, id);
+    // auto ref = block.get();
+    // return ref;
+    //
+    return {};
 }
 
-std::shared_ptr<jl::value::Variable> jl::Block::create_varaible()
+std::shared_ptr<jl::value::Variable> jl::Block::create_varaible(value::Variable::Storage type)
 {
-    return std::make_unique<value::Variable>(m_var_count++);
+    return std::make_shared<value::Variable>(m_var_count++, type);
 }
 
 std::shared_ptr<jl::value::Variable> jl::Block::create_named_variable(const std::string& name)
 {
-    auto var = create_varaible();
+    auto var = create_varaible(value::Variable::STACK);
     m_symbol_table.insert({ name, var });
     return var;
 }

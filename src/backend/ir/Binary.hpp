@@ -25,6 +25,8 @@ namespace ir {
             BIT_AND,
             BIT_OR,
             BIT_XOR,
+            LOG_AND,
+            LOG_OR,
         };
 
         Binary(
@@ -34,9 +36,9 @@ namespace ir {
             Operation operation,
             uint32_t line);
 
-        virtual ~Binary() = default;
+        ~Binary() = default;
 
-        virtual std::string to_str() const = 0;
+        std::string to_str() const;
 
     private:
         std::shared_ptr<value::Variable> m_dest;
