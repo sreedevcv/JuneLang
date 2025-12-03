@@ -13,6 +13,10 @@ namespace ir {
             std::shared_ptr<value::Variable> dest,
             uint32_t line);
 
+        virtual ~InitLiteral() = default;
+
+        std::string to_str() const override;
+
     private:
         std::unique_ptr<LiteralValue> m_source;
         std::shared_ptr<value::Variable> m_dest;

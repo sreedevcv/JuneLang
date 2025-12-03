@@ -3,9 +3,12 @@
 #include "Expr.hpp"
 #include "Stmt.hpp"
 #include "Value.hpp"
+#include "backend/Block.hpp"
 #include "backend/FuncBlock.hpp"
 #include "backend/LiteralValue.hpp"
 #include "backend/ir/InitLiteral.hpp"
+#include "backend/value/Variable.hpp"
+#include <memory>
 
 namespace jl {
 class CodeGen : IExprVisitor, IStmtVisitor {
@@ -15,7 +18,15 @@ public:
     FuncBlock generate(Expr* expr);
 
 private:
-    FuncBlock m_block;
+    Block m_block;
+
+    FuncBlock m_func;
+
+    std::shared_ptr<value::Variable> emit(Expr* expr);
+
+    void emit(Stmt* stmt);
+
+    void emit(std::vector<std::unique_ptr<Stmt>>& stmts);
 
     template <typename T>
     std::shared_ptr<jl::value::Variable> add_literal_ir(Value value)
@@ -23,7 +34,7 @@ private:
         auto val = std::get<T>(value);
         auto literal = std::make_unique<LiteralValue>(val);
         auto var = m_block.create_varaible();
-        m_block.add_ir<ir::InitLiteral>(std::move(literal), var, m_block.get_last_line());
+        m_func.add_ir<ir::InitLiteral>(std::move(literal), var, m_func.get_last_line());
         return var;
     }
 

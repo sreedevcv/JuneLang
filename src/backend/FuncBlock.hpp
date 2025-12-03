@@ -1,21 +1,58 @@
 #pragma once
 
-#include "backend/Block.hpp"
-#include "backend/value/Variable.hpp"
+#include "backend/ir/IR.hpp"
+#include "backend/types/Type.hpp"
 
+#include <algorithm>
+#include <memory>
+#include <stack>
 #include <string>
 #include <unordered_map>
+#include <vector>
 
 namespace jl {
 
-class FuncBlock : public Block {
+class FuncBlock {
 public:
-    FuncBlock(const Block* parent, uint32_t id, const std::string& name);
+    FuncBlock(const std::string& name, std::unique_ptr<type::Func> type);
 
-    std::shared_ptr<value::Variable> add_input_parameter(const std::string& name);
+    ~FuncBlock() = default;
+
+    FuncBlock(const FuncBlock&) = delete;
+
+    FuncBlock& operator=(const FuncBlock&) = delete;
+
+    FuncBlock(FuncBlock&&) = default;
+
+    FuncBlock& operator=(FuncBlock&&) = default;
+
+    template <typename T, typename... Args>
+    void add_ir(Args&&... args)
+    {
+        m_current_func->irs.push_back(std::make_unique<T>(std::forward<Args>(args)...));
+    }
+
+    struct FuncData {
+        std::unique_ptr<type::Func> type;
+        std::vector<std::unique_ptr<ir::IR>> irs;
+
+        FuncData(std::unique_ptr<type::Func> func_type)
+            : type(std::move(func_type))
+        {
+        }
+    };
+
+    void push_func(const std::string& name, std::unique_ptr<type::Func> type);
+
+    void pop_func();
+
+    uint32_t get_last_line() const;
+
+    std::ostream& stream(std::ostream& in) const;
 
 private:
-    std::string m_name;
-    std::unordered_map<std::string, value::Variable*> m_inputs;
+    std::unordered_map<std::string, std::unique_ptr<FuncData>> m_func_datas;
+    std::stack<FuncData*> m_funcs;
+    FuncData* m_current_func = nullptr;
 };
 }

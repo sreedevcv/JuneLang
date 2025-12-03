@@ -1,4 +1,5 @@
 #include "Block.hpp"
+
 #include "backend/value/Variable.hpp"
 #include <memory>
 
@@ -8,11 +9,10 @@ jl::Block::Block(const Block* parent, uint32_t id)
 {
 }
 
-jl::Block* jl::Block::create_block()
+jl::Block* jl::Block::create_block(uint32_t id)
 {
-    auto block = std::make_unique<Block>(this, m_children.size());
+    auto block = std::make_unique<Block>(this, id);
     auto ref = block.get();
-    m_children.push_back(std::move(block));
     return ref;
 }
 
@@ -28,7 +28,7 @@ std::shared_ptr<jl::value::Variable> jl::Block::create_named_variable(const std:
     return var;
 }
 
-std::optional<std::shared_ptr<jl::value::Variable>> jl::Block::lookup_variable(const std::string& name)
+std::optional<std::shared_ptr<jl::value::Variable>> jl::Block::lookup_variable(const std::string& name) const
 {
     const Block* block = this;
     do {
@@ -40,13 +40,4 @@ std::optional<std::shared_ptr<jl::value::Variable>> jl::Block::lookup_variable(c
     } while (block != nullptr);
 
     return std::nullopt;
-}
-
-uint32_t jl::Block::get_last_line() const
-{
-    if (m_irs.size() > 0) {
-        return m_irs.back().get()->m_line;
-    } else {
-        return 0;
-    }
 }

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <string>
 #include <variant>
 
 namespace jl {
@@ -11,6 +12,8 @@ public:
     using type = std::variant<int_type, float_type>;
 
     LiteralValue(const type& data);
+
+    std::string to_str() const;
 
 private:
     type m_data;

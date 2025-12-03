@@ -1,36 +1,37 @@
 #pragma once
 
-#include "backend/ir/IR.hpp"
-#include "backend/value/Variable.hpp"
 #include <cstdint>
 #include <memory>
 #include <optional>
 #include <unordered_map>
-#include <utility>
-#include <vector>
+
+#include "backend/value/Variable.hpp"
 
 namespace jl {
 class Block {
 public:
     Block(const Block* parent, uint32_t id);
 
-    template <typename T, typename... Args>
-    void add_ir(Args&&... args)
-    {
-        m_irs.push_back(std::make_unique<T>(std::forward<Args>(args)...));
-    }
+    ~Block() = default;
 
-    Block* create_block();
+    Block(const Block&) = delete;
+
+    Block& operator=(const Block&) = delete;
+
+    Block(Block&&) = default;
+
+    Block& operator=(Block&&) = default;
+
+    Block* create_block(uint32_t id);
+
     std::shared_ptr<value::Variable> create_varaible();
-    std::shared_ptr<value::Variable> create_named_variable(const std::string& name);
-    std::optional<std::shared_ptr<value::Variable>> lookup_variable(const std::string& name);
 
-    uint32_t get_last_line() const;
+    std::shared_ptr<value::Variable> create_named_variable(const std::string& name);
+
+    std::optional<std::shared_ptr<value::Variable>> lookup_variable(const std::string& name) const;
 
 protected:
-    std::vector<std::unique_ptr<ir::IR>> m_irs;
     std::unordered_map<std::string, std::shared_ptr<value::Variable>> m_symbol_table;
-    std::vector<std::unique_ptr<Block>> m_children;
 
     uint32_t m_var_count { 0 };
     const Block* m_parent;
