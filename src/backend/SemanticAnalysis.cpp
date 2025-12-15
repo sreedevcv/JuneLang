@@ -8,6 +8,7 @@
 #include "Value.hpp"
 #include "backend/types/Type.hpp"
 
+#include <algorithm>
 #include <format>
 #include <memory>
 #include <optional>
@@ -607,7 +608,9 @@ std::any jl::SemanticAnalyzer::visit_func_stmt(FuncStmt* stmt)
         return false;
     }
 
-    // Store it in a stack to track inside which function we are currently in, useful for type checkinf return stmts
+    // Cache the func type in the stmt so that it could be refered in the code gen part (Dont know whether it will be useful)
+    stmt->m_type = func_type->clone();
+    // Store it in a stack to track inside which function we are currently in, needed for type checking return stmts
     m_func_types.push(func_type.get());
     // Define the function in the previous block
     m_symbol_table[m_symbol_table.size() - 2].insert({ stmt->m_name.get_lexeme(), std::move(func_type) });
@@ -639,10 +642,11 @@ std::any jl::SemanticAnalyzer::visit_return_stmt(ReturnStmt* stmt)
     }
 
     // Defined and parsed types differ
-    if (!m_func_types.top()->equals(return_type)) {
+    auto ret_type = static_cast<const type::Func*>(m_func_types.top())->m_return_type.get();
+    if (!ret_type->equals(return_type)) {
         ErrorHandler::error(m_file_name, stmt->m_keyword.get_line(),
             std::format("Expedted return type: {}, but found: {}",
-                m_func_types.top()->to_str(), return_type->to_str())
+                ret_type->to_str(), return_type->to_str())
                 .c_str());
         return false;
     }

@@ -3,24 +3,15 @@
 #include "backend/value/Variable.hpp"
 #include <memory>
 
-jl::Block::Block(const Block* parent, uint32_t id)
+jl::Block::Block(const Block* parent, VarData* var_data)
     : m_parent(parent)
-    , m_id(id)
+    , m_var_data(var_data)
 {
-}
-
-jl::Block* jl::Block::create_block(uint32_t id)
-{
-    // auto block = std::make_unique<Block>(this, id);
-    // auto ref = block.get();
-    // return ref;
-    //
-    return {};
 }
 
 std::shared_ptr<jl::value::Variable> jl::Block::create_varaible(value::Variable::Storage type)
 {
-    return std::make_shared<value::Variable>(m_var_count++, type);
+    return std::make_shared<value::Variable>(m_var_data->temp_var_count++, type);
 }
 
 std::shared_ptr<jl::value::Variable> jl::Block::create_named_variable(const std::string& name)
@@ -42,4 +33,9 @@ std::optional<std::shared_ptr<jl::value::Variable>> jl::Block::lookup_variable(c
     } while (block != nullptr);
 
     return std::nullopt;
+}
+
+uint32_t jl::Block::create_label()
+{
+    return m_var_data->label_count++;
 }

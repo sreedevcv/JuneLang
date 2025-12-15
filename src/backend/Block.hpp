@@ -10,7 +10,13 @@
 namespace jl {
 class Block {
 public:
-    Block(const Block* parent, uint32_t id);
+    struct VarData {
+        uint32_t temp_var_count { 0 };
+        uint32_t stack_var_count { 0 };
+        uint32_t label_count { 0 };
+    };
+
+    Block(const Block* parent, VarData* var_data);
 
     ~Block() = default;
 
@@ -22,20 +28,20 @@ public:
 
     Block& operator=(Block&&) = default;
 
-    Block* create_block(uint32_t id);
-
     std::shared_ptr<value::Variable> create_varaible(value::Variable::Storage type = value::Variable::TEMP);
 
     std::shared_ptr<value::Variable> create_named_variable(const std::string& name);
 
     std::optional<std::shared_ptr<value::Variable>> lookup_variable(const std::string& name) const;
 
+    uint32_t create_label();
+
 protected:
     std::unordered_map<std::string, std::shared_ptr<value::Variable>> m_symbol_table;
 
-    uint32_t m_var_count { 0 };
     const Block* m_parent;
-    uint32_t m_id;
+
+    VarData* m_var_data;
 };
 
 }

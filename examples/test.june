@@ -65,4 +65,40 @@
 // t[5] = t();
 
 
-var a = -1.0 == 2 and 2.0 == 1;
+// var a = -1.0 == 2 and 2.0 == 1;
+// var b = 1;
+// var c = 1 + b;
+// c = b;
+
+// [
+// 	var h = c;
+// 	var d = b;
+// 	var b: int = 3;
+// 	[
+// 		var b: bool = a;
+// 	]
+// ]
+
+// if (a) [
+// 	b = c + 124;
+// ] else if (true) [
+// 	var t = 67.13;
+// ] else [
+// 	var e = 'a';
+// ]
+
+
+var v = 3;
+
+fun t1(a: int, b: float): int [
+	var at1 = 1;
+	var x = b;
+	while (b == 1.1) [
+		var t = v + a;
+	]
+
+	return a - 1;
+]
+
+
+v = t1(v, 2.0);

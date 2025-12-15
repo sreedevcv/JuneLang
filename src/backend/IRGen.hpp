@@ -8,22 +8,30 @@
 #include "backend/LiteralValue.hpp"
 #include "backend/ir/InitLiteral.hpp"
 #include "backend/value/Variable.hpp"
+
 #include <memory>
+#include <unordered_map>
 
 namespace jl {
-class CodeGen : IExprVisitor, IStmtVisitor {
+class IRGen : IExprVisitor, IStmtVisitor {
 public:
-    CodeGen();
+    IRGen();
 
     FuncBlock generate(Expr* expr);
     FuncBlock generate(std::vector<std::unique_ptr<jl::Stmt>>& stmts);
 
 private:
-    Block m_block;
+    Block::VarData m_var_data;
+
+    Block* m_block;
 
     FuncBlock m_func;
 
     std::shared_ptr<value::Variable> emit(Expr* expr);
+
+    std::stack<Block> m_env;
+
+    std::unordered_map<std::shared_ptr<value::Variable>, std::string> m_func_vars;
 
     void emit(Stmt* stmt);
 
@@ -34,10 +42,14 @@ private:
     {
         auto val = std::get<T>(value);
         auto literal = std::make_unique<LiteralValue>(val);
-        auto var = m_block.create_varaible();
+        auto var = m_block->create_varaible();
         m_func.add_ir<ir::InitLiteral>(std::move(literal), var, m_func.get_last_line());
         return var;
     }
+
+    void push_block();
+
+    void pop_block();
 
     std::any visit_assign_expr(Assign* expr) override;
     std::any visit_binary_expr(Binary* expr) override;

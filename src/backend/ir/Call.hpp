@@ -1,0 +1,28 @@
+#pragma once
+
+#include "backend/ir/IR.hpp"
+#include "backend/value/Variable.hpp"
+#include <cstdint>
+#include <memory>
+#include <vector>
+
+namespace jl {
+namespace ir {
+    class Call : public IR {
+    public:
+        Call(const std::string& name,
+            std::vector<std::shared_ptr<value::Variable>> args,
+            std::shared_ptr<value::Variable> dest,
+            uint32_t line);
+
+        ~Call() = default;
+
+        std::string to_str() const override;
+
+    private:
+        std::string m_name;
+        std::vector<std::shared_ptr<value::Variable>> m_args;
+        std::shared_ptr<value::Variable> m_dest;
+    };
+}
+}

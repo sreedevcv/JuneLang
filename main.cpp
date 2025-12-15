@@ -3,7 +3,7 @@
 #include "ErrorHandler.hpp"
 #include "Lexer.hpp"
 #include "Parser.hpp"
-#include "backend/CodeGen.hpp"
+#include "backend/IRGen.hpp"
 #include "backend/SemanticAnalysis.hpp"
 
 #include <cassert>
@@ -51,7 +51,7 @@ int main(int argc, char const* argv[])
     if (sm.type_check(stmts)) {
         std::println("{}", printer.print(stmts).str());
 
-        jl::CodeGen cg;
+        jl::IRGen cg;
         const auto block = cg.generate(stmts);
         block.stream(std::cout);
     } else {
