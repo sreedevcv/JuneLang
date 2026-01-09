@@ -14,3 +14,8 @@ std::string jl::ir::InitLiteral::to_str() const
 {
     return m_dest->to_str() + " = " + m_source->to_str();
 }
+
+void jl::ir::InitLiteral::accept(IRVisitor& visitor)
+{
+    visitor.visit_init_literal_ir(*this);
+}

@@ -17,7 +17,6 @@ public:
 
     std::string to_str() const;
 
-private:
     type m_data;
 };
 };

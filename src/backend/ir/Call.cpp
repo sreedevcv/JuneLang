@@ -28,3 +28,8 @@ std::string jl::ir::Call::to_str() const
             })
         + ")";
 }
+
+void jl::ir::Call::accept(IRVisitor& visitor)
+{
+    visitor.visit_call_ir(*this);
+}

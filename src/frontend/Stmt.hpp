@@ -184,7 +184,7 @@ public:
 class FuncStmt : public Stmt {
 public:
     Token m_name;
-    std::vector<Token*> m_params; // TODO::Should i delete these??
+    std::vector<Token*> m_params;
     std::vector<TypeInfo> m_data_types;
     std::optional<TypeInfo> m_return_type;
     std::vector<std::unique_ptr<Stmt>> m_body;

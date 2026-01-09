@@ -6,17 +6,12 @@
 #include <unordered_map>
 
 #include "backend/value/Variable.hpp"
+#include "types/Type.hpp"
 
 namespace jl {
 class Block {
 public:
-    struct VarData {
-        uint32_t temp_var_count { 0 };
-        uint32_t stack_var_count { 0 };
-        uint32_t label_count { 0 };
-    };
-
-    Block(const Block* parent, VarData* var_data);
+    Block(const Block* parent, value::VarData* var_data);
 
     ~Block() = default;
 
@@ -28,9 +23,17 @@ public:
 
     Block& operator=(Block&&) = default;
 
-    std::shared_ptr<value::Variable> create_varaible(value::Variable::Storage type = value::Variable::TEMP);
+    std::shared_ptr<value::Variable> create_varaible(
+        std::string func_name,
+        const type::Type* data_type,
+        value::Variable::Storage type = value::Variable::TEMP);
 
-    std::shared_ptr<value::Variable> create_named_variable(const std::string& name);
+    std::shared_ptr<value::Variable> create_named_variable(
+        std::string func_name,
+        const std::string& name,
+        const type::Type* data_type);
+
+    void set_variable_size(const value::Variable* unsized_var, const value::Variable* sized_var);
 
     std::optional<std::shared_ptr<value::Variable>> lookup_variable(const std::string& name) const;
 
@@ -41,7 +44,7 @@ protected:
 
     const Block* m_parent;
 
-    VarData* m_var_data;
+    value::VarData* m_var_data;
 };
 
 }

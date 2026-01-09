@@ -24,3 +24,8 @@ std::string jl::ir::Unary::to_str() const
         return m_dest->to_str() + " = ~ " + m_operand->to_str();
     }
 }
+
+void jl::ir::Unary::accept(IRVisitor& visitor)
+{
+
+}

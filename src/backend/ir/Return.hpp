@@ -9,15 +9,15 @@
 
 namespace jl {
 namespace ir {
-    class Return : public IR {
-    public:
+    struct Return : public IR {
         Return(std::optional<std::shared_ptr<value::Variable>> ret_val, uint32_t line);
 
         ~Return() = default;
 
         std::string to_str() const override;
 
-    private:
+        void accept(IRVisitor& visitor) override;
+
         std::optional<std::shared_ptr<value::Variable>> m_ret_val;
     };
 }

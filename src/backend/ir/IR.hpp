@@ -1,20 +1,22 @@
 #pragma once
 
+#include "ir/IRVisitor.hpp"
 #include <cstdint>
 #include <string>
 
 namespace jl {
 namespace ir {
-    class IR {
-    public:
+    struct IR {
         IR(uint32_t line);
+
         virtual ~IR() = default;
 
         virtual std::string to_str() const = 0;
 
+        virtual void accept(IRVisitor& visitor) = 0;
+
         uint32_t line() const;
 
-    private:
         uint32_t m_line;
     };
 }

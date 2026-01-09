@@ -17,3 +17,8 @@ std::string jl::ir::Move::to_str() const
 {
     return m_dest->to_str() + " = " + m_source->to_str();
 }
+
+void jl::ir::Move::accept(IRVisitor& visitor)
+{
+    visitor.visit_move_ir(*this);
+}

@@ -15,6 +15,7 @@
 #include "backend/types/Type.hpp"
 #include "backend/value/Variable.hpp"
 #include <any>
+#include <cstdint>
 #include <memory>
 #include <optional>
 #include <utility>
@@ -50,7 +51,7 @@ std::shared_ptr<jl::value::Variable> jl::IRGen::emit(Expr* expr)
 
     // Insert typecast ir here
     if (expr->m_cast_to) {
-        auto dest = m_block->create_varaible();
+        auto dest = m_block->create_varaible(m_func.get_current_func_name(), expr->m_cast_to.value().get());
 
         m_func.add_ir<ir::TypeCast>(
             expr->m_type->clone(),
@@ -79,7 +80,7 @@ void jl::IRGen::emit(std::vector<std::unique_ptr<Stmt>>& stmts)
 
 void jl::IRGen::push_block()
 {
-    m_env.push(Block(m_block, &m_var_data));
+    m_env.push(Block(m_block, m_func.get_var_data()));
     m_block = &m_env.top();
 }
 
@@ -95,7 +96,9 @@ std::any jl::IRGen::visit_assign_expr(Assign* expr)
 {
     const auto temp_var = emit(expr->m_expr.get());
     const auto stack_var = m_block->lookup_variable(expr->m_token.get_lexeme()).value();
+
     m_func.add_ir<ir::Move>(temp_var, stack_var, expr->m_token.get_line());
+    m_block->set_variable_size(stack_var.get(), temp_var.get());
 
     return stack_var;
 }
@@ -152,7 +155,7 @@ std::any jl::IRGen::visit_binary_expr(Binary* expr)
 
     const auto operand_a = emit(expr->m_left.get());
     const auto operand_b = emit(expr->m_right.get());
-    const auto dest = m_block->create_varaible();
+    const auto dest = m_block->create_varaible(m_func.get_current_func_name(), expr->m_type.get());
     m_func.add_ir<ir::Binary>(dest, operand_a, operand_b, operation, expr->m_oper.get_line());
 
     return dest;
@@ -182,7 +185,7 @@ std::any jl::IRGen::visit_unary_expr(Unary* expr)
     }
 
     const auto source = emit(expr->m_expr.get());
-    const auto dest = m_block->create_varaible();
+    const auto dest = m_block->create_varaible(m_func.get_current_func_name(), expr->m_type.get());
     m_func.add_ir<ir::Unary>(dest, source, operation, expr->m_oper.get_line());
     return dest;
 }
@@ -190,16 +193,17 @@ std::any jl::IRGen::visit_unary_expr(Unary* expr)
 std::any jl::IRGen::visit_literal_expr(Literal* expr)
 {
     auto& value = expr->m_value;
+    auto type = expr->m_type.get();
 
     switch (get_type(value)) {
     case Type::INT:
-        return add_literal_ir<int>(value);
+        return add_literal_ir<int>(value, type);
     case Type::FLOAT:
-        return add_literal_ir<double>(value);
+        return add_literal_ir<double>(value, type);
     case Type::BOOL:
-        return add_literal_ir<bool>(value);
+        return add_literal_ir<bool>(value, type);
     case Type::CHAR:
-        return add_literal_ir<char>(value);
+        return add_literal_ir<char>(value, type);
     case Type::STR:
     case Type::JNULL:
     default:
@@ -215,20 +219,6 @@ std::any jl::IRGen::visit_variable_expr(Variable* expr)
 {
     const auto var = m_block->lookup_variable(expr->m_name.get_lexeme());
     return var.value();
-
-    // if (var) {
-    //     return var.value();
-    // } else {
-    //     // TODO::Remove use of `m_func_name_ref`
-    //     // 1. During func  declaration, do the usual: Declare a named variable so that func name is associated with a value::Variable
-    //     // 2. Also add it to a map[value::Variable, string]
-    //     // 3. During call evaulation, evaluate the callee to get the created value::Variable
-    //     // 4. From the map[value::Variable, string],  get the name of the function needed in the IR
-    //     // Special handling of functions
-    //     m_func_name_ref = expr->m_name.get_lexeme();
-    //     // Dummy return
-    //     return std::make_shared<value::Variable>(0, value::Variable::TEMP);
-    // }
 }
 
 std::any jl::IRGen::visit_logical_expr(Logical* expr)
@@ -239,7 +229,7 @@ std::any jl::IRGen::visit_logical_expr(Logical* expr)
         operation = ir::Binary::LOG_OR;
     }
 
-    const auto dest = m_block->create_varaible();
+    const auto dest = m_block->create_varaible(m_func.get_current_func_name(), expr->m_type.get());
     const auto operand_a = emit(expr->m_left.get());
     const auto operand_b = emit(expr->m_right.get());
     m_func.add_ir<ir::Binary>(dest, operand_a, operand_b, operation, expr->m_oper.get_line());
@@ -256,7 +246,7 @@ std::any jl::IRGen::visit_call_expr(Call* expr)
     }
 
     const auto callee = emit(expr->m_callee.get());
-    const auto dest = m_block->create_varaible();
+    const auto dest = m_block->create_varaible(m_func.get_current_func_name(), expr->m_type.get());
 
     m_func.add_ir<ir::Call>(m_func_vars.at(callee), std::move(args), dest, expr->m_paren.get_line());
 
@@ -316,10 +306,15 @@ std::any jl::IRGen::visit_var_stmt(VarStmt* stmt)
 {
     if (stmt->m_initializer) {
         const auto src = emit(stmt->m_initializer->get());
-        const auto dest = m_block->create_named_variable(stmt->m_name.get_lexeme());
+        const auto dest = m_block->create_named_variable(
+            m_func.get_current_func_name(),
+            stmt->m_name.get_lexeme(),
+            stmt->m_initializer->get()->m_type.get());
         m_func.add_ir<ir::Move>(src, dest, stmt->m_name.get_line());
     } else {
-        m_block->create_named_variable(stmt->m_name.get_lexeme());
+        // Note::Right now we will add it as 0, it will be replaced with the actual size
+        // during assignments
+        m_block->create_named_variable(m_func.get_current_func_name(), stmt->m_name.get_lexeme(), 0);
     }
 
     return {};
@@ -390,7 +385,10 @@ std::any jl::IRGen::visit_while_stmt(WhileStmt* stmt)
 
 std::any jl::IRGen::visit_func_stmt(FuncStmt* stmt)
 {
-    const auto var = m_block->create_named_variable(stmt->m_name.get_lexeme());
+    const auto var = m_block->create_named_variable(
+        m_func.get_current_func_name(),
+        stmt->m_name.get_lexeme(),
+        stmt->m_type.get());
     m_func_vars.insert({ var, stmt->m_name.get_lexeme() });
 
     // Upcast unique ptr to Func from Type
@@ -400,8 +398,9 @@ std::any jl::IRGen::visit_func_stmt(FuncStmt* stmt)
     push_block();
 
     // Add new params to the block
-    for (const auto& s : stmt->m_params) {
-        m_block->create_named_variable(s->get_lexeme());
+    for (uint32_t i = 0; i < stmt->m_params.size(); i++) {
+        auto param_type = type::from_type_info(stmt->m_data_types[i]);
+        m_block->create_named_variable(m_func.get_current_func_name(), stmt->m_params[i]->get_lexeme(), param_type.value().get());
     }
 
     // Compile the body

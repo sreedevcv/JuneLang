@@ -3,20 +3,27 @@
 #include "backend/value/Variable.hpp"
 #include <memory>
 
-jl::Block::Block(const Block* parent, VarData* var_data)
+jl::Block::Block(const Block* parent, value::VarData* var_data)
     : m_parent(parent)
     , m_var_data(var_data)
 {
 }
 
-std::shared_ptr<jl::value::Variable> jl::Block::create_varaible(value::Variable::Storage type)
+std::shared_ptr<jl::value::Variable> jl::Block::create_varaible(
+    std::string func_name,
+    const type::Type* data_type,
+    value::Variable::Storage type)
 {
-    return std::make_shared<value::Variable>(m_var_data->temp_var_count++, type);
+    auto idx = m_var_data->add_variable(data_type->size());
+    return std::make_shared<value::Variable>(func_name, idx, type);
 }
 
-std::shared_ptr<jl::value::Variable> jl::Block::create_named_variable(const std::string& name)
+std::shared_ptr<jl::value::Variable> jl::Block::create_named_variable(
+    std::string func_name,
+    const std::string& name,
+    const type::Type* data_type)
 {
-    auto var = create_varaible(value::Variable::STACK);
+    auto var = create_varaible(func_name, data_type, value::Variable::STACK);
     m_symbol_table.insert({ name, var });
     return var;
 }
@@ -35,7 +42,12 @@ std::optional<std::shared_ptr<jl::value::Variable>> jl::Block::lookup_variable(c
     return std::nullopt;
 }
 
+void jl::Block::set_variable_size(const value::Variable* unsized_var, const value::Variable* sized_var)
+{
+    m_var_data->reset_offset(unsized_var->id(), sized_var->id());
+}
+
 uint32_t jl::Block::create_label()
 {
-    return m_var_data->label_count++;
+    return m_var_data->new_label();
 }

@@ -50,7 +50,16 @@ add_library(JuneInterpreter
  backend/value/Variable.cpp
 
  backend/types/Type.cpp
+
+ backend/codegen/x86CodeGen.cpp
 )
+
+target_compile_options(JuneInterpreter
+    PRIVATE
+    "$<$<COMPILE_LANG_AND_ID:CXX,GNU>:-fconcepts-diagnostics-depth=3>"
+    "$<$<COMPILE_LANG_AND_ID:CXX,GNU>:-fdiagnostics-all-candidates>"
+)
+
 
 target_link_libraries(
  JuneInterpreter
@@ -65,4 +74,5 @@ target_include_directories(JuneInterpreter
  compiler
  interpreter
  frontend
+ backend
 )

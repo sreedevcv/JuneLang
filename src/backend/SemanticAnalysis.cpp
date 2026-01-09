@@ -8,7 +8,6 @@
 #include "Value.hpp"
 #include "backend/types/Type.hpp"
 
-#include <algorithm>
 #include <format>
 #include <memory>
 #include <optional>

@@ -90,15 +90,10 @@
 
 var v = 3;
 
-fun t1(a: int, b: float): int [
-	var at1 = 1;
-	var x = b;
-	while (b == 1.1) [
-		var t = v + a;
-	]
-
-	return a - 1;
+fun add(a: int, b: int): int [
+    var c = a;
+    return b + c;
 ]
 
 
-v = t1(v, 2.0);
+var u = add(v, 2);

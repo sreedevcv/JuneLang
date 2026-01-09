@@ -8,8 +8,7 @@
 
 namespace jl {
 namespace ir {
-    class Unary : public IR {
-    public:
+    struct Unary : public IR {
         enum Operation {
             MINUS,
             BANG,
@@ -24,9 +23,10 @@ namespace ir {
 
         ~Unary() = default;
 
-        std::string to_str() const;
+        std::string to_str() const override;
 
-    private:
+        void accept(IRVisitor& visitor) override;
+
         std::shared_ptr<value::Variable> m_dest;
         std::shared_ptr<value::Variable> m_operand;
         Operation m_operation;

@@ -8,8 +8,7 @@
 
 namespace jl {
 namespace ir {
-    class Call : public IR {
-    public:
+    struct Call : public IR {
         Call(const std::string& name,
             std::vector<std::shared_ptr<value::Variable>> args,
             std::shared_ptr<value::Variable> dest,
@@ -19,7 +18,8 @@ namespace ir {
 
         std::string to_str() const override;
 
-    private:
+        void accept(IRVisitor& visitor) override;
+
         std::string m_name;
         std::vector<std::shared_ptr<value::Variable>> m_args;
         std::shared_ptr<value::Variable> m_dest;

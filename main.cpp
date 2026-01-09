@@ -1,16 +1,17 @@
 #include "ASTPrinter.hpp"
-#include "ArgParser.hpp"
 #include "ErrorHandler.hpp"
 #include "Lexer.hpp"
 #include "Parser.hpp"
 #include "backend/IRGen.hpp"
 #include "backend/SemanticAnalysis.hpp"
+#include "codegen/x86CodeGen.hpp"
 
 #include <cassert>
 #include <iostream>
 #include <ostream>
 #include <print>
 #include <string>
+#include <utility>
 
 int main(int argc, char const* argv[])
 {
@@ -52,8 +53,25 @@ int main(int argc, char const* argv[])
         std::println("{}", printer.print(stmts).str());
 
         jl::IRGen cg;
-        const auto block = cg.generate(stmts);
+        auto block = cg.generate(stmts);
         block.stream(std::cout);
+
+        auto ir_data = block.get_func_irs();
+
+        for (const auto& data : ir_data) {
+            std::println("Fun {}", data.first);
+            for (const auto& [idx, data] : data.second.get()->var_data.get_offset_map()) {
+                const auto [size, offset] = data;
+                std::println("{} - size: {} offset: {}", idx, size, offset);
+            }
+        }
+
+        jl::x86CodeGen codegen(std::move(ir_data));
+        const auto ss = codegen.generate();
+
+        std::println("x86");
+        std::println("{}", ss.str());
+
     } else {
         std::println("Type check Failed");
     }

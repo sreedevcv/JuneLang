@@ -21,8 +21,6 @@ public:
     FuncBlock generate(std::vector<std::unique_ptr<jl::Stmt>>& stmts);
 
 private:
-    Block::VarData m_var_data;
-
     Block* m_block;
 
     FuncBlock m_func;
@@ -38,11 +36,11 @@ private:
     void emit(std::vector<std::unique_ptr<Stmt>>& stmts);
 
     template <typename T>
-    std::shared_ptr<jl::value::Variable> add_literal_ir(Value value)
+    std::shared_ptr<jl::value::Variable> add_literal_ir(Value value, const type::Type* size)
     {
         auto val = std::get<T>(value);
         auto literal = std::make_unique<LiteralValue>(val);
-        auto var = m_block->create_varaible();
+        auto var = m_block->create_varaible(m_func.get_current_func_name(), size);
         m_func.add_ir<ir::InitLiteral>(std::move(literal), var, m_func.get_last_line());
         return var;
     }

@@ -8,8 +8,7 @@
 
 namespace jl {
 namespace ir {
-    class Binary : public IR {
-    public:
+    struct Binary : public IR {
         enum Operation {
             PLUS,
             MINUS,
@@ -38,9 +37,10 @@ namespace ir {
 
         ~Binary() = default;
 
-        std::string to_str() const;
+        std::string to_str() const override;
 
-    private:
+        void accept(IRVisitor& visitor) override;
+
         std::shared_ptr<value::Variable> m_dest;
         std::shared_ptr<value::Variable> m_operand_a;
         std::shared_ptr<value::Variable> m_operand_b;

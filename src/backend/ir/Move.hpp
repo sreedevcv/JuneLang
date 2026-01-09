@@ -8,8 +8,7 @@
 
 namespace jl {
 namespace ir {
-    class Move : public IR {
-    public:
+    struct Move : public IR {
         Move(std::shared_ptr<value::Variable> source,
             std::shared_ptr<value::Variable> dest,
             uint32_t line);
@@ -18,7 +17,8 @@ namespace ir {
 
         std::string to_str() const override;
 
-    private:
+        void accept(IRVisitor& visitor) override;
+
         std::shared_ptr<value::Variable> m_source;
         std::shared_ptr<value::Variable> m_dest;
     };

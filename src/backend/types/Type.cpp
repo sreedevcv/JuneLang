@@ -48,6 +48,26 @@ std::unique_ptr<jl::type::Type> jl::type::Builtin::clone() const
     return std::make_unique<Builtin>(m_primitive);
 }
 
+uint8_t jl::type::Builtin::size() const
+{
+    switch (m_primitive) {
+    case INT:
+        return 8;
+    case FLOAT:
+        return 8;
+    case BOOL:
+        return 8; // Change this back to 1 or 4
+    case CHAR:
+        return 1;
+    case VOID:
+        return 0;
+    default:
+        unimplemented();
+        break;
+    }
+    return 0;
+}
+
 jl::type::Pointer::Pointer(std::unique_ptr<Type> pointee)
     : Type(Kind::PTR)
     , m_pointee(std::move(pointee))
@@ -69,6 +89,11 @@ std::string jl::type::Pointer::to_str() const
 std::unique_ptr<jl::type::Type> jl::type::Pointer::clone() const
 {
     return std::make_unique<Pointer>(std::unique_ptr<Type>(m_pointee.get()->clone()));
+}
+
+uint8_t jl::type::Pointer::size() const
+{
+    return 8;
 }
 
 jl::type::Func::Func(std::unique_ptr<Type> return_type, std::vector<std::unique_ptr<Type>> param_types)
@@ -124,6 +149,11 @@ std::unique_ptr<jl::type::Type> jl::type::Func::clone() const
     return std::make_unique<Func>(m_return_type.get()->clone(), std::move(in));
 }
 
+uint8_t jl::type::Func::size() const
+{
+    return 0;
+}
+
 jl::type::List::List(std::unique_ptr<Type> elem_type, uint32_t count)
     : Type(LIST)
     , m_elem_type(std::move(elem_type))
@@ -151,6 +181,11 @@ std::string jl::type::List::to_str() const
 std::unique_ptr<jl::type::Type> jl::type::List::clone() const
 {
     return std::make_unique<List>(m_elem_type->clone(), m_count);
+}
+
+uint8_t jl::type::List::size() const
+{
+    return m_elem_type->size() * m_count;
 }
 
 bool jl::type::is_number(const Type* t)

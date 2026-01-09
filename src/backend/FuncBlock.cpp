@@ -46,7 +46,7 @@ void jl::FuncBlock::push_func(const std::string& name, std::unique_ptr<type::Fun
     auto func_data = std::make_unique<FuncData>(std::move(type));
     m_funcs.push(func_data.get());
     m_func_datas.insert({ name, std::move(func_data) });
-
+    m_current_func_name = name;
     m_current_func = m_funcs.top();
 }
 
@@ -54,4 +54,19 @@ void jl::FuncBlock::pop_func()
 {
     m_funcs.pop();
     m_current_func = m_funcs.top();
+}
+
+std::unordered_map<std::string, std::unique_ptr<jl::FuncBlock::FuncData>> jl::FuncBlock::get_func_irs()
+{
+    return std::move(m_func_datas);
+}
+
+const std::string& jl::FuncBlock::get_current_func_name() const
+{
+    return m_current_func_name;
+}
+
+jl::value::VarData* jl::FuncBlock::get_var_data()
+{
+    return &m_funcs.top()->var_data;
 }

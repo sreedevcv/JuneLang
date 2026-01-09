@@ -7,17 +7,16 @@
 
 namespace jl {
 namespace ir {
-    class InitLiteral : public IR {
-    public:
+    struct InitLiteral : public IR {
         InitLiteral(std::unique_ptr<LiteralValue> source,
             std::shared_ptr<value::Variable> dest,
             uint32_t line);
 
         virtual ~InitLiteral() = default;
 
-        std::string to_str() const override;
+        void accept(IRVisitor& visitor) override;
 
-    private:
+        std::string to_str() const override;
         std::unique_ptr<LiteralValue> m_source;
         std::shared_ptr<value::Variable> m_dest;
     };

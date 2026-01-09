@@ -2,8 +2,8 @@
 
 #include "backend/ir/IR.hpp"
 #include "backend/types/Type.hpp"
+#include "value/Variable.hpp"
 
-#include <algorithm>
 #include <memory>
 #include <stack>
 #include <string>
@@ -35,6 +35,7 @@ public:
     struct FuncData {
         std::unique_ptr<type::Func> type;
         std::vector<std::unique_ptr<ir::IR>> irs;
+        value::VarData var_data;
 
         FuncData(std::unique_ptr<type::Func> func_type)
             : type(std::move(func_type))
@@ -48,11 +49,18 @@ public:
 
     uint32_t get_last_line() const;
 
+    std::unordered_map<std::string, std::unique_ptr<FuncData>> get_func_irs();
+
     std::ostream& stream(std::ostream& in) const;
+
+    const std::string& get_current_func_name() const;
+
+    value::VarData* get_var_data();
 
 private:
     std::unordered_map<std::string, std::unique_ptr<FuncData>> m_func_datas;
     std::stack<FuncData*> m_funcs;
     FuncData* m_current_func = nullptr;
+    std::string m_current_func_name;
 };
 }

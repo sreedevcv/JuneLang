@@ -51,3 +51,8 @@ std::string jl::ir::Binary::to_str() const
         return m_dest->to_str() + " = " + m_operand_a->to_str() + " || " + m_operand_b->to_str();
     }
 }
+
+void jl::ir::Binary::accept(IRVisitor& visitor)
+{
+    visitor.visit_binary_ir(*this);
+}

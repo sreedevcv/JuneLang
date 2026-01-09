@@ -13,6 +13,11 @@ std::string jl::ir::Jump::to_str() const
     return "jump to label: " + std::to_string(m_label) + (m_condition ? " if " + m_condition.value()->to_str() : "");
 }
 
+void jl::ir::Jump::accept(IRVisitor& visitor)
+{
+
+}
+
 jl::ir::Label::Label(uint32_t value, uint32_t line)
 	: IR(line)
 	, m_value(value)
@@ -23,4 +28,9 @@ jl::ir::Label::Label(uint32_t value, uint32_t line)
 std::string jl::ir::Label::to_str() const
 {
     return "label: " + std::to_string(m_value);
+}
+
+void jl::ir::Label::accept(IRVisitor& visitor)
+{
+
 }
