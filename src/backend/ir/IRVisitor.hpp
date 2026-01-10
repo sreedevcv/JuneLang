@@ -1,6 +1,5 @@
 #pragma once
 
-
 namespace jl {
 namespace ir {
     class Binary;
@@ -9,6 +8,9 @@ namespace ir {
     class Call;
     class InitLiteral;
     class DebugPrint;
+    class Jump;
+    class Unary;
+    class Label;
 
     struct IRVisitor {
         virtual void visit_binary_ir(ir::Binary& binary) = 0;
@@ -18,6 +20,12 @@ namespace ir {
         virtual void visit_return_ir(ir::Return& ret) = 0;
 
         virtual void visit_call_ir(ir::Call& call) = 0;
+
+        virtual void visit_jump_ir(ir::Jump& jump) = 0;
+
+        virtual void visit_unary_ir(ir::Unary& unary) = 0;
+
+        virtual void visit_label_ir(ir::Label& label) = 0;
 
         virtual void visit_init_literal_ir(ir::InitLiteral& literal) = 0;
 

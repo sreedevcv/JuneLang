@@ -27,5 +27,5 @@ std::string jl::ir::Unary::to_str() const
 
 void jl::ir::Unary::accept(IRVisitor& visitor)
 {
-
+    visitor.visit_unary_ir(*this);
 }

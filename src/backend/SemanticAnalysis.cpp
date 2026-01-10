@@ -11,6 +11,7 @@
 #include <format>
 #include <memory>
 #include <optional>
+#include <string>
 #include <utility>
 #include <vector>
 
@@ -202,6 +203,10 @@ std::any jl::SemanticAnalyzer::visit_literal_expr(Literal* expr)
         expr->m_type = std::make_unique<type::Builtin>(type::Builtin::CHAR);
         return true;
     case Type::STR:
+        expr->m_type = std::make_unique<type::List>(
+            std::make_unique<type::Builtin>(type::Builtin::CHAR),
+            std::get<std::string>(value).size());
+        break;
     case Type::JNULL:
     // TODO: Create a pointer literal of value of zero
     default:

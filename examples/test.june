@@ -88,15 +88,35 @@
 // ]
 
 
-var v = 3;
+fun sum(limit: int): int [
+    var sum = 0;
 
-fun add(a: int, b: int): int [
-    var c = a;
-    return b + c;
+    for (var i = 0; i <= limit; i+=1) [
+        sum += i;
+    ]
+
+    return sum;
 ]
 
+fun factorial(val: int): int [
+    var fact = 1;
 
-var u = add(v, 2);
+    for (var i = 2; i <= val; i+=1) [
+        fact *= i;
+    ]
 
-print v;
-print u;
+    return fact;
+]
+
+fun recursive(val: int): int [
+    if (val == 1) return 1;
+
+    return recursive(val - 1) * val;
+]
+
+var s = sum(10);
+
+var f = recursive(5);
+
+print s;
+print f;

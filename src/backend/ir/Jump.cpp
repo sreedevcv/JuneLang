@@ -15,6 +15,7 @@ std::string jl::ir::Jump::to_str() const
 
 void jl::ir::Jump::accept(IRVisitor& visitor)
 {
+    visitor.visit_jump_ir(*this);
 
 }
 
@@ -32,5 +33,5 @@ std::string jl::ir::Label::to_str() const
 
 void jl::ir::Label::accept(IRVisitor& visitor)
 {
-
+    visitor.visit_label_ir(*this);
 }

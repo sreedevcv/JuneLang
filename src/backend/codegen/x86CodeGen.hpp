@@ -34,6 +34,12 @@ private:
 
     void visit_call_ir(ir::Call& call) override;
 
+    void visit_jump_ir(ir::Jump& jump) override;
+
+    void visit_unary_ir(ir::Unary& unary) override;
+
+    void visit_label_ir(ir::Label& label) override;
+
     void visit_init_literal_ir(ir::InitLiteral& literal) override;
 
     void visit_debug_print_ir(ir::DebugPrint& print) override;
