@@ -14,6 +14,7 @@
 #include "backend/ir/Unary.hpp"
 #include "backend/types/Type.hpp"
 #include "backend/value/Variable.hpp"
+#include "ir/DebugPrint.hpp"
 #include <any>
 #include <cstdint>
 #include <memory>
@@ -296,7 +297,11 @@ std::any jl::IRGen::visit_type_cast_expr(TypeCast* expr)
 
 std::any jl::IRGen::visit_print_stmt(PrintStmt* stmt)
 {
-    unimplemented("IRGen");
+    const auto var = emit(stmt->m_expr.get());
+    const auto builtin = dynamic_cast<type::Builtin*>(stmt->m_expr.get()->m_type.get());
+
+    m_func.add_ir<ir::DebugPrint>(var, builtin->m_primitive, 0);
+
     return {};
 }
 

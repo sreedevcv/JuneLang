@@ -45,6 +45,7 @@ add_library(JuneInterpreter
  backend/ir/Jump.cpp
  backend/ir/Return.cpp
  backend/ir/Call.cpp
+ backend/ir/DebugPrint.cpp
 
  backend/value/Integer.cpp
  backend/value/Variable.cpp
@@ -54,11 +55,11 @@ add_library(JuneInterpreter
  backend/codegen/x86CodeGen.cpp
 )
 
-target_compile_options(JuneInterpreter
-    PRIVATE
-    "$<$<COMPILE_LANG_AND_ID:CXX,GNU>:-fconcepts-diagnostics-depth=3>"
-    "$<$<COMPILE_LANG_AND_ID:CXX,GNU>:-fdiagnostics-all-candidates>"
-)
+# target_compile_options(JuneInterpreter
+#     PRIVATE
+#     "$<$<COMPILE_LANG_AND_ID:CXX,GNU>:-fconcepts-diagnostics-depth=3>"
+#     "$<$<COMPILE_LANG_AND_ID:CXX,GNU>:-fdiagnostics-all-candidates>"
+# )
 
 
 target_link_libraries(

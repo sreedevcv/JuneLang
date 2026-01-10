@@ -97,3 +97,6 @@ fun add(a: int, b: int): int [
 
 
 var u = add(v, 2);
+
+print v;
+print u;

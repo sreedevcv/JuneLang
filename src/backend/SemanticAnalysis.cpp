@@ -653,7 +653,22 @@ std::any jl::SemanticAnalyzer::visit_return_stmt(ReturnStmt* stmt)
     return true;
 }
 
-std::any jl::SemanticAnalyzer::visit_print_stmt(PrintStmt* stmt) { return false; }
+std::any jl::SemanticAnalyzer::visit_print_stmt(PrintStmt* stmt)
+{
+    const auto res = type_check(stmt->m_expr.get());
+
+    if (res && stmt->m_expr.get()->m_type->m_kind != type::Type::BUILTIN) {
+        ErrorHandler::error(
+            m_file_name, 0,
+            std::format("Only priimitives can be printed, but found type: {}",
+                stmt->m_expr.get()->m_type.get()->to_str())
+                .c_str());
+        return false;
+    }
+
+    return res;
+}
+
 std::any jl::SemanticAnalyzer::visit_class_stmt(ClassStmt* stmt) { return false; }
 std::any jl::SemanticAnalyzer::visit_for_each_stmt(ForEachStmt* stmt) { return false; }
 std::any jl::SemanticAnalyzer::visit_break_stmt(BreakStmt* stmt) { return false; }

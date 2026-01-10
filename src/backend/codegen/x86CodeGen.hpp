@@ -36,6 +36,8 @@ private:
 
     void visit_init_literal_ir(ir::InitLiteral& literal) override;
 
+    void visit_debug_print_ir(ir::DebugPrint& print) override;
+
     const std::array<std::string, 6> m_arg_registers {
         "rdi",
         "rsi",

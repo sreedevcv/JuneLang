@@ -7,6 +7,7 @@
 #include "codegen/x86CodeGen.hpp"
 
 #include <cassert>
+#include <fstream>
 #include <iostream>
 #include <ostream>
 #include <print>
@@ -69,8 +70,11 @@ int main(int argc, char const* argv[])
         jl::x86CodeGen codegen(std::move(ir_data));
         const auto ss = codegen.generate();
 
-        std::println("x86");
         std::println("{}", ss.str());
+
+        std::ofstream file("test.asm");
+        file << ss.str();
+        file.close();
 
     } else {
         std::println("Type check Failed");
