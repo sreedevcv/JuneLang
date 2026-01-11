@@ -1,26 +1,22 @@
 # JuneLang
 
-> ⚠️ **Note:** JuneLang is **still in development**.
 
 A simple programming language written in C++ inspired by C.
 
-It is statically typed and compiled to bytecode, which is then run on a VM.
+It is statically typed and compiled to native x86-64.
 
 ## Features
 
 - Statically typed
-- 4 primitive types: `int`, `float`, `char`, `bool`, and their pointer variants
+- 3 primitive types: `int`, `char`, `bool`, and their list variants
 - If blocks
 - `while` and `for` loops
 - Functions
 - Type inference
-- C interoperability
 
 ## Example
 
 ```java
-extern "puts" as puts(s: [char]);
-
 fun sample_function(list: [int], size: int): int [
     var s = 0;
 
@@ -39,7 +35,7 @@ var int_list = {1, 2, 3 + 1, 4, 5};
 var result = sample_function(int_list, 5);
 
 var str: [char; 13] = "Hello World!";
-puts(str);
+print str;
 ```
 
 ## Prerequisites

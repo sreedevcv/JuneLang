@@ -1,61 +1,40 @@
 add_library(JuneInterpreter
- frontend/Value.cpp
- frontend/Token.cpp
- frontend/Lexer.cpp
- frontend/ErrorHandler.cpp
- frontend/Parser.cpp
- # frontend/Callable.cpp
- frontend/Resolver.cpp
- frontend/StreamHandler.cpp
- frontend/ASTPrinter.cpp
- # interpreter/Interpreter.cpp
- # interpreter/Environment.cpp
- # interpreter/NativeFunctions.cpp
- # memory/Arena.cpp
- # memory/MemoryPool.cpp
- # memory/GarbageCollector.cpp
- # memory/DebugArena.cpp
- # compiler/CodeGenerator.cpp
- # compiler/Chunk.cpp
- # compiler/OpCode.cpp
- # compiler/VM.cpp
- # compiler/Ir.cpp
- # compiler/Operand.cpp
- # compiler/VariableManager.cpp
- # compiler/DataSection.cpp
- # compiler/CFFI.cpp
- # compiler/StaticAddressPass.cpp
- # compiler/IROptimizer.cpp
- ArgParser.cpp
+    frontend/Value.cpp
+    frontend/Token.cpp
+    frontend/Lexer.cpp
+    frontend/ErrorHandler.cpp
+    frontend/Parser.cpp
+    frontend/Resolver.cpp
+    frontend/StreamHandler.cpp
+    frontend/ASTPrinter.cpp
+    ArgParser.cpp
+    backend/Block.cpp
+    backend/FuncBlock.cpp
+    backend/IRGen.cpp
+    backend/LiteralValue.cpp
+    backend/SemanticAnalysis.cpp
 
 
- backend/Block.cpp
- backend/FuncBlock.cpp
- backend/IRGen.cpp
- backend/LiteralValue.cpp
- backend/SemanticAnalysis.cpp
+    backend/ir/IR.cpp
+    backend/ir/Move.cpp
+    backend/ir/InitLiteral.cpp
+    backend/ir/TypeCast.cpp
+    backend/ir/Unary.cpp
+    backend/ir/Binary.cpp
+    backend/ir/Jump.cpp
+    backend/ir/Return.cpp
+    backend/ir/Call.cpp
+    backend/ir/DebugPrint.cpp
+    backend/ir/Allocate.cpp
+    backend/ir/Read.cpp
+    backend/ir/Write.cpp
 
+    backend/value/Integer.cpp
+    backend/value/Variable.cpp
 
- backend/ir/IR.cpp
- backend/ir/Move.cpp
- backend/ir/InitLiteral.cpp
- backend/ir/TypeCast.cpp
- backend/ir/Unary.cpp
- backend/ir/Binary.cpp
- backend/ir/Jump.cpp
- backend/ir/Return.cpp
- backend/ir/Call.cpp
- backend/ir/DebugPrint.cpp
- backend/ir/Allocate.cpp
- backend/ir/Read.cpp
- backend/ir/Write.cpp
+    backend/types/Type.cpp
 
- backend/value/Integer.cpp
- backend/value/Variable.cpp
-
- backend/types/Type.cpp
-
- backend/codegen/x86CodeGen.cpp
+    backend/codegen/x86CodeGen.cpp
 )
 
 # target_compile_options(JuneInterpreter
@@ -66,17 +45,17 @@ add_library(JuneInterpreter
 
 
 target_link_libraries(
- JuneInterpreter
- stdc++exp
- ffi
+    JuneInterpreter
+    stdc++exp
+    ffi
 )
 
 target_include_directories(JuneInterpreter
- PUBLIC
- ${CMAKE_CURRENT_SOURCE_DIR}
- memory
- compiler
- interpreter
- frontend
- backend
+    PUBLIC
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    memory
+    compiler
+    interpreter
+    frontend
+    backend
 )
