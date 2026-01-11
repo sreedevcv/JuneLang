@@ -26,6 +26,21 @@ private:
 
     value::VarData::Data get_size_and_offset(uint32_t id) const;
 
+    void move_data(
+        const std::string& src,
+        const std::string& dest,
+        uint32_t& total_size,
+        uint32_t& offset1,
+        uint32_t& offset2);
+
+    void do_sized_move(
+        const std::string& src,
+        const std::string& dest,
+        uint32_t& total_size,
+        uint32_t fixed_size,
+        uint32_t& offset1,
+        uint32_t& offset2);
+
     void visit_binary_ir(ir::Binary& binary) override;
 
     void visit_move_ir(ir::Move& move) override;
@@ -39,6 +54,12 @@ private:
     void visit_unary_ir(ir::Unary& unary) override;
 
     void visit_label_ir(ir::Label& label) override;
+
+     void visit_allocate_ir(ir::Allocate& allocate) override;
+
+     void visit_read_ir(ir::Read& read) override;
+
+     void visit_write_ir(ir::Write& write) override;
 
     void visit_init_literal_ir(ir::InitLiteral& literal) override;
 
@@ -54,7 +75,7 @@ private:
     };
 
     const std::unordered_map<uint8_t, const char*> m_size_to_ptr_map {
-        { 1, "" },
+        { 1, "BYTE" },
         { 2, "WORD" },
         { 4, "DWORD" },
         { 8, "QWORD" }

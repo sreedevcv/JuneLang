@@ -2,8 +2,8 @@
 #include "backend/ir/IR.hpp"
 
 jl::ir::Unary::Unary(
-    std::shared_ptr<value::Variable> dest,
-    std::shared_ptr<value::Variable> operand,
+    value::Variable dest,
+    value::Variable operand,
     Operation operation,
     uint32_t line)
     : IR(line)
@@ -17,11 +17,11 @@ std::string jl::ir::Unary::to_str() const
 {
     switch (m_operation) {
     case MINUS:
-        return m_dest->to_str() + " = - " + m_operand->to_str();
+        return m_dest.to_str() + " = - " + m_operand.to_str();
     case BANG:
-        return m_dest->to_str() + " = ! " + m_operand->to_str();
+        return m_dest.to_str() + " = ! " + m_operand.to_str();
     case BIT_NOT:
-        return m_dest->to_str() + " = ~ " + m_operand->to_str();
+        return m_dest.to_str() + " = ~ " + m_operand.to_str();
     }
 }
 

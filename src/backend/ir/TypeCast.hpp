@@ -13,8 +13,8 @@ namespace ir {
         TypeCast(
             std::unique_ptr<type::Type> from,
             std::unique_ptr<type::Type> to,
-            std::shared_ptr<value::Variable> dest,
-            std::shared_ptr<value::Variable> source,
+            value::Variable dest,
+            value::Variable source,
             uint32_t line);
 
         virtual ~TypeCast() = default;
@@ -23,8 +23,8 @@ namespace ir {
 
         void accept(IRVisitor& visitor) override;
 
-        std::shared_ptr<value::Variable> m_dest;
-        std::shared_ptr<value::Variable> m_source;
+        value::Variable m_dest;
+        value::Variable m_source;
 
         std::unique_ptr<type::Type> m_from;
         std::unique_ptr<type::Type> m_to;

@@ -11,6 +11,9 @@ namespace ir {
     class Jump;
     class Unary;
     class Label;
+    class Allocate;
+    class Read;
+    class Write;
 
     struct IRVisitor {
         virtual void visit_binary_ir(ir::Binary& binary) = 0;
@@ -26,6 +29,12 @@ namespace ir {
         virtual void visit_unary_ir(ir::Unary& unary) = 0;
 
         virtual void visit_label_ir(ir::Label& label) = 0;
+
+        virtual void visit_allocate_ir(ir::Allocate& allocate) = 0;
+
+        virtual void visit_read_ir(ir::Read& read) = 0;
+
+        virtual void visit_write_ir(ir::Write& write) = 0;
 
         virtual void visit_init_literal_ir(ir::InitLiteral& literal) = 0;
 

@@ -16,8 +16,8 @@ namespace ir {
         };
 
         Unary(
-            std::shared_ptr<value::Variable> dest,
-            std::shared_ptr<value::Variable> operand,
+            value::Variable dest,
+            value::Variable operand,
             Operation operation,
             uint32_t line);
 
@@ -27,8 +27,8 @@ namespace ir {
 
         void accept(IRVisitor& visitor) override;
 
-        std::shared_ptr<value::Variable> m_dest;
-        std::shared_ptr<value::Variable> m_operand;
+        value::Variable m_dest;
+        value::Variable m_operand;
         Operation m_operation;
     };
 }

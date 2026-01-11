@@ -5,12 +5,11 @@
 #include "value/Variable.hpp"
 
 #include <cstdint>
-#include <memory>
 
 namespace jl {
 namespace ir {
     struct DebugPrint : public IR {
-        DebugPrint(std::shared_ptr<value::Variable> val, type::Builtin::Primitive primitive, uint32_t line);
+        DebugPrint(value::Variable val, type::Builtin::Primitive primitive, uint32_t line);
 
         ~DebugPrint() = default;
 
@@ -18,7 +17,7 @@ namespace ir {
 
         void accept(IRVisitor& visitor) override;
 
-        std::shared_ptr<value::Variable> m_val;
+        value::Variable m_val;
         type::Builtin::Primitive m_primitive;
     };
 }

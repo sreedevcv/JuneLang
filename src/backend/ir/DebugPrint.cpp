@@ -1,7 +1,7 @@
 #include "DebugPrint.hpp"
 #include "ir/IR.hpp"
 
-jl::ir::DebugPrint::DebugPrint(std::shared_ptr<value::Variable> val, type::Builtin::Primitive primitive, uint32_t line)
+jl::ir::DebugPrint::DebugPrint(value::Variable val, type::Builtin::Primitive primitive, uint32_t line)
     : IR(line)
     , m_val(val)
     , m_primitive(primitive)
@@ -10,7 +10,7 @@ jl::ir::DebugPrint::DebugPrint(std::shared_ptr<value::Variable> val, type::Built
 
 std::string jl::ir::DebugPrint::to_str() const
 {
-    return "print " + m_val->to_str();
+    return "print " + m_val.to_str();
 }
 
 void jl::ir::DebugPrint::accept(IRVisitor& visitor)

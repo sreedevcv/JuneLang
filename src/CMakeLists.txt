@@ -46,6 +46,9 @@ add_library(JuneInterpreter
  backend/ir/Return.cpp
  backend/ir/Call.cpp
  backend/ir/DebugPrint.cpp
+ backend/ir/Allocate.cpp
+ backend/ir/Read.cpp
+ backend/ir/Write.cpp
 
  backend/value/Integer.cpp
  backend/value/Variable.cpp

@@ -29,9 +29,9 @@ namespace ir {
         };
 
         Binary(
-            std::shared_ptr<value::Variable> dest,
-            std::shared_ptr<value::Variable> operand_a,
-            std::shared_ptr<value::Variable> operand_b,
+            value::Variable dest,
+            value::Variable operand_a,
+            value::Variable operand_b,
             Operation operation,
             uint32_t line);
 
@@ -41,9 +41,9 @@ namespace ir {
 
         void accept(IRVisitor& visitor) override;
 
-        std::shared_ptr<value::Variable> m_dest;
-        std::shared_ptr<value::Variable> m_operand_a;
-        std::shared_ptr<value::Variable> m_operand_b;
+        value::Variable m_dest;
+        value::Variable m_operand_a;
+        value::Variable m_operand_b;
         Operation m_operation;
     };
 }

@@ -3,8 +3,8 @@
 #include <string>
 
 jl::ir::Call::Call(const std::string& name,
-    std::vector<std::shared_ptr<value::Variable>> args,
-    std::shared_ptr<value::Variable> dest,
+    std::vector<value::Variable> args,
+    value::Variable dest,
     uint32_t line)
     : IR(line)
     , m_name(name)
@@ -15,7 +15,7 @@ jl::ir::Call::Call(const std::string& name,
 
 std::string jl::ir::Call::to_str() const
 {
-    return m_dest->to_str()
+    return m_dest.to_str()
         + " = call "
         + m_name
         + "("
@@ -24,7 +24,7 @@ std::string jl::ir::Call::to_str() const
             m_args.end(),
             std::string(""),
             [](auto a, auto b) {
-                return a + b->to_str() + " ";
+                return a + b.to_str() + " ";
             })
         + ")";
 }

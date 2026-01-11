@@ -19,6 +19,17 @@ uint32_t jl::value::Variable::id() const
     return m_id;
 }
 
+jl::value::Variable::Storage jl::value::Variable::storage() const
+{
+    return m_storage;
+}
+
+bool jl::value::Variable::operator==(const Variable& other) const
+{
+    return this->m_id == other.m_id; // Compare unique identifiers
+}
+
+
 uint32_t jl::value::VarData::add_variable(uint32_t size)
 {
     auto idx = m_var_count++;

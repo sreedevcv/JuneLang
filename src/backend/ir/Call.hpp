@@ -10,8 +10,8 @@ namespace jl {
 namespace ir {
     struct Call : public IR {
         Call(const std::string& name,
-            std::vector<std::shared_ptr<value::Variable>> args,
-            std::shared_ptr<value::Variable> dest,
+            std::vector<value::Variable> args,
+            value::Variable dest,
             uint32_t line);
 
         ~Call() = default;
@@ -21,8 +21,8 @@ namespace ir {
         void accept(IRVisitor& visitor) override;
 
         std::string m_name;
-        std::vector<std::shared_ptr<value::Variable>> m_args;
-        std::shared_ptr<value::Variable> m_dest;
+        std::vector<value::Variable> m_args;
+        value::Variable m_dest;
     };
 }
 }

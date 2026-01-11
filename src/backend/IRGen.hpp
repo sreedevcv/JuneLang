@@ -25,22 +25,22 @@ private:
 
     FuncBlock m_func;
 
-    std::shared_ptr<value::Variable> emit(Expr* expr);
+    value::Variable emit(Expr* expr);
 
     std::stack<Block> m_env;
 
-    std::unordered_map<std::shared_ptr<value::Variable>, std::string> m_func_vars;
+    std::unordered_map<value::Variable, std::string> m_func_vars;
 
     void emit(Stmt* stmt);
 
     void emit(std::vector<std::unique_ptr<Stmt>>& stmts);
 
     template <typename T>
-    std::shared_ptr<jl::value::Variable> add_literal_ir(Value value, const type::Type* size)
+    jl::value::Variable add_literal_ir(Value value, const type::Type* size)
     {
-        auto val = std::get<T>(value);
+        const auto val = std::get<T>(value);
+        const auto var = m_block->create_varaible(m_func.get_current_func_name(), size);
         auto literal = std::make_unique<LiteralValue>(val);
-        auto var = m_block->create_varaible(m_func.get_current_func_name(), size);
         m_func.add_ir<ir::InitLiteral>(std::move(literal), var, m_func.get_last_line());
         return var;
     }

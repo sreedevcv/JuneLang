@@ -1,7 +1,8 @@
 #pragma once
 
-#include "Value.hpp"
+#include <cstddef>
 #include <cstdint>
+#include <functional>
 #include <string>
 #include <unordered_map>
 
@@ -33,7 +34,7 @@ namespace value {
         std::unordered_map<uint32_t, Data> m_var_offset;
     };
 
-    class Variable : Value {
+    class Variable {
     public:
         enum Storage {
             TEMP,
@@ -46,10 +47,25 @@ namespace value {
 
         uint32_t id() const;
 
+        Storage storage() const;
+
+        bool operator==(const Variable& other) const;
+
     private:
         uint32_t m_id;
         std::string m_func_id;
         Storage m_storage;
     };
 }
+}
+
+// Hash implementation
+namespace std {
+template <>
+struct hash<jl::value::Variable> {
+    size_t operator()(const jl::value::Variable& var) const
+    {
+        return hash<uint32_t>()(var.id());
+    }
+};
 }

@@ -1,7 +1,6 @@
 #pragma once
 
 #include <cstdint>
-#include <memory>
 #include <optional>
 #include <unordered_map>
 
@@ -23,24 +22,26 @@ public:
 
     Block& operator=(Block&&) = default;
 
-    std::shared_ptr<value::Variable> create_varaible(
+    value::Variable create_varaible(
         std::string func_name,
         const type::Type* data_type,
         value::Variable::Storage type = value::Variable::TEMP);
 
-    std::shared_ptr<value::Variable> create_named_variable(
+    value::Variable create_named_variable(
         std::string func_name,
         const std::string& name,
         const type::Type* data_type);
 
-    void set_variable_size(const value::Variable* unsized_var, const value::Variable* sized_var);
+    value::Variable allocate_space(std::string func_name, uint32_t size);
 
-    std::optional<std::shared_ptr<value::Variable>> lookup_variable(const std::string& name) const;
+    void set_variable_size(const value::Variable& unsized_var, const value::Variable& sized_var);
+
+    std::optional<value::Variable> lookup_variable(const std::string& name) const;
 
     uint32_t create_label();
 
 protected:
-    std::unordered_map<std::string, std::shared_ptr<value::Variable>> m_symbol_table;
+    std::unordered_map<std::string, value::Variable> m_symbol_table;
 
     const Block* m_parent;
 

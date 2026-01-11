@@ -9,14 +9,14 @@
 namespace jl {
 namespace ir {
     struct Jump : public IR {
-        Jump(uint32_t label, std::optional<std::shared_ptr<value::Variable>> condition, uint32_t line);
+        Jump(uint32_t label, std::optional<value::Variable> condition, uint32_t line);
 
         std::string to_str() const override;
 
         void accept(IRVisitor& visitor) override;
 
         uint32_t m_label;
-        std::optional<std::shared_ptr<value::Variable>> m_condition;
+        std::optional<value::Variable> m_condition;
     };
 
     struct Label : public IR {

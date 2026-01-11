@@ -4,8 +4,8 @@
 #include <memory>
 
 jl::ir::Move::Move(
-    std::shared_ptr<value::Variable> source,
-    std::shared_ptr<value::Variable> dest,
+    value::Variable source,
+    value::Variable dest,
     uint32_t line)
     : IR(line)
     , m_source(std::move(source))
@@ -15,7 +15,7 @@ jl::ir::Move::Move(
 
 std::string jl::ir::Move::to_str() const
 {
-    return m_dest->to_str() + " = " + m_source->to_str();
+    return m_dest.to_str() + " = " + m_source.to_str();
 }
 
 void jl::ir::Move::accept(IRVisitor& visitor)

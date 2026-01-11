@@ -10,7 +10,7 @@
 namespace jl {
 namespace ir {
     struct Return : public IR {
-        Return(std::optional<std::shared_ptr<value::Variable>> ret_val, uint32_t line);
+        Return(std::optional<value::Variable> ret_val, uint32_t line);
 
         ~Return() = default;
 
@@ -18,7 +18,7 @@ namespace ir {
 
         void accept(IRVisitor& visitor) override;
 
-        std::optional<std::shared_ptr<value::Variable>> m_ret_val;
+        std::optional<value::Variable> m_ret_val;
     };
 }
 }

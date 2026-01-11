@@ -4,7 +4,7 @@
 
 #include <utility>
 
-jl::ir::Return::Return(std::optional<std::shared_ptr<value::Variable>> ret_val, uint32_t line)
+jl::ir::Return::Return(std::optional<value::Variable> ret_val, uint32_t line)
     : IR(line)
     , m_ret_val(std::move(ret_val))
 {
@@ -12,7 +12,7 @@ jl::ir::Return::Return(std::optional<std::shared_ptr<value::Variable>> ret_val, 
 
 std::string jl::ir::Return::to_str() const
 {
-    return "ret " + (m_ret_val ? m_ret_val.value()->to_str() : "");
+    return "ret " + (m_ret_val ? m_ret_val.value().to_str() : "");
 }
 
 void jl::ir::Return::accept(IRVisitor& visitor)

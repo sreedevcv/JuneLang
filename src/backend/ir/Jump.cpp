@@ -1,7 +1,7 @@
 #include "Jump.hpp"
 #include <string>
 
-jl::ir::Jump::Jump(uint32_t label, std::optional<std::shared_ptr<value::Variable>> condition, uint32_t line)
+jl::ir::Jump::Jump(uint32_t label, std::optional<value::Variable> condition, uint32_t line)
     : IR(line)
     , m_label(label)
     , m_condition(condition)
@@ -10,7 +10,7 @@ jl::ir::Jump::Jump(uint32_t label, std::optional<std::shared_ptr<value::Variable
 
 std::string jl::ir::Jump::to_str() const
 {
-    return "jump to label: " + std::to_string(m_label) + (m_condition ? " if " + m_condition.value()->to_str() : "");
+    return "jump to label: " + std::to_string(m_label) + (m_condition ? " if " + m_condition.value().to_str() : "");
 }
 
 void jl::ir::Jump::accept(IRVisitor& visitor)

@@ -9,7 +9,7 @@ namespace jl {
 namespace ir {
     struct InitLiteral : public IR {
         InitLiteral(std::unique_ptr<LiteralValue> source,
-            std::shared_ptr<value::Variable> dest,
+            value::Variable dest,
             uint32_t line);
 
         virtual ~InitLiteral() = default;
@@ -18,7 +18,7 @@ namespace ir {
 
         std::string to_str() const override;
         std::unique_ptr<LiteralValue> m_source;
-        std::shared_ptr<value::Variable> m_dest;
+        value::Variable m_dest;
     };
 }
 }

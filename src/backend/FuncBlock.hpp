@@ -32,6 +32,12 @@ public:
         m_current_func->irs.push_back(std::make_unique<T>(std::forward<Args>(args)...));
     }
 
+    template <typename T>
+    void add_ir(T&& ir)
+    {
+        m_current_func->irs.push_back(std::make_unique<T>(std::forward<T>(ir)));
+    }
+
     struct FuncData {
         std::unique_ptr<type::Func> type;
         std::vector<std::unique_ptr<ir::IR>> irs;

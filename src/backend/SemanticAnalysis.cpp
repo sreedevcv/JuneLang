@@ -206,7 +206,7 @@ std::any jl::SemanticAnalyzer::visit_literal_expr(Literal* expr)
         expr->m_type = std::make_unique<type::List>(
             std::make_unique<type::Builtin>(type::Builtin::CHAR),
             std::get<std::string>(value).size());
-        break;
+        return true;
     case Type::JNULL:
     // TODO: Create a pointer literal of value of zero
     default:
@@ -283,6 +283,13 @@ std::any jl::SemanticAnalyzer::visit_assign_expr(Assign* expr)
         // Variable is untyped as of now
         type = expr->m_expr->m_type.get()->clone();
         expr->m_type = type.value().get()->clone();
+
+        if (type.value()->m_kind == type::Type::LIST) {
+            ErrorHandler::error(m_file_name, expr->m_token.get_line(),
+                "Late initializations of lists are not allowed");
+            return false;
+        }
+
         return true;
     }
 
@@ -417,7 +424,7 @@ std::any jl::SemanticAnalyzer::visit_index_set_expr(IndexSet* expr)
         ErrorHandler::error(m_file_name, expr->m_closing_bracket.get_line(),
             std::format("Cannot index into a list with value of type: {}, only ints are allowed", expr->m_index_expr->m_type->to_str()).c_str());
         return false;
-    } else if (!expr->m_value_expr->m_type->equals(expr->m_jlist->m_type.get())) {
+    } else if (!expr->m_value_expr->m_type->equals(dynamic_cast<type::List*>(expr->m_jlist->m_type.get())->m_elem_type.get())) {
         // LHS and RHS dont match
         ErrorHandler::error(m_file_name, expr->m_closing_bracket.get_line(),
             std::format("Cannot assign value of type: {} to list of type: {}",

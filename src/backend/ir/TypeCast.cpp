@@ -5,8 +5,8 @@
 jl::ir::TypeCast::TypeCast(
     std::unique_ptr<type::Type> from,
     std::unique_ptr<type::Type> to,
-    std::shared_ptr<value::Variable> dest,
-    std::shared_ptr<value::Variable> source,
+    value::Variable dest,
+    value::Variable source,
     uint32_t line)
     : IR(line)
     , m_dest(std::move(dest))
@@ -18,7 +18,7 @@ jl::ir::TypeCast::TypeCast(
 
 std::string jl::ir::TypeCast::to_str() const
 {
-    return m_dest->to_str() + " = (" + m_from.get()->to_str() + " to " + m_to->to_str() + ") " + m_source->to_str();
+    return m_dest.to_str() + " = (" + m_from.get()->to_str() + " to " + m_to->to_str() + ") " + m_source.to_str();
 }
 
 void jl::ir::TypeCast::accept(IRVisitor& visitor)

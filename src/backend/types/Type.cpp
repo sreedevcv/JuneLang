@@ -56,7 +56,7 @@ uint8_t jl::type::Builtin::size() const
     case FLOAT:
         return 8;
     case BOOL:
-        return 8; // Change this back to 1 or 4
+        return 1; // Change this back to 1 or 4
     case CHAR:
         return 1;
     case VOID:
@@ -185,7 +185,7 @@ std::unique_ptr<jl::type::Type> jl::type::List::clone() const
 
 uint8_t jl::type::List::size() const
 {
-    return m_elem_type->size() * m_count;
+    return 16;
 }
 
 bool jl::type::is_number(const Type* t)

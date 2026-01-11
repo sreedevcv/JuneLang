@@ -1,7 +1,6 @@
 #include "Block.hpp"
 
 #include "backend/value/Variable.hpp"
-#include <memory>
 
 jl::Block::Block(const Block* parent, value::VarData* var_data)
     : m_parent(parent)
@@ -9,16 +8,16 @@ jl::Block::Block(const Block* parent, value::VarData* var_data)
 {
 }
 
-std::shared_ptr<jl::value::Variable> jl::Block::create_varaible(
+jl::value::Variable jl::Block::create_varaible(
     std::string func_name,
     const type::Type* data_type,
     value::Variable::Storage type)
 {
     auto idx = m_var_data->add_variable(data_type->size());
-    return std::make_shared<value::Variable>(func_name, idx, type);
+    return value::Variable(func_name, idx, type);
 }
 
-std::shared_ptr<jl::value::Variable> jl::Block::create_named_variable(
+jl::value::Variable jl::Block::create_named_variable(
     std::string func_name,
     const std::string& name,
     const type::Type* data_type)
@@ -28,7 +27,7 @@ std::shared_ptr<jl::value::Variable> jl::Block::create_named_variable(
     return var;
 }
 
-std::optional<std::shared_ptr<jl::value::Variable>> jl::Block::lookup_variable(const std::string& name) const
+std::optional<jl::value::Variable> jl::Block::lookup_variable(const std::string& name) const
 {
     const Block* block = this;
     do {
@@ -42,12 +41,18 @@ std::optional<std::shared_ptr<jl::value::Variable>> jl::Block::lookup_variable(c
     return std::nullopt;
 }
 
-void jl::Block::set_variable_size(const value::Variable* unsized_var, const value::Variable* sized_var)
+void jl::Block::set_variable_size(const value::Variable& unsized_var, const value::Variable& sized_var)
 {
-    m_var_data->reset_offset(unsized_var->id(), sized_var->id());
+    m_var_data->reset_offset(unsized_var.id(), sized_var.id());
 }
 
 uint32_t jl::Block::create_label()
 {
     return m_var_data->new_label();
+}
+
+jl::value::Variable jl::Block::allocate_space(std::string func_name, uint32_t size)
+{
+    const auto idx = m_var_data->add_variable(size);
+    return value::Variable(func_name, idx, value::Variable::STACK);
 }
