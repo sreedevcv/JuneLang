@@ -9,7 +9,6 @@
 
 #include <memory>
 #include <optional>
-#include <print>
 #include <utility>
 
 jl::Parser::Parser(std::vector<Token>& tokens, std::string& file_name)
@@ -497,8 +496,8 @@ std::unique_ptr<jl::Stmt> jl::Parser::declaration()
 std::unique_ptr<jl::Stmt> jl::Parser::print_statement()
 {
     auto expr = expression();
-    consume(Token::SEMI_COLON, "Expected ; after expression");
-    auto print_stmt = std::make_unique<PrintStmt>(std::move(expr));
+    auto token = consume(Token::SEMI_COLON, "Expected ; after expression");
+    auto print_stmt = std::make_unique<PrintStmt>(std::move(expr), std::move(token));
     return print_stmt;
 }
 

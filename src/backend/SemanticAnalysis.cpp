@@ -668,14 +668,25 @@ std::any jl::SemanticAnalyzer::visit_return_stmt(ReturnStmt* stmt)
 std::any jl::SemanticAnalyzer::visit_print_stmt(PrintStmt* stmt)
 {
     const auto res = type_check(stmt->m_expr.get());
+    const auto kind = stmt->m_expr.get()->m_type->m_kind;
 
-    if (res && stmt->m_expr.get()->m_type->m_kind != type::Type::BUILTIN) {
+    if (res && kind != type::Type::BUILTIN && kind != type::Type::LIST) {
         ErrorHandler::error(
-            m_file_name, 0,
-            std::format("Only priimitives can be printed, but found type: {}",
+            m_file_name, stmt->m_token.get_line(),
+            std::format("Only primitives and lists can be printed, but found type: {}",
                 stmt->m_expr.get()->m_type.get()->to_str())
                 .c_str());
         return false;
+    }
+
+    if (kind == type::Type::LIST) {
+        const auto list = dynamic_cast<type::List*>(stmt->m_expr->m_type.get());
+        if (list->m_elem_type->m_kind != type::Type::BUILTIN) {
+            ErrorHandler::error(
+                m_file_name, stmt->m_token.get_line(),
+                std::format("Expected a list of primitives for printing but fount", list->to_str()).c_str());
+            return false;
+        }
     }
 
     return res;

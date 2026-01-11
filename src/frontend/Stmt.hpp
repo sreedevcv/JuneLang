@@ -5,6 +5,7 @@
 #include "TypeInfo.hpp"
 #include "backend/types/Type.hpp"
 
+#include <algorithm>
 #include <memory>
 #include <optional>
 #include <utility>
@@ -69,9 +70,11 @@ public:
 class PrintStmt : public Stmt {
 public:
     std::unique_ptr<Expr> m_expr;
+    Token m_token;
 
-    inline PrintStmt(std::unique_ptr<Expr> expr)
+    inline PrintStmt(std::unique_ptr<Expr> expr, Token token)
         : m_expr(std::move(expr))
+        , m_token(std::move(token))
     {
     }
 

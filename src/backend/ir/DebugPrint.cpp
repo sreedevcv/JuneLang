@@ -1,10 +1,17 @@
 #include "DebugPrint.hpp"
 #include "ir/IR.hpp"
 
-jl::ir::DebugPrint::DebugPrint(value::Variable val, type::Builtin::Primitive primitive, uint32_t line)
+jl::ir::DebugPrint::DebugPrint(
+    value::Variable val,
+    bool is_list,
+    type::Builtin::Primitive primitive,
+    uint32_t list_elem_size,
+    uint32_t line)
     : IR(line)
     , m_val(val)
+    , m_is_list(is_list)
     , m_primitive(primitive)
+    , m_list_elem_size(list_elem_size)
 {
 }
 

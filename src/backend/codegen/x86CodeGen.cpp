@@ -1,10 +1,13 @@
 #include "x86CodeGen.hpp"
 
+#include <array>
 #include <cassert>
+#include <cmath>
 #include <cstdint>
 #include <format>
 #include <sstream>
 #include <string>
+#include <unordered_map>
 #include <utility>
 #include <variant>
 
@@ -22,6 +25,11 @@
 #include "ir/Unary.hpp"
 #include "ir/Write.hpp"
 
+constexpr auto int_str = "printf_int_str";
+constexpr auto char_str = "printf_char_str";
+constexpr auto int_list_str = "printf_int_list_str";
+constexpr auto char_list_str = "printf_char_list_str";
+
 jl::x86CodeGen::x86CodeGen(std::unordered_map<std::string, std::unique_ptr<jl::FuncBlock::FuncData>> ir_data)
     : m_ir_data(std::move(ir_data))
 {
@@ -32,8 +40,10 @@ std::stringstream jl::x86CodeGen::generate()
     m_out << "extern printf\n\n";
     m_out << "global main\n\n";
     m_out << "section .data\n\n";
-    m_out << "printf_int_str: db '%d', 0xA, 0\n";
-    m_out << "printf_char_str: db '%c', 0xA, 0\n\n";
+    m_out << int_str << ": db '%ld', 0xA, 0\n";
+    m_out << char_str << ": db '%c', 0xA, 0\n\n";
+    m_out << int_list_str << ": db '%ld ', 0\n\n";
+    m_out << char_list_str << ": db '%c', 0\n\n";
 
     m_out << "section .text\n\n";
 
@@ -49,21 +59,56 @@ std::stringstream jl::x86CodeGen::generate()
     return std::move(m_out);
 }
 
-std::string select_register(char reg, uint32_t size)
+const char* select_register(const char* reg, uint32_t size)
 {
-    switch (size) {
-    case 1:
-        return std::format("{}l", reg);
-    case 2:
-        return std::format("{}x", reg);
-    case 4:
-        return std::format("e{}x", reg);
-    case 8:
-        return std::format("r{}x", reg);
-    }
+    static const std::unordered_map<std::string, std::array<const char*, 4>> reg_size_map = {
+        { "a", { "rax", "eax", "ax", "al" } },
+        { "b", { "rbx", "ebx", "bx", "bl" } },
+        { "c", { "rcx", "ecx", "cx", "cl" } },
+        { "d", { "rdx", "edx", "dx", "dl" } },
+        { "si", { "rsi", "esi", "si", "sil" } },
+        { "di", { "rdi", "edi", "di", "dil" } },
+        { "bp", { "rbp", "ebp", "bp", "bpl" } },
+        { "sp", { "rsp", "esp", "sp", "spl" } },
+        { "r8", { "r8", "r8d", "r8w", "r8b" } },
+        { "r9", { "r9", "r9d", "r9w", "r9b" } },
+        { "r10", { "r10", "r10d", "r10w", "r10b" } },
+        { "r11", { "r11", "r11d", "r11w", "r11b" } },
+        { "r12", { "r12", "r12d", "r12w", "r12b" } },
+        { "r13", { "r13", "r13d", "r13w", "r13b" } },
+        { "r14", { "r14", "r14d", "r14w", "r14b" } },
+        { "r15", { "r15", "r15d", "r15w", "r15b" } },
+    };
 
-    unimplemented("Invalid register size");
-    return "";
+    return reg_size_map.at(reg)[3 - std::log2(size)];
+}
+
+void jl::x86CodeGen::move_data(
+    lambda_t& mov_lambda,
+    uint32_t& total_size,
+    uint32_t& offset1,
+    uint32_t& offset2)
+{
+    static constexpr uint32_t sizes[] = { 8, 4, 2, 1 };
+
+    for (int i = 0; i < 4 && total_size > 0; i++) {
+        do_sized_move(mov_lambda, total_size, sizes[i], offset1, offset2);
+    }
+}
+
+void jl::x86CodeGen::do_sized_move(
+    lambda_t& mov_lambda,
+    uint32_t& total_size,
+    uint32_t fixed_size,
+    uint32_t& offset1,
+    uint32_t& offset2)
+{
+    while (total_size >= fixed_size) {
+        m_out << mov_lambda(fixed_size, offset1, offset2);
+        total_size -= fixed_size;
+        offset1 -= fixed_size;
+        offset2 -= fixed_size;
+    }
 }
 
 jl::value::VarData::Data jl::x86CodeGen::get_size_and_offset(uint32_t id) const
@@ -91,10 +136,32 @@ void jl::x86CodeGen::generate(const std::string& func_name, const FuncBlock::Fun
     m_out << std::format("sub rsp, {}\n", stack_space);
 
     // Move all arguments to stack
+    uint32_t arg_reg = 0;
     for (size_t i = 0; i < func_data.type.get()->m_param_types.size(); i++) {
         const auto [size, offset] = get_size_and_offset(i);
 
-        m_out << std::format("mov {} [rbp-{}], {}\n", m_size_to_ptr_map.at(size), offset, m_arg_registers[i]);
+        if (size > 8)
+            continue;
+
+        const auto sized_reg = select_register(m_arg_registers[arg_reg].c_str(), size);
+        m_out << std::format("mov {} [rbp-{}], {}\n", m_size_to_ptr_map.at(size), offset, sized_reg);
+        arg_reg += 1;
+    }
+
+    // Pop all the larges values into the stack
+    for (uint32_t i = 0; i < func_data.type.get()->m_param_types.size(); i++) {
+        auto [size_src, offset_dest] = get_size_and_offset(i);
+        if (size_src <= 8)
+            continue;
+
+        static lambda_t mov_lambda = [this](uint32_t size, uint32_t offset1, uint32_t offset2) {
+            static const auto a_reg = select_register("a", size);
+            return std::format("mov {}, {} [rbp+{}]\n", a_reg, m_size_to_ptr_map.at(size), -offset1)
+                + std::format("mov {} [rbp-{}], {}\n", m_size_to_ptr_map.at(size), offset2, a_reg);
+        };
+
+        uint32_t stack_offset = -16;
+        move_data(mov_lambda, size_src, stack_offset, offset_dest);
     }
 
     // Generate op code for the irs
@@ -108,6 +175,8 @@ void jl::x86CodeGen::generate(const std::string& func_name, const FuncBlock::Fun
     m_out << "pop rbp\n";
     m_out << "ret\n\n";
 }
+
+// --------------------------------------------------VISITOR-FUNCTIONS--------------------------------------------------
 
 void jl::x86CodeGen::visit_binary_ir(ir::Binary& binary)
 {
@@ -173,40 +242,8 @@ void jl::x86CodeGen::visit_binary_ir(ir::Binary& binary)
         break;
     }
 
-    const auto a_reg = select_register('a', size3); // for logical ops, size3 will be byte(bool)
+    const auto a_reg = select_register("a", size3); // for logical ops, size3 will be byte(bool)
     m_out << std::format("mov {} [rbp-{}], {}\n", m_size_to_ptr_map.at(size3), offset3, a_reg);
-}
-
-void jl::x86CodeGen::move_data(
-    const std::string& src,
-    const std::string& dest,
-    uint32_t& total_size,
-    uint32_t& offset1,
-    uint32_t& offset2)
-{
-    static constexpr uint32_t sizes[] = { 8, 4, 2, 1 };
-
-    for (int i = 0; i < 4 && total_size > 0; i++) {
-        do_sized_move(src, dest, total_size, sizes[i], offset1, offset2);
-    }
-}
-
-void jl::x86CodeGen::do_sized_move(
-    const std::string& src,
-    const std::string& dest,
-    uint32_t& total_size,
-    uint32_t fixed_size,
-    uint32_t& offset1,
-    uint32_t& offset2)
-{
-    const auto a_reg = select_register('a', fixed_size);
-    while (total_size >= fixed_size) {
-        m_out << std::format("mov {}, {} [rbp-{}]\n", a_reg, m_size_to_ptr_map.at(fixed_size), offset1);
-        m_out << std::format("mov {} [rbp-{}], {}\n", m_size_to_ptr_map.at(fixed_size), offset2, a_reg);
-        total_size -= fixed_size;
-        offset1 -= fixed_size;
-        offset2 -= fixed_size;
-    }
 }
 
 void jl::x86CodeGen::visit_move_ir(ir::Move& move)
@@ -216,11 +253,16 @@ void jl::x86CodeGen::visit_move_ir(ir::Move& move)
     auto [size1, offset1] = get_size_and_offset(move.m_source.id());
     auto [size2, offset2] = get_size_and_offset(move.m_dest.id());
 
-    std::string t;
-    move_data(t, t, size1, offset1, offset2);
+    // m_out << std::format("mov {}, {} [rbp-{}]\n", a_reg, m_size_to_ptr_map.at(fixed_size), offset1);
+    // m_out << std::format("mov {} [rbp-{}], {}\n", m_size_to_ptr_map.at(fixed_size), offset2, a_reg);
 
-    // m_out << std::format("mov rax, {} [rbp-{}]\n", m_size_to_ptr_map.at(size1), offset1);
-    // m_out << std::format("mov {} [rbp-{}], rax\n", m_size_to_ptr_map.at(size2), offset2);
+    static lambda_t mov_lambda = [this](uint32_t size, uint32_t offset1, uint32_t offset2) -> std::string {
+        static const auto a_reg = select_register("a", size);
+        return std::format("mov {}, {} [rbp-{}]\n", a_reg, m_size_to_ptr_map.at(size), offset1)
+            + std::format("mov {} [rbp-{}], {}\n", m_size_to_ptr_map.at(size), offset2, a_reg);
+    };
+
+    move_data(mov_lambda, size1, offset1, offset2);
 }
 
 void jl::x86CodeGen::visit_return_ir(ir::Return& ret)
@@ -229,8 +271,7 @@ void jl::x86CodeGen::visit_return_ir(ir::Return& ret)
 
     if (ret.m_ret_val) {
         const auto [size, offset] = get_size_and_offset(ret.m_ret_val.value().id());
-        const auto a_reg = select_register('a', size);
-
+        const auto a_reg = select_register("a", size);
         m_out << std::format("mov {}, {} [rbp-{}]\n", a_reg, m_size_to_ptr_map.at(size), offset);
     }
 
@@ -243,18 +284,48 @@ void jl::x86CodeGen::visit_call_ir(ir::Call& call)
 
     assert(call.m_args.size() < 6 && "Calls should have less than 6 args");
 
+    uint32_t arg_reg = 0;
+    uint32_t stack_alloc_size = 0;
     for (uint32_t i = 0; i < call.m_args.size(); i++) {
         const auto [size, offset] = get_size_and_offset(call.m_args[i].id());
-        m_out << std::format("mov {}, {} [rbp-{}] \n", m_arg_registers[i], m_size_to_ptr_map.at(size), offset);
+        if (size <= 8) {
+            const auto sized_reg = select_register(m_arg_registers[arg_reg].c_str(), size);
+            m_out << std::format("mov {}, {} [rbp-{}] \n", sized_reg, m_size_to_ptr_map.at(size), offset);
+            arg_reg += 1;
+        } else {
+            stack_alloc_size += size;
+        }
     }
 
-    const auto [size, offset] = get_size_and_offset(call.m_dest.id());
+    if (stack_alloc_size > 0) {
+        m_out << "sub rsp, " << stack_alloc_size << "\n";
+    }
+
+    // Push all the larges values into the stack
+    for (uint32_t i = 0; i < call.m_args.size(); i++) {
+        auto [size_src, offset_src] = get_size_and_offset(call.m_args[i].id());
+        if (size_src <= 8)
+            continue;
+
+        static lambda_t mov_lambda = [this](uint32_t size, uint32_t offset1, uint32_t offset2) {
+            static const auto a_reg = select_register("a", size);
+            return std::format("mov {}, {} [rbp-{}]\n", a_reg, m_size_to_ptr_map.at(size), offset1)
+                + std::format("mov {} [rsp+{}], {}\n", m_size_to_ptr_map.at(size), -offset2, a_reg);
+        };
+
+        uint32_t stack_offset = 0;
+        move_data(mov_lambda, size_src, offset_src, stack_offset);
+    }
 
     m_out << "call " << call.m_name << '\n';
 
     // Move the result from a register to destination
-    const auto a_reg = select_register('a', size);
-    m_out << std::format("mov {} [rbp-{}], {}\n", m_size_to_ptr_map.at(size), offset, a_reg);
+    const auto [size, offset] = get_size_and_offset(call.m_dest.id());
+    if (size > 0) {
+        // For non void return types
+        const auto a_reg = select_register("a", size);
+        m_out << std::format("mov {} [rbp-{}], {}\n", m_size_to_ptr_map.at(size), offset, a_reg);
+    }
 }
 
 void jl::x86CodeGen::visit_init_literal_ir(ir::InitLiteral& literal)
@@ -272,27 +343,77 @@ void jl::x86CodeGen::visit_debug_print_ir(ir::DebugPrint& print)
 {
     m_out << "; visit_debug_print_ir: " << print.line() << '\n';
 
-    switch (print.m_primitive) {
-    case type::Builtin::INT:
-        m_out << "mov rdi, printf_int_str\n";
-        break;
-    case type::Builtin::BOOL:
-        m_out << "mov rdi, printf_int_str\n";
-        break;
-    case type::Builtin::CHAR:
-        m_out << "mov rdi, printf_char_str\n";
-        break;
-    case type::Builtin::FLOAT:
-    case type::Builtin::VOID:
-        unimplemented("printf strings for float and void");
-        break;
+    if (!print.m_is_list) {
+        const auto [size, offset] = get_size_and_offset(print.m_val.id());
+        switch (print.m_primitive) {
+        case type::Builtin::INT:
+            m_out << "mov rdi," << int_str << '\n';
+            break;
+        case type::Builtin::BOOL:
+            m_out << "mov rdi," << int_str << '\n';
+            break;
+        case type::Builtin::CHAR:
+            m_out << "mov rdi," << char_str << '\n';
+            break;
+        case type::Builtin::FLOAT:
+        case type::Builtin::VOID:
+            unimplemented("printf strings for float and void");
+            break;
+        }
+
+        const auto si_reg = select_register("si", size);
+        m_out << std::format("mov {}, {} [rbp-{}]\n", si_reg, m_size_to_ptr_map.at(size), offset);
+        m_out << "mov eax, 0\n";
+        m_out << "call printf\n";
+    } else {
+        const auto loop_start_label = std::format("printloopstart_{}_{}", *m_current_func_name, print.m_line);
+        const auto loop_end_label = std::format("printloopend_{}_{}", *m_current_func_name, print.m_line);
+        auto [size, offset] = get_size_and_offset(print.m_val.id());
+        // move list base address to rax
+        m_out << std::format("mov rax, {} [rbp-{}]\n", m_size_to_ptr_map.at(8), offset);
+        // move list size to rcx
+        m_out << std::format("mov rcx, {} [rbp-{}]\n", m_size_to_ptr_map.at(8), offset - 8);
+        // add a label to loop around
+        m_out << loop_start_label << ":\n";
+        // Break out of the loop
+        m_out << "cmp rcx, 0\n";
+        m_out << "jle " << loop_end_label << '\n';
+        // push rax and rcx to save it
+        m_out << "push rax\n";
+        m_out << "push rcx\n";
+        // print content at base address
+        switch (print.m_primitive) {
+        case type::Builtin::INT:
+            m_out << "mov rdi," << int_list_str << '\n';
+            break;
+        case type::Builtin::BOOL:
+            m_out << "mov rdi," << int_list_str << '\n';
+            break;
+        case type::Builtin::CHAR:
+            m_out << "mov rdi," << char_list_str << '\n';
+            break;
+        case type::Builtin::FLOAT:
+        case type::Builtin::VOID:
+            unimplemented("printf strings for float and void");
+            break;
+        }
+
+        const auto si_reg = select_register("si", 8);
+        m_out << std::format("mov {}, {} [rax]\n", si_reg, m_size_to_ptr_map.at(8));
+        m_out << "mov eax, 0\n";
+        m_out << "call printf\n";
+        // retrieve rax and rcx
+        m_out << "pop rcx\n";
+        m_out << "pop rax\n";
+        // decrease base address
+        m_out << std::format("add rax, {}\n", print.m_list_elem_size);
+        // decrease rcx
+        m_out << "dec rcx\n";
+        // loop back
+        m_out << "jmp " << loop_start_label << '\n';
+        // add a label to skip loop
+        m_out << loop_end_label << ":\n";
     }
-
-    const auto [size, offset] = get_size_and_offset(print.m_val.id());
-
-    m_out << std::format("mov rsi, {} [rbp-{}]\n", m_size_to_ptr_map.at(size), offset);
-    m_out << "mov eax, 0\n";
-    m_out << "call printf\n";
 }
 
 void jl::x86CodeGen::visit_jump_ir(ir::Jump& jump)
@@ -371,10 +492,10 @@ void jl::x86CodeGen::visit_read_ir(ir::Read& read)
     // Add with the base address
     m_out << std::format("add rax, {} [rbp-{}]\n", m_size_to_ptr_map.at(8), base_offset);
     // Move the read value to rbx
-    auto b_reg = select_register('b', read.m_size);
+    auto b_reg = select_register("b", read.m_size);
     m_out << std::format("mov {}, {} [rax]\n", b_reg, m_size_to_ptr_map.at(read.m_size));
     // Move rbx to destination
-    b_reg = select_register('b', mov_size);
+    b_reg = select_register("b", mov_size);
     m_out << std::format("mov {} [rbp-{}], {}\n", m_size_to_ptr_map.at(mov_size), mov_offset, b_reg);
 }
 
@@ -393,9 +514,9 @@ void jl::x86CodeGen::visit_write_ir(ir::Write& write)
     // Add with the base address
     m_out << std::format("add rax, {} [rbp-{}]\n", m_size_to_ptr_map.at(8), base_offset);
     // Move src to b register
-    auto b_reg = select_register('b', src_size);
+    auto b_reg = select_register("b", src_size);
     m_out << std::format("mov {}, {} [rbp-{}]\n", b_reg, m_size_to_ptr_map.at(src_size), src_offset);
     // Move the read value to rbx
-    b_reg = select_register('b', write.m_size);
+    b_reg = select_register("b", write.m_size);
     m_out << std::format("mov {} [rax], {}\n", m_size_to_ptr_map.at(write.m_size), b_reg);
 }

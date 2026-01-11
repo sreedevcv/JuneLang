@@ -168,9 +168,7 @@ bool jl::type::List::equals(const Type* type) const
     }
 
     auto list = static_cast<const List*>(type);
-
-    return list->m_count == m_count
-        && list->m_elem_type->equals(m_elem_type.get());
+    return list->m_elem_type->equals(m_elem_type.get());
 }
 
 std::string jl::type::List::to_str() const
@@ -200,8 +198,6 @@ bool jl::type::is_number(const Type* t)
 
 std::optional<std::unique_ptr<jl::type::Type>> jl::type::from_type_info(const TypeInfo& type_info)
 {
-    // TODO::For arrays create a new Type
-
     std::unique_ptr<Type> t;
     if (type_info.name == "int") {
         t = std::make_unique<Builtin>(Builtin::INT);
@@ -216,8 +212,7 @@ std::optional<std::unique_ptr<jl::type::Type>> jl::type::from_type_info(const Ty
     }
 
     if (type_info.is_array) {
-        // TODO:: This will throw if pointers come
-        return std::make_unique<List>(std::move(t), type_info.size.value());
+        return std::make_unique<List>(std::move(t), type_info.size.value_or(0));
     } else {
         return t;
     }

@@ -6,6 +6,7 @@
 
 #include <array>
 #include <cstdint>
+#include <functional>
 #include <sstream>
 #include <string>
 #include <unordered_map>
@@ -26,16 +27,16 @@ private:
 
     value::VarData::Data get_size_and_offset(uint32_t id) const;
 
+    using lambda_t = std::function<std::string(uint32_t, uint32_t, uint32_t)>;
+
     void move_data(
-        const std::string& src,
-        const std::string& dest,
+        lambda_t& mov_lambda,
         uint32_t& total_size,
         uint32_t& offset1,
         uint32_t& offset2);
 
     void do_sized_move(
-        const std::string& src,
-        const std::string& dest,
+        lambda_t& mov_lambda,
         uint32_t& total_size,
         uint32_t fixed_size,
         uint32_t& offset1,
@@ -55,20 +56,20 @@ private:
 
     void visit_label_ir(ir::Label& label) override;
 
-     void visit_allocate_ir(ir::Allocate& allocate) override;
+    void visit_allocate_ir(ir::Allocate& allocate) override;
 
-     void visit_read_ir(ir::Read& read) override;
+    void visit_read_ir(ir::Read& read) override;
 
-     void visit_write_ir(ir::Write& write) override;
+    void visit_write_ir(ir::Write& write) override;
 
     void visit_init_literal_ir(ir::InitLiteral& literal) override;
 
     void visit_debug_print_ir(ir::DebugPrint& print) override;
 
     const std::array<std::string, 6> m_arg_registers {
-        "rdi",
-        "rsi",
-        "rdx",
+        "di",
+        "si",
+        "dx",
         "rcx",
         "r8",
         "r9",

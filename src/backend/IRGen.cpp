@@ -383,7 +383,13 @@ std::any jl::IRGen::visit_print_stmt(PrintStmt* stmt)
     const auto var = emit(stmt->m_expr.get());
     const auto builtin = dynamic_cast<type::Builtin*>(stmt->m_expr.get()->m_type.get());
 
-    m_func.add_ir<ir::DebugPrint>(var, builtin->m_primitive, 0);
+    if (builtin) {
+        m_func.add_ir<ir::DebugPrint>(var, false, builtin->m_primitive, 0, stmt->m_token.get_line());
+    } else {
+        const auto list = dynamic_cast<type::List*>(stmt->m_expr.get()->m_type.get());
+        const auto builtin = dynamic_cast<type::Builtin*>(list->m_elem_type.get());
+        m_func.add_ir<ir::DebugPrint>(var, true, builtin->m_primitive, builtin->size(), stmt->m_token.get_line());
+    }
 
     return {};
 }
