@@ -149,11 +149,31 @@
 //
 //test('a');
 
+//print a;
 
-var list = {1.0, 2.0+3.0, 4.0};
+//var list = {1.0, 2.0+3.0, 4.0};
+//
+//var ints = {34, 21, 54};
+//
+// for (var i = 0; i < 3; i+=1) [
+//     print list[i];
+//     print ints[i];
+// ]
+//
+//var     dd = 3.53251321;
+//print dd;
 
-// var list = {1, 2, 3, 4};
+var l = {1.1, 2.2, 3.3, 4.4};
 
- for (var i = 0; i < 3; i+=1) [
-     print list[i];
- ]
+fun add_list(list: [float], start: float): float [
+    var sum = start;
+
+    for (var i = 0; i < 4; i+=1) [
+        sum += list[i];
+    ]
+
+    return sum;
+]
+
+print add_list(l, 2.0);
+print l;

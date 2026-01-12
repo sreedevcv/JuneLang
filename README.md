@@ -8,7 +8,7 @@ It is statically typed and compiled to native x86-64.
 ## Features
 
 - Statically typed
-- 3 primitive types: `int`, `char`, `bool`, and their list variants
+- 4 primitive types: `int`, `char`, `bool`, `float`, and their list variants
 - If blocks
 - `while` and `for` loops
 - Functions

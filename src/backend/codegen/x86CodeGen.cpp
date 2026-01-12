@@ -32,6 +32,7 @@ constexpr auto char_str = "printf_char_str";
 constexpr auto float_str = "printf_float_str";
 constexpr auto int_list_str = "printf_int_list_str";
 constexpr auto char_list_str = "printf_char_list_str";
+constexpr auto float_list_str = "printf_float_list_str";
 
 jl::x86CodeGen::x86CodeGen(std::unordered_map<std::string, std::unique_ptr<jl::FuncBlock::FuncData>> ir_data)
     : m_ir_data(std::move(ir_data))
@@ -49,6 +50,7 @@ std::stringstream jl::x86CodeGen::generate()
     m_data_section_out << float_str << ": db '%lf', 0xA, 0\n\n";
     m_data_section_out << int_list_str << ": db '%ld ', 0\n\n";
     m_data_section_out << char_list_str << ": db '%c', 0\n\n";
+    m_data_section_out << float_list_str << ": db '%lf ', 0\n\n";
 
     m_out << "section .text\n\n";
 
@@ -203,61 +205,44 @@ void jl::x86CodeGen::visit_binary_ir(ir::Binary& binary)
     const auto [size1, offset1] = get_size_and_offset(binary.m_operand_a.id());
     const auto [size2, offset2] = get_size_and_offset(binary.m_operand_b.id());
     const auto [size3, offset3] = get_size_and_offset(binary.m_dest.id());
+    const auto pair = m_arith_opers.at(binary.m_operation);
+    const auto bin_op = binary.m_is_float ? pair.second : pair.first;
+    auto mov_op = "mov";
+    auto mov_reg = "rax";
 
     if (binary.m_is_float) {
-        m_out << std::format("movsd xmm0, {} [rbp-{}]\n", m_size_to_ptr_map.at(size1), offset1);
-    } else {
-        m_out << std::format("mov rax, {} [rbp-{}]\n", m_size_to_ptr_map.at(size1), offset1);
+        mov_op = "movsd";
+        mov_reg = "xmm0";
     }
+
+    m_out << std::format("{} {}, {} [rbp-{}]\n", mov_op, mov_reg, m_size_to_ptr_map.at(size1), offset1);
 
     switch (binary.m_operation) {
     case ir::Binary::PLUS:
-        if (binary.m_is_float) {
-            m_out << std::format("addsd xmm0, {} [rbp-{}]\n", m_size_to_ptr_map.at(size2), offset2);
-        } else {
-            m_out << std::format("add rax, {} [rbp-{}]\n", m_size_to_ptr_map.at(size2), offset2);
-        }
-        break;
     case ir::Binary::MINUS:
-        m_out << std::format("sub rax, {} [rbp-{}]\n", m_size_to_ptr_map.at(size2), offset2);
-        break;
     case ir::Binary::STAR:
-        m_out << std::format("imul rax, {} [rbp-{}]\n", m_size_to_ptr_map.at(size2), offset2);
+        m_out << std::format("{} {}, {} [rbp-{}]\n", bin_op, mov_reg, m_size_to_ptr_map.at(size2), offset2);
         break;
     case ir::Binary::SLASH:
-        m_out << "cqo\n"; // convert quad word to octword (extends sign or rax into rdx:rax)
-        m_out << std::format("idiv {} [rbp-{}]\n", m_size_to_ptr_map.at(size2), offset2);
+        if (!binary.m_is_float) {
+            m_out << "cqo\n"; // convert quad word to octword (extends sign or rax into rdx:rax)
+            m_out << std::format("idiv {} [rbp-{}]\n", m_size_to_ptr_map.at(size2), offset2);
+        } else {
+            m_out << std::format("{} {}, {} [rbp-{}]\n", bin_op, mov_reg, m_size_to_ptr_map.at(size2), offset2);
+        }
         break;
     case ir::Binary::GREATER:
-        m_out << std::format("cmp rax, {} [rbp-{}]\n", m_size_to_ptr_map.at(size2), offset2);
-        m_out << "setg al\n";
-        m_out << "movzx rax, al\n";
-        break;
     case ir::Binary::LESS:
-        m_out << std::format("cmp rax, {} [rbp-{}]\n", m_size_to_ptr_map.at(size2), offset2);
-        m_out << "setl al\n";
-        m_out << "movzx rax, al\n";
-        break;
     case ir::Binary::GREATER_EQUAL:
-        m_out << std::format("cmp rax, {} [rbp-{}]\n", m_size_to_ptr_map.at(size2), offset2);
-        m_out << "setge al\n";
-        m_out << "movzx rax, al\n";
-        break;
     case ir::Binary::LESS_EQUAL:
-        m_out << std::format("cmp rax, {} [rbp-{}]\n", m_size_to_ptr_map.at(size2), offset2);
-        m_out << "setle al\n";
-        m_out << "movzx rax, al\n";
-        break;
     case ir::Binary::EQUAL_EQUAL:
-        m_out << std::format("cmp rax, {} [rbp-{}]\n", m_size_to_ptr_map.at(size2), offset2);
-        m_out << "sete al\n";
+    case ir::Binary::BANG_EQUAL: {
+        const auto pair = m_cmp_opers.at(binary.m_operation);
+        const auto flag_oper = binary.m_is_float ? pair.second : pair.first;
+        m_out << std::format("{} {}, {} [rbp-{}]\n", bin_op, mov_reg, m_size_to_ptr_map.at(size2), offset2);
+        m_out << flag_oper << " al\n";
         m_out << "movzx rax, al\n";
-        break;
-    case ir::Binary::BANG_EQUAL:
-        m_out << std::format("cmp rax, {} [rbp-{}]\n", m_size_to_ptr_map.at(size2), offset2);
-        m_out << "setne al\n";
-        m_out << "movzx rax, al\n";
-        break;
+    } break;
     case ir::Binary::PERCENT:
     case ir::Binary::BIT_AND:
     case ir::Binary::BIT_OR:
@@ -283,11 +268,15 @@ void jl::x86CodeGen::visit_move_ir(ir::Move& move)
     auto [size1, offset1] = get_size_and_offset(move.m_source.id());
     auto [size2, offset2] = get_size_and_offset(move.m_dest.id());
 
-    // m_out << std::format("mov {}, {} [rbp-{}]\n", a_reg, m_size_to_ptr_map.at(fixed_size), offset1);
-    // m_out << std::format("mov {} [rbp-{}], {}\n", m_size_to_ptr_map.at(fixed_size), offset2, a_reg);
+    if (size1 <= 8) {
+        const auto a_reg = select_register("a", size1);
+        m_out << std::format("mov {}, {} [rbp-{}]\n", a_reg, m_size_to_ptr_map.at(size1), offset1);
+        m_out << std::format("mov {} [rbp-{}], {}\n", m_size_to_ptr_map.at(size1), offset2, a_reg);
+        return;
+    }
 
     static lambda_t mov_lambda = [this](uint32_t size, uint32_t offset1, uint32_t offset2) -> std::string {
-        static const auto a_reg = select_register("a", size);
+        const auto a_reg = select_register("a", size);
         return std::format("mov {}, {} [rbp-{}]\n", a_reg, m_size_to_ptr_map.at(size), offset1)
             + std::format("mov {} [rbp-{}], {}\n", m_size_to_ptr_map.at(size), offset2, a_reg);
     };
@@ -393,8 +382,9 @@ void jl::x86CodeGen::visit_debug_print_ir(ir::DebugPrint& print)
 {
     m_out << "\n; visit_debug_print_ir: " << print.line() << '\n';
 
+    const auto [size, offset, type] = get_var_info(print.m_val.id());
+
     if (!print.m_is_list) {
-        const auto [size, offset, type] = get_var_info(print.m_val.id());
 
         switch (print.m_primitive) {
         case type::Builtin::INT:
@@ -414,19 +404,20 @@ void jl::x86CodeGen::visit_debug_print_ir(ir::DebugPrint& print)
             break;
         }
 
-        if (dynamic_cast<const type::Builtin*>(type)->m_primitive == type::Builtin::FLOAT) {
+        const auto is_float = dynamic_cast<const type::Builtin*>(type)->m_primitive == type::Builtin::FLOAT;
+        if (is_float) {
             m_out << std::format("movsd xmm0, {} [rbp-{}]\n", m_size_to_ptr_map.at(size), offset);
             m_out << "mov eax, 1\n";
         } else {
             const auto si_reg = select_register("si", size);
-            m_out << std::format("mov {}, {} [rbp-{}]\n", si_reg, m_size_to_ptr_map.at(size), offset);
+            const auto mov_op = size == 8 ? "mov" : "movsx";
+            m_out << std::format("{} rsi, {} [rbp-{}]\n", mov_op, m_size_to_ptr_map.at(size), offset);
             m_out << "mov eax, 0\n";
         }
         m_out << "call printf\n";
     } else {
         const auto loop_start_label = std::format("printloopstart_{}_{}", *m_current_func_name, print.m_line);
         const auto loop_end_label = std::format("printloopend_{}_{}", *m_current_func_name, print.m_line);
-        auto [size, offset] = get_size_and_offset(print.m_val.id());
         // move list base address to rax
         m_out << std::format("mov rax, {} [rbp-{}]\n", m_size_to_ptr_map.at(8), offset);
         // move list size to rcx
@@ -451,14 +442,21 @@ void jl::x86CodeGen::visit_debug_print_ir(ir::DebugPrint& print)
             m_out << "mov rdi," << char_list_str << '\n';
             break;
         case type::Builtin::FLOAT:
+            m_out << "mov rdi," << float_list_str << '\n';
+            break;
         case type::Builtin::VOID:
             unimplemented("printf strings for float and void");
             break;
         }
 
-        const auto si_reg = select_register("si", 8);
-        m_out << std::format("mov {}, {} [rax]\n", si_reg, m_size_to_ptr_map.at(8));
-        m_out << "mov eax, 0\n";
+        if (print.m_primitive != type::Builtin::FLOAT) {
+            const auto si_reg = select_register("si", 8);
+            m_out << std::format("mov {}, {} [rax]\n", si_reg, m_size_to_ptr_map.at(8));
+            m_out << "mov eax, 0\n";
+        } else {
+            m_out << std::format("movsd xmm0, QWORD [rax]\n", offset);
+            m_out << "mov eax, 1\n";
+        }
         m_out << "call printf\n";
         // retrieve rax and rcx
         m_out << "pop rcx\n";

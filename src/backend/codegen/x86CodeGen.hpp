@@ -1,9 +1,9 @@
 #pragma once
 
 #include "FuncBlock.hpp"
+#include "ir/Binary.hpp"
 #include "ir/IRVisitor.hpp"
 #include "types/Type.hpp"
-#include "value/Variable.hpp"
 
 #include <array>
 #include <cstdint>
@@ -91,6 +91,28 @@ private:
         { 2, "WORD" },
         { 4, "DWORD" },
         { 8, "QWORD" }
+    };
+
+    const std::unordered_map<ir::Binary::Operation, std::pair<const char*, const char*>> m_arith_opers {
+        { ir::Binary::PLUS, { "add", "addsd" } },
+        { ir::Binary::MINUS, { "sub", "subsd" } },
+        { ir::Binary::STAR, { "imul", "mulsd" } },
+        { ir::Binary::SLASH, { "idiv", "divsd" } },
+        { ir::Binary::GREATER, { "cmp", "ucomisd" } },
+        { ir::Binary::LESS, { "cmp", "ucomisd" } },
+        { ir::Binary::GREATER_EQUAL, { "cmp", "ucomisd" } },
+        { ir::Binary::LESS_EQUAL, { "cmp", "ucomisd" } },
+        { ir::Binary::EQUAL_EQUAL, { "cmp", "ucomisd" } },
+        { ir::Binary::BANG_EQUAL, { "cmp", "ucomisd" } },
+    };
+
+    const std::unordered_map<ir::Binary::Operation, std::pair<const char*, const char*>> m_cmp_opers {
+        { ir::Binary::LESS, { "setl", "setb" } },
+        { ir::Binary::LESS_EQUAL, { "setle", "setbe" } },
+        { ir::Binary::GREATER, { "setg", "seta" } },
+        { ir::Binary::GREATER_EQUAL, { "setge", "setae" } },
+        { ir::Binary::EQUAL_EQUAL, { "sete", "sete" } },
+        { ir::Binary::BANG_EQUAL, { "setne", "setne" } },
     };
 
     const FuncBlock::FuncData* m_current_func;
