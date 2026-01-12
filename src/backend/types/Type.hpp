@@ -26,7 +26,7 @@ namespace type {
         virtual bool equals(const Type* type) const = 0;
         virtual std::string to_str() const = 0;
         virtual std::unique_ptr<Type> clone() const = 0;
-        virtual uint8_t size() const = 0;
+        virtual uint32_t size() const = 0;
     };
 
     struct Builtin : Type {
@@ -50,7 +50,7 @@ namespace type {
         bool equals(const Type* type) const override;
         std::string to_str() const override;
         std::unique_ptr<Type> clone() const override;
-        uint8_t size() const override;
+        uint32_t size() const override;
     };
 
     struct Pointer : Type {
@@ -62,7 +62,7 @@ namespace type {
         bool equals(const Type* type) const override;
         std::string to_str() const override;
         std::unique_ptr<Type> clone() const override;
-        uint8_t size() const override;
+        uint32_t size() const override;
     };
 
     struct Func : Type {
@@ -75,7 +75,7 @@ namespace type {
         bool equals(const Type* type) const override;
         std::string to_str() const override;
         std::unique_ptr<Type> clone() const override;
-        uint8_t size() const override;
+        uint32_t size() const override;
     };
 
     struct List : Type {
@@ -87,7 +87,7 @@ namespace type {
         bool equals(const Type* type) const override;
         std::string to_str() const override;
         std::unique_ptr<Type> clone() const override;
-        uint8_t size() const override;
+        uint32_t size() const override;
     };
 
     bool is_number(const Type* t);

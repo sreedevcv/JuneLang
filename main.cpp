@@ -62,8 +62,8 @@ int main(int argc, char const* argv[])
         for (const auto& data : ir_data) {
             std::println("Fun {}", data.first);
             for (const auto& [idx, data] : data.second.get()->var_data.get_offset_map()) {
-                const auto [size, offset] = data;
-                std::println("{} - size: {} offset: {}", idx, size, offset);
+                const auto& [size, offset, type] = data;
+                std::println("{} - size: {} offset: {} type: {}", idx, size, offset, type ? type.get()->to_str() : "data");
             }
         }
 

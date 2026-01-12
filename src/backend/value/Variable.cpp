@@ -29,12 +29,19 @@ bool jl::value::Variable::operator==(const Variable& other) const
     return this->m_id == other.m_id; // Compare unique identifiers
 }
 
-
 uint32_t jl::value::VarData::add_variable(uint32_t size)
 {
     auto idx = m_var_count++;
-    m_var_offset.insert({ idx, { size, m_total_size } });
+    m_var_offset.insert({ idx, { size, m_total_size, nullptr } });
     m_total_size += size;
+    return idx;
+}
+
+uint32_t jl::value::VarData::add_variable(const type::Type* type)
+{
+    auto idx = m_var_count++;
+    m_var_offset.insert({ idx, { type->size(), m_total_size, type->clone() } });
+    m_total_size += type->size();
     return idx;
 }
 

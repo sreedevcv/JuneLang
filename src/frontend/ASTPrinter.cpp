@@ -395,7 +395,19 @@ std::any jl::ASTPrinter::visit_return_stmt(ReturnStmt* stmt)
     return {};
 }
 
-std::any jl::ASTPrinter::visit_print_stmt(PrintStmt* stmt) { return {}; }
+std::any jl::ASTPrinter::visit_print_stmt(PrintStmt* stmt)
+{
+    spacer();
+    stream << "Print: {\n";
+
+    // stream << "Condition: \n";
+    traverse(stmt->m_expr.get());
+
+    spacer();
+    stream << "}\n";
+    return {};
+}
+
 std::any jl::ASTPrinter::visit_class_stmt(ClassStmt* stmt) { return {}; }
 std::any jl::ASTPrinter::visit_for_each_stmt(ForEachStmt* stmt) { return {}; }
 std::any jl::ASTPrinter::visit_break_stmt(BreakStmt* stmt) { return {}; }

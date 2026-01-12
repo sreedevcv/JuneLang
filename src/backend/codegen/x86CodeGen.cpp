@@ -7,6 +7,7 @@
 #include <format>
 #include <sstream>
 #include <string>
+#include <type_traits>
 #include <unordered_map>
 #include <utility>
 #include <variant>
@@ -24,9 +25,11 @@
 #include "ir/Return.hpp"
 #include "ir/Unary.hpp"
 #include "ir/Write.hpp"
+#include "types/Type.hpp"
 
 constexpr auto int_str = "printf_int_str";
 constexpr auto char_str = "printf_char_str";
+constexpr auto float_str = "printf_float_str";
 constexpr auto int_list_str = "printf_int_list_str";
 constexpr auto char_list_str = "printf_char_list_str";
 
@@ -39,11 +42,13 @@ std::stringstream jl::x86CodeGen::generate()
 {
     m_out << "extern printf\n\n";
     m_out << "global main\n\n";
-    m_out << "section .data\n\n";
-    m_out << int_str << ": db '%ld', 0xA, 0\n";
-    m_out << char_str << ": db '%c', 0xA, 0\n\n";
-    m_out << int_list_str << ": db '%ld ', 0\n\n";
-    m_out << char_list_str << ": db '%c', 0\n\n";
+
+    m_data_section_out << "\nsection .data\n\n";
+    m_data_section_out << int_str << ": db '%ld', 0xA, 0\n";
+    m_data_section_out << char_str << ": db '%c', 0xA, 0\n\n";
+    m_data_section_out << float_str << ": db '%lf', 0xA, 0\n\n";
+    m_data_section_out << int_list_str << ": db '%ld ', 0\n\n";
+    m_data_section_out << char_list_str << ": db '%c', 0\n\n";
 
     m_out << "section .text\n\n";
 
@@ -55,6 +60,8 @@ std::stringstream jl::x86CodeGen::generate()
     m_out << "call __root__\n";
     m_out << "mov eax, 0\n";
     m_out << "ret\n";
+
+    m_out << m_data_section_out.str();
 
     return std::move(m_out);
 }
@@ -111,11 +118,22 @@ void jl::x86CodeGen::do_sized_move(
     }
 }
 
-jl::value::VarData::Data jl::x86CodeGen::get_size_and_offset(uint32_t id) const
+jl::x86CodeGen::VarInfo jl::x86CodeGen::get_var_info(uint32_t id) const
 {
-    auto data = m_current_func->var_data.get_offset_map().at(id);
-    data.offset += data.size;
-    return data;
+    const auto& data = m_current_func->var_data.get_offset_map().at(id);
+    VarInfo info = {
+        .size = data.size,
+        .offset = data.offset + data.size,
+        .type = data.m_type.get()
+    };
+
+    return info;
+}
+
+std::pair<uint32_t, uint32_t> jl::x86CodeGen::get_size_and_offset(uint32_t id) const
+{
+    const auto [size, offset, _] = get_var_info(id);
+    return { size, offset };
 }
 
 void jl::x86CodeGen::generate(const std::string& func_name, const FuncBlock::FuncData& func_data)
@@ -133,7 +151,7 @@ void jl::x86CodeGen::generate(const std::string& func_name, const FuncBlock::Fun
 
     // Allocate space on the stack
     const auto stack_space = func_data.var_data.total_size() + (16 - func_data.var_data.total_size() % 16);
-    m_out << std::format("sub rsp, {}\n", stack_space);
+    m_out << std::format("sub rsp, {}\n", stack_space + 8); /* 8 is added to account for the  rbp that we are pushing. This will make stack 16byte aligned*/
 
     // Move all arguments to stack
     uint32_t arg_reg = 0;
@@ -180,17 +198,25 @@ void jl::x86CodeGen::generate(const std::string& func_name, const FuncBlock::Fun
 
 void jl::x86CodeGen::visit_binary_ir(ir::Binary& binary)
 {
-    m_out << "; visit_binary_ir: " << binary.line() << '\n';
+    m_out << "\n; visit_binary_ir: " << binary.line() << '\n';
 
     const auto [size1, offset1] = get_size_and_offset(binary.m_operand_a.id());
     const auto [size2, offset2] = get_size_and_offset(binary.m_operand_b.id());
     const auto [size3, offset3] = get_size_and_offset(binary.m_dest.id());
 
-    m_out << std::format("mov rax, {} [rbp-{}]\n", m_size_to_ptr_map.at(size1), offset1);
+    if (binary.m_is_float) {
+        m_out << std::format("movsd xmm0, {} [rbp-{}]\n", m_size_to_ptr_map.at(size1), offset1);
+    } else {
+        m_out << std::format("mov rax, {} [rbp-{}]\n", m_size_to_ptr_map.at(size1), offset1);
+    }
 
     switch (binary.m_operation) {
     case ir::Binary::PLUS:
-        m_out << std::format("add rax, {} [rbp-{}]\n", m_size_to_ptr_map.at(size2), offset2);
+        if (binary.m_is_float) {
+            m_out << std::format("addsd xmm0, {} [rbp-{}]\n", m_size_to_ptr_map.at(size2), offset2);
+        } else {
+            m_out << std::format("add rax, {} [rbp-{}]\n", m_size_to_ptr_map.at(size2), offset2);
+        }
         break;
     case ir::Binary::MINUS:
         m_out << std::format("sub rax, {} [rbp-{}]\n", m_size_to_ptr_map.at(size2), offset2);
@@ -242,13 +268,17 @@ void jl::x86CodeGen::visit_binary_ir(ir::Binary& binary)
         break;
     }
 
-    const auto a_reg = select_register("a", size3); // for logical ops, size3 will be byte(bool)
-    m_out << std::format("mov {} [rbp-{}], {}\n", m_size_to_ptr_map.at(size3), offset3, a_reg);
+    if (binary.m_is_float) {
+        m_out << std::format("movsd {} [rbp-{}], xmm0\n", m_size_to_ptr_map.at(size3), offset3);
+    } else {
+        const auto a_reg = select_register("a", size3); // for logical ops, size3 will be byte(bool)
+        m_out << std::format("mov {} [rbp-{}], {}\n", m_size_to_ptr_map.at(size3), offset3, a_reg);
+    }
 }
 
 void jl::x86CodeGen::visit_move_ir(ir::Move& move)
 {
-    m_out << "; visit_move_ir: " << move.line() << '\n';
+    m_out << "\n; visit_move_ir: " << move.line() << '\n';
 
     auto [size1, offset1] = get_size_and_offset(move.m_source.id());
     auto [size2, offset2] = get_size_and_offset(move.m_dest.id());
@@ -267,7 +297,7 @@ void jl::x86CodeGen::visit_move_ir(ir::Move& move)
 
 void jl::x86CodeGen::visit_return_ir(ir::Return& ret)
 {
-    m_out << "; visit_return_ir: " << ret.line() << '\n';
+    m_out << "\n; visit_return_ir: " << ret.line() << '\n';
 
     if (ret.m_ret_val) {
         const auto [size, offset] = get_size_and_offset(ret.m_ret_val.value().id());
@@ -280,7 +310,7 @@ void jl::x86CodeGen::visit_return_ir(ir::Return& ret)
 
 void jl::x86CodeGen::visit_call_ir(ir::Call& call)
 {
-    m_out << "; visit_call_ir: " << call.line() << '\n';
+    m_out << "\n; visit_call_ir: " << call.line() << '\n';
 
     assert(call.m_args.size() < 6 && "Calls should have less than 6 args");
 
@@ -330,21 +360,42 @@ void jl::x86CodeGen::visit_call_ir(ir::Call& call)
 
 void jl::x86CodeGen::visit_init_literal_ir(ir::InitLiteral& literal)
 {
-    m_out << "; visit_init_literal_ir: " << literal.line() << '\n';
+    m_out << "\n; visit_init_literal_ir: " << literal.line() << '\n';
 
-    const auto [size, offset] = get_size_and_offset(literal.m_dest.id());
-    m_out << std::format("mov {} [rbp-{}], ", m_size_to_ptr_map.at(size), offset);
+    std::visit([this, &literal](auto&& value) {
+        const auto [size, offset] = get_size_and_offset(literal.m_dest.id());
+        using T = std::decay_t<decltype(value)>;
 
-    std::visit([this](auto&& value) { m_out << (uint64_t)value << "\n"; },
+        if constexpr (std::is_same_v<T, LiteralValue::int_type>) {
+            m_out << std::format("mov {} [rbp-{}], ", m_size_to_ptr_map.at(size), offset);
+            m_out << value << "\n";
+        } else if constexpr (std::is_same_v<T, LiteralValue::char_type>) {
+            m_out << std::format("mov {} [rbp-{}], ", m_size_to_ptr_map.at(size), offset);
+            m_out << (uint8_t)value << "\n";
+        } else if constexpr (std::is_same_v<T, LiteralValue::bool_type>) {
+            m_out << std::format("mov {} [rbp-{}], ", m_size_to_ptr_map.at(size), offset);
+            m_out << value << "\n";
+        } else if constexpr (std::is_same_v<T, LiteralValue::float_type>) {
+            const auto float_val = std::get<LiteralValue::float_type>(literal.m_source.get()->m_data);
+            const auto tag = std::format("float_{}_{:f}", offset, float_val);
+            m_data_section_out << std::format("{}: dq {:f}\n", tag, float_val);
+            m_out << std::format("movsd xmm0, [rel {}]\n", tag);
+            m_out << std::format("movsd {} [rbp-{}], xmm0\n", m_size_to_ptr_map.at(size), offset);
+            m_out << '\n';
+        } else {
+            unimplemented("Type of literal value is not found");
+        }
+    },
         literal.m_source.get()->m_data);
 }
 
 void jl::x86CodeGen::visit_debug_print_ir(ir::DebugPrint& print)
 {
-    m_out << "; visit_debug_print_ir: " << print.line() << '\n';
+    m_out << "\n; visit_debug_print_ir: " << print.line() << '\n';
 
     if (!print.m_is_list) {
-        const auto [size, offset] = get_size_and_offset(print.m_val.id());
+        const auto [size, offset, type] = get_var_info(print.m_val.id());
+
         switch (print.m_primitive) {
         case type::Builtin::INT:
             m_out << "mov rdi," << int_str << '\n';
@@ -356,14 +407,21 @@ void jl::x86CodeGen::visit_debug_print_ir(ir::DebugPrint& print)
             m_out << "mov rdi," << char_str << '\n';
             break;
         case type::Builtin::FLOAT:
+            m_out << "mov rdi," << float_str << '\n';
+            break;
         case type::Builtin::VOID:
             unimplemented("printf strings for float and void");
             break;
         }
 
-        const auto si_reg = select_register("si", size);
-        m_out << std::format("mov {}, {} [rbp-{}]\n", si_reg, m_size_to_ptr_map.at(size), offset);
-        m_out << "mov eax, 0\n";
+        if (dynamic_cast<const type::Builtin*>(type)->m_primitive == type::Builtin::FLOAT) {
+            m_out << std::format("movsd xmm0, {} [rbp-{}]\n", m_size_to_ptr_map.at(size), offset);
+            m_out << "mov eax, 1\n";
+        } else {
+            const auto si_reg = select_register("si", size);
+            m_out << std::format("mov {}, {} [rbp-{}]\n", si_reg, m_size_to_ptr_map.at(size), offset);
+            m_out << "mov eax, 0\n";
+        }
         m_out << "call printf\n";
     } else {
         const auto loop_start_label = std::format("printloopstart_{}_{}", *m_current_func_name, print.m_line);
@@ -418,7 +476,7 @@ void jl::x86CodeGen::visit_debug_print_ir(ir::DebugPrint& print)
 
 void jl::x86CodeGen::visit_jump_ir(ir::Jump& jump)
 {
-    m_out << "; visit_jump_ir: " << jump.line() << '\n';
+    m_out << "\n; visit_jump_ir: " << jump.line() << '\n';
 
     if (jump.m_condition) {
         const auto [size, offset] = get_size_and_offset(jump.m_condition.value().id());
@@ -432,7 +490,7 @@ void jl::x86CodeGen::visit_jump_ir(ir::Jump& jump)
 
 void jl::x86CodeGen::visit_unary_ir(ir::Unary& unary)
 {
-    m_out << "; visit_unary_ir: " << unary.line() << '\n';
+    m_out << "\n; visit_unary_ir: " << unary.line() << '\n';
 
     const auto [size1, offset1] = get_size_and_offset(unary.m_operand.id());
     m_out << std::format("mov rax, {} [rbp-{}]\n", m_size_to_ptr_map.at(size1), offset1);
@@ -460,7 +518,7 @@ void jl::x86CodeGen::visit_label_ir(ir::Label& label)
 
 void jl::x86CodeGen::visit_allocate_ir(ir::Allocate& allocate)
 {
-    m_out << "; visit_allocate_ir: " << allocate.line() << '\n';
+    m_out << "\n; visit_allocate_ir: " << allocate.line() << '\n';
 
     const auto [s1, offset1] = get_size_and_offset(allocate.m_fat_ptr.id());
     const auto [s2, offset2] = get_size_and_offset(allocate.m_list.id());
@@ -479,7 +537,7 @@ void jl::x86CodeGen::visit_allocate_ir(ir::Allocate& allocate)
 
 void jl::x86CodeGen::visit_read_ir(ir::Read& read)
 {
-    m_out << "; visit_read_ir: " << read.line() << '\n';
+    m_out << "\n; visit_read_ir: " << read.line() << '\n';
 
     const auto [base_size, base_offset] = get_size_and_offset(read.m_base.id());
     const auto [offset_size, real_offset] = get_size_and_offset(read.m_offset.id());
@@ -501,7 +559,7 @@ void jl::x86CodeGen::visit_read_ir(ir::Read& read)
 
 void jl::x86CodeGen::visit_write_ir(ir::Write& write)
 {
-    m_out << "; visit_write_ir: " << write.line() << '\n';
+    m_out << "\n; visit_write_ir: " << write.line() << '\n';
 
     const auto [base_size, base_offset] = get_size_and_offset(write.m_base.id());
     const auto [offset_size, real_offset] = get_size_and_offset(write.m_offset.id());

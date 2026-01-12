@@ -48,7 +48,7 @@ std::unique_ptr<jl::type::Type> jl::type::Builtin::clone() const
     return std::make_unique<Builtin>(m_primitive);
 }
 
-uint8_t jl::type::Builtin::size() const
+uint32_t jl::type::Builtin::size() const
 {
     switch (m_primitive) {
     case INT:
@@ -91,7 +91,7 @@ std::unique_ptr<jl::type::Type> jl::type::Pointer::clone() const
     return std::make_unique<Pointer>(std::unique_ptr<Type>(m_pointee.get()->clone()));
 }
 
-uint8_t jl::type::Pointer::size() const
+uint32_t jl::type::Pointer::size() const
 {
     return 8;
 }
@@ -149,7 +149,7 @@ std::unique_ptr<jl::type::Type> jl::type::Func::clone() const
     return std::make_unique<Func>(m_return_type.get()->clone(), std::move(in));
 }
 
-uint8_t jl::type::Func::size() const
+uint32_t jl::type::Func::size() const
 {
     return 0;
 }
@@ -181,7 +181,7 @@ std::unique_ptr<jl::type::Type> jl::type::List::clone() const
     return std::make_unique<List>(m_elem_type->clone(), m_count);
 }
 
-uint8_t jl::type::List::size() const
+uint32_t jl::type::List::size() const
 {
     return 16;
 }

@@ -2,6 +2,7 @@
 
 #include "FuncBlock.hpp"
 #include "ir/IRVisitor.hpp"
+#include "types/Type.hpp"
 #include "value/Variable.hpp"
 
 #include <array>
@@ -10,6 +11,7 @@
 #include <sstream>
 #include <string>
 #include <unordered_map>
+#include <utility>
 
 namespace jl {
 class x86CodeGen : ir::IRVisitor {
@@ -22,10 +24,19 @@ private:
     std::unordered_map<std::string, std::unique_ptr<FuncBlock::FuncData>> m_ir_data;
 
     std::stringstream m_out;
+    std::stringstream m_data_section_out;
 
     void generate(const std::string& func_name, const FuncBlock::FuncData& func_data);
 
-    value::VarData::Data get_size_and_offset(uint32_t id) const;
+    struct VarInfo {
+        uint32_t size;
+        uint32_t offset;
+        const type::Type* type;
+    };
+
+    VarInfo get_var_info(uint32_t id) const;
+
+    std::pair<uint32_t, uint32_t> get_size_and_offset(uint32_t id) const;
 
     using lambda_t = std::function<std::string(uint32_t, uint32_t, uint32_t)>;
 

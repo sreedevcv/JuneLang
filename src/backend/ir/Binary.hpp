@@ -33,6 +33,7 @@ namespace ir {
             value::Variable operand_a,
             value::Variable operand_b,
             Operation operation,
+            bool is_float,
             uint32_t line);
 
         ~Binary() = default;
@@ -45,6 +46,7 @@ namespace ir {
         value::Variable m_operand_a;
         value::Variable m_operand_b;
         Operation m_operation;
+        bool m_is_float;
     };
 }
 }

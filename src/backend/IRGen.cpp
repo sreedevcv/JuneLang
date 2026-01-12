@@ -183,7 +183,8 @@ std::any jl::IRGen::visit_binary_expr(Binary* expr)
     const auto operand_a = emit(expr->m_left.get());
     const auto operand_b = emit(expr->m_right.get());
     const auto dest = m_block->create_varaible(m_func.get_current_func_name(), expr->m_type.get());
-    m_func.add_ir<ir::Binary>(dest, operand_a, operand_b, operation, expr->m_oper.get_line());
+    const auto is_float = dynamic_cast<type::Builtin*>(expr->m_type.get())->m_primitive == type::Builtin::FLOAT;
+    m_func.add_ir<ir::Binary>(dest, operand_a, operand_b, operation, is_float, expr->m_oper.get_line());
 
     return dest;
 }
@@ -268,7 +269,8 @@ std::any jl::IRGen::visit_logical_expr(Logical* expr)
     const auto dest = m_block->create_varaible(m_func.get_current_func_name(), expr->m_type.get());
     const auto operand_a = emit(expr->m_left.get());
     const auto operand_b = emit(expr->m_right.get());
-    m_func.add_ir<ir::Binary>(dest, operand_a, operand_b, operation, expr->m_oper.get_line());
+    const auto is_float = dynamic_cast<type::Builtin*>(expr->m_type.get())->m_primitive == type::Builtin::FLOAT;
+    m_func.add_ir<ir::Binary>(dest, operand_a, operand_b, operation, is_float, expr->m_oper.get_line());
 
     return dest;
 }
@@ -297,7 +299,7 @@ std::any jl::IRGen::visit_jlist_expr(JList* expr)
     const auto total_size = elem_count * elem_size;
     const auto ptr_var = m_block->create_varaible(m_func.get_current_func_name(), list_type);
     const auto list_var = m_block->allocate_space(m_func.get_current_func_name(), total_size);
-    auto allocate_ir = ir::Allocate(ptr_var, list_var, 1, elem_count, m_func.get_last_line());
+    auto allocate_ir = ir::Allocate(ptr_var, list_var, elem_size, elem_count, m_func.get_last_line());
 
     // allocate_ir.set_data(expr->m_items.data(), expr->m_items.size() * list_type->m_elem_type->size());
     m_func.add_ir(std::move(allocate_ir));
@@ -309,7 +311,7 @@ std::any jl::IRGen::visit_jlist_expr(JList* expr)
         const auto elem_var = emit(elem.get());
         // Create a var for storing the offset to the item
         const auto offset = m_block->create_varaible(m_func.get_current_func_name(), &int_type);
-        // Move the offset value to a literal
+        // Move the offset value(i) to a literal
         m_func.add_ir<ir::InitLiteral>(
             std::make_unique<LiteralValue>(i),
             offset,
@@ -332,7 +334,7 @@ std::any jl::IRGen::visit_index_get_expr(IndexGet* expr)
     const auto list_var = emit(expr->m_jlist.get());
     const auto offset_var = emit(expr->m_index_expr.get());
     const auto size = expr->m_type.get()->size();
-    const auto dest = m_block->create_varaible(m_func.get_current_func_name(), expr->m_index_expr.get()->m_type.get());
+    const auto dest = m_block->create_varaible(m_func.get_current_func_name(), expr->m_type.get());
 
     m_func.add_ir<ir::Read>(dest, list_var, offset_var, size, size, expr->m_closing_bracket.get_line());
 

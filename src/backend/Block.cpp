@@ -13,7 +13,7 @@ jl::value::Variable jl::Block::create_varaible(
     const type::Type* data_type,
     value::Variable::Storage type)
 {
-    auto idx = m_var_data->add_variable(data_type->size());
+    auto idx = m_var_data->add_variable(data_type);
     return value::Variable(func_name, idx, type);
 }
 

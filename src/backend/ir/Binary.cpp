@@ -5,12 +5,14 @@ jl::ir::Binary::Binary(
     value::Variable operand_a,
     value::Variable operand_b,
     Operation operation,
+    bool is_float,
     uint32_t line)
     : IR(line)
     , m_dest(dest)
     , m_operand_a(operand_a)
     , m_operand_b(operand_b)
     , m_operation(operation)
+    , m_is_float(is_float)
 {
 }
 

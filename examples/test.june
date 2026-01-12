@@ -99,52 +99,61 @@
 // ]
 //
 
-fun factorial(val: int): int [
-    var fact = 1;
+//fun factorial(val: int): int [
+//    var fact = 1;
+//
+//    for (var i = 2; i <= val; i+=1) [
+//        fact *= i;
+//    ]
+//
+//    return fact;
+//]
+//
+//fun recursive(val: int): int [
+//    if (val == 1) return 1;
+//
+//    return recursive(val - 1) * val;
+//]
+//
+//
+//var f = recursive(5);
+//
+//print "Factorial of 5 is: ";
+//print f;
+//print ' ';
+//
+//
+//var a = {1, 2, 3 + 1, 4, 5};
+//print "Sum of elemnts of list: ";
+//print a;
+//print "is: ";
+//
+//fun sum_of_items(list: [int], size: int) : int [
+//    var sum = 0;
+//    for (var i = 0; i < size; i +=1 ) [
+//        sum += list[i];
+//    ]
+//    return sum;
+//]
+//
+//print sum_of_items(a, 5);
+//
+//print ' ';
+//
+//print "Hello world";
+//
+//fun test(c: char) [
+//
+//print c;
+//]
+//
+//test('a');
 
-    for (var i = 2; i <= val; i+=1) [
-        fact *= i;
-    ]
 
-    return fact;
-]
+var list = {1.0, 2.0+3.0, 4.0};
 
-fun recursive(val: int): int [
-    if (val == 1) return 1;
+// var list = {1, 2, 3, 4};
 
-    return recursive(val - 1) * val;
-]
-
-
-var f = recursive(5);
-
-print "Factorial of 5 is: ";
-print f;
-print ' ';
-
-
-var a = {1, 2, 3 + 1, 4, 5};
-print "Sum of elemnts of list: ";
-print a;
-print "is: ";
-
-fun sum_of_items(list: [int], size: int) : int [
-    var sum = 0;
-    for (var i = 0; i < size; i +=1 ) [
-        sum += list[i];
-    ]
-    return sum;
-]
-
-print sum_of_items(a, 5);
-
-print ' ';
-
-print "Hello world";
-
-fun test(c: char) [
-
-print c;
-]
-
-test('a');
+ for (var i = 0; i < 3; i+=1) [
+     print list[i];
+ ]
