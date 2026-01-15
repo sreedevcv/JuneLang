@@ -3,7 +3,7 @@
 #include "Expr.hpp"
 #include "Stmt.hpp"
 #include "Value.hpp"
-#include "backend/types/Type.hpp"
+#include "types/Type.hpp"
 
 #include <memory>
 #include <optional>

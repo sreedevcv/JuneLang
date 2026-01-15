@@ -6,7 +6,7 @@
 #include "Token.hpp"
 #include "Utils.hpp"
 #include "Value.hpp"
-#include "backend/types/Type.hpp"
+#include "types/Type.hpp"
 
 #include <format>
 #include <memory>

@@ -1,7 +1,7 @@
 #pragma once
 
 #include "backend/ir/IR.hpp"
-#include "backend/types/Type.hpp"
+#include "types/Type.hpp"
 #include "backend/value/Variable.hpp"
 
 #include <cstdint>

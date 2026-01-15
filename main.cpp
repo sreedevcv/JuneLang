@@ -1,10 +1,11 @@
 #include "ASTPrinter.hpp"
+#include "ArgParser.hpp"
 #include "ErrorHandler.hpp"
 #include "Lexer.hpp"
 #include "Parser.hpp"
 #include "backend/IRGen.hpp"
-#include "backend/SemanticAnalysis.hpp"
 #include "codegen/x86CodeGen.hpp"
+#include "frontend/SemanticAnalysis.hpp"
 
 #include <cassert>
 #include <fstream>
@@ -16,16 +17,7 @@
 
 int main(int argc, char const* argv[])
 {
-
-    // jl::ArgParser args_parser(argc, argv);
-    // const auto params = args_parser.parse();
-
-    // if (!params) {
-    //     return 0;
-    // }
-
-    // std::string file_name { argv[1] };
-    std::string file_name { "../examples/test.june" };
+    std::string file_name = argc == 0 ? "../examples/test.june" : argv[1];
     jl::Lexer lexer(file_name);
 
     lexer.scan();

@@ -7,12 +7,14 @@ add_library(JuneInterpreter
     frontend/Resolver.cpp
     frontend/StreamHandler.cpp
     frontend/ASTPrinter.cpp
+    frontend/SemanticAnalysis.cpp
+    frontend/types/Type.cpp
+
     ArgParser.cpp
     backend/Block.cpp
     backend/FuncBlock.cpp
     backend/IRGen.cpp
     backend/LiteralValue.cpp
-    backend/SemanticAnalysis.cpp
 
 
     backend/ir/IR.cpp
@@ -32,7 +34,6 @@ add_library(JuneInterpreter
     backend/value/Integer.cpp
     backend/value/Variable.cpp
 
-    backend/types/Type.cpp
 
     backend/codegen/x86CodeGen.cpp
 )

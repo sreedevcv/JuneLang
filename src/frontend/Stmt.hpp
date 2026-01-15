@@ -3,9 +3,8 @@
 #include "Expr.hpp"
 #include "Token.hpp"
 #include "TypeInfo.hpp"
-#include "backend/types/Type.hpp"
+#include "types/Type.hpp"
 
-#include <algorithm>
 #include <memory>
 #include <optional>
 #include <utility>

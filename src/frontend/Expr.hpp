@@ -10,7 +10,7 @@
 #include "Token.hpp"
 #include "TypeInfo.hpp"
 #include "Value.hpp"
-#include "backend/types/Type.hpp"
+#include "types/Type.hpp"
 
 namespace jl {
 

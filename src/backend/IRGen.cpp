@@ -17,7 +17,7 @@
 #include "backend/ir/Return.hpp"
 #include "backend/ir/TypeCast.hpp"
 #include "backend/ir/Unary.hpp"
-#include "backend/types/Type.hpp"
+#include "frontend/types/Type.hpp"
 #include "backend/value/Variable.hpp"
 #include "ir/Allocate.hpp"
 #include "ir/DebugPrint.hpp"

@@ -1,3 +1,2 @@
-extern "puts" as puts(s: [char]);
 
-puts("Hello World");
+print "Hello World";
