@@ -360,7 +360,7 @@ void jl::x86CodeGen::visit_init_literal_ir(ir::InitLiteral& literal)
             m_out << value << "\n";
         } else if constexpr (std::is_same_v<T, LiteralValue::char_type>) {
             m_out << std::format("mov {} [rbp-{}], ", m_size_to_ptr_map.at(size), offset);
-            m_out << (uint8_t)value << "\n";
+            m_out << std::format("{:d}", value) << "\n";
         } else if constexpr (std::is_same_v<T, LiteralValue::bool_type>) {
             m_out << std::format("mov {} [rbp-{}], ", m_size_to_ptr_map.at(size), offset);
             m_out << value << "\n";
