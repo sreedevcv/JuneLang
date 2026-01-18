@@ -21,61 +21,19 @@
 //print list;
 //
 
-fun is_sorted(list: [int], size: int): bool [
-    for (var i = 0; i < size - 1; i += 1) [
-        if (list[i] > list[i + 1]) [
-            return false;
-        ]
+fun hello(a: int, b: float): int [
+    var test = 12;
+    var num = 10;
+
+    if (a < 10) [
+        num = 99;
+    ] else if (a == 1) [
+        num = 88;
+    ] else if (a >= 25) [
+        b = 10.0;
+    ] else [
+        num = 3;
     ]
 
-    return true;
+    return num;
 ]
-
-fun swap(list: [int], i: int, j: int) [
-    var temp = list[i];
-    list[i] = list[j];
-    list[j] = temp;
-]
-
-fun partition(list: [int], start: int, end: int): int [
-    var pivot = list[end];
-    var limit = start - 1;
-
-    for (var i = start; i <= end - 1; i += 1) [
-        if (list[i] <= pivot) [
-            limit += 1;
-            swap(list, i, limit);
-        ]
-    ]
-
-    swap(list, limit + 1, end);
-
-    return limit + 1;
-]
-
-fun __quickSortImpl(list: [int], start: int, end: int) [
-    if (start < end) [
-        var pivot = partition(list, start, end);
-
-        __quickSortImpl(list, start, pivot - 1);
-        __quickSortImpl(list, pivot + 1, end);
-    ]
-]
-
-fun quickSort(list: [int], size: int) [
-    __quickSortImpl(list, 0, size - 1);
-]
-
-var list = {5, 1, 7, 3, 9, 0, 3, 4, 2, 8, 6};
-
-quickSort(list, 10);
-
-print list;
-
-var min = list[0];
-var max = list[9];
-
-var sorted = is_sorted(list, 10);
-
-print ' ';
-print sorted;

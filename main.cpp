@@ -1,15 +1,17 @@
 #include "ASTPrinter.hpp"
-#include "ArgParser.hpp"
 #include "ErrorHandler.hpp"
 #include "Lexer.hpp"
 #include "Parser.hpp"
 #include "backend/IRGen.hpp"
 #include "codegen/x86CodeGen.hpp"
 #include "frontend/SemanticAnalysis.hpp"
+#include "llvm_backend/JuneModule.hpp"
+#include "llvm_backend/LLVMIRGen.hpp"
 
 #include <cassert>
 #include <fstream>
 #include <iostream>
+#include <llvm/Support/raw_ostream.h>
 #include <ostream>
 #include <print>
 #include <string>
@@ -17,7 +19,7 @@
 
 int main(int argc, char const* argv[])
 {
-    std::string file_name = argc == 0 ? "../examples/test.june" : argv[1];
+    std::string file_name = argc <= 1 ? "../examples/test.june" : argv[1];
     jl::Lexer lexer(file_name);
 
     lexer.scan();
@@ -41,6 +43,19 @@ int main(int argc, char const* argv[])
 
     jl::SemanticAnalyzer sm(file_name);
     // std::println("Type check FINAL result: {}", );
+    //
+
+    if (sm.type_check(stmts)) {
+        // jl::Module module(file_name);
+        // module.module().print(llvm::outs(), nullptr);
+
+        jl::LLVMIRGen ir_gen(file_name);
+        ir_gen.emit(stmts).module().print(llvm::outs(), nullptr);
+    } else {
+        std::println("Type  check failed");
+    }
+
+    return 0;
 
     if (sm.type_check(stmts)) {
         std::println("{}", printer.print(stmts).str());
