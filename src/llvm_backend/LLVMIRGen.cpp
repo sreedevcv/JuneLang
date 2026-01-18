@@ -60,7 +60,15 @@ std::any jl::LLVMIRGen::visit_literal_expr(Literal* expr)
             std::get<double>(expr->m_value));
         break;
     case Type::BOOL:
+        value = llvm::ConstantInt::getBool(
+            m_module.ctx(),
+            std::get<bool>(expr->m_value));
+        break;
     case Type::CHAR:
+        value = llvm::ConstantInt::get(
+            llvm::Type::getInt8Ty(m_module.ctx()),
+            std::get<char>(expr->m_value));
+        break;
     case Type::STR:
     default:
         unimplemented("literal type");
@@ -73,7 +81,7 @@ std::any jl::LLVMIRGen::visit_literal_expr(Literal* expr)
 std::any jl::LLVMIRGen::visit_assign_expr(Assign* expr)
 {
     auto value = emit(expr->m_expr);
-    auto [var_ptr, _] = m_module.function().read_local_var_definiton(expr->m_token.get_lexeme());
+    auto [var_ptr, _] = m_module.function().read_local_var_def(expr->m_token.get_lexeme());
     m_module.builder().CreateStore(value, var_ptr);
     return value;
 }
@@ -143,7 +151,7 @@ std::any jl::LLVMIRGen::visit_logical_expr(Logical* expr)
 
 std::any jl::LLVMIRGen::visit_variable_expr(Variable* expr)
 {
-    auto [ptr, type] = m_module.function().read_local_var_definiton(expr->m_name.get_lexeme());
+    auto [ptr, type] = m_module.function().read_local_var_def(expr->m_name.get_lexeme());
     return static_cast<llvm::Value*>(m_module.builder().CreateLoad(type, ptr));
 }
 
@@ -232,8 +240,9 @@ std::any jl::LLVMIRGen::visit_func_stmt(FuncStmt* stmt)
         // TODO::Add attributes
         arg.setName(param->get_lexeme());
         // Store it in stack
-        auto alloca_arg = m_module.builder().CreateAlloca(arg.getType(), nullptr, param->get_lexeme());
-        m_module.function().add_local_var_definition(param->get_lexeme(), alloca_arg, arg.getType());
+        auto alloca_arg = m_module.allocate_in_entry_block(param->get_lexeme(), arg.getType());
+        m_module.function().add_local_var_def(param->get_lexeme(), alloca_arg, arg.getType());
+        m_module.builder().CreateStore(&arg, alloca_arg);
     }
 
     emit(stmt->m_body);
@@ -251,11 +260,11 @@ std::any jl::LLVMIRGen::visit_var_stmt(VarStmt* stmt)
     // Evaluate the initializer
     auto val = emit(stmt->m_initializer.value());
     // Allocate the var on the stack
-    auto var_alloc = m_module.builder().CreateAlloca(val->getType(), nullptr, stmt->m_name.get_lexeme());
+    auto var_alloc = m_module.allocate_in_entry_block(stmt->m_name.get_lexeme(), val->getType());
     // Store the initialized value in the ptr
     m_module.builder().CreateStore(val, var_alloc);
     // Store the name and ptr in the scope
-    m_module.function().add_local_var_definition(stmt->m_name.get_lexeme(), var_alloc, val->getType());
+    m_module.function().add_local_var_def(stmt->m_name.get_lexeme(), var_alloc, val->getType());
 
     return {};
 }

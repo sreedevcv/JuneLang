@@ -101,3 +101,15 @@ std::optional<llvm::Type*> jl::JuneModule::map_to_llvm_type(const TypeInfo& type
         return std::nullopt;
     }
 }
+
+llvm::Value* jl::JuneModule::allocate_in_entry_block(const std::string& name, llvm::Type* type)
+{
+    auto current_block = m_builder.GetInsertBlock();
+    auto& entry_block = m_llvm_function->getEntryBlock();
+    m_builder.SetInsertPoint(&entry_block);
+
+    auto alloca = m_builder.CreateAlloca(type, nullptr, name);
+    m_builder.SetInsertPoint(current_block);
+
+    return alloca;
+}

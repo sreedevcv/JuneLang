@@ -30,6 +30,8 @@ public:
 
     llvm::IRBuilder<>& builder();
 
+    llvm::Value* allocate_in_entry_block(const std::string& name, llvm::Type* type);
+
 private:
     llvm::LLVMContext m_context;
     llvm::Module m_module;

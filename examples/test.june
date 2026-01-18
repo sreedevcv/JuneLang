@@ -33,6 +33,7 @@ fun hello(a: int, b: float): int [
         b = 10.0;
     ] else [
         num = 3;
+        var x = 1;
     ]
 
     return num;
