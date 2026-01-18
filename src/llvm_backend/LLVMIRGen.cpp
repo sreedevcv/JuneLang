@@ -91,6 +91,7 @@ std::any jl::LLVMIRGen::visit_binary_expr(Binary* expr)
     auto left = emit(expr->m_left);
     auto right = emit(expr->m_right);
 
+    // TODO::Support for floating point numbers
     switch (expr->m_oper.get_tokentype()) {
     case Token::PLUS:
         return m_module.builder().CreateAdd(left, right);
@@ -313,11 +314,31 @@ std::any jl::LLVMIRGen::visit_if_stmt(IfStmt* stmt)
         m_module.builder().SetInsertPoint(if_block);
         m_module.builder().CreateBr(continuation_block);
 
-        // // Set the bolc to continue with
+        // Set the block to continue with
         else_block = continuation_block;
     }
 
     m_module.builder().SetInsertPoint(else_block);
+
+    return {};
+}
+
+std::any jl::LLVMIRGen::visit_while_stmt(WhileStmt* stmt)
+{
+    auto condition_block = llvm::BasicBlock::Create(m_module.ctx(), "while.cond", m_module.llvm_function());
+    auto while_block = llvm::BasicBlock::Create(m_module.ctx(), "while.body", m_module.llvm_function());
+    auto after_block = llvm::BasicBlock::Create(m_module.ctx(), "while.after", m_module.llvm_function());
+    // The loop guard
+    m_module.builder().SetInsertPoint(condition_block);
+    auto condition = emit(stmt->m_condition);
+    // Generate the branch instruction
+    m_module.builder().CreateCondBr(condition, while_block, after_block);
+    // Emit the while block instructions
+    m_module.builder().SetInsertPoint(while_block);
+    emit(stmt->m_body);
+    m_module.builder().CreateBr(condition_block);
+
+    m_module.builder().SetInsertPoint(after_block);
 
     return {};
 }
@@ -334,11 +355,6 @@ std::any jl::LLVMIRGen::visit_expr_stmt(ExprStmt* stmt)
 }
 std::any jl::LLVMIRGen::visit_empty_stmt(EmptyStmt* stmt)
 {
-    return {};
-}
-std::any jl::LLVMIRGen::visit_while_stmt(WhileStmt* stmt)
-{
-    unimplemented("visit_while_stmt");
     return {};
 }
 
