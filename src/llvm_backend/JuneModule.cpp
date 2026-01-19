@@ -62,7 +62,7 @@ llvm::Module& jl::JuneModule::module()
     return m_module;
 }
 
-void jl::JuneModule::set_function(llvm::Function* function)
+void jl::JuneModule::set_current_function(llvm::Function* function)
 {
     m_llvm_function = function;
     m_function = std::make_unique<JuneFunction>(JuneFunction(function->getName().str()));
@@ -106,10 +106,24 @@ llvm::Value* jl::JuneModule::allocate_in_entry_block(const std::string& name, ll
 {
     auto current_block = m_builder.GetInsertBlock();
     auto& entry_block = m_llvm_function->getEntryBlock();
-    m_builder.SetInsertPoint(&entry_block);
+    m_builder.SetInsertPoint(&entry_block, entry_block.begin());
 
     auto alloca = m_builder.CreateAlloca(type, nullptr, name);
     m_builder.SetInsertPoint(current_block);
 
     return alloca;
+}
+
+void jl::JuneModule::store_function(const std::string& name, llvm::Function* function)
+{
+    m_function_map[name] = function;
+}
+
+std::optional<llvm::Function*> jl::JuneModule::get_function(const std::string& name) const
+{
+    if (m_function_map.contains(name)) {
+        return m_function_map.at(name);
+    } else {
+        return std::nullopt;
+    }
 }

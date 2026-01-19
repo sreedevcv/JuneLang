@@ -40,7 +40,11 @@ llvm::Value* jl::LLVMIRGen::emit(const std::unique_ptr<Expr>& expr)
 
 void jl::LLVMIRGen::emit(const std::unique_ptr<Stmt>& stmt)
 {
-    stmt->accept(*this);
+    auto curr_block = m_module.builder().GetInsertBlock();
+    // Emit instructions only if the current BB has not yet terminated
+    if (!curr_block || curr_block->getTerminator() == nullptr) {
+        stmt->accept(*this);
+    }
 }
 
 std::any jl::LLVMIRGen::visit_literal_expr(Literal* expr)
@@ -152,6 +156,12 @@ std::any jl::LLVMIRGen::visit_logical_expr(Logical* expr)
 
 std::any jl::LLVMIRGen::visit_variable_expr(Variable* expr)
 {
+    // First check if its a function
+    auto func = m_module.get_function(expr->m_name.get_lexeme());
+    if (func) {
+        return static_cast<llvm::Value*>(func.value());
+    }
+
     auto [ptr, type] = m_module.function().read_local_var_def(expr->m_name.get_lexeme());
     return static_cast<llvm::Value*>(m_module.builder().CreateLoad(type, ptr));
 }
@@ -163,9 +173,17 @@ std::any jl::LLVMIRGen::visit_grouping_expr(Grouping* expr)
 
 std::any jl::LLVMIRGen::visit_call_expr(Call* expr)
 {
-    unimplemented("visit_call_expr");
-    return {};
+    llvm::SmallVector<llvm::Value*, 5> arg_values;
+
+    for (const auto& arg : expr->m_arguments) {
+        arg_values.push_back(emit(arg));
+    }
+
+    auto name_val = emit(expr->m_callee);
+
+    return static_cast<llvm::Value*>(m_module.builder().CreateCall((static_cast<llvm::Function*>(name_val)), arg_values));
 }
+
 std::any jl::LLVMIRGen::visit_get_expr(Get* expr)
 {
     unimplemented("visit_get_expr");
@@ -232,9 +250,12 @@ std::any jl::LLVMIRGen::visit_func_stmt(FuncStmt* stmt)
         stmt->m_name.get_lexeme(),
         m_module.module());
 
+    // Store the function name as variable so that it can be looked up during
+    m_module.store_function(stmt->m_name.get_lexeme(), function);
+    m_module.set_current_function(function);
+
     auto entry_block = llvm::BasicBlock::Create(m_module.ctx(), "entry", function);
     m_module.builder().SetInsertPoint(entry_block);
-    m_module.set_function(function);
 
     for (auto [idx, arg] : llvm::enumerate(function->args())) {
         const auto param = stmt->m_params[idx];
@@ -245,6 +266,10 @@ std::any jl::LLVMIRGen::visit_func_stmt(FuncStmt* stmt)
         m_module.function().add_local_var_def(param->get_lexeme(), alloca_arg, arg.getType());
         m_module.builder().CreateStore(&arg, alloca_arg);
     }
+
+    auto rest_block = llvm::BasicBlock::Create(m_module.ctx(), "rest", function);
+    m_module.builder().CreateBr(rest_block);
+    m_module.builder().SetInsertPoint(rest_block);
 
     emit(stmt->m_body);
 
@@ -291,7 +316,6 @@ std::any jl::LLVMIRGen::visit_block_stmt(BlockStmt* stmt)
 
 std::any jl::LLVMIRGen::visit_if_stmt(IfStmt* stmt)
 {
-    // Evaluate the condition
     auto condition = emit(stmt->m_condition);
     // Create the if block
     auto if_block = llvm::BasicBlock::Create(m_module.ctx(), "cond.true", m_module.llvm_function());
@@ -302,23 +326,32 @@ std::any jl::LLVMIRGen::visit_if_stmt(IfStmt* stmt)
     // Evalue the if block
     m_module.builder().SetInsertPoint(if_block);
     emit(stmt->m_then_stmt);
-    // m_module.builder().CreateBr(else_block);
 
     if (stmt->m_else_stmt) {
-        // Evaluate the else block
+        auto after_block = llvm::BasicBlock::Create(m_module.ctx(), "cond.after", m_module.llvm_function());
+
+        // Add the br to cond.after in the current block(continued from the original if-then instrs)
+        if (!m_module.builder().GetInsertBlock()->getTerminator())
+            m_module.builder().CreateBr(after_block);
+
+        // Emit the instrs for the else block
         m_module.builder().SetInsertPoint(else_block);
         emit(stmt->m_else_stmt.value());
 
-        // // Jump to a new block after the if block is done
-        auto continuation_block = llvm::BasicBlock::Create(m_module.ctx(), "after-if", m_module.llvm_function());
-        m_module.builder().SetInsertPoint(if_block);
-        m_module.builder().CreateBr(continuation_block);
+        // Add the br to cond.after in the current block(continued from the original else instrs)
+        if (!m_module.builder().GetInsertBlock()->getTerminator())
+            m_module.builder().CreateBr(after_block);
 
-        // Set the block to continue with
-        else_block = continuation_block;
+        // New instructions will be added to the cond.after block
+        m_module.builder().SetInsertPoint(after_block);
+    } else {
+        // Add the br to cond.else in the current block(continued from the original if-then instrs)
+        if (!m_module.builder().GetInsertBlock()->getTerminator())
+            m_module.builder().CreateBr(else_block);
+
+        // New instructions will be added to the cond.else block
+        m_module.builder().SetInsertPoint(else_block);
     }
-
-    m_module.builder().SetInsertPoint(else_block);
 
     return {};
 }
@@ -326,6 +359,8 @@ std::any jl::LLVMIRGen::visit_if_stmt(IfStmt* stmt)
 std::any jl::LLVMIRGen::visit_while_stmt(WhileStmt* stmt)
 {
     auto condition_block = llvm::BasicBlock::Create(m_module.ctx(), "while.cond", m_module.llvm_function());
+    m_module.builder().CreateBr(condition_block);
+
     auto while_block = llvm::BasicBlock::Create(m_module.ctx(), "while.body", m_module.llvm_function());
     auto after_block = llvm::BasicBlock::Create(m_module.ctx(), "while.after", m_module.llvm_function());
     // The loop guard
@@ -336,25 +371,30 @@ std::any jl::LLVMIRGen::visit_while_stmt(WhileStmt* stmt)
     // Emit the while block instructions
     m_module.builder().SetInsertPoint(while_block);
     emit(stmt->m_body);
-    m_module.builder().CreateBr(condition_block);
+    // Loop back to the while.cond block
+    if (!m_module.builder().GetInsertBlock()->getTerminator())
+        m_module.builder().CreateBr(condition_block);
 
+    // New instructions will go to the while.after block
     m_module.builder().SetInsertPoint(after_block);
 
+    return {};
+}
+
+std::any jl::LLVMIRGen::visit_expr_stmt(ExprStmt* stmt)
+{
+    emit(stmt->m_expr);
+    return {};
+}
+
+std::any jl::LLVMIRGen::visit_empty_stmt(EmptyStmt* stmt)
+{
     return {};
 }
 
 std::any jl::LLVMIRGen::visit_print_stmt(PrintStmt* stmt)
 {
     unimplemented("visit_print_stmt");
-    return {};
-}
-std::any jl::LLVMIRGen::visit_expr_stmt(ExprStmt* stmt)
-{
-    emit(stmt->m_expr);
-    return {};
-}
-std::any jl::LLVMIRGen::visit_empty_stmt(EmptyStmt* stmt)
-{
     return {};
 }
 
@@ -378,3 +418,79 @@ std::any jl::LLVMIRGen::visit_extern_stmt(ExternStmt* stmt)
     unimplemented("visit_extern_stmt");
     return {};
 }
+
+/*
+
+fun hello(a: int, b: float): int [
+    var num = 10;
+
+
+    if (a + 1 == 7) [
+        num = 11;
+        while (1 == 2) [
+            var num = 3;
+
+            var op: float = 0.0;
+
+            if (num == 2) [
+                op = 98.0;
+            ]
+
+
+                op = 45.1;
+
+        ]
+        num =22;
+    ] else if (a >= 0) [
+        num = 33;
+        return 1;
+    ] else if ( a - 3 != 2) [
+        var tt = 1234;
+    ]
+    else [
+        num = 1;
+    ]
+
+    num = 44;
+    return num;
+]
+
+
+
+fun hello(a: int, b: float): int [
+    var num = 10;
+
+    for (var i = 0; i < num; i += 1) [
+        if (a + 1 == 7) [
+            num = 11;
+            while (1 == 2) [
+                var op: float = 0.0;
+                if (num == 2) [
+                    return num;
+                    op = 98.0;
+                ] else [
+                    op = 45.1;
+                    return num;
+                ]
+                var num = 3;
+                return num;
+            ]
+            num =22;
+        ] else if (a >= 0) [
+            num = 33;
+            return num;
+        ] else if ( a - 3 != 2) [
+            var tt = 1234;
+            return num;
+        ]
+        else [
+            num = 1;
+            return num;
+        ]
+    ]
+
+    num = 44;
+    return num;
+]
+
+ */

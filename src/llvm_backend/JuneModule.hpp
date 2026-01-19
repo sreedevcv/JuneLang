@@ -9,6 +9,7 @@
 
 #include <llvm/IR/Type.h>
 #include <string>
+#include <unordered_map>
 
 namespace jl {
 
@@ -22,13 +23,17 @@ public:
 
     llvm::Module& module();
 
-    void set_function(llvm::Function* function);
-
     JuneFunction& function();
 
     llvm::Function* llvm_function();
 
     llvm::IRBuilder<>& builder();
+
+    void set_current_function(llvm::Function* function);
+
+    void store_function(const std::string& name, llvm::Function* function);
+
+    std::optional<llvm::Function*> get_function(const std::string& name) const;
 
     llvm::Value* allocate_in_entry_block(const std::string& name, llvm::Type* type);
 
@@ -38,5 +43,6 @@ private:
     llvm::Function* m_llvm_function;
     std::unique_ptr<JuneFunction> m_function;
     llvm::IRBuilder<> m_builder;
+    std::unordered_map<std::string, llvm::Function*> m_function_map;
 };
 }
