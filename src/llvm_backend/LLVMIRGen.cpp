@@ -3,6 +3,7 @@
 #include "Utils.hpp"
 #include "Value.hpp"
 #include "llvm_backend/JuneModule.hpp"
+#include "types/Type.hpp"
 #include <any>
 #include <llvm/ADT/STLExtras.h>
 #include <llvm/ADT/SmallVector.h>
@@ -94,6 +95,7 @@ std::any jl::LLVMIRGen::visit_binary_expr(Binary* expr)
 {
     auto left = emit(expr->m_left);
     auto right = emit(expr->m_right);
+    const auto is_float = static_cast<type::Builtin*>(expr->m_left->m_type.get())->m_primitive == type::Builtin::FLOAT;
 
     // TODO::Support for floating point numbers
     switch (expr->m_oper.get_tokentype()) {
@@ -104,18 +106,32 @@ std::any jl::LLVMIRGen::visit_binary_expr(Binary* expr)
     case Token::STAR:
         return m_module.builder().CreateMul(left, right);
     case Token::SLASH:
+        if (is_float)
+            return m_module.builder().CreateFDiv(left, right);
         return m_module.builder().CreateSDiv(left, right);
     case Token::GREATER:
+        if (is_float)
+            return m_module.builder().CreateFCmpOGT(left, right);
         return m_module.builder().CreateICmpSGT(left, right);
     case Token::LESS:
+        if (is_float)
+            return m_module.builder().CreateFCmpOLT(left, right);
         return m_module.builder().CreateICmpSLT(left, right);
     case Token::GREATER_EQUAL:
+        if (is_float)
+            return m_module.builder().CreateFCmpOGE(left, right);
         return m_module.builder().CreateICmpSGT(left, right);
     case Token::LESS_EQUAL:
+        if (is_float)
+            return m_module.builder().CreateFCmpOLE(left, right);
         return m_module.builder().CreateICmpSLT(left, right);
     case Token::EQUAL_EQUAL:
+        if (is_float)
+            return m_module.builder().CreateFCmpOEQ(left, right);
         return m_module.builder().CreateICmpEQ(left, right);
     case Token::BANG_EQUAL:
+        if (is_float)
+            return m_module.builder().CreateFCmpONE(left, right);
         return m_module.builder().CreateICmpNE(left, right);
     case Token::PERCENT:
     case Token::BIT_AND:
@@ -132,6 +148,8 @@ std::any jl::LLVMIRGen::visit_unary_expr(Unary* expr)
     auto value = emit(expr->m_expr);
     switch (expr->m_oper.get_tokentype()) {
     case Token::MINUS:
+        if (static_cast<type::Builtin*>(expr->m_expr->m_type.get())->m_primitive == type::Builtin::FLOAT)
+            return m_module.builder().CreateFNeg(value);
         return m_module.builder().CreateNeg(value);
     case Token::BANG:
         return m_module.builder().CreateNot(value);

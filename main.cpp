@@ -15,6 +15,7 @@
 #include <ostream>
 #include <print>
 #include <string>
+#include <system_error>
 #include <utility>
 
 int main(int argc, char const* argv[])
@@ -50,7 +51,14 @@ int main(int argc, char const* argv[])
         // module.module().print(llvm::outs(), nullptr);
 
         jl::LLVMIRGen ir_gen(file_name);
-        ir_gen.emit(stmts).module().print(llvm::outs(), nullptr);
+        // ir_gen.emit(stmts).module().print(llvm::outs(), nullptr);
+
+        std::error_code ec;
+        llvm::raw_fd_ostream file("test.ll", ec);
+        ir_gen.emit(stmts).module().print(file, nullptr);
+
+        file.close();
+
     } else {
         std::println("Type  check failed");
     }
