@@ -1,6 +1,8 @@
 #pragma once
 
 #include "TypeInfo.hpp"
+#include <llvm/IR/LLVMContext.h>
+#include <llvm/IR/Type.h>
 #include <memory>
 #include <optional>
 #include <string>
@@ -27,6 +29,7 @@ namespace type {
         virtual std::string to_str() const = 0;
         virtual std::unique_ptr<Type> clone() const = 0;
         virtual uint32_t size() const = 0;
+        virtual llvm::Type* llvm_type(llvm::LLVMContext& context) const = 0;
     };
 
     struct Builtin : Type {
@@ -51,6 +54,7 @@ namespace type {
         std::string to_str() const override;
         std::unique_ptr<Type> clone() const override;
         uint32_t size() const override;
+        llvm::Type* llvm_type(llvm::LLVMContext& context) const override;
     };
 
     struct Pointer : Type {
@@ -63,6 +67,7 @@ namespace type {
         std::string to_str() const override;
         std::unique_ptr<Type> clone() const override;
         uint32_t size() const override;
+        llvm::Type* llvm_type(llvm::LLVMContext& context) const override;
     };
 
     struct Func : Type {
@@ -76,6 +81,7 @@ namespace type {
         std::string to_str() const override;
         std::unique_ptr<Type> clone() const override;
         uint32_t size() const override;
+        llvm::Type* llvm_type(llvm::LLVMContext& context) const override;
     };
 
     struct List : Type {
@@ -88,6 +94,7 @@ namespace type {
         std::string to_str() const override;
         std::unique_ptr<Type> clone() const override;
         uint32_t size() const override;
+        llvm::Type* llvm_type(llvm::LLVMContext& context) const override;
     };
 
     bool is_number(const Type* t);

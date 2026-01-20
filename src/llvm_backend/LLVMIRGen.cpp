@@ -13,15 +13,20 @@
 #include <llvm/IR/Function.h>
 #include <llvm/IR/GlobalValue.h>
 #include <llvm/IR/InstrTypes.h>
+#include <llvm/IR/Instructions.h>
 #include <llvm/IR/Type.h>
 #include <llvm/IR/Value.h>
+#include <llvm/Support/Casting.h>
 #include <llvm/Support/ErrorHandling.h>
 #include <llvm/Support/WithColor.h>
 #include <llvm/Support/raw_ostream.h>
+#include <string>
 
 jl::LLVMIRGen::LLVMIRGen(const std::string file_name)
     : m_module(file_name)
 {
+    auto int_type = llvm::Type::getInt64Ty(m_module.ctx());
+    m_zero_int = llvm::ConstantInt::get(int_type, 0);
 }
 
 jl::JuneModule& jl::LLVMIRGen::emit(const std::vector<std::unique_ptr<Stmt>>& stmts)
@@ -43,7 +48,7 @@ void jl::LLVMIRGen::emit(const std::unique_ptr<Stmt>& stmt)
 {
     auto curr_block = m_module.builder().GetInsertBlock();
     // Emit instructions only if the current BB has not yet terminated
-    if (!curr_block || curr_block->getTerminator() == nullptr) {
+    if (!m_function_compilation_started || curr_block->getTerminator() == nullptr) {
         stmt->accept(*this);
     }
 }
@@ -51,13 +56,12 @@ void jl::LLVMIRGen::emit(const std::unique_ptr<Stmt>& stmt)
 std::any jl::LLVMIRGen::visit_literal_expr(Literal* expr)
 {
     llvm::Value* value = nullptr;
+    auto char_type = llvm::Type::getInt8Ty(m_module.ctx());
+    auto int_type = llvm::Type::getInt64Ty(m_module.ctx());
 
     switch (get_type(expr->m_value)) {
     case Type::INT:
-        value = llvm::ConstantInt::get(
-            llvm::Type::getInt64Ty(m_module.ctx()),
-            std::get<int>(expr->m_value),
-            true);
+        value = llvm::ConstantInt::get(int_type, std::get<int>(expr->m_value), true);
         break;
     case Type::FLOAT:
         value = llvm::ConstantFP::get(
@@ -70,11 +74,25 @@ std::any jl::LLVMIRGen::visit_literal_expr(Literal* expr)
             std::get<bool>(expr->m_value));
         break;
     case Type::CHAR:
-        value = llvm::ConstantInt::get(
-            llvm::Type::getInt8Ty(m_module.ctx()),
-            std::get<char>(expr->m_value));
+        value = llvm::ConstantInt::get(char_type, std::get<char>(expr->m_value));
         break;
-    case Type::STR:
+    case Type::STR: {
+        auto str = std::get<std::string>(expr->m_value);
+        auto array_type = llvm::ArrayType::get(char_type, str.size());
+        auto array = m_module.builder().CreateAlloca(array_type);
+
+        for (const auto [idx, ch] : llvm::enumerate(str)) {
+            auto idx_value = llvm::ConstantInt::get(int_type, idx);
+            auto char_value = llvm::ConstantInt::get(char_type, ch);
+            auto idx_addr = m_module.builder().CreateInBoundsGEP(
+                array_type,
+                array,
+                { m_zero_int, idx_value });
+            m_module.builder().CreateStore(char_value, idx_addr);
+        }
+
+        value = array;
+    } break;
     default:
         unimplemented("literal type");
         break;
@@ -97,7 +115,6 @@ std::any jl::LLVMIRGen::visit_binary_expr(Binary* expr)
     auto right = emit(expr->m_right);
     const auto is_float = static_cast<type::Builtin*>(expr->m_left->m_type.get())->m_primitive == type::Builtin::FLOAT;
 
-    // TODO::Support for floating point numbers
     switch (expr->m_oper.get_tokentype()) {
     case Token::PLUS:
         return m_module.builder().CreateAdd(left, right);
@@ -181,6 +198,12 @@ std::any jl::LLVMIRGen::visit_variable_expr(Variable* expr)
     }
 
     auto [ptr, type] = m_module.function().read_local_var_def(expr->m_name.get_lexeme());
+
+    // If the type is a null then this is a list
+    if (type == nullptr) {
+        return ptr;
+    }
+
     return static_cast<llvm::Value*>(m_module.builder().CreateLoad(type, ptr));
 }
 
@@ -198,8 +221,52 @@ std::any jl::LLVMIRGen::visit_call_expr(Call* expr)
     }
 
     auto name_val = emit(expr->m_callee);
+    auto call = m_module.builder().CreateCall((static_cast<llvm::Function*>(name_val)), arg_values);
 
-    return static_cast<llvm::Value*>(m_module.builder().CreateCall((static_cast<llvm::Function*>(name_val)), arg_values));
+    return static_cast<llvm::Value*>(call);
+}
+
+std::any jl::LLVMIRGen::visit_jlist_expr(JList* expr)
+{
+    auto total_size = expr->m_items.size() + expr->m_extra_item_count.value_or(0);
+    auto list_type = static_cast<type::List*>(expr->m_type.get());
+    auto array_type = llvm::ArrayType::get(list_type->m_elem_type->llvm_type(m_module.ctx()), list_type->m_count);
+    auto array_alloca = m_module.builder().CreateAlloca(array_type);
+
+    for (auto [idx, elem_ptr] : llvm::enumerate(expr->m_items)) {
+        auto elem = emit(elem_ptr);
+        auto int_type = llvm::Type::getInt64Ty(m_module.ctx());
+        auto idx_val = llvm::ConstantInt::get(int_type, idx);
+        auto addr = m_module.builder().CreateInBoundsGEP(array_type, array_alloca, { m_zero_int, idx_val });
+        m_module.builder().CreateStore(elem, addr);
+    }
+
+    return static_cast<llvm::Value*>(array_alloca);
+}
+
+std::any jl::LLVMIRGen::visit_index_get_expr(IndexGet* expr)
+{
+    auto list = emit(expr->m_jlist);
+    auto elem_idx = emit(expr->m_index_expr);
+    auto array_type = static_cast<llvm::AllocaInst*>(list)->getAllocatedType();
+    auto addr = m_module.builder().CreateGEP(array_type, list, { m_zero_int, elem_idx });
+    auto elem_type = static_cast<llvm::ArrayType*>(array_type)->getElementType();
+    auto elem = m_module.builder().CreateLoad(elem_type, addr);
+
+    return static_cast<llvm::Value*>(elem);
+}
+
+std::any jl::LLVMIRGen::visit_index_set_expr(IndexSet* expr)
+{
+    auto list = emit(expr->m_jlist);
+    auto elem_idx = emit(expr->m_index_expr);
+    auto target = emit(expr->m_value_expr);
+    auto array_type = static_cast<llvm::AllocaInst*>(list)->getAllocatedType();
+    auto addr = m_module.builder().CreateGEP(array_type, list, { m_zero_int, elem_idx });
+    auto elem_type = static_cast<llvm::ArrayType*>(array_type)->getElementType();
+    auto set = m_module.builder().CreateStore(target, addr);
+
+    return static_cast<llvm::Value*>(target);
 }
 
 std::any jl::LLVMIRGen::visit_get_expr(Get* expr)
@@ -222,21 +289,6 @@ std::any jl::LLVMIRGen::visit_super_expr(Super* expr)
     unimplemented("visit_super_expr");
     return {};
 }
-std::any jl::LLVMIRGen::visit_jlist_expr(JList* expr)
-{
-    unimplemented("visit_jlist_expr");
-    return {};
-}
-std::any jl::LLVMIRGen::visit_index_get_expr(IndexGet* expr)
-{
-    unimplemented("visit_index_get_expr");
-    return {};
-}
-std::any jl::LLVMIRGen::visit_index_set_expr(IndexSet* expr)
-{
-    unimplemented("visit_index_set_expr");
-    return {};
-}
 std::any jl::LLVMIRGen::visit_type_cast_expr(TypeCast* expr)
 {
     unimplemented("visit_type_cast_expr");
@@ -247,6 +299,8 @@ std::any jl::LLVMIRGen::visit_type_cast_expr(TypeCast* expr)
 
 std::any jl::LLVMIRGen::visit_func_stmt(FuncStmt* stmt)
 {
+    m_function_compilation_started = true;
+
     llvm::SmallVector<llvm::Type*, 8> llvm_types;
     // Collect all the input parameters types
     for (const auto& param_type : stmt->m_data_types) {
@@ -285,11 +339,14 @@ std::any jl::LLVMIRGen::visit_func_stmt(FuncStmt* stmt)
         m_module.builder().CreateStore(&arg, alloca_arg);
     }
 
-    auto rest_block = llvm::BasicBlock::Create(m_module.ctx(), "rest", function);
-    m_module.builder().CreateBr(rest_block);
-    m_module.builder().SetInsertPoint(rest_block);
-
     emit(stmt->m_body);
+
+    // // Add a return if none is there
+    // if (m_module.builder().GetInsertBlock()->getTerminator() == nullptr) {
+    //     m_module.builder().CreateRet(nullptr);
+    // }
+
+    m_function_compilation_started = false;
 
     return {};
 }
@@ -303,13 +360,19 @@ std::any jl::LLVMIRGen::visit_var_stmt(VarStmt* stmt)
 
     // Evaluate the initializer
     auto val = emit(stmt->m_initializer.value());
-    // Allocate the var on the stack
-    auto var_alloc = m_module.allocate_in_entry_block(stmt->m_name.get_lexeme(), val->getType());
-    // Store the initialized value in the ptr
-    m_module.builder().CreateStore(val, var_alloc);
-    // Store the name and ptr in the scope
-    m_module.function().add_local_var_def(stmt->m_name.get_lexeme(), var_alloc, val->getType());
 
+    // This is an array so no need to store it in the stack, since its already in the stack
+    if (llvm::isa<llvm::AllocaInst>(val)) {
+        auto contained_type = llvm::dyn_cast<llvm::AllocaInst>(val)->getAllocatedType();
+        m_module.function().add_local_var_def(stmt->m_name.get_lexeme(), val, nullptr);
+    } else {
+        // Allocate the var on the stack
+        auto var_alloc = m_module.allocate_in_entry_block(stmt->m_name.get_lexeme(), val->getType());
+        // Store the initialized value in the ptr
+        m_module.builder().CreateStore(val, var_alloc);
+        // Store the name and ptr in the scope
+        m_module.function().add_local_var_def(stmt->m_name.get_lexeme(), var_alloc, val->getType());
+    }
     return {};
 }
 

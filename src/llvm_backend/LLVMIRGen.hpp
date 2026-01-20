@@ -3,6 +3,7 @@
 #include "Expr.hpp"
 #include "Stmt.hpp"
 #include "llvm_backend/JuneModule.hpp"
+#include <llvm/IR/Value.h>
 
 namespace jl {
 class LLVMIRGen : IExprVisitor, IStmtVisitor {
@@ -17,6 +18,8 @@ public:
 
 private:
     JuneModule m_module;
+    llvm::Value* m_zero_int;
+    bool m_function_compilation_started = false;
 
     std::any visit_assign_expr(Assign* expr) override;
     std::any visit_binary_expr(Binary* expr) override;

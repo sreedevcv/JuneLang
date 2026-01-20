@@ -365,7 +365,9 @@ std::any jl::SemanticAnalyzer::visit_jlist_expr(JList* expr)
         return false;
     }
 
-    auto list_type = std::make_unique<type::List>(expr->m_items.front()->m_type->clone(), expr->m_items.size());
+    auto list_type = std::make_unique<type::List>(
+        expr->m_items.front()->m_type->clone(),
+        expr->m_items.size() + expr->m_extra_item_count.value_or(0));
 
     for (int i = 1; i < expr->m_items.size(); i++) {
         auto item = expr->m_items[i].get();
@@ -476,7 +478,6 @@ std::any jl::SemanticAnalyzer::visit_var_stmt(VarStmt* stmt)
                 auto lhs = static_cast<type::List*>(type->get());
                 auto rhs = static_cast<type::List*>(rhs_expr->m_type.get());
 
-                // Nothing to do, everything is correct
                 if (!lhs->m_elem_type->equals(rhs->m_elem_type.get())) {
                     goto error;
                 }

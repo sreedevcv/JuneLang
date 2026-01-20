@@ -21,14 +21,18 @@
 //print list;
 //
 
-fun hello(a: int, b: float): int [
-    var num = 10;
-    var x = -b;
 
-    return num;
+fun get_index(): int [
+    var list = {1, 2, 3, 4, 5};
+    var temp = {1.2, 2.3};
+    var chars = {'1', '2', '4'};
+    var bools = {true, false};
+
+    var sum = 0;
+
+    for (var i = 0; i < 5; i += 1) [
+        sum += list[i];
+    ]
+
+    return sum;
 ]
-
-
-//fun fib() [
-//    var t = hello(1, 3.1);
-//]

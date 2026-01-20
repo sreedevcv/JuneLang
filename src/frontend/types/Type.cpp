@@ -1,5 +1,8 @@
 #include "Type.hpp"
 #include "Utils.hpp"
+#include <llvm/IR/DerivedTypes.h>
+#include <llvm/IR/Type.h>
+#include <llvm/Support/Casting.h>
 #include <memory>
 #include <optional>
 #include <string>
@@ -68,6 +71,22 @@ uint32_t jl::type::Builtin::size() const
     return 0;
 }
 
+llvm::Type* jl::type::Builtin::llvm_type(llvm::LLVMContext& context) const
+{
+    switch (m_primitive) {
+    case INT:
+        return llvm::dyn_cast<llvm::Type>(llvm::Type::getInt64Ty(context));
+    case FLOAT:
+        return llvm::dyn_cast<llvm::Type>(llvm::Type::getDoubleTy(context));
+    case BOOL:
+        return llvm::dyn_cast<llvm::Type>(llvm::Type::getInt1Ty(context));
+    case CHAR:
+        return llvm::dyn_cast<llvm::Type>(llvm::Type::getInt8Ty(context));
+    case VOID:
+        return llvm::dyn_cast<llvm::Type>(llvm::Type::getVoidTy(context));
+    }
+}
+
 jl::type::Pointer::Pointer(std::unique_ptr<Type> pointee)
     : Type(Kind::PTR)
     , m_pointee(std::move(pointee))
@@ -94,6 +113,12 @@ std::unique_ptr<jl::type::Type> jl::type::Pointer::clone() const
 uint32_t jl::type::Pointer::size() const
 {
     return 8;
+}
+
+llvm::Type* jl::type::Pointer::llvm_type(llvm::LLVMContext& context) const
+{
+    unimplemented();
+    return nullptr;
 }
 
 jl::type::Func::Func(std::unique_ptr<Type> return_type, std::vector<std::unique_ptr<Type>> param_types)
@@ -154,6 +179,12 @@ uint32_t jl::type::Func::size() const
     return 0;
 }
 
+llvm::Type* jl::type::Func::llvm_type(llvm::LLVMContext& context) const
+{
+    unimplemented();
+    return nullptr;
+}
+
 jl::type::List::List(std::unique_ptr<Type> elem_type, uint32_t count)
     : Type(LIST)
     , m_elem_type(std::move(elem_type))
@@ -184,6 +215,11 @@ std::unique_ptr<jl::type::Type> jl::type::List::clone() const
 uint32_t jl::type::List::size() const
 {
     return 16;
+}
+
+llvm::Type* jl::type::List::llvm_type(llvm::LLVMContext& context) const
+{
+    return llvm::ArrayType::get(m_elem_type->llvm_type(context), m_count);
 }
 
 bool jl::type::is_number(const Type* t)
