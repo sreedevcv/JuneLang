@@ -3,7 +3,7 @@
 
 A simple programming language written in C++ inspired by C.
 
-It is statically typed and compiled to native x86-64.
+It is statically typed and compiled using llvm backend as well as custom x86-64 backend.
 
 ## Features
 
@@ -13,10 +13,11 @@ It is statically typed and compiled to native x86-64.
 - `while` and `for` loops
 - Functions
 - Type inference
+- LLVM Backend
 
 ## Example
 
-```java
+```
 fun sample_function(list: [int], size: int): int [
     var s = 0;
 

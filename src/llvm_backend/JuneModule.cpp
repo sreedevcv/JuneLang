@@ -3,6 +3,7 @@
 #include "llvm_backend/JuneFunction.hpp"
 
 #include <llvm/CodeGen/CommandFlags.h>
+#include <llvm/IR/DerivedTypes.h>
 #include <llvm/IR/LLVMContext.h>
 #include <llvm/IR/Type.h>
 #include <llvm/MC/TargetRegistry.h>
@@ -85,21 +86,25 @@ llvm::Function* jl::JuneModule::llvm_function()
 
 std::optional<llvm::Type*> jl::JuneModule::map_to_llvm_type(const TypeInfo& type_info)
 {
-    if (type_info.is_array) {
-        unimplemented("Array types");
-    }
+    llvm::Type* type = nullptr;
 
     if (type_info.name == "int") {
-        return llvm::Type::getInt64Ty(m_context);
+        type = llvm::Type::getInt64Ty(m_context);
     } else if (type_info.name == "float") {
-        return llvm::Type::getDoubleTy(m_context);
+        type = llvm::Type::getDoubleTy(m_context);
     } else if (type_info.name == "bool") {
-        return llvm::Type::getInt1Ty(m_context);
+        type = llvm::Type::getInt1Ty(m_context);
     } else if (type_info.name == "char") {
-        return llvm::Type::getInt8Ty(m_context);
+        type = llvm::Type::getInt8Ty(m_context);
     } else {
-        return std::nullopt;
+        unimplemented("Unknow type");
     }
+
+    if (type_info.is_array) {
+        return llvm::PointerType::getUnqual(m_context);
+    }
+
+    return type;
 }
 
 llvm::Value* jl::JuneModule::allocate_in_entry_block(const std::string& name, llvm::Type* type)
