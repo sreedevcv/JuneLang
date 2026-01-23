@@ -3,6 +3,7 @@
 #include "TypeInfo.hpp"
 #include <llvm/IR/LLVMContext.h>
 #include <llvm/IR/Type.h>
+#include <llvm/IR/Value.h>
 #include <memory>
 #include <optional>
 #include <string>
@@ -30,6 +31,7 @@ namespace type {
         virtual std::unique_ptr<Type> clone() const = 0;
         virtual uint32_t size() const = 0;
         virtual llvm::Type* llvm_type(llvm::LLVMContext& context) const = 0;
+        virtual llvm::Value* llvm_default_value(llvm::LLVMContext& context) const;
     };
 
     struct Builtin : Type {
@@ -55,6 +57,7 @@ namespace type {
         std::unique_ptr<Type> clone() const override;
         uint32_t size() const override;
         llvm::Type* llvm_type(llvm::LLVMContext& context) const override;
+        llvm::Value* llvm_default_value(llvm::LLVMContext& context) const override;
     };
 
     struct Pointer : Type {

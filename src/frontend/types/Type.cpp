@@ -1,7 +1,9 @@
 #include "Type.hpp"
 #include "Utils.hpp"
+#include <llvm/IR/Constants.h>
 #include <llvm/IR/DerivedTypes.h>
 #include <llvm/IR/Type.h>
+#include <llvm/IR/Value.h>
 #include <llvm/Support/Casting.h>
 #include <memory>
 #include <optional>
@@ -18,6 +20,11 @@
 //     , m_primitive(primitive)
 // {
 // }
+
+llvm::Value* jl::type::Type::llvm_default_value(llvm::LLVMContext& context) const
+{
+    return nullptr;
+}
 
 bool jl::type::Builtin::equals(const Type* type) const
 {
@@ -84,6 +91,24 @@ llvm::Type* jl::type::Builtin::llvm_type(llvm::LLVMContext& context) const
         return llvm::dyn_cast<llvm::Type>(llvm::Type::getInt8Ty(context));
     case VOID:
         return llvm::dyn_cast<llvm::Type>(llvm::Type::getVoidTy(context));
+    }
+}
+
+llvm::Value* jl::type::Builtin::llvm_default_value(llvm::LLVMContext& context) const
+{
+    auto type = llvm_type(context);
+
+    switch (m_primitive) {
+    case INT:
+        return llvm::ConstantInt::get(type, 0, true);
+    case FLOAT:
+        return llvm::ConstantFP::get(type, 0.0);
+    case BOOL:
+        return llvm::ConstantInt::get(type, 0);
+    case CHAR:
+        return llvm::ConstantInt::get(type, '\0');
+    case VOID:
+        return nullptr;
     }
 }
 

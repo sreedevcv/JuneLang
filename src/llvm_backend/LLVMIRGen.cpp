@@ -337,9 +337,22 @@ std::any jl::LLVMIRGen::visit_func_stmt(FuncStmt* stmt)
 
     emit(stmt->m_body);
 
-    // Add a unreachable if there is not return at the end :)
-    if (m_module.builder().GetInsertBlock()->getTerminator() == nullptr) {
-        m_module.builder().CreateUnreachable();
+    auto exit_block = m_module.builder().GetInsertBlock()->getTerminator();
+    // Add a return if none exists
+    if (exit_block == nullptr) {
+        if (stmt->m_return_type) {
+            // Find a default value for the return type and then return it, otherwise  mark as unreachable :)
+            auto ret_type = type::from_type_info(stmt->m_return_type.value()).value();
+
+            if (auto ret = ret_type->llvm_default_value(m_module.ctx())) {
+                m_module.builder().CreateRet(ret);
+            } else {
+                m_module.builder().CreateUnreachable();
+            }
+        } else {
+            // Return type is void
+            m_module.builder().CreateRetVoid();
+        }
     }
 
     m_function_compilation_started = false;
