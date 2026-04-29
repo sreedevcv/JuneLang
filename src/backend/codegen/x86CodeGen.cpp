@@ -126,7 +126,7 @@ jl::x86CodeGen::VarInfo jl::x86CodeGen::get_var_info(uint32_t id) const
     VarInfo info = {
         .size = data.size,
         .offset = data.offset + data.size,
-        .type = data.m_type.get()
+        .type = data.m_type
     };
 
     return info;
@@ -140,7 +140,7 @@ std::pair<uint32_t, uint32_t> jl::x86CodeGen::get_size_and_offset(uint32_t id) c
 
 void jl::x86CodeGen::generate(const std::string& func_name, const FuncBlock::FuncData& func_data)
 {
-    if (func_data.type.get()->m_param_types.size() > 6) {
+    if (func_data.type->m_param_types.size() > 6) {
         unimplemented("Functions with parameters > 6 not supported");
     }
 
@@ -157,7 +157,7 @@ void jl::x86CodeGen::generate(const std::string& func_name, const FuncBlock::Fun
 
     // Move all arguments to stack
     uint32_t arg_reg = 0;
-    for (size_t i = 0; i < func_data.type.get()->m_param_types.size(); i++) {
+    for (size_t i = 0; i < func_data.type->m_param_types.size(); i++) {
         const auto [size, offset] = get_size_and_offset(i);
 
         if (size > 8)
@@ -169,7 +169,7 @@ void jl::x86CodeGen::generate(const std::string& func_name, const FuncBlock::Fun
     }
 
     // Pop all the larges values into the stack
-    for (uint32_t i = 0; i < func_data.type.get()->m_param_types.size(); i++) {
+    for (uint32_t i = 0; i < func_data.type->m_param_types.size(); i++) {
         auto [size_src, offset_dest] = get_size_and_offset(i);
         if (size_src <= 8)
             continue;

@@ -14,7 +14,7 @@ namespace jl {
 
 class FuncBlock {
 public:
-    FuncBlock(const std::string& name, std::unique_ptr<type::Func> type);
+    FuncBlock(const std::string& name, const type::Func* type);
 
     ~FuncBlock() = default;
 
@@ -39,17 +39,17 @@ public:
     }
 
     struct FuncData {
-        std::unique_ptr<type::Func> type;
+        const type::Func* type;
         std::vector<std::unique_ptr<ir::IR>> irs;
         value::VarData var_data;
 
-        FuncData(std::unique_ptr<type::Func> func_type)
-            : type(std::move(func_type))
+        FuncData(const type::Func* func_type)
+            : type(func_type)
         {
         }
     };
 
-    void push_func(const std::string& name, std::unique_ptr<type::Func> type);
+    void push_func(const std::string& name, const type::Func* type);
 
     void pop_func();
 

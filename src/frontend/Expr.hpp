@@ -53,8 +53,8 @@ public:
 
 class Expr {
 public:
-    std::unique_ptr<type::Type> m_type;
-    std::optional<std::unique_ptr<type::Type>> m_cast_to = std::nullopt;
+    const type::Type* m_type = nullptr;
+    std::optional<const type::Type*> m_cast_to = std::nullopt;
 
     virtual std::any accept(IExprVisitor& visitor) = 0;
     virtual ~Expr() = default;

@@ -11,7 +11,7 @@
 
 void print_node_type(jl::Expr* expr, std::ostream& stream)
 {
-    if (expr->m_type.get() != nullptr) {
+    if (expr->m_type != nullptr) {
         stream << "(" << expr->m_type->to_str();
 
         if (expr->m_cast_to) {

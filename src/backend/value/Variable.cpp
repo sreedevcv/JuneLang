@@ -40,7 +40,7 @@ uint32_t jl::value::VarData::add_variable(uint32_t size)
 uint32_t jl::value::VarData::add_variable(const type::Type* type)
 {
     auto idx = m_var_count++;
-    m_var_offset.insert({ idx, { type->size(), m_total_size, type->clone() } });
+    m_var_offset.insert({ idx, { type->size(), m_total_size, type } });
     m_total_size += type->size();
     return idx;
 }

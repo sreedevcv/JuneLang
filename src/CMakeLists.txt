@@ -9,6 +9,7 @@ add_library(JuneInterpreter
     frontend/ASTPrinter.cpp
     frontend/SemanticAnalysis.cpp
     frontend/types/Type.cpp
+    frontend/types/TypeContext.cpp
     ArgParser.cpp
     backend/Block.cpp
     backend/FuncBlock.cpp

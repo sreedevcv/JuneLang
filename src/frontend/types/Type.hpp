@@ -26,9 +26,7 @@ namespace type {
         {
         }
         virtual ~Type() = default;
-        virtual bool equals(const Type* type) const = 0;
         virtual std::string to_str() const = 0;
-        virtual std::unique_ptr<Type> clone() const = 0;
         virtual uint32_t size() const = 0;
         virtual llvm::Type* llvm_type(llvm::LLVMContext& context) const = 0;
         virtual llvm::Value* llvm_default_value(llvm::LLVMContext& context) const;
@@ -41,6 +39,7 @@ namespace type {
             BOOL,
             CHAR,
             VOID,
+            PRIMITIVE_MAX
         };
 
         Primitive m_primitive;
@@ -52,56 +51,47 @@ namespace type {
         }
         virtual ~Builtin() = default;
 
-        bool equals(const Type* type) const override;
         std::string to_str() const override;
-        std::unique_ptr<Type> clone() const override;
         uint32_t size() const override;
         llvm::Type* llvm_type(llvm::LLVMContext& context) const override;
         llvm::Value* llvm_default_value(llvm::LLVMContext& context) const override;
     };
 
     struct Pointer : Type {
-        std::unique_ptr<Type> m_pointee;
+        const Type* m_pointee;
 
-        Pointer(std::unique_ptr<Type> pointee);
+        Pointer(const Type* pointee);
         virtual ~Pointer() = default;
 
-        bool equals(const Type* type) const override;
         std::string to_str() const override;
-        std::unique_ptr<Type> clone() const override;
         uint32_t size() const override;
         llvm::Type* llvm_type(llvm::LLVMContext& context) const override;
     };
 
     struct Func : Type {
-        std::unique_ptr<Type> m_return_type;
-        std::vector<std::unique_ptr<Type>> m_param_types;
+        const Type* m_return_type;
+        std::vector<const Type*> m_param_types;
 
-        Func(std::unique_ptr<Type> return_type, std::vector<std::unique_ptr<Type>> in);
+        Func(const Type* return_type, std::vector<const Type*> in);
         virtual ~Func() = default;
 
-        bool equals(const Type* type) const override;
         std::string to_str() const override;
-        std::unique_ptr<Type> clone() const override;
         uint32_t size() const override;
         llvm::Type* llvm_type(llvm::LLVMContext& context) const override;
     };
 
     struct List : Type {
-        std::unique_ptr<Type> m_elem_type;
+        const Type* m_elem_type;
         uint32_t m_count;
 
-        List(std::unique_ptr<Type> melem_type, uint32_t count);
+        List(const Type* melem_type, uint32_t count);
         virtual ~List() = default;
-        bool equals(const Type* type) const override;
         std::string to_str() const override;
-        std::unique_ptr<Type> clone() const override;
         uint32_t size() const override;
         llvm::Type* llvm_type(llvm::LLVMContext& context) const override;
     };
 
     bool is_number(const Type* t);
-    std::optional<std::unique_ptr<Type>> from_type_info(const TypeInfo& type_info);
     bool is_boolean(const jl::type::Type* t);
 }
 }

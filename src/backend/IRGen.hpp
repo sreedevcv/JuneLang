@@ -8,6 +8,7 @@
 #include "backend/LiteralValue.hpp"
 #include "backend/ir/InitLiteral.hpp"
 #include "backend/value/Variable.hpp"
+#include "types/TypeContext.hpp"
 
 #include <memory>
 #include <unordered_map>
@@ -15,12 +16,14 @@
 namespace jl {
 class IRGen : IExprVisitor, IStmtVisitor {
 public:
-    IRGen();
+    IRGen(TypeContext& type_context);
 
     FuncBlock generate(Expr* expr);
     FuncBlock generate(std::vector<std::unique_ptr<jl::Stmt>>& stmts);
 
 private:
+    TypeContext& m_type_context;
+
     Block* m_block;
 
     FuncBlock m_func;

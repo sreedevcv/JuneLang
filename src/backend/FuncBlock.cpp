@@ -6,9 +6,9 @@
 #include <utility>
 #include <vector>
 
-jl::FuncBlock::FuncBlock(const std::string& name, std::unique_ptr<type::Func> type)
+jl::FuncBlock::FuncBlock(const std::string& name, const type::Func* type)
 {
-    push_func(name, std::move(type));
+    push_func(name, type);
 }
 
 uint32_t jl::FuncBlock::get_last_line() const
@@ -41,9 +41,9 @@ std::ostream& jl::FuncBlock::stream(std::ostream& in) const
     return in;
 }
 
-void jl::FuncBlock::push_func(const std::string& name, std::unique_ptr<type::Func> type)
+void jl::FuncBlock::push_func(const std::string& name, const type::Func* type)
 {
-    auto func_data = std::make_unique<FuncData>(std::move(type));
+    auto func_data = std::make_unique<FuncData>(type);
     m_funcs.push(func_data.get());
     m_func_datas.insert({ name, std::move(func_data) });
     m_current_func_name = name;

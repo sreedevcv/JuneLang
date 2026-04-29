@@ -17,8 +17,8 @@
 #include "backend/ir/Return.hpp"
 #include "backend/ir/TypeCast.hpp"
 #include "backend/ir/Unary.hpp"
-#include "frontend/types/Type.hpp"
 #include "backend/value/Variable.hpp"
+#include "frontend/types/Type.hpp"
 #include "ir/Allocate.hpp"
 #include "ir/DebugPrint.hpp"
 
@@ -30,14 +30,20 @@
 #include <utility>
 #include <vector>
 
-std::vector<std::unique_ptr<jl::type::Type>> vec;
-auto void_func = std::make_unique<jl::type::Func>(
-    std::move(std::make_unique<jl::type::Builtin>(jl::type::Builtin::VOID)),
-    std::move(vec));
+// std::vector<std::unique_ptr<jl::type::Type>> vec;
+// auto void_func = std::make_unique<jl::type::Func>(
+//     std::move(std::make_unique<jl::type::Builtin>(jl::type::Builtin::VOID)),
+//     std::move(vec));
 
-jl::IRGen::IRGen()
-    : m_block(nullptr)
-    , m_func(std::string("__root__"), std::move(void_func))
+jl::IRGen::IRGen(TypeContext& type_context)
+    : m_type_context(type_context)
+    , m_block(nullptr)
+    , m_func(std::string("__root__"),
+          std::move(
+              m_type_context.create_function(
+                  type::Func(
+                      m_type_context.create_builtin(jl::type::Builtin::VOID),
+                      {}))))
 {
     push_block();
 }
@@ -60,11 +66,11 @@ jl::value::Variable jl::IRGen::emit(Expr* expr)
 
     // Insert typecast ir here
     if (expr->m_cast_to) {
-        auto dest = m_block->create_varaible(m_func.get_current_func_name(), expr->m_cast_to.value().get());
+        auto dest = m_block->create_varaible(m_func.get_current_func_name(), expr->m_cast_to.value());
 
         m_func.add_ir<ir::TypeCast>(
-            expr->m_type->clone(),
-            expr->m_cast_to.value()->clone(),
+            expr->m_type,
+            expr->m_cast_to.value(),
             dest,
             var,
             m_func.get_last_line());
@@ -182,8 +188,8 @@ std::any jl::IRGen::visit_binary_expr(Binary* expr)
 
     const auto operand_a = emit(expr->m_left.get());
     const auto operand_b = emit(expr->m_right.get());
-    const auto dest = m_block->create_varaible(m_func.get_current_func_name(), expr->m_type.get());
-    const auto is_float = dynamic_cast<type::Builtin*>(expr->m_type.get())->m_primitive == type::Builtin::FLOAT;
+    const auto dest = m_block->create_varaible(m_func.get_current_func_name(), expr->m_type);
+    const auto is_float = dynamic_cast<const type::Builtin*>(expr->m_type)->m_primitive == type::Builtin::FLOAT;
     m_func.add_ir<ir::Binary>(dest, operand_a, operand_b, operation, is_float, expr->m_oper.get_line());
 
     return dest;
@@ -213,7 +219,7 @@ std::any jl::IRGen::visit_unary_expr(Unary* expr)
     }
 
     const auto source = emit(expr->m_expr.get());
-    const auto dest = m_block->create_varaible(m_func.get_current_func_name(), expr->m_type.get());
+    const auto dest = m_block->create_varaible(m_func.get_current_func_name(), expr->m_type);
     m_func.add_ir<ir::Unary>(dest, source, operation, expr->m_oper.get_line());
     return dest;
 }
@@ -221,7 +227,7 @@ std::any jl::IRGen::visit_unary_expr(Unary* expr)
 std::any jl::IRGen::visit_literal_expr(Literal* expr)
 {
     auto& value = expr->m_value;
-    auto type = expr->m_type.get();
+    auto type = expr->m_type;
 
     switch (get_type(value)) {
     case Type::INT:
@@ -234,7 +240,7 @@ std::any jl::IRGen::visit_literal_expr(Literal* expr)
         return add_literal_ir<char>(value, type);
     case Type::STR: {
         auto& str = std::get<std::string>(value);
-        const auto ptr_var = m_block->create_varaible(m_func.get_current_func_name(), expr->m_type.get());
+        const auto ptr_var = m_block->create_varaible(m_func.get_current_func_name(), expr->m_type);
         // Should I align the stack allocation to 16 bytes??
         const auto list_var = m_block->allocate_space(m_func.get_current_func_name(), str.size());
         auto allocate_ir = ir::Allocate(ptr_var, list_var, 1, str.size(), m_func.get_last_line());
@@ -266,10 +272,10 @@ std::any jl::IRGen::visit_logical_expr(Logical* expr)
         operation = ir::Binary::LOG_OR;
     }
 
-    const auto dest = m_block->create_varaible(m_func.get_current_func_name(), expr->m_type.get());
+    const auto dest = m_block->create_varaible(m_func.get_current_func_name(), expr->m_type);
     const auto operand_a = emit(expr->m_left.get());
     const auto operand_b = emit(expr->m_right.get());
-    const auto is_float = dynamic_cast<type::Builtin*>(expr->m_type.get())->m_primitive == type::Builtin::FLOAT;
+    const auto is_float = dynamic_cast<const type::Builtin*>(expr->m_type)->m_primitive == type::Builtin::FLOAT;
     m_func.add_ir<ir::Binary>(dest, operand_a, operand_b, operation, is_float, expr->m_oper.get_line());
 
     return dest;
@@ -284,7 +290,7 @@ std::any jl::IRGen::visit_call_expr(Call* expr)
     }
 
     const auto callee = emit(expr->m_callee.get());
-    const auto dest = m_block->create_varaible(m_func.get_current_func_name(), expr->m_type.get());
+    const auto dest = m_block->create_varaible(m_func.get_current_func_name(), expr->m_type);
 
     m_func.add_ir<ir::Call>(m_func_vars.at(callee), std::move(args), dest, expr->m_paren.get_line());
 
@@ -293,7 +299,7 @@ std::any jl::IRGen::visit_call_expr(Call* expr)
 
 std::any jl::IRGen::visit_jlist_expr(JList* expr)
 {
-    const auto list_type = dynamic_cast<type::List*>(expr->m_type.get());
+    const auto list_type = dynamic_cast<const type::List*>(expr->m_type);
     const auto elem_count = expr->m_items.size() + expr->m_extra_item_count.value_or(0);
     const auto elem_size = list_type->m_elem_type->size();
     const auto total_size = elem_count * elem_size;
@@ -333,8 +339,8 @@ std::any jl::IRGen::visit_index_get_expr(IndexGet* expr)
 {
     const auto list_var = emit(expr->m_jlist.get());
     const auto offset_var = emit(expr->m_index_expr.get());
-    const auto size = expr->m_type.get()->size();
-    const auto dest = m_block->create_varaible(m_func.get_current_func_name(), expr->m_type.get());
+    const auto size = expr->m_type->size();
+    const auto dest = m_block->create_varaible(m_func.get_current_func_name(), expr->m_type);
 
     m_func.add_ir<ir::Read>(dest, list_var, offset_var, size, size, expr->m_closing_bracket.get_line());
 
@@ -346,7 +352,7 @@ std::any jl::IRGen::visit_index_set_expr(IndexSet* expr)
     const auto list_var = emit(expr->m_jlist.get());
     const auto offset_var = emit(expr->m_index_expr.get());
     const auto src_var = emit(expr->m_value_expr.get());
-    const auto size = expr->m_type.get()->size();
+    const auto size = expr->m_type->size();
 
     m_func.add_ir<ir::Write>(src_var, list_var, offset_var, size, size, expr->m_closing_bracket.get_line());
 
@@ -383,13 +389,13 @@ std::any jl::IRGen::visit_super_expr(Super* expr)
 std::any jl::IRGen::visit_print_stmt(PrintStmt* stmt)
 {
     const auto var = emit(stmt->m_expr.get());
-    const auto builtin = dynamic_cast<type::Builtin*>(stmt->m_expr.get()->m_type.get());
+    const auto builtin = dynamic_cast<const type::Builtin*>(stmt->m_expr.get()->m_type);
 
     if (builtin) {
         m_func.add_ir<ir::DebugPrint>(var, false, builtin->m_primitive, 0, stmt->m_token.get_line());
     } else {
-        const auto list = dynamic_cast<type::List*>(stmt->m_expr.get()->m_type.get());
-        const auto builtin = dynamic_cast<type::Builtin*>(list->m_elem_type.get());
+        const auto list = dynamic_cast<const type::List*>(stmt->m_expr.get()->m_type);
+        const auto builtin = dynamic_cast<const type::Builtin*>(list->m_elem_type);
         m_func.add_ir<ir::DebugPrint>(var, true, builtin->m_primitive, builtin->size(), stmt->m_token.get_line());
     }
 
@@ -405,7 +411,7 @@ std::any jl::IRGen::visit_var_stmt(VarStmt* stmt)
         const auto dest = m_block->create_named_variable(
             m_func.get_current_func_name(),
             stmt->m_name.get_lexeme(),
-            stmt->m_initializer->get()->m_type.get());
+            stmt->m_initializer->get()->m_type);
         m_func.add_ir<ir::Move>(src, dest, stmt->m_name.get_line());
     } else {
         // Note::Right now we will add it as 0, it will be replaced with the actual size
@@ -484,19 +490,19 @@ std::any jl::IRGen::visit_func_stmt(FuncStmt* stmt)
     const auto var = m_block->create_named_variable(
         m_func.get_current_func_name(),
         stmt->m_name.get_lexeme(),
-        stmt->m_type.get());
+        stmt->m_type);
     m_func_vars.insert({ var, stmt->m_name.get_lexeme() });
 
     // Upcast unique ptr to Func from Type
-    auto type = std::unique_ptr<type::Func>((type::Func*)stmt->m_type->clone().release());
+    auto type = static_cast<const type::Func*>(stmt->m_type);
     // Set up new context
     m_func.push_func(stmt->m_name.get_lexeme(), std::move(type));
     push_block();
 
     // Add new params to the block
     for (uint32_t i = 0; i < stmt->m_params.size(); i++) {
-        auto param_type = type::from_type_info(stmt->m_data_types[i]);
-        m_block->create_named_variable(m_func.get_current_func_name(), stmt->m_params[i]->get_lexeme(), param_type.value().get());
+        auto param_type = m_type_context.from_type_info(stmt->m_data_types[i]);
+        m_block->create_named_variable(m_func.get_current_func_name(), stmt->m_params[i]->get_lexeme(), param_type.value());
     }
 
     // Compile the body

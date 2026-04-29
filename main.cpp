@@ -18,6 +18,8 @@
 #include <system_error>
 #include <utility>
 
+#define CUSTOM_BACKEND
+
 int main(int argc, char const* argv[])
 {
     std::string file_name = argc <= 1 ? "../examples/test.june" : argv[1];
@@ -42,33 +44,14 @@ int main(int argc, char const* argv[])
     jl::ASTPrinter printer;
     std::cout << printer.print(stmts).str() << std::endl;
 
-    jl::SemanticAnalyzer sm(file_name);
-    // std::println("Type check FINAL result: {}", );
-    //
+    jl::TypeContext type_context;
+    jl::SemanticAnalyzer sm(file_name, type_context);
 
     if (sm.type_check(stmts)) {
-        // jl::Module module(file_name);
-        // module.module().print(llvm::outs(), nullptr);
-
-        jl::LLVMIRGen ir_gen(file_name);
-        // ir_gen.emit(stmts).module().print(llvm::outs(), nullptr);
-
-        std::error_code ec;
-        llvm::raw_fd_ostream file("test.ll", ec);
-        ir_gen.emit(stmts).module().print(file, nullptr);
-
-        file.close();
-
-    } else {
-        std::println("Type  check failed");
-    }
-
-    return 0;
-
-    if (sm.type_check(stmts)) {
+#ifdef CUSTOM_BACKEND
         std::println("{}", printer.print(stmts).str());
 
-        jl::IRGen cg;
+        jl::IRGen cg(type_context);
         auto block = cg.generate(stmts);
         block.stream(std::cout);
 
@@ -76,9 +59,11 @@ int main(int argc, char const* argv[])
 
         for (const auto& data : ir_data) {
             std::println("Fun {}", data.first);
-            for (const auto& [idx, data] : data.second.get()->var_data.get_offset_map()) {
+            for (const auto& [idx, data] :
+                data.second->var_data.get_offset_map()) {
                 const auto& [size, offset, type] = data;
-                std::println("{} - size: {} offset: {} type: {}", idx, size, offset, type ? type.get()->to_str() : "data");
+                std::println("{} - size: {} offset: {} type: {}", idx, size, offset,
+                    type ? type->to_str() : "data");
             }
         }
 
@@ -91,12 +76,22 @@ int main(int argc, char const* argv[])
         file << ss.str();
         file.close();
 
-    } else {
-        std::println("Type check Failed");
-    }
+#else
+        // jl::Module module(file_name);
+        // module.module().print(llvm::outs(), nullptr);
+        jl::LLVMIRGen ir_gen(file_name, type_context);
+        // ir_gen.emit(stmts).module().print(llvm::outs(), nullptr);
 
-    // jl::CodeGen code_gen;
-    // code_gen.generate(expr.get());
+        std::error_code ec;
+        llvm::raw_fd_ostream file("test.ll", ec);
+        ir_gen.emit(stmts).module().print(file, nullptr);
+
+        file.close();
+#endif
+
+    } else {
+        std::println("Type  check failed");
+    }
 
     return 0;
 }

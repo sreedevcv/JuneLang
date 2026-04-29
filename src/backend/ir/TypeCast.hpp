@@ -5,14 +5,13 @@
 #include "backend/value/Variable.hpp"
 
 #include <cstdint>
-#include <memory>
 
 namespace jl {
 namespace ir {
     struct TypeCast : public IR {
         TypeCast(
-            std::unique_ptr<type::Type> from,
-            std::unique_ptr<type::Type> to,
+            const type::Type* from,
+            const type::Type* to,
             value::Variable dest,
             value::Variable source,
             uint32_t line);
@@ -26,8 +25,8 @@ namespace ir {
         value::Variable m_dest;
         value::Variable m_source;
 
-        std::unique_ptr<type::Type> m_from;
-        std::unique_ptr<type::Type> m_to;
+        const type::Type* m_from;
+        const type::Type* m_to;
     };
 }
 }

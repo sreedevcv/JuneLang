@@ -190,7 +190,7 @@ public:
     std::vector<TypeInfo> m_data_types;
     std::optional<TypeInfo> m_return_type;
     std::vector<std::unique_ptr<Stmt>> m_body;
-    std::unique_ptr<type::Type> m_type;
+    const type::Type* m_type;
     bool is_extern;
 
     inline FuncStmt(

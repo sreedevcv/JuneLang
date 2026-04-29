@@ -4,6 +4,7 @@
 #include "Stmt.hpp"
 #include "Value.hpp"
 #include "types/Type.hpp"
+#include "types/TypeContext.hpp"
 
 #include <memory>
 #include <optional>
@@ -15,7 +16,7 @@
 namespace jl {
 class SemanticAnalyzer : IExprVisitor, IStmtVisitor {
 public:
-    SemanticAnalyzer(std::string& file_name);
+    SemanticAnalyzer(std::string& file_name, TypeContext& type_context);
 
     bool type_check(Expr* expr);
     bool type_check(Stmt* stmt);
@@ -23,13 +24,14 @@ public:
 
 private:
     std::string m_file_name = "KLKLKL";
-    std::vector<std::unordered_map<std::string, std::optional<std::unique_ptr<type::Type>>>> m_symbol_table;
+    std::vector<std::unordered_map<std::string, std::optional<const type::Type*>>> m_symbol_table;
     std::stack<const type::Type*> m_func_types;
+    TypeContext& m_type_context;
 
 
     bool is_defined(const std::string& name);
-    std::optional<std::unique_ptr<type::Type>>& get_variable_type(const std::string& name);
-    bool define_variable(const std::string& name, std::optional<std::unique_ptr<type::Type>> type);
+    std::optional<const type::Type*>& get_variable_type(const std::string& name);
+    bool define_variable(const std::string& name, std::optional<const type::Type*> type);
 
     std::any visit_assign_expr(Assign* expr) override;
     std::any visit_binary_expr(Binary* expr) override;

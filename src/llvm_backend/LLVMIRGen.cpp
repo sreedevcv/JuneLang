@@ -22,8 +22,9 @@
 #include <llvm/Support/raw_ostream.h>
 #include <string>
 
-jl::LLVMIRGen::LLVMIRGen(const std::string file_name)
+jl::LLVMIRGen::LLVMIRGen(const std::string file_name, TypeContext& type_context)
     : m_module(file_name)
+    , m_type_context(type_context)
 {
     auto int_type = llvm::Type::getInt64Ty(m_module.ctx());
     m_zero_int = llvm::ConstantInt::get(int_type, 0);
@@ -114,7 +115,7 @@ std::any jl::LLVMIRGen::visit_binary_expr(Binary* expr)
 {
     auto left = emit(expr->m_left);
     auto right = emit(expr->m_right);
-    const auto is_float = static_cast<type::Builtin*>(expr->m_left->m_type.get())->m_primitive == type::Builtin::FLOAT;
+    const auto is_float = static_cast<const type::Builtin*>(expr->m_left->m_type)->m_primitive == type::Builtin::FLOAT;
 
     switch (expr->m_oper.get_tokentype()) {
     case Token::PLUS:
@@ -166,7 +167,7 @@ std::any jl::LLVMIRGen::visit_unary_expr(Unary* expr)
     auto value = emit(expr->m_expr);
     switch (expr->m_oper.get_tokentype()) {
     case Token::MINUS:
-        if (static_cast<type::Builtin*>(expr->m_expr->m_type.get())->m_primitive == type::Builtin::FLOAT)
+        if (static_cast<const type::Builtin*>(expr->m_expr->m_type)->m_primitive == type::Builtin::FLOAT)
             return m_module.builder().CreateFNeg(value);
         return m_module.builder().CreateNeg(value);
     case Token::BANG:
@@ -225,7 +226,7 @@ std::any jl::LLVMIRGen::visit_call_expr(Call* expr)
 std::any jl::LLVMIRGen::visit_jlist_expr(JList* expr)
 {
     auto total_size = expr->m_items.size() + expr->m_extra_item_count.value_or(0);
-    auto list_type = static_cast<type::List*>(expr->m_type.get());
+    auto list_type = static_cast<const type::List*>(expr->m_type);
     auto array_type = llvm::ArrayType::get(list_type->m_elem_type->llvm_type(m_module.ctx()), list_type->m_count);
     auto array_alloca = m_module.builder().CreateAlloca(array_type);
 
@@ -245,7 +246,7 @@ std::any jl::LLVMIRGen::visit_index_get_expr(IndexGet* expr)
 {
     auto list = emit(expr->m_jlist);
     auto elem_idx = emit(expr->m_index_expr);
-    auto list_type = static_cast<type::List*>(expr->m_jlist->m_type.get());
+    auto list_type = static_cast<const type::List*>(expr->m_jlist->m_type);
     auto elem_type = list_type->m_elem_type->llvm_type(m_module.ctx());
     auto addr = m_module.builder().CreateGEP(elem_type, list, elem_idx);
     auto elem = m_module.builder().CreateLoad(elem_type, addr);
@@ -257,7 +258,7 @@ std::any jl::LLVMIRGen::visit_index_set_expr(IndexSet* expr)
     auto list = emit(expr->m_jlist);
     auto elem_idx = emit(expr->m_index_expr);
     auto target = emit(expr->m_value_expr);
-    auto list_type = static_cast<type::List*>(expr->m_jlist->m_type.get());
+    auto list_type = static_cast<const type::List*>(expr->m_jlist->m_type);
     auto elem_type = list_type->m_elem_type->llvm_type(m_module.ctx());
     auto addr = m_module.builder().CreateGEP(elem_type, list, elem_idx);
     auto set = m_module.builder().CreateStore(target, addr);
@@ -342,7 +343,7 @@ std::any jl::LLVMIRGen::visit_func_stmt(FuncStmt* stmt)
     if (exit_block == nullptr) {
         if (stmt->m_return_type) {
             // Find a default value for the return type and then return it, otherwise  mark as unreachable :)
-            auto ret_type = type::from_type_info(stmt->m_return_type.value()).value();
+            auto ret_type = m_type_context.from_type_info(stmt->m_return_type.value()).value();
 
             if (auto ret = ret_type->llvm_default_value(m_module.ctx())) {
                 m_module.builder().CreateRet(ret);

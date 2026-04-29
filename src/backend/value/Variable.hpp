@@ -4,7 +4,6 @@
 #include <cstddef>
 #include <cstdint>
 #include <functional>
-#include <memory>
 #include <string>
 #include <unordered_map>
 
@@ -27,7 +26,7 @@ namespace value {
         struct Data {
             uint32_t size;
             uint32_t offset;
-            std::unique_ptr<type::Type> m_type;
+            const type::Type* m_type;
         };
 
         const std::unordered_map<uint32_t, Data>& get_offset_map() const;

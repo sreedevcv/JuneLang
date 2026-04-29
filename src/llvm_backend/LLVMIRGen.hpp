@@ -3,12 +3,13 @@
 #include "Expr.hpp"
 #include "Stmt.hpp"
 #include "llvm_backend/JuneModule.hpp"
+#include "types/TypeContext.hpp"
 #include <llvm/IR/Value.h>
 
 namespace jl {
 class LLVMIRGen : IExprVisitor, IStmtVisitor {
 public:
-    LLVMIRGen(const std::string file_name);
+    LLVMIRGen(const std::string file_name, TypeContext& type_context);
 
     llvm::Value* emit(const std::unique_ptr<Expr>& expr);
 
@@ -18,6 +19,7 @@ public:
 
 private:
     JuneModule m_module;
+    TypeContext& m_type_context;
     llvm::Value* m_zero_int;
     bool m_function_compilation_started = false;
 
