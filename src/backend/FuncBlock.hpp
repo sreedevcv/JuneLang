@@ -29,23 +29,39 @@ public:
     template <typename T, typename... Args>
     void add_ir(Args&&... args)
     {
-        m_current_func->irs.push_back(std::make_unique<T>(std::forward<Args>(args)...));
+        m_current_block->irs.push_back(std::make_unique<T>(std::forward<Args>(args)...));
+        m_current_block->chain(m_current_block->irs.back().get());
     }
 
     template <typename T>
     void add_ir(T&& ir)
     {
-        m_current_func->irs.push_back(std::make_unique<T>(std::forward<T>(ir)));
+        m_current_block->irs.push_back(std::make_unique<T>(std::forward<T>(ir)));
+        m_current_block->chain(m_current_block->irs.back().get());
     }
 
-    struct FuncData {
+    struct BasicBlock {
         const type::Func* type;
         std::vector<std::unique_ptr<ir::IR>> irs;
         value::VarData var_data;
+        ir::IR* head = nullptr;
+        ir::IR* tail = nullptr;
 
-        FuncData(const type::Func* func_type)
+        BasicBlock(const type::Func* func_type)
             : type(func_type)
         {
+        }
+
+        void chain(ir::IR* ir)
+        {
+            if (head == nullptr) {
+                head = ir;
+                tail = head;
+            } else {
+                ir->prev = tail;
+                tail->next = ir;
+                tail = ir;
+            }
         }
     };
 
@@ -55,18 +71,18 @@ public:
 
     uint32_t get_last_line() const;
 
-    std::unordered_map<std::string, std::unique_ptr<FuncData>> get_func_irs();
+    std::unordered_map<std::string, std::unique_ptr<BasicBlock>> basic_blocks();
 
     std::ostream& stream(std::ostream& in) const;
 
     const std::string& get_current_func_name() const;
 
-    value::VarData* get_var_data();
+    // value::VarData* get_var_data();
 
 private:
-    std::unordered_map<std::string, std::unique_ptr<FuncData>> m_func_datas;
-    std::stack<FuncData*> m_funcs;
-    FuncData* m_current_func = nullptr;
+    std::unordered_map<std::string, std::unique_ptr<BasicBlock>> m_basic_blocks;
+    std::stack<BasicBlock*> m_blks;
+    BasicBlock* m_current_block = nullptr;
     std::string m_current_func_name;
 };
 }

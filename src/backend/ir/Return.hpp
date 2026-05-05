@@ -4,7 +4,6 @@
 #include "backend/value/Variable.hpp"
 
 #include <cstdint>
-#include <memory>
 #include <optional>
 
 namespace jl {

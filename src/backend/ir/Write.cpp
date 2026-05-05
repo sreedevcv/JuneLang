@@ -5,7 +5,7 @@
 jl::ir::Write::Write(
     value::Variable src,
     value::Variable base,
-    value::Variable offset,
+    std::optional<value::Variable> offset,
     uint32_t offset_multiplier,
     uint32_t size,
     uint32_t line)
@@ -20,8 +20,10 @@ jl::ir::Write::Write(
 
 std::string jl::ir::Write::to_str() const
 {
-    return std::format("write {} to {} + {} * {} <- {}",
-        m_size, m_base.to_str(), m_offset.to_str(), m_offset_multiplier, m_src.to_str());
+    // return std::format("write {} to {} + {} * {} <- {}",
+    //     m_size, m_base.to_str(), m_offset.to_str(), m_offset_multiplier, m_src.to_str());
+
+    return std::format("({})[{} x {}] size {} = {}", m_base.to_str(), m_offset ? m_offset->to_str() : "0", m_offset_multiplier, m_size, m_src.to_str());
 }
 
 void jl::ir::Write::accept(IRVisitor& visitor)

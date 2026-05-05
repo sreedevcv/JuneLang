@@ -1,11 +1,8 @@
 #pragma once
 
-#include "TypeInfo.hpp"
 #include <llvm/IR/LLVMContext.h>
 #include <llvm/IR/Type.h>
 #include <llvm/IR/Value.h>
-#include <memory>
-#include <optional>
 #include <string>
 #include <vector>
 

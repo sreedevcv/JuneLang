@@ -7,10 +7,10 @@
 
 namespace jl {
 namespace ir {
-    struct Allocate : public IR {
-        Allocate(value::Variable fat_ptr, value::Variable list, uint32_t elem_size, uint32_t elem_count, uint32_t line);
+    struct AllocateList : public IR {
+        AllocateList(value::Variable fat_ptr, value::Variable list, uint32_t elem_size, uint32_t elem_count, uint32_t line);
 
-        ~Allocate() = default;
+        ~AllocateList() = default;
 
         std::string to_str() const override;
 

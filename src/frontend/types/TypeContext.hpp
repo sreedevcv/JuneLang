@@ -1,5 +1,6 @@
 #pragma once
 
+#include "TypeInfo.hpp"
 #include "types/Type.hpp"
 #include <array>
 #include <cstddef>

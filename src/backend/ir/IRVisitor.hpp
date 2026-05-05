@@ -9,9 +9,11 @@ namespace ir {
     class InitLiteral;
     class DebugPrint;
     class Jump;
+    class CondJump;
     class Unary;
     class Label;
-    class Allocate;
+    class AllocateList;
+    class AllocateVar;
     class Read;
     class Write;
 
@@ -26,11 +28,15 @@ namespace ir {
 
         virtual void visit_jump_ir(ir::Jump& jump) = 0;
 
+        virtual void visit_cond_jump_ir(ir::CondJump& jump) = 0;
+
         virtual void visit_unary_ir(ir::Unary& unary) = 0;
 
         virtual void visit_label_ir(ir::Label& label) = 0;
 
-        virtual void visit_allocate_ir(ir::Allocate& allocate) = 0;
+        virtual void visit_allocate_list_ir(ir::AllocateList& allocate) = 0;
+
+        virtual void visit_allocate_var_ir(ir::AllocateVar& allocate) = 0;
 
         virtual void visit_read_ir(ir::Read& read) = 0;
 

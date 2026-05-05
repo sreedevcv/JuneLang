@@ -134,7 +134,7 @@ std::unique_ptr<jl::Expr> jl::Parser::parse_list()
     }
 
     auto right_brace = consume(Token::RIGHT_BRACE, "Lists should end with '}'");
-    auto jlist = std::make_unique<JList>(std::move(list), std::move(right_brace));
+    auto jlist = std::make_unique<JList>(std::move(list), std::move(right_brace), right_brace.get_line());
     return jlist;
 }
 
@@ -154,7 +154,7 @@ std::unique_ptr<jl::Expr> jl::Parser::equality()
     while (match({ Token::BANG_EQUAL, Token::EQUAL_EQUAL })) {
         Token& oper = previous();
         auto right = comparison();
-        expr = std::make_unique<Binary>(std::move(expr), oper, std::move(right));
+        expr = std::make_unique<Binary>(std::move(expr), oper, std::move(right), oper.get_line());
     }
 
     return expr;
@@ -167,7 +167,7 @@ std::unique_ptr<jl::Expr> jl::Parser::comparison()
     while (match({ Token::GREATER, Token::GREATER_EQUAL, Token::LESS, Token::LESS_EQUAL })) {
         Token& oper = previous();
         auto right = term();
-        expr = std::make_unique<Binary>(std::move(expr), oper, std::move(right));
+        expr = std::make_unique<Binary>(std::move(expr), oper, std::move(right), oper.get_line());
     }
     return expr;
 }
@@ -179,7 +179,7 @@ std::unique_ptr<jl::Expr> jl::Parser::term()
     while (match({ Token::MINUS, Token::PLUS, Token::BIT_AND, Token::BIT_OR, Token::BIT_XOR })) {
         Token& oper = previous();
         auto right = factor();
-        expr = std::make_unique<Binary>(std::move(expr), oper, std::move(right));
+        expr = std::make_unique<Binary>(std::move(expr), oper, std::move(right), oper.get_line());
     }
     return expr;
 }
@@ -191,7 +191,7 @@ std::unique_ptr<jl::Expr> jl::Parser::factor()
     while (match({ Token::SLASH, Token::STAR, Token::PERCENT })) {
         Token& oper = previous();
         auto right = type_cast();
-        expr = std::make_unique<Binary>(std::move(expr), oper, std::move(right));
+        expr = std::make_unique<Binary>(std::move(expr), oper, std::move(right), oper.get_line());
     }
     return expr;
 }
@@ -215,7 +215,7 @@ std::unique_ptr<jl::Expr> jl::Parser::type_cast()
             right = TypeInfo {};
         }
 
-        expr = std::make_unique<TypeCast>(std::move(expr), *right);
+        expr = std::make_unique<TypeCast>(std::move(expr), *right, oper.get_line());
     }
     return expr;
 }
@@ -225,7 +225,7 @@ std::unique_ptr<jl::Expr> jl::Parser::unary()
     if (match({ Token::BANG, Token::MINUS, Token::BIT_NOT })) {
         Token& oper = previous();
         auto right = unary();
-        auto unary_epxr = std::make_unique<Unary>(oper, std::move(right));
+        auto unary_epxr = std::make_unique<Unary>(oper, std::move(right), oper.get_line());
         return unary_epxr;
     }
 
@@ -236,28 +236,28 @@ std::unique_ptr<jl::Expr> jl::Parser::primary()
 {
     if (match({ Token::INT, Token::FLOAT, Token::STRING, Token::FALSE, Token::TRUE, Token::NULL_, Token::CHAR })) {
         Value value = previous().get_value();
-        auto literal = std::make_unique<Literal>(value);
+        auto literal = std::make_unique<Literal>(value, previous().get_line());
         return literal;
     }
     if (match({ Token::THIS })) {
-        auto this_expr = std::make_unique<This>(previous());
+        auto this_expr = std::make_unique<This>(previous(), previous().get_line());
         return this_expr;
     }
     if (match({ Token::IDENTIFIER })) {
-        auto var = std::make_unique<Variable>(previous());
+        auto var = std::make_unique<Variable>(previous(), previous().get_line());
         return var;
     }
     if (match({ Token::LEFT_PAR })) {
         auto expr = expression();
         consume(Token::RIGHT_PAR, "Expected ) after expression");
-        auto grouping = std::make_unique<Grouping>(std::move(expr));
+        auto grouping = std::make_unique<Grouping>(std::move(expr), previous().get_line());
         return grouping;
     }
     if (match({ Token::SUPER })) {
         Token& keyword = previous();
         consume(Token::DOT, "Expected '.' after super");
         Token& method = consume(Token::IDENTIFIER, "Expect superclass method name");
-        auto super = std::make_unique<Super>(keyword, method);
+        auto super = std::make_unique<Super>(keyword, method, previous().get_line());
         return super;
     }
     if (match({ Token::LEFT_BRACE })) {
@@ -284,11 +284,11 @@ std::unique_ptr<jl::Expr> jl::Parser::assignment()
 
         if (dynamic_cast<Variable*>(expr.get())) {
             Token& name = static_cast<Variable*>(expr.get())->m_name;
-            auto assign = std::make_unique<Assign>(std::move(value), name);
+            auto assign = std::make_unique<Assign>(std::move(value), name, name.get_line());
             return assign;
         } else if (dynamic_cast<Get*>(expr.get())) {
             Get* get_expr = static_cast<Get*>(expr.get());
-            auto set = std::make_unique<Set>(get_expr->m_name, std::move(get_expr->m_object), std::move(value));
+            auto set = std::make_unique<Set>(get_expr->m_name, std::move(get_expr->m_object), std::move(value), get_expr->m_line);
             return set;
         } else if (dynamic_cast<IndexGet*>(expr.get())) {
             IndexGet* index_get = static_cast<IndexGet*>(expr.get());
@@ -296,7 +296,7 @@ std::unique_ptr<jl::Expr> jl::Parser::assignment()
                 std::move(index_get->m_jlist),
                 std::move(index_get->m_index_expr),
                 std::move(value),
-                index_get->m_closing_bracket);
+                index_get->m_line);
             return index_set;
         }
 
@@ -330,7 +330,7 @@ std::unique_ptr<jl::Expr> jl::Parser::or_expr()
     while (match({ Token::OR })) {
         Token& oper = previous();
         auto right = and_expr();
-        expr = std::make_unique<Logical>(std::move(expr), oper, std::move(right));
+        expr = std::make_unique<Logical>(std::move(expr), oper, std::move(right), oper.get_line());
     }
 
     return expr;
@@ -343,7 +343,7 @@ std::unique_ptr<jl::Expr> jl::Parser::and_expr()
     while (match({ Token::AND })) {
         Token& oper = previous();
         auto right = equality();
-        expr = std::make_unique<Logical>(std::move(expr), oper, std::move(right));
+        expr = std::make_unique<Logical>(std::move(expr), oper, std::move(right), oper.get_line());
     }
 
     return expr;
@@ -358,11 +358,11 @@ std::unique_ptr<jl::Expr> jl::Parser::call()
             expr = finish_call(std::move(expr));
         } else if (match({ Token::DOT })) {
             Token& name = consume(Token::IDENTIFIER, "Expected property name after '.'");
-            expr = std::make_unique<Get>(name, std::move(expr));
+            expr = std::make_unique<Get>(name, std::move(expr), name.get_line());
         } else if (match({ Token::LEFT_SQUARE })) {
             auto index_expr = or_expr();
             Token& closing_bracket = consume(Token::RIGHT_SQUARE, "Expected closing ] after indexing");
-            expr = std::make_unique<IndexGet>(std::move(expr), std::move(index_expr), closing_bracket);
+            expr = std::make_unique<IndexGet>(std::move(expr), std::move(index_expr), closing_bracket.get_line());
         } else {
             break;
         }
@@ -391,7 +391,7 @@ std::unique_ptr<jl::Expr> jl::Parser::finish_call(std::unique_ptr<Expr> callee)
     }
 
     Token& paren = consume(Token::RIGHT_PAR, "Expected ) after arguments");
-    auto call = std::make_unique<Call>(std::move(callee), paren, std::move(arguments));
+    auto call = std::make_unique<Call>(std::move(callee), paren, std::move(arguments), paren.get_line());
     return call;
 }
 
@@ -404,24 +404,24 @@ std::unique_ptr<jl::Expr> jl::Parser::modify_and_assign(Token::TokenType oper_ty
     if (dynamic_cast<Variable*>(expr.get())) {
         Token& name = static_cast<Variable*>(expr.get())->m_name;
         Token oper_token = Token(oper_type, m_tokens[m_current - 2].get_lexeme(), m_tokens[m_current - 2].get_line());
-        auto oper = std::make_unique<Binary>(std::move(expr), oper_token, std::move(value));
-        auto assign = std::make_unique<Assign>(std::move(oper), name);
+        auto oper = std::make_unique<Binary>(std::move(expr), oper_token, std::move(value), oper_token.get_line());
+        auto assign = std::make_unique<Assign>(std::move(oper), name, name.get_line());
         return assign;
     } else if (dynamic_cast<Get*>(expr.get())) {
         Get* get_expr = static_cast<Get*>(expr.get());
         Token oper_token = Token(oper_type, previous().get_lexeme(), previous().get_line());
-        auto oper = std::make_unique<Binary>(std::move(expr), oper_token, std::move(value));
-        auto set = std::make_unique<Set>(get_expr->m_name, std::move(get_expr->m_object), std::move(oper));
+        auto oper = std::make_unique<Binary>(std::move(expr), oper_token, std::move(value), oper_token.get_line());
+        auto set = std::make_unique<Set>(get_expr->m_name, std::move(get_expr->m_object), std::move(oper), get_expr->m_line);
         return set;
     } else if (dynamic_cast<IndexGet*>(expr.get())) {
         IndexGet* index_get = static_cast<IndexGet*>(expr.get());
         Token oper_token = Token(oper_type, previous().get_lexeme(), previous().get_line());
-        auto oper = std::make_unique<Binary>(std::move(expr), oper_token, std::move(value));
+        auto oper = std::make_unique<Binary>(std::move(expr), oper_token, std::move(value), oper_token.get_line());
         auto index_set = std::make_unique<IndexSet>(
             std::move(index_get->m_jlist),
             std::move(index_get->m_index_expr),
             std::move(oper),
-            index_get->m_closing_bracket);
+            index_get->m_line);
         return index_set;
     }
 
@@ -442,7 +442,7 @@ std::unique_ptr<jl::Expr> jl::Parser::modify_and_assign(Token::TokenType oper_ty
 std::unique_ptr<jl::Stmt> jl::Parser::statement()
 {
     if (match({ Token::LEFT_SQUARE })) {
-        auto block_stmt = std::make_unique<BlockStmt>(block());
+        auto block_stmt = std::make_unique<BlockStmt>(block(), previous().get_line());
         return block_stmt;
     }
     if (match({ Token::PRINT })) {
@@ -480,7 +480,7 @@ std::unique_ptr<jl::Stmt> jl::Parser::declaration()
             return var_declaration();
         }
         if (match({ Token::SEMI_COLON })) {
-            auto empty = std::make_unique<EmptyStmt>();
+            auto empty = std::make_unique<EmptyStmt>(previous().get_line());
             return empty;
         }
         if (match({ Token::EXTERN })) {
@@ -497,7 +497,7 @@ std::unique_ptr<jl::Stmt> jl::Parser::print_statement()
 {
     auto expr = expression();
     auto token = consume(Token::SEMI_COLON, "Expected ; after expression");
-    auto print_stmt = std::make_unique<PrintStmt>(std::move(expr), std::move(token));
+    auto print_stmt = std::make_unique<PrintStmt>(std::move(expr), std::move(token), previous().get_line());
     return print_stmt;
 }
 
@@ -505,7 +505,7 @@ std::unique_ptr<jl::Stmt> jl::Parser::expr_statement()
 {
     auto expr = expression();
     consume(Token::SEMI_COLON, "Expected ; after expression");
-    auto expr_stmt = std::make_unique<ExprStmt>(std::move(expr));
+    auto expr_stmt = std::make_unique<ExprStmt>(std::move(expr), previous().get_line());
     return expr_stmt;
 }
 
@@ -539,7 +539,7 @@ std::unique_ptr<jl::Stmt> jl::Parser::var_declaration(bool for_each)
         consume(Token::SEMI_COLON, "Expected ; after variable declaration");
     }
 
-    auto var = std::make_unique<VarStmt>(name, std::move(initializer), std::move(type_info));
+    auto var = std::make_unique<VarStmt>(name, std::move(initializer), std::move(type_info), previous().get_line());
     return var;
 }
 
@@ -558,7 +558,7 @@ std::unique_ptr<jl::Stmt> jl::Parser::if_stmt()
 
     auto if_stmt = std::make_unique<IfStmt>(
         std::move(condition), std::move(then_branch),
-        std::move(else_branch), std::move(left_par));
+        std::move(else_branch), left_par.get_line());
     return if_stmt;
 }
 
@@ -568,7 +568,7 @@ std::unique_ptr<jl::Stmt> jl::Parser::while_statement()
     auto condition = expression();
     consume(Token::RIGHT_PAR, "Expected ) after onditions in a while block");
     auto body = statement();
-    auto while_stmt = std::make_unique<WhileStmt>(std::move(condition), std::move(body), std::move(left_par));
+    auto while_stmt = std::make_unique<WhileStmt>(std::move(condition), std::move(body), left_par.get_line());
     return while_stmt;
 }
 
@@ -602,7 +602,7 @@ std::unique_ptr<jl::Stmt> jl::Parser::for_statement()
         auto list_expr = call();
         consume(Token::RIGHT_PAR, "Expected ) after all loop clauses");
         auto body = statement();
-        auto for_each = std::make_unique<ForEachStmt>(std::move(*initializer), std::move(list_expr), std::move(body));
+        auto for_each = std::make_unique<ForEachStmt>(std::move(*initializer), std::move(list_expr), std::move(body), left_par.get_line());
         return for_each;
     } else { // Normal For loop
         std::optional<std::unique_ptr<Expr>> condition = std::nullopt;
@@ -620,24 +620,24 @@ std::unique_ptr<jl::Stmt> jl::Parser::for_statement()
         auto body = statement();
 
         if (increment) {
-            auto expr_stmt = std::make_unique<ExprStmt>(std::move(*increment));
+            auto expr_stmt = std::make_unique<ExprStmt>(std::move(*increment), increment.value()->m_line);
             std::vector<std::unique_ptr<Stmt>> stmts;
             stmts.push_back(std::move(body));
             stmts.push_back(std::move(expr_stmt));
-            body = std::make_unique<BlockStmt>(std::move(stmts));
+            body = std::make_unique<BlockStmt>(std::move(stmts), previous().get_line());
         }
         if (!condition) {
             auto true_val = Token::global_true_constant;
-            condition = std::make_unique<Literal>(true_val);
+            condition = std::make_unique<Literal>(true_val, previous().get_line());
         }
 
-        body = std::make_unique<WhileStmt>(std::move(*condition), std::move(body), std::move(left_par));
+        body = std::make_unique<WhileStmt>(std::move(*condition), std::move(body), left_par.get_line());
 
         if (initializer) {
             std::vector<std::unique_ptr<Stmt>> stmts;
             stmts.push_back(std::move(*initializer));
             stmts.push_back(std::move(body));
-            body = std::make_unique<BlockStmt>(std::move(stmts));
+            body = std::make_unique<BlockStmt>(std::move(stmts), previous().get_line());
         }
 
         return body;
@@ -666,7 +666,7 @@ std::unique_ptr<jl::Stmt> jl::Parser::return_statement()
     }
 
     consume(Token::SEMI_COLON, "Expected ; after return");
-    auto return_stmt = std::make_unique<ReturnStmt>(return_token, std::move(expr));
+    auto return_stmt = std::make_unique<ReturnStmt>(std::move(expr), return_token.get_line());
     return return_stmt;
 }
 
@@ -700,7 +700,7 @@ std::unique_ptr<jl::Stmt> jl::Parser::break_statement()
 {
     Token& break_token = previous();
     consume(Token::SEMI_COLON, "Expected ; after break");
-    auto break_stmt = std::make_unique<BreakStmt>(break_token);
+    auto break_stmt = std::make_unique<BreakStmt>(break_token.get_line());
     return break_stmt;
 }
 
@@ -724,7 +724,7 @@ std::unique_ptr<jl::Stmt> jl::Parser::extern_declaration()
     auto june_func = function_declaration();
     consume(Token::SEMI_COLON, "Expected ; after extern declaration");
 
-    auto extern_stmt = std::make_unique<ExternStmt>(extern_token, symbol_name, std::move(june_func));
+    auto extern_stmt = std::make_unique<ExternStmt>(symbol_name, std::move(june_func), extern_token.get_line());
     return extern_stmt;
 }
 
@@ -773,7 +773,7 @@ std::unique_ptr<jl::FuncStmt> jl::Parser::function_declaration()
         }
     }
 
-    auto func = std::make_unique<FuncStmt>(name, parameters, std::move(data_types), return_type);
+    auto func = std::make_unique<FuncStmt>(name, parameters, std::move(data_types), return_type, previous().get_line());
     return func;
 }
 

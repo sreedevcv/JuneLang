@@ -34,7 +34,7 @@ constexpr auto int_list_str = "printf_int_list_str";
 constexpr auto char_list_str = "printf_char_list_str";
 constexpr auto float_list_str = "printf_float_list_str";
 
-jl::x86CodeGen::x86CodeGen(std::unordered_map<std::string, std::unique_ptr<jl::FuncBlock::FuncData>> ir_data)
+jl::x86CodeGen::x86CodeGen(std::unordered_map<std::string, std::unique_ptr<jl::FuncBlock::BasicBlock>> ir_data)
     : m_ir_data(std::move(ir_data))
 {
 }
@@ -138,7 +138,7 @@ std::pair<uint32_t, uint32_t> jl::x86CodeGen::get_size_and_offset(uint32_t id) c
     return { size, offset };
 }
 
-void jl::x86CodeGen::generate(const std::string& func_name, const FuncBlock::FuncData& func_data)
+void jl::x86CodeGen::generate(const std::string& func_name, const FuncBlock::BasicBlock& func_data)
 {
     if (func_data.type->m_param_types.size() > 6) {
         unimplemented("Functions with parameters > 6 not supported");

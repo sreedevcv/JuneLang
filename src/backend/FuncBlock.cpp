@@ -13,8 +13,8 @@ jl::FuncBlock::FuncBlock(const std::string& name, const type::Func* type)
 
 uint32_t jl::FuncBlock::get_last_line() const
 {
-    if (m_current_func->irs.size() > 0) {
-        return m_current_func->irs.back().get()->line();
+    if (m_current_block->irs.size() > 0) {
+        return m_current_block->irs.back().get()->line();
     } else {
         return 0;
     }
@@ -22,7 +22,7 @@ uint32_t jl::FuncBlock::get_last_line() const
 
 std::ostream& jl::FuncBlock::stream(std::ostream& in) const
 {
-    for (const auto& [name, func_info] : m_func_datas) {
+    for (const auto& [name, func_info] : m_basic_blocks) {
         in << name << " : " << func_info->type->to_str() << "\n";
 
         for (const auto& ir : func_info->irs) {
@@ -43,22 +43,22 @@ std::ostream& jl::FuncBlock::stream(std::ostream& in) const
 
 void jl::FuncBlock::push_func(const std::string& name, const type::Func* type)
 {
-    auto func_data = std::make_unique<FuncData>(type);
-    m_funcs.push(func_data.get());
-    m_func_datas.insert({ name, std::move(func_data) });
+    auto func_data = std::make_unique<BasicBlock>(type);
+    m_blks.push(func_data.get());
+    m_basic_blocks.insert({ name, std::move(func_data) });
     m_current_func_name = name;
-    m_current_func = m_funcs.top();
+    m_current_block = m_blks.top();
 }
 
 void jl::FuncBlock::pop_func()
 {
-    m_funcs.pop();
-    m_current_func = m_funcs.top();
+    m_blks.pop();
+    m_current_block = m_blks.top();
 }
 
-std::unordered_map<std::string, std::unique_ptr<jl::FuncBlock::FuncData>> jl::FuncBlock::get_func_irs()
+std::unordered_map<std::string, std::unique_ptr<jl::FuncBlock::BasicBlock>> jl::FuncBlock::basic_blocks()
 {
-    return std::move(m_func_datas);
+    return std::move(m_basic_blocks);
 }
 
 const std::string& jl::FuncBlock::get_current_func_name() const
@@ -68,5 +68,5 @@ const std::string& jl::FuncBlock::get_current_func_name() const
 
 jl::value::VarData* jl::FuncBlock::get_var_data()
 {
-    return &m_funcs.top()->var_data;
+    return &m_blks.top()->var_data;
 }

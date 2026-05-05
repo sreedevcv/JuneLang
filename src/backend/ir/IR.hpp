@@ -18,6 +18,10 @@ namespace ir {
         uint32_t line() const;
 
         uint32_t m_line;
+
+        IR* prev = nullptr;
+
+        IR* next = nullptr;
     };
 }
 }

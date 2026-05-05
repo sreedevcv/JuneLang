@@ -106,7 +106,7 @@ std::any jl::SemanticAnalyzer::visit_binary_expr(Binary* expr)
     if (!type::is_number(left_type) || !type::is_number(right_type)) {
         ErrorHandler::error(
             m_file_name,
-            expr->m_oper.get_line(),
+            expr->m_line,
             std::format("Left: {} and right: {} operands are not numbers", left_type->to_str(), right_type->to_str()).c_str());
         return false;
     }
@@ -128,7 +128,7 @@ std::any jl::SemanticAnalyzer::visit_binary_expr(Binary* expr)
         if (!is_float_allowed_op(expr->m_oper.get_tokentype())) {
             ErrorHandler::error(
                 m_file_name,
-                expr->m_oper.get_line(),
+                expr->m_line,
                 std::format("Operation {} is not allowed for floats", expr->m_oper.get_lexeme()).c_str());
             return false;
         }
@@ -179,7 +179,7 @@ std::any jl::SemanticAnalyzer::visit_unary_expr(Unary* expr)
 
     ErrorHandler::error(
         m_file_name,
-        expr->m_oper.get_line(),
+        expr->m_line,
         std::format("Operation '{}' not permitted for type: {}", expr->m_oper.get_lexeme(), expr->m_expr->m_type->to_str()).c_str());
     return false;
 }
@@ -226,7 +226,7 @@ std::any jl::SemanticAnalyzer::visit_logical_expr(Logical* expr)
     const auto right = expr->m_right.get()->m_type;
 
     if (!is_boolean(left) || !is_boolean(right)) {
-        ErrorHandler::error(m_file_name, expr->m_oper.get_line(),
+        ErrorHandler::error(m_file_name, expr->m_line,
             std::format("Operation: {} is only permitted for booleans, here right: {} and left: {}",
                 expr->m_oper.get_lexeme(),
                 right->to_str(),
@@ -242,7 +242,7 @@ std::any jl::SemanticAnalyzer::visit_logical_expr(Logical* expr)
 std::any jl::SemanticAnalyzer::visit_variable_expr(Variable* expr)
 {
     if (!is_defined(expr->m_name.get_lexeme())) {
-        ErrorHandler::error(m_file_name, expr->m_name.get_line(),
+        ErrorHandler::error(m_file_name, expr->m_line,
             std::format("Variable {} is undefined", expr->m_name.get_lexeme()).c_str());
         return false;
     }
@@ -250,7 +250,7 @@ std::any jl::SemanticAnalyzer::visit_variable_expr(Variable* expr)
     auto& type = get_variable_type(expr->m_name.get_lexeme());
 
     if (!type) {
-        ErrorHandler::error(m_file_name, expr->m_name.get_line(),
+        ErrorHandler::error(m_file_name, expr->m_line,
             std::format("Variable {} is uninitialized", expr->m_name.get_lexeme()).c_str());
         return false;
     }
@@ -266,7 +266,7 @@ std::any jl::SemanticAnalyzer::visit_assign_expr(Assign* expr)
         return false;
 
     if (!is_defined(expr->m_token.get_lexeme())) {
-        ErrorHandler::error(m_file_name, expr->m_token.get_line(),
+        ErrorHandler::error(m_file_name, expr->m_line,
             std::format("Variable {} is undefined", expr->m_token.get_lexeme()).c_str());
         return false;
     }
@@ -274,7 +274,7 @@ std::any jl::SemanticAnalyzer::visit_assign_expr(Assign* expr)
     auto& type = get_variable_type(expr->m_token.get_lexeme());
     const auto void_type = m_type_context.create_builtin(type::Builtin(type::Builtin::VOID));
     if (expr->m_expr->m_type == void_type || (type && type.value() == void_type)) {
-        ErrorHandler::error(m_file_name, expr->m_token.get_line(),
+        ErrorHandler::error(m_file_name, expr->m_line,
             "Assignments involving void values are not allowed");
         return false;
     }
@@ -285,7 +285,7 @@ std::any jl::SemanticAnalyzer::visit_assign_expr(Assign* expr)
         expr->m_type = type.value();
 
         if (type.value()->m_kind == type::Type::LIST) {
-            ErrorHandler::error(m_file_name, expr->m_token.get_line(),
+            ErrorHandler::error(m_file_name, expr->m_line,
                 "Late initializations of lists are not allowed");
             return false;
         }
@@ -299,7 +299,7 @@ std::any jl::SemanticAnalyzer::visit_assign_expr(Assign* expr)
     }
 
     // Variable and expr types do not match
-    ErrorHandler::error(m_file_name, expr->m_token.get_line(),
+    ErrorHandler::error(m_file_name, expr->m_line,
         std::format("Variable {} of type {} cannot be assigned value of type {}",
             expr->m_token.get_lexeme(), type.value()->to_str(),
             expr->m_expr->m_type->to_str())
@@ -317,7 +317,7 @@ std::any jl::SemanticAnalyzer::visit_call_expr(Call* expr)
 
     // If parsed variable is not a function
     if (type->m_kind != type::Type::FUNC) {
-        ErrorHandler::error(m_file_name, expr->m_paren.get_line(),
+        ErrorHandler::error(m_file_name, expr->m_line,
             std::format("Only functions can be called, found type: {}", type->to_str()).c_str());
         return false;
     }
@@ -326,7 +326,7 @@ std::any jl::SemanticAnalyzer::visit_call_expr(Call* expr)
 
     // No. of arguments differ
     if (func->m_param_types.size() != expr->m_arguments.size()) {
-        ErrorHandler::error(m_file_name, expr->m_paren.get_line(),
+        ErrorHandler::error(m_file_name, expr->m_line,
             std::format("Expected {} arguments but found type: {}", func->m_param_types.size(), expr->m_arguments.size()).c_str());
         return false;
     }
@@ -348,7 +348,7 @@ std::any jl::SemanticAnalyzer::visit_call_expr(Call* expr)
             if (list_check)
                 continue;
 
-            ErrorHandler::error(m_file_name, expr->m_paren.get_line(),
+            ErrorHandler::error(m_file_name, expr->m_line,
                 std::format("Expected argument {} to be of type {}  but found type: {}",
                     i + 1, func->m_param_types[i]->to_str(), arg->m_type->to_str())
                     .c_str());
@@ -364,7 +364,7 @@ std::any jl::SemanticAnalyzer::visit_call_expr(Call* expr)
 std::any jl::SemanticAnalyzer::visit_jlist_expr(JList* expr)
 {
     if (expr->m_items.empty()) {
-        ErrorHandler::error(m_file_name, expr->m_right_brace.get_line(), "Empty lists are not allowed");
+        ErrorHandler::error(m_file_name, expr->m_line, "Empty lists are not allowed");
         return false;
     }
 
@@ -385,7 +385,7 @@ std::any jl::SemanticAnalyzer::visit_jlist_expr(JList* expr)
 
         // Make sure following elements have the same type as the first element
         if (item->m_type != list_type->m_elem_type) {
-            ErrorHandler::error(m_file_name, expr->m_right_brace.get_line(),
+            ErrorHandler::error(m_file_name, expr->m_line,
                 std::format("Item at index {} is of type: {} but list is of type: {}",
                     i + 1, item->m_type->to_str(), list_type->m_elem_type->to_str())
                     .c_str());
@@ -405,12 +405,12 @@ std::any jl::SemanticAnalyzer::visit_index_get_expr(IndexGet* expr)
         return false;
     } else if (expr->m_jlist.get()->m_type->m_kind != type::Type::LIST) {
         // Variable/Value not a list, so cannot be indexed
-        ErrorHandler::error(m_file_name, expr->m_closing_bracket.get_line(),
+        ErrorHandler::error(m_file_name, expr->m_line,
             std::format("Cannot index into a value of type: {}", expr->m_jlist->m_type->to_str()).c_str());
         return false;
     } else if (expr->m_index_expr->m_type != int_type) {
         // Attempted to index with a non int value
-        ErrorHandler::error(m_file_name, expr->m_closing_bracket.get_line(),
+        ErrorHandler::error(m_file_name, expr->m_line,
             std::format("Cannot index into a list with value of type: {}, only ints are allowed", expr->m_index_expr->m_type->to_str()).c_str());
         return false;
     } else {
@@ -429,17 +429,17 @@ std::any jl::SemanticAnalyzer::visit_index_set_expr(IndexSet* expr)
         return false;
     } else if (expr->m_jlist.get()->m_type->m_kind != type::Type::LIST) {
         // Variable/Value not a list, so cannot be indexed
-        ErrorHandler::error(m_file_name, expr->m_closing_bracket.get_line(),
+        ErrorHandler::error(m_file_name, expr->m_line,
             std::format("Cannot index into a value of type: {}", expr->m_jlist->m_type->to_str()).c_str());
         return false;
     } else if (expr->m_index_expr->m_type != int_type) {
         // Attempted to index with a non int value
-        ErrorHandler::error(m_file_name, expr->m_closing_bracket.get_line(),
+        ErrorHandler::error(m_file_name, expr->m_line,
             std::format("Cannot index into a list with value of type: {}, only ints are allowed", expr->m_index_expr->m_type->to_str()).c_str());
         return false;
     } else if (expr->m_value_expr->m_type != dynamic_cast<const type::List*>(expr->m_jlist->m_type)->m_elem_type) {
         // LHS and RHS dont match
-        ErrorHandler::error(m_file_name, expr->m_closing_bracket.get_line(),
+        ErrorHandler::error(m_file_name, expr->m_line,
             std::format("Cannot assign value of type: {} to list of type: {}",
                 expr->m_value_expr->m_type->to_str(),
                 expr->m_jlist->m_type->to_str())
@@ -479,7 +479,7 @@ std::any jl::SemanticAnalyzer::visit_var_stmt(VarStmt* stmt)
 
             // Check whether the type exits
             if (!type) {
-                ErrorHandler::error(m_file_name, stmt->m_name.get_line(),
+                ErrorHandler::error(m_file_name, stmt->m_line,
                     std::format("Unrecognized type in var declaration: {}", stmt->m_data_type.value().name).c_str());
                 return false;
             }
@@ -494,7 +494,7 @@ std::any jl::SemanticAnalyzer::visit_var_stmt(VarStmt* stmt)
                 }
 
                 if (lhs->m_count < rhs->m_count) {
-                    ErrorHandler::error(m_file_name, stmt->m_name.get_line(),
+                    ErrorHandler::error(m_file_name, stmt->m_line,
                         std::format("Array initializer has {} items which is more than the declared {} items", rhs->m_count, lhs->m_count).c_str());
                     return false;
                 } else if (lhs->m_count > rhs->m_count) {
@@ -504,7 +504,7 @@ std::any jl::SemanticAnalyzer::visit_var_stmt(VarStmt* stmt)
             } else if (type.value() != rhs_expr->m_type) {
                 // Check whether the defined RHS type and parsed LHS types are the same for all non list types
             error:
-                ErrorHandler::error(m_file_name, stmt->m_name.get_line(),
+                ErrorHandler::error(m_file_name, stmt->m_line,
                     std::format("During var intialization variable {} of type {} cannot be assigned value of type {}",
                         stmt->m_name.get_lexeme(), type.value()->to_str(),
                         rhs_expr->m_type->to_str())
@@ -516,7 +516,7 @@ std::any jl::SemanticAnalyzer::visit_var_stmt(VarStmt* stmt)
         // If RHS is of type void
         const auto void_type = m_type_context.create_builtin(type::Builtin(type::Builtin::VOID));
         if (rhs_expr->m_type == void_type) {
-            ErrorHandler::error(m_file_name, stmt->m_name.get_line(), "Assignments involving void values are not allowed");
+            ErrorHandler::error(m_file_name, stmt->m_line, "Assignments involving void values are not allowed");
             return false;
         }
 
@@ -527,7 +527,7 @@ std::any jl::SemanticAnalyzer::visit_var_stmt(VarStmt* stmt)
 
     // If another variable of same name already exists in the current scope
     if (!define_variable(stmt->m_name.get_lexeme(), final_type)) {
-        ErrorHandler::error(m_file_name, stmt->m_name.get_line(),
+        ErrorHandler::error(m_file_name, stmt->m_line,
             std::format("Redefinition of variable {}", stmt->m_name.get_lexeme()).c_str());
         return false;
     }
@@ -554,7 +554,7 @@ std::any jl::SemanticAnalyzer::visit_if_stmt(IfStmt* stmt)
     result &= type_check(stmt->m_condition.get());
 
     if (result && !type::is_boolean(stmt->m_condition->m_type)) {
-        ErrorHandler::error(m_file_name, stmt->m_if_keyword.get_line(),
+        ErrorHandler::error(m_file_name, stmt->m_line,
             std::format("Condition of if statement should be bool, but found {}", stmt->m_condition->m_type->to_str()).c_str());
         result = false;
     }
@@ -573,7 +573,7 @@ std::any jl::SemanticAnalyzer::visit_while_stmt(WhileStmt* stmt)
     result &= type_check(stmt->m_condition.get());
 
     if (result && !type::is_boolean(stmt->m_condition->m_type)) {
-        ErrorHandler::error(m_file_name, stmt->m_left_par.get_line(),
+        ErrorHandler::error(m_file_name, stmt->m_line,
             std::format("Condition of while statement should be bool, but found {}", stmt->m_condition->m_type->to_str()).c_str());
         result = false;
     }
@@ -612,7 +612,7 @@ std::any jl::SemanticAnalyzer::visit_func_stmt(FuncStmt* stmt)
         auto type = m_type_context.from_type_info(*stmt->m_return_type);
 
         if (!type) {
-            ErrorHandler::error(m_file_name, stmt->m_name.get_line(),
+            ErrorHandler::error(m_file_name, stmt->m_line,
                 std::format("Function {} has unrecognized return type {} ",
                     stmt->m_name.get_lexeme(), stmt->m_return_type->name)
                     .c_str());
@@ -627,7 +627,7 @@ std::any jl::SemanticAnalyzer::visit_func_stmt(FuncStmt* stmt)
     // Create the fucntion type
     auto func_type = m_type_context.create_function(type::Func(std::move(return_type), std::move(param_types)));
     if (is_defined(stmt->m_name.get_lexeme())) {
-        ErrorHandler::error(m_file_name, stmt->m_name.get_line(),
+        ErrorHandler::error(m_file_name, stmt->m_line,
             std::format("Redefinition of variable {}", stmt->m_name.get_lexeme()).c_str());
         return false;
     }
@@ -650,7 +650,7 @@ std::any jl::SemanticAnalyzer::visit_return_stmt(ReturnStmt* stmt)
 {
     auto result = true;
     if (m_func_types.size() == 0) {
-        ErrorHandler::error(m_file_name, stmt->m_keyword.get_line(), "Return can be used only inside functions");
+        ErrorHandler::error(m_file_name, stmt->m_line, "Return can be used only inside functions");
         return false;
     }
 
@@ -669,7 +669,7 @@ std::any jl::SemanticAnalyzer::visit_return_stmt(ReturnStmt* stmt)
     // Defined and parsed types differ
     auto ret_type = static_cast<const type::Func*>(m_func_types.top())->m_return_type;
     if (ret_type != return_type) {
-        ErrorHandler::error(m_file_name, stmt->m_keyword.get_line(),
+        ErrorHandler::error(m_file_name, stmt->m_line,
             std::format("Expedted return type: {}, but found: {}",
                 ret_type->to_str(), return_type->to_str())
                 .c_str());
@@ -686,7 +686,7 @@ std::any jl::SemanticAnalyzer::visit_print_stmt(PrintStmt* stmt)
 
     if (res && kind != type::Type::BUILTIN && kind != type::Type::LIST) {
         ErrorHandler::error(
-            m_file_name, stmt->m_token.get_line(),
+            m_file_name, stmt->m_line,
             std::format("Only primitives and lists can be printed, but found type: {}",
                 stmt->m_expr.get()->m_type->to_str())
                 .c_str());
@@ -697,7 +697,7 @@ std::any jl::SemanticAnalyzer::visit_print_stmt(PrintStmt* stmt)
         const auto list = dynamic_cast<const type::List*>(stmt->m_expr->m_type);
         if (list->m_elem_type->m_kind != type::Type::BUILTIN) {
             ErrorHandler::error(
-                m_file_name, stmt->m_token.get_line(),
+                m_file_name, stmt->m_line,
                 std::format("Expected a list of primitives for printing but fount", list->to_str()).c_str());
             return false;
         }
@@ -731,7 +731,7 @@ bool validate_ptr_arithmetic(jl::Binary* expr, const jl::type::Type* left, const
         if (left->m_kind != type::Type::BUILTIN) {
             ErrorHandler::error(
                 m_file_name,
-                expr->m_oper.get_line(),
+                expr->m_line,
                 std::format("Operation: {} is not permitted for Right: {} (is a pointer) but left: {} (not a pointer)",
                     expr->m_oper.get_lexeme(),
                     right->to_str(),
@@ -741,7 +741,7 @@ bool validate_ptr_arithmetic(jl::Binary* expr, const jl::type::Type* left, const
         } else if (static_cast<const type::Builtin*>(left)->m_primitive != type::Builtin::INT) {
             ErrorHandler::error(
                 m_file_name,
-                expr->m_oper.get_line(),
+                expr->m_line,
                 std::format("Operation: {} is not permitted for Right: {} (is a pointer) but left: {} (not a int)",
                     expr->m_oper.get_lexeme(),
                     right->to_str(),
@@ -758,7 +758,7 @@ bool validate_ptr_arithmetic(jl::Binary* expr, const jl::type::Type* left, const
         if (right->m_kind != type::Type::BUILTIN) {
             ErrorHandler::error(
                 m_file_name,
-                expr->m_oper.get_line(),
+                expr->m_line,
                 std::format("Operation: {} is not permitted for left: {} (is a pointer) and right: {} (not a pointer)",
                     expr->m_oper.get_lexeme(),
                     left->to_str(),
@@ -768,7 +768,7 @@ bool validate_ptr_arithmetic(jl::Binary* expr, const jl::type::Type* left, const
         } else if (static_cast<const type::Builtin*>(right)->m_primitive != type::Builtin::INT) {
             ErrorHandler::error(
                 m_file_name,
-                expr->m_oper.get_line(),
+                expr->m_line,
                 std::format("Operation: {} is not permitted for left: {} (is a pointer) and right: {} (not a int)",
                     expr->m_oper.get_lexeme(),
                     left->to_str(),

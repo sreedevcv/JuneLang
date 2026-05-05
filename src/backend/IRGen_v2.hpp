@@ -1,32 +1,36 @@
 #pragma once
 
 #include "Expr.hpp"
+#include "Function.hpp"
+#include "Module.hpp"
 #include "Stmt.hpp"
 #include "Value.hpp"
 #include "backend/SemanticBlock.hpp"
-#include "backend/FuncBlock.hpp"
+// #include "backend/FuncBlock.hpp"
 #include "backend/LiteralValue.hpp"
 #include "backend/ir/InitLiteral.hpp"
 #include "backend/value/Variable.hpp"
 #include "types/TypeContext.hpp"
 
+#include <cstdint>
 #include <memory>
+#include <stack>
 #include <unordered_map>
 
 namespace jl {
-class IRGen : IExprVisitor, IStmtVisitor {
+class IRGenv2 : IExprVisitor, IStmtVisitor {
 public:
-    IRGen(TypeContext& type_context);
+    IRGenv2(TypeContext& type_context);
 
-    FuncBlock generate(Expr* expr);
-    FuncBlock generate(std::vector<std::unique_ptr<jl::Stmt>>& stmts);
+    Module generate(Expr* expr);
+    Module generate(std::vector<std::unique_ptr<jl::Stmt>>& stmts);
 
 private:
     TypeContext& m_type_context;
 
     SemanticBlock* m_block;
 
-    FuncBlock m_func;
+    Module m_module;
 
     value::Variable emit(Expr* expr);
 
@@ -39,12 +43,12 @@ private:
     void emit(std::vector<std::unique_ptr<Stmt>>& stmts);
 
     template <typename T>
-    jl::value::Variable add_literal_ir(Value value, const type::Type* size)
+    jl::value::Variable add_literal_ir(Value value, const type::Type* size, uint32_t line)
     {
         const auto val = std::get<T>(value);
         const auto var = m_block->create_varaible(size);
         auto literal = std::make_unique<LiteralValue>(val);
-        m_func.add_ir<ir::InitLiteral>(std::move(literal), var, m_func.get_last_line());
+        m_module.current_function()->add_ir<ir::InitLiteral>(std::move(literal), var, line);
         return var;
     }
 

@@ -5,8 +5,10 @@
 #include "TypeInfo.hpp"
 #include "types/Type.hpp"
 
+#include <cstdint>
 #include <memory>
 #include <optional>
+#include <sys/types.h>
 #include <utility>
 #include <vector>
 
@@ -45,6 +47,12 @@ public:
 
 class Stmt {
 public:
+    uint32_t m_line;
+    inline Stmt(uint32_t line)
+        : m_line(line)
+    {
+    }
+
     virtual std::any accept(IStmtVisitor& visitor) = 0;
     virtual ~Stmt() = default;
 };
@@ -53,8 +61,9 @@ class ExprStmt : public Stmt {
 public:
     std::unique_ptr<Expr> m_expr;
 
-    inline ExprStmt(std::unique_ptr<Expr> expr)
-        : m_expr(std::move(expr))
+    inline ExprStmt(std::unique_ptr<Expr> expr, uint32_t line)
+        : Stmt(line)
+        , m_expr(std::move(expr))
     {
     }
 
@@ -71,8 +80,9 @@ public:
     std::unique_ptr<Expr> m_expr;
     Token m_token;
 
-    inline PrintStmt(std::unique_ptr<Expr> expr, Token token)
-        : m_expr(std::move(expr))
+    inline PrintStmt(std::unique_ptr<Expr> expr, Token token, uint32_t line)
+        : Stmt(line)
+        , m_expr(std::move(expr))
         , m_token(std::move(token))
     {
     }
@@ -91,8 +101,9 @@ public:
     std::optional<std::unique_ptr<Expr>> m_initializer;
     std::optional<TypeInfo> m_data_type;
 
-    inline VarStmt(Token& name, std::optional<std::unique_ptr<Expr>> initializer, std::optional<TypeInfo> data_type)
-        : m_name(std::move(name))
+    inline VarStmt(Token& name, std::optional<std::unique_ptr<Expr>> initializer, std::optional<TypeInfo> data_type, uint32_t line)
+        : Stmt(line)
+        , m_name(std::move(name))
         , m_initializer(std::move(initializer))
         , m_data_type(std::move(data_type))
     {
@@ -110,8 +121,9 @@ class BlockStmt : public Stmt {
 public:
     std::vector<std::unique_ptr<Stmt>> m_statements;
 
-    inline BlockStmt(std::vector<std::unique_ptr<Stmt>> statements)
-        : m_statements(std::move(statements))
+    inline BlockStmt(std::vector<std::unique_ptr<Stmt>> statements, uint32_t line)
+        : Stmt(line)
+        , m_statements(std::move(statements))
     {
     }
 
@@ -125,7 +137,10 @@ public:
 
 class EmptyStmt : public Stmt {
 public:
-    EmptyStmt() = default;
+    EmptyStmt(uint32_t line)
+        : Stmt(line)
+    {
+    }
 
     inline virtual std::any accept(IStmtVisitor& visitor) override
     {
@@ -140,17 +155,16 @@ public:
     std::unique_ptr<Expr> m_condition;
     std::unique_ptr<Stmt> m_then_stmt;
     std::optional<std::unique_ptr<Stmt>> m_else_stmt;
-    Token m_if_keyword;
 
     inline IfStmt(
         std::unique_ptr<Expr> condition,
         std::unique_ptr<Stmt> then_stmt,
         std::optional<std::unique_ptr<Stmt>> else_stmt,
-        Token if_keyword)
-        : m_condition(std::move(condition))
+        uint32_t line)
+        : Stmt(line)
+        , m_condition(std::move(condition))
         , m_then_stmt(std::move(then_stmt))
         , m_else_stmt(std::move(else_stmt))
-        , m_if_keyword(std::move(if_keyword))
     {
     }
 
@@ -166,12 +180,11 @@ class WhileStmt : public Stmt {
 public:
     std::unique_ptr<Expr> m_condition;
     std::unique_ptr<Stmt> m_body;
-    Token m_left_par;
 
-    inline WhileStmt(std::unique_ptr<Expr> condition, std::unique_ptr<Stmt> body, Token left_par)
-        : m_condition(std::move(condition))
+    inline WhileStmt(std::unique_ptr<Expr> condition, std::unique_ptr<Stmt> body, uint32_t line)
+        : Stmt(line)
+        , m_condition(std::move(condition))
         , m_body(std::move(body))
-        , m_left_par(std::move(left_par))
     {
     }
 
@@ -198,8 +211,9 @@ public:
         std::vector<Token*>& params,
         std::vector<TypeInfo> data_types,
         std::optional<TypeInfo> return_type,
-        std::vector<std::unique_ptr<Stmt>> body)
-        : m_name(std::move(name))
+        std::vector<std::unique_ptr<Stmt>> body, uint32_t line)
+        : Stmt(line)
+        , m_name(std::move(name))
         , m_params(params)
         , m_data_types(std::move(data_types))
         , m_return_type(return_type)
@@ -212,8 +226,9 @@ public:
         Token name,
         std::vector<Token*>& params,
         std::vector<TypeInfo> data_types,
-        std::optional<TypeInfo> return_type)
-        : m_name(std::move(name))
+        std::optional<TypeInfo> return_type, uint32_t line)
+        : Stmt(line)
+        , m_name(std::move(name))
         , m_params(params)
         , m_data_types(std::move(data_types))
         , m_return_type(return_type)
@@ -231,11 +246,10 @@ public:
 
 class ReturnStmt : public Stmt {
 public:
-    Token m_keyword;
     std::optional<std::unique_ptr<Expr>> m_expr;
 
-    inline ReturnStmt(Token& keyword, std::optional<std::unique_ptr<Expr>> expr)
-        : m_keyword(std::move(keyword))
+    inline ReturnStmt(std::optional<std::unique_ptr<Expr>> expr, uint32_t line)
+        : Stmt(line)
         , m_expr(std::move(expr))
     {
     }
@@ -254,8 +268,9 @@ public:
     std::unique_ptr<Variable> m_super_class;
     std::vector<std::unique_ptr<FuncStmt>> m_methods;
 
-    inline ClassStmt(Token& name, std::unique_ptr<Variable> super_class, std::vector<std::unique_ptr<FuncStmt>> methods)
-        : m_name(std::move(name))
+    inline ClassStmt(Token& name, std::unique_ptr<Variable> super_class, std::vector<std::unique_ptr<FuncStmt>> methods, uint32_t line)
+        : Stmt(line)
+        , m_name(std::move(name))
         , m_super_class(std::move(super_class))
         , m_methods(std::move(methods))
     {
@@ -275,8 +290,9 @@ public:
     std::unique_ptr<Expr> m_list_expr;
     std::unique_ptr<Stmt> m_body;
 
-    inline ForEachStmt(std::unique_ptr<Stmt> var_declaration, std::unique_ptr<Expr> list_expr, std::unique_ptr<Stmt> body)
-        : m_var_declaration(std::move(var_declaration))
+    inline ForEachStmt(std::unique_ptr<Stmt> var_declaration, std::unique_ptr<Expr> list_expr, std::unique_ptr<Stmt> body, uint32_t line)
+        : Stmt(line)
+        , m_var_declaration(std::move(var_declaration))
         , m_list_expr(std::move(list_expr))
         , m_body(std::move(body))
     {
@@ -292,10 +308,8 @@ public:
 
 class BreakStmt : public Stmt {
 public:
-    Token m_break_token;
-
-    inline BreakStmt(Token& break_token)
-        : m_break_token(std::move(break_token))
+    inline BreakStmt(uint32_t line)
+        : Stmt(line)
     {
     }
 
@@ -309,12 +323,11 @@ public:
 
 class ExternStmt : public Stmt {
 public:
-    Token& m_extern_token;
     Token& m_symbol_name;
     std::unique_ptr<FuncStmt> m_june_func;
 
-    inline ExternStmt(Token& extern_token, Token& symbol_name, std::unique_ptr<FuncStmt> june_func)
-        : m_extern_token(extern_token)
+    inline ExternStmt(Token& symbol_name, std::unique_ptr<FuncStmt> june_func, uint32_t line)
+        : Stmt(line)
         , m_symbol_name(symbol_name)
         , m_june_func(std::move(june_func))
     {

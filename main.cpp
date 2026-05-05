@@ -2,8 +2,8 @@
 #include "ErrorHandler.hpp"
 #include "Lexer.hpp"
 #include "Parser.hpp"
-#include "backend/IRGen.hpp"
-#include "codegen/x86CodeGen.hpp"
+#include "backend/IRGen_v2.hpp"
+// #include "codegen/x86CodeGen.hpp"
 #include "frontend/SemanticAnalysis.hpp"
 #include "llvm_backend/JuneModule.hpp"
 #include "llvm_backend/LLVMIRGen.hpp"
@@ -51,30 +51,33 @@ int main(int argc, char const* argv[])
 #ifdef CUSTOM_BACKEND
         std::println("{}", printer.print(stmts).str());
 
-        jl::IRGen cg(type_context);
-        auto block = cg.generate(stmts);
-        block.stream(std::cout);
+        jl::IRGenv2 cg(type_context);
+        auto module = cg.generate(stmts);
+        // module.stream(std::cout);
 
-        auto ir_data = block.get_func_irs();
+        std::println("Functions: ");
+        std::cout << module;
 
-        for (const auto& data : ir_data) {
-            std::println("Fun {}", data.first);
-            for (const auto& [idx, data] :
-                data.second->var_data.get_offset_map()) {
-                const auto& [size, offset, type] = data;
-                std::println("{} - size: {} offset: {} type: {}", idx, size, offset,
-                    type ? type->to_str() : "data");
-            }
-        }
+        // auto ir_data = module.basic_blocks();
 
-        jl::x86CodeGen codegen(std::move(ir_data));
-        const auto ss = codegen.generate();
+        // for (const auto& data : ir_data) {
+        //     std::println("Fun {}", data.first);
+        //     for (const auto& [idx, data] :
+        //         data.second->var_data.get_offset_map()) {
+        //         const auto& [size, offset, type] = data;
+        //         std::println("{} - size: {} offset: {} type: {}", idx, size, offset,
+        //             type ? type->to_str() : "data");
+        //     }
+        // }
 
-        std::println("{}", ss.str());
+        // jl::x86CodeGen codegen(std::move(ir_data));
+        // const auto ss = codegen.generate();
 
-        std::ofstream file("test.asm");
-        file << ss.str();
-        file.close();
+        // std::println("{}", ss.str());
+
+        // std::ofstream file("test.asm");
+        // file << ss.str();
+        // file.close();
 
 #else
         // jl::Module module(file_name);

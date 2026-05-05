@@ -16,17 +16,17 @@
 namespace jl {
 class x86CodeGen : ir::IRVisitor {
 public:
-    x86CodeGen(std::unordered_map<std::string, std::unique_ptr<FuncBlock::FuncData>> ir_data);
+    x86CodeGen(std::unordered_map<std::string, std::unique_ptr<FuncBlock::BasicBlock>> ir_data);
 
     std::stringstream generate();
 
 private:
-    std::unordered_map<std::string, std::unique_ptr<FuncBlock::FuncData>> m_ir_data;
+    std::unordered_map<std::string, std::unique_ptr<FuncBlock::BasicBlock>> m_ir_data;
 
     std::stringstream m_out;
     std::stringstream m_data_section_out;
 
-    void generate(const std::string& func_name, const FuncBlock::FuncData& func_data);
+    void generate(const std::string& func_name, const FuncBlock::BasicBlock& func_data);
 
     struct VarInfo {
         uint32_t size;
@@ -67,7 +67,7 @@ private:
 
     void visit_label_ir(ir::Label& label) override;
 
-    void visit_allocate_ir(ir::Allocate& allocate) override;
+    void visit_allocate_ir(ir::AllocateList& allocate) override;
 
     void visit_read_ir(ir::Read& read) override;
 
@@ -115,7 +115,7 @@ private:
         { ir::Binary::BANG_EQUAL, { "setne", "setne" } },
     };
 
-    const FuncBlock::FuncData* m_current_func;
+    const FuncBlock::BasicBlock* m_current_func;
     const std::string* m_current_func_name;
 };
 }

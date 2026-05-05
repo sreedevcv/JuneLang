@@ -278,11 +278,11 @@ std::any jl::Resolver::visit_func_stmt(FuncStmt* stmt)
 std::any jl::Resolver::visit_return_stmt(ReturnStmt* stmt)
 {
     if (m_current_function_type == FunctionType::NONE) {
-        ErrorHandler::error(m_file_name, "resolving", "return statement", stmt->m_keyword.get_line(), "Return statement should be inside a function", 0);
+        ErrorHandler::error(m_file_name, "resolving", "return statement", stmt->m_line, "Return statement should be inside a function", 0);
     }
     if (stmt->m_expr != nullptr) {
         if (m_current_function_type == FunctionType::INITIALIZER) {
-            ErrorHandler::error(m_file_name, "resolving", "return", stmt->m_keyword.get_line(), "Can't return a value from an initializer", 0);
+            ErrorHandler::error(m_file_name, "resolving", "return", stmt->m_line, "Can't return a value from an initializer", 0);
         }
         resolve(stmt->m_expr->get());
     }
@@ -347,7 +347,7 @@ std::any jl::Resolver::visit_for_each_stmt(ForEachStmt* stmt)
 std::any jl::Resolver::visit_break_stmt(BreakStmt* stmt)
 {
     if (m_current_loop_type == LoopType::NONE) {
-        ErrorHandler::error(m_file_name, "resolving", "break statement", stmt->m_break_token.get_line(), "Break statement should be inside a loop", 0);
+        ErrorHandler::error(m_file_name, "resolving", "break statement", stmt->m_line, "Break statement should be inside a loop", 0);
     }
     return nullptr;
 }

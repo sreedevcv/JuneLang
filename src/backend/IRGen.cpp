@@ -66,7 +66,7 @@ jl::value::Variable jl::IRGen::emit(Expr* expr)
 
     // Insert typecast ir here
     if (expr->m_cast_to) {
-        auto dest = m_block->create_varaible(m_func.get_current_func_name(), expr->m_cast_to.value());
+        auto dest = m_block->create_varaible(expr->m_cast_to.value());
 
         m_func.add_ir<ir::TypeCast>(
             expr->m_type,
@@ -95,7 +95,7 @@ void jl::IRGen::emit(std::vector<std::unique_ptr<Stmt>>& stmts)
 
 void jl::IRGen::push_block()
 {
-    m_env.push(Block(m_block, m_func.get_var_data()));
+    m_env.push(SemanticBlock(m_block, m_func.get_var_data()));
     m_block = &m_env.top();
 }
 
@@ -188,7 +188,7 @@ std::any jl::IRGen::visit_binary_expr(Binary* expr)
 
     const auto operand_a = emit(expr->m_left.get());
     const auto operand_b = emit(expr->m_right.get());
-    const auto dest = m_block->create_varaible(m_func.get_current_func_name(), expr->m_type);
+    const auto dest = m_block->create_varaible(expr->m_type);
     const auto is_float = dynamic_cast<const type::Builtin*>(expr->m_type)->m_primitive == type::Builtin::FLOAT;
     m_func.add_ir<ir::Binary>(dest, operand_a, operand_b, operation, is_float, expr->m_oper.get_line());
 
@@ -219,7 +219,7 @@ std::any jl::IRGen::visit_unary_expr(Unary* expr)
     }
 
     const auto source = emit(expr->m_expr.get());
-    const auto dest = m_block->create_varaible(m_func.get_current_func_name(), expr->m_type);
+    const auto dest = m_block->create_varaible(expr->m_type);
     m_func.add_ir<ir::Unary>(dest, source, operation, expr->m_oper.get_line());
     return dest;
 }
@@ -240,9 +240,9 @@ std::any jl::IRGen::visit_literal_expr(Literal* expr)
         return add_literal_ir<char>(value, type);
     case Type::STR: {
         auto& str = std::get<std::string>(value);
-        const auto ptr_var = m_block->create_varaible(m_func.get_current_func_name(), expr->m_type);
+        const auto ptr_var = m_block->create_varaible(expr->m_type);
         // Should I align the stack allocation to 16 bytes??
-        const auto list_var = m_block->allocate_space(m_func.get_current_func_name(), str.size());
+        const auto list_var = m_block->allocate_space(str.size(), expr->m_type);
         auto allocate_ir = ir::Allocate(ptr_var, list_var, 1, str.size(), m_func.get_last_line());
         allocate_ir.set_data(str.data(), str.size());
         m_func.add_ir(std::move(allocate_ir));
@@ -272,7 +272,7 @@ std::any jl::IRGen::visit_logical_expr(Logical* expr)
         operation = ir::Binary::LOG_OR;
     }
 
-    const auto dest = m_block->create_varaible(m_func.get_current_func_name(), expr->m_type);
+    const auto dest = m_block->create_varaible(expr->m_type);
     const auto operand_a = emit(expr->m_left.get());
     const auto operand_b = emit(expr->m_right.get());
     const auto is_float = dynamic_cast<const type::Builtin*>(expr->m_type)->m_primitive == type::Builtin::FLOAT;
@@ -290,7 +290,7 @@ std::any jl::IRGen::visit_call_expr(Call* expr)
     }
 
     const auto callee = emit(expr->m_callee.get());
-    const auto dest = m_block->create_varaible(m_func.get_current_func_name(), expr->m_type);
+    const auto dest = m_block->create_varaible(expr->m_type);
 
     m_func.add_ir<ir::Call>(m_func_vars.at(callee), std::move(args), dest, expr->m_paren.get_line());
 
@@ -303,8 +303,8 @@ std::any jl::IRGen::visit_jlist_expr(JList* expr)
     const auto elem_count = expr->m_items.size() + expr->m_extra_item_count.value_or(0);
     const auto elem_size = list_type->m_elem_type->size();
     const auto total_size = elem_count * elem_size;
-    const auto ptr_var = m_block->create_varaible(m_func.get_current_func_name(), list_type);
-    const auto list_var = m_block->allocate_space(m_func.get_current_func_name(), total_size);
+    const auto ptr_var = m_block->create_varaible(list_type);
+    const auto list_var = m_block->allocate_space(total_size, list_type->m_elem_type);
     auto allocate_ir = ir::Allocate(ptr_var, list_var, elem_size, elem_count, m_func.get_last_line());
 
     // allocate_ir.set_data(expr->m_items.data(), expr->m_items.size() * list_type->m_elem_type->size());
@@ -316,7 +316,7 @@ std::any jl::IRGen::visit_jlist_expr(JList* expr)
         auto& elem = expr->m_items[i];
         const auto elem_var = emit(elem.get());
         // Create a var for storing the offset to the item
-        const auto offset = m_block->create_varaible(m_func.get_current_func_name(), &int_type);
+        const auto offset = m_block->create_varaible(&int_type);
         // Move the offset value(i) to a literal
         m_func.add_ir<ir::InitLiteral>(
             std::make_unique<LiteralValue>(i),
@@ -340,7 +340,7 @@ std::any jl::IRGen::visit_index_get_expr(IndexGet* expr)
     const auto list_var = emit(expr->m_jlist.get());
     const auto offset_var = emit(expr->m_index_expr.get());
     const auto size = expr->m_type->size();
-    const auto dest = m_block->create_varaible(m_func.get_current_func_name(), expr->m_type);
+    const auto dest = m_block->create_varaible(expr->m_type);
 
     m_func.add_ir<ir::Read>(dest, list_var, offset_var, size, size, expr->m_closing_bracket.get_line());
 
@@ -408,15 +408,12 @@ std::any jl::IRGen::visit_var_stmt(VarStmt* stmt)
 {
     if (stmt->m_initializer) {
         const auto src = emit(stmt->m_initializer->get());
-        const auto dest = m_block->create_named_variable(
-            m_func.get_current_func_name(),
-            stmt->m_name.get_lexeme(),
-            stmt->m_initializer->get()->m_type);
+        const auto dest = m_block->create_named_variable(stmt->m_name.get_lexeme(), stmt->m_initializer->get()->m_type);
         m_func.add_ir<ir::Move>(src, dest, stmt->m_name.get_line());
     } else {
         // Note::Right now we will add it as 0, it will be replaced with the actual size
         // during assignments
-        m_block->create_named_variable(m_func.get_current_func_name(), stmt->m_name.get_lexeme(), 0);
+        m_block->create_named_variable(stmt->m_name.get_lexeme(), 0);
     }
 
     return {};
@@ -487,10 +484,7 @@ std::any jl::IRGen::visit_while_stmt(WhileStmt* stmt)
 
 std::any jl::IRGen::visit_func_stmt(FuncStmt* stmt)
 {
-    const auto var = m_block->create_named_variable(
-        m_func.get_current_func_name(),
-        stmt->m_name.get_lexeme(),
-        stmt->m_type);
+    const auto var = m_block->create_named_variable(stmt->m_name.get_lexeme(), stmt->m_type);
     m_func_vars.insert({ var, stmt->m_name.get_lexeme() });
 
     // Upcast unique ptr to Func from Type
@@ -502,7 +496,7 @@ std::any jl::IRGen::visit_func_stmt(FuncStmt* stmt)
     // Add new params to the block
     for (uint32_t i = 0; i < stmt->m_params.size(); i++) {
         auto param_type = m_type_context.from_type_info(stmt->m_data_types[i]);
-        m_block->create_named_variable(m_func.get_current_func_name(), stmt->m_params[i]->get_lexeme(), param_type.value());
+        m_block->create_named_variable(stmt->m_params[i]->get_lexeme(), param_type.value());
     }
 
     // Compile the body

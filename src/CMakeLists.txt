@@ -11,10 +11,14 @@ add_library(JuneInterpreter
     frontend/types/Type.cpp
     frontend/types/TypeContext.cpp
     ArgParser.cpp
-    backend/Block.cpp
-    backend/FuncBlock.cpp
-    backend/IRGen.cpp
+    backend/SemanticBlock.cpp
+    backend/BasicBlock.cpp
+    # backend/FuncBlock.cpp
+    # backend/IRGen.cpp
     backend/LiteralValue.cpp
+    backend/Module.cpp
+    backend/Function.cpp
+    backend/IRGen_v2.cpp
     backend/ir/IR.cpp
     backend/ir/Move.cpp
     backend/ir/InitLiteral.cpp
@@ -22,15 +26,17 @@ add_library(JuneInterpreter
     backend/ir/Unary.cpp
     backend/ir/Binary.cpp
     backend/ir/Jump.cpp
+    backend/ir/ConditionalJump.cpp
     backend/ir/Return.cpp
     backend/ir/Call.cpp
     backend/ir/DebugPrint.cpp
-    backend/ir/Allocate.cpp
+    backend/ir/AllocateList.cpp
+    backend/ir/AllocateVar.cpp
     backend/ir/Read.cpp
     backend/ir/Write.cpp
     backend/value/Integer.cpp
     backend/value/Variable.cpp
-    backend/codegen/x86CodeGen.cpp
+    # backend/codegen/x86CodeGen.cpp
 
     llvm_backend/JuneModule.cpp
     llvm_backend/LLVMIRGen.cpp

@@ -101,7 +101,7 @@ jl::type::Pointer::Pointer(const Type* pointee)
 
 std::string jl::type::Pointer::to_str() const
 {
-    return "Pointer";
+    return "*" + m_pointee->to_str();
 }
 
 uint32_t jl::type::Pointer::size() const

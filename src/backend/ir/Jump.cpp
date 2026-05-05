@@ -1,37 +1,20 @@
 #include "Jump.hpp"
 #include <string>
+#include "BasicBlock.hpp"
 
-jl::ir::Jump::Jump(uint32_t label, std::optional<value::Variable> condition, uint32_t line)
+jl::ir::Jump::Jump(BasicBlock* target, uint32_t line)
     : IR(line)
-    , m_label(label)
-    , m_condition(condition)
+    , m_target(target)
 {
 }
 
 std::string jl::ir::Jump::to_str() const
 {
-    return "jump to label: " + std::to_string(m_label) + (m_condition ? " if " + m_condition.value().to_str() : "");
+    return "jump " + m_target->get_name();
 }
 
 void jl::ir::Jump::accept(IRVisitor& visitor)
 {
     visitor.visit_jump_ir(*this);
 
-}
-
-jl::ir::Label::Label(uint32_t value, uint32_t line)
-	: IR(line)
-	, m_value(value)
-{
-
-}
-
-std::string jl::ir::Label::to_str() const
-{
-    return "label: " + std::to_string(m_value);
-}
-
-void jl::ir::Label::accept(IRVisitor& visitor)
-{
-    visitor.visit_label_ir(*this);
 }

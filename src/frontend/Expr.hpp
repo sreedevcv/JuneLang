@@ -55,6 +55,12 @@ class Expr {
 public:
     const type::Type* m_type = nullptr;
     std::optional<const type::Type*> m_cast_to = std::nullopt;
+    uint32_t m_line;
+
+    inline Expr(uint32_t line)
+        : m_line(line)
+    {
+    }
 
     virtual std::any accept(IExprVisitor& visitor) = 0;
     virtual ~Expr() = default;
@@ -64,8 +70,9 @@ class Variable : public Expr {
 public:
     Token m_name;
 
-    inline Variable(Token& name)
-        : m_name(std::move(name))
+    inline Variable(Token& name, uint32_t line)
+        : Expr(line)
+        , m_name(std::move(name))
     {
     }
 
@@ -82,8 +89,9 @@ public:
     std::unique_ptr<Expr> m_expr;
     Token m_token;
 
-    inline Assign(std::unique_ptr<Expr> expr, Token& token)
-        : m_expr(std::move(expr))
+    inline Assign(std::unique_ptr<Expr> expr, Token& token, uint32_t line)
+        : Expr(line)
+        , m_expr(std::move(expr))
         , m_token(std::move(token))
     {
     }
@@ -102,8 +110,9 @@ public:
     Token m_oper;
     std::unique_ptr<Expr> m_right;
 
-    inline Binary(std::unique_ptr<Expr> left, Token& oper, std::unique_ptr<Expr> right)
-        : m_left(std::move(left))
+    inline Binary(std::unique_ptr<Expr> left, Token& oper, std::unique_ptr<Expr> right, uint32_t line)
+        : Expr(line)
+        , m_left(std::move(left))
         , m_right(std::move(right))
         , m_oper(std::move(oper))
     {
@@ -121,8 +130,9 @@ class Grouping : public Expr {
 public:
     std::unique_ptr<Expr> m_expr;
 
-    inline Grouping(std::unique_ptr<Expr> expr)
-        : m_expr(std::move(expr))
+    inline Grouping(std::unique_ptr<Expr> expr, uint32_t line)
+        : Expr(line)
+        , m_expr(std::move(expr))
     {
     }
     inline virtual std::any accept(IExprVisitor& visitor) override
@@ -137,8 +147,9 @@ class Literal : public Expr {
 public:
     Value m_value;
 
-    inline Literal(Value& value)
-        : m_value(std::move(value))
+    inline Literal(Value& value, uint32_t line)
+        : Expr(line)
+        , m_value(std::move(value))
     {
     }
 
@@ -155,8 +166,9 @@ public:
     std::unique_ptr<Expr> m_expr;
     Token m_oper;
 
-    inline Unary(Token oper, std::unique_ptr<Expr> expr)
-        : m_expr(std::move(expr))
+    inline Unary(Token oper, std::unique_ptr<Expr> expr, uint32_t line)
+        : Expr(line)
+        , m_expr(std::move(expr))
         , m_oper(std::move(oper))
     {
     }
@@ -175,8 +187,9 @@ public:
     Token m_oper;
     std::unique_ptr<Expr> m_right;
 
-    inline Logical(std::unique_ptr<Expr> left, Token& oper, std::unique_ptr<Expr> right)
-        : m_left(std::move(left))
+    inline Logical(std::unique_ptr<Expr> left, Token& oper, std::unique_ptr<Expr> right, uint32_t line)
+        : Expr(line)
+        , m_left(std::move(left))
         , m_oper(std::move(oper))
         , m_right(std::move(right))
     {
@@ -196,8 +209,9 @@ public:
     Token m_paren;
     std::vector<std::unique_ptr<Expr>> m_arguments;
 
-    inline Call(std::unique_ptr<Expr> callee, Token& paren, std::vector<std::unique_ptr<Expr>> arguments)
-        : m_callee(std::move(callee))
+    inline Call(std::unique_ptr<Expr> callee, Token& paren, std::vector<std::unique_ptr<Expr>> arguments, uint32_t line)
+        : Expr(line)
+        , m_callee(std::move(callee))
         , m_paren(std::move(paren))
         , m_arguments(std::move(arguments))
     {
@@ -216,8 +230,9 @@ public:
     Token m_name;
     std::unique_ptr<Expr> m_object;
 
-    inline Get(Token& name, std::unique_ptr<Expr> expr)
-        : m_name(std::move(name))
+    inline Get(Token& name, std::unique_ptr<Expr> expr, uint32_t line)
+        : Expr(line)
+        , m_name(std::move(name))
         , m_object(std::move(expr))
     {
     }
@@ -236,8 +251,9 @@ public:
     std::unique_ptr<Expr> m_object;
     std::unique_ptr<Expr> m_value;
 
-    inline Set(Token& name, std::unique_ptr<Expr> expr, std::unique_ptr<Expr> value)
-        : m_name(std::move(name))
+    inline Set(Token& name, std::unique_ptr<Expr> expr, std::unique_ptr<Expr> value, uint32_t line)
+        : Expr(line)
+        , m_name(std::move(name))
         , m_object(std::move(expr))
         , m_value(std::move(value))
     {
@@ -255,8 +271,9 @@ class This : public Expr {
 public:
     Token m_keyword;
 
-    inline This(Token& keyword)
-        : m_keyword(std::move(keyword))
+    inline This(Token& keyword, uint32_t line)
+        : Expr(line)
+        , m_keyword(std::move(keyword))
     {
     }
 
@@ -273,8 +290,9 @@ public:
     Token m_keyword;
     Token m_method;
 
-    inline Super(Token& keyword, Token& method)
-        : m_keyword(std::move(keyword))
+    inline Super(Token& keyword, Token& method, uint32_t line)
+        : Expr(line)
+        , m_keyword(std::move(keyword))
         , m_method(std::move(method))
     {
     }
@@ -294,8 +312,9 @@ public:
     // During type checking, this field will be set if more elements than declared should be allocated
     std::optional<uint32_t> m_extra_item_count = std::nullopt;
 
-    inline JList(std::vector<std::unique_ptr<Expr>> items, Token right_brace)
-        : m_items(std::move(items))
+    inline JList(std::vector<std::unique_ptr<Expr>> items, Token right_brace, uint32_t line)
+        : Expr(line)
+        , m_items(std::move(items))
         , m_right_brace(std::move(right_brace))
     {
     }
@@ -312,12 +331,11 @@ class IndexGet : public Expr {
 public:
     std::unique_ptr<Expr> m_jlist;
     std::unique_ptr<Expr> m_index_expr;
-    Token m_closing_bracket;
 
-    inline IndexGet(std::unique_ptr<Expr> jlist, std::unique_ptr<Expr> index_expr, Token& closing_bracket)
-        : m_jlist(std::move(jlist))
+    inline IndexGet(std::unique_ptr<Expr> jlist, std::unique_ptr<Expr> index_expr, uint32_t line)
+        : Expr(line)
+        , m_jlist(std::move(jlist))
         , m_index_expr(std::move(index_expr))
-        , m_closing_bracket(std::move(closing_bracket))
     {
     }
 
@@ -334,13 +352,12 @@ public:
     std::unique_ptr<Expr> m_jlist;
     std::unique_ptr<Expr> m_index_expr;
     std::unique_ptr<Expr> m_value_expr;
-    Token m_closing_bracket;
 
-    inline IndexSet(std::unique_ptr<Expr> jlist, std::unique_ptr<Expr> index_expr, std::unique_ptr<Expr> value_expr, Token& closing_bracket)
-        : m_jlist(std::move(jlist))
+    inline IndexSet(std::unique_ptr<Expr> jlist, std::unique_ptr<Expr> index_expr, std::unique_ptr<Expr> value_expr, uint32_t line)
+        : Expr(line)
+        , m_jlist(std::move(jlist))
         , m_index_expr(std::move(index_expr))
         , m_value_expr(std::move(value_expr))
-        , m_closing_bracket(std::move(closing_bracket))
     {
     }
 
@@ -357,8 +374,9 @@ public:
     std::unique_ptr<Expr> m_left;
     TypeInfo m_right;
 
-    TypeCast(std::unique_ptr<Expr> left, TypeInfo right)
-        : m_left(std::move(left))
+    TypeCast(std::unique_ptr<Expr> left, TypeInfo right, uint32_t line)
+        : Expr(line)
+        , m_left(std::move(left))
         , m_right(right)
     {
     }

@@ -1,7 +1,6 @@
 #include "Move.hpp"
 
 #include "backend/ir/IR.hpp"
-#include <memory>
 
 jl::ir::Move::Move(
     value::Variable source,
