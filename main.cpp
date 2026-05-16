@@ -41,14 +41,12 @@ int main(int argc, char const* argv[])
         return 1;
     }
 
-    jl::ASTPrinter printer;
-    std::cout << printer.print(stmts).str() << std::endl;
-
     jl::TypeContext type_context;
     jl::SemanticAnalyzer sm(file_name, type_context);
 
     if (sm.type_check(stmts)) {
 #ifdef CUSTOM_BACKEND
+        jl::ASTPrinter printer;
         std::println("{}", printer.print(stmts).str());
 
         jl::IRGenv2 cg(type_context);

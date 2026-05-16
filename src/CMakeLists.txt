@@ -36,6 +36,8 @@ add_library(JuneInterpreter
     backend/ir/Write.cpp
     backend/value/Integer.cpp
     backend/value/Variable.cpp
+    backend/utils/RPO.cpp
+    backend/utils/DominanceTree.cpp
     # backend/codegen/x86CodeGen.cpp
 
     llvm_backend/JuneModule.cpp

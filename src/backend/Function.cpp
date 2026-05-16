@@ -1,6 +1,7 @@
 #include "Function.hpp"
 #include "BasicBlock.hpp"
 #include "types/Type.hpp"
+#include "utils/algorithms.hpp"
 #include <iomanip>
 #include <ios>
 #include <ostream>
@@ -38,8 +39,23 @@ void jl::Function::add_input_arg(value::Variable var)
     m_input_args.push_back(var);
 }
 
-std::ostream& jl::operator<<(std::ostream& out, const Function& function)
+jl::BasicBlock* jl::Function::entry_block()
 {
+    if (m_blocks.size() > 0) {
+        return m_blocks.front().get();
+    } else {
+        return nullptr;
+    }
+}
+
+std::vector<std::unique_ptr<jl::BasicBlock>>& jl::Function::blocks()
+{
+    return m_blocks;
+}
+
+std::ostream& jl::operator<<(std::ostream& out, Function& function)
+{
+    // Print the signature
     auto type = static_cast<const type::Func*>(function.m_type);
 
     out << function.m_name << "::(";
@@ -54,6 +70,7 @@ std::ostream& jl::operator<<(std::ostream& out, const Function& function)
 
     out << ") -> " << type->m_return_type->to_str() << '\n';
 
+    // Print the basic blocks
     for (const auto& block : function.m_blocks) {
         out << block->get_name() << ": \n";
 
@@ -66,6 +83,24 @@ std::ostream& jl::operator<<(std::ostream& out, const Function& function)
 
         out << std::endl;
     }
+
+    // Print rpo
+    const auto rpo = algorithms::RPO(function.m_blocks[0].get());
+
+    out << "\nPost Order Traversal:\n";
+    for (const auto [block, idx] : rpo) {
+        out << "[" << idx << "]: " << block->get_name() << '\n';
+    }
+
+    // Print doms
+    const auto doms = algorithms::dominance_tree(&function);
+
+    out << "\nDominance Tree:\n";
+    for (const auto [block, parent] : doms) {
+        out << block->get_name() << " -> " << parent->get_name() << '\n';
+    }
+
+    out << "\n";
 
     return out;
 }

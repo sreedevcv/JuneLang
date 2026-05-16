@@ -41,6 +41,10 @@ public:
 
     void add_input_arg(value::Variable var);
 
+    BasicBlock* entry_block();
+
+    std::vector<std::unique_ptr<BasicBlock>>& blocks();
+
 private:
     std::string m_name;
     const type::Type* m_type;
@@ -62,8 +66,8 @@ private:
         }
     }
 
-    friend std::ostream& operator<<(std::ostream& out, const Function& function);
+    friend std::ostream& operator<<(std::ostream& out, Function& function);
 };
 
-std::ostream& operator<<(std::ostream& out, const Function& function);
+std::ostream& operator<<(std::ostream& out, Function& function);
 }

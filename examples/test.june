@@ -14,22 +14,22 @@ fun get_index(): char [
 fun sum(list: [int], size: int): int [
     var s = 0;
 
-//    for (var i = 0; i < size - 1; i += 1) [
-//        for (var j = 0; j < size - 1 - i; j += 1) [
-//            if (list[j] > list[j + 1]) [
-//                var temp = list[j];
-//                list[j] = list[j + 1];
-//                list[j + 1] = temp;
-//            ]
-//        ]
-//    ]
-
-    var p = 0;
-    while (p < size) [
-        s += list[p];
-        p += 1;
+    for (var i = 0; i < size - 1; i += 1) [
+        for (var j = 0; j < size - 1 - i; j += 1) [
+            if (list[j] > list[j + 1]) [
+                var temp = list[j];
+                list[j] = list[j + 1];
+                list[j + 1] = temp;
+            ]
+        ]
     ]
-    return s;
+
+//    var p = 0;
+//    while (p < size) [
+//        s += list[p];
+//        p += 1;
+//    ]
+//    return s;
 ]
 
 var l = {1, 2, 3, 4, 5};
