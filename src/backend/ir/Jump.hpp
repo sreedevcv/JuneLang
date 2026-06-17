@@ -14,6 +14,10 @@ namespace ir {
 
         void accept(IRVisitor& visitor) override;
 
+        bool uses(value::Variable var) override;
+
+        void replace(value::Variable from, value::Variable to) override;
+
         BasicBlock* m_target;
     };
 }

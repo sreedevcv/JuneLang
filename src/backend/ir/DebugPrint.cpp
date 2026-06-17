@@ -24,3 +24,18 @@ void jl::ir::DebugPrint::accept(IRVisitor& visitor)
 {
     visitor.visit_debug_print_ir(*this);
 }
+
+bool jl::ir::DebugPrint::uses(value::Variable var)
+{
+    if (m_val.id() == var.id()) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+void jl::ir::DebugPrint::replace(value::Variable from, value::Variable to)
+{
+    if (m_val == from)
+        m_val = to;
+}

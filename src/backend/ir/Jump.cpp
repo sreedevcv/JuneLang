@@ -1,6 +1,6 @@
 #include "Jump.hpp"
-#include <string>
 #include "BasicBlock.hpp"
+#include <string>
 
 jl::ir::Jump::Jump(BasicBlock* target, uint32_t line)
     : IR(line)
@@ -16,5 +16,13 @@ std::string jl::ir::Jump::to_str() const
 void jl::ir::Jump::accept(IRVisitor& visitor)
 {
     visitor.visit_jump_ir(*this);
+}
 
+bool jl::ir::Jump::uses(value::Variable var)
+{
+    return false;
+}
+
+void jl::ir::Jump::replace(value::Variable from, value::Variable to)
+{
 }

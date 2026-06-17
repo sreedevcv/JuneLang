@@ -16,5 +16,9 @@ namespace algorithms {
     std::unordered_map<jl::BasicBlock*, uint32_t> RPO(BasicBlock* entry_block);
 
     std::unordered_map<BasicBlock*, BasicBlock*> dominance_tree(Function* function);
+
+    using DominanceFrontier = std::unordered_map<jl::BasicBlock*, std::vector<jl::BasicBlock*>>;
+    DominanceFrontier dominance_frontier(jl::Function* function, std::vector<jl::BasicBlock*>& rpo);
+
 }
 }

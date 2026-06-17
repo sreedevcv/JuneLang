@@ -1,4 +1,4 @@
-add_library(JuneInterpreter
+add_library(JuneCompiler
     frontend/Value.cpp
     frontend/Token.cpp
     frontend/Lexer.cpp
@@ -34,11 +34,15 @@ add_library(JuneInterpreter
     backend/ir/AllocateVar.cpp
     backend/ir/Read.cpp
     backend/ir/Write.cpp
+    backend/ir/Phi.cpp
     backend/value/Integer.cpp
     backend/value/Variable.cpp
     backend/utils/RPO.cpp
     backend/utils/DominanceTree.cpp
+    backend/utils/DominanceFrontier.cpp
+    backend/utils/UseIter.cpp
     # backend/codegen/x86CodeGen.cpp
+    backend/opt/mem2reg.cpp
 
     llvm_backend/JuneModule.cpp
     llvm_backend/LLVMIRGen.cpp
@@ -65,17 +69,17 @@ llvm_map_components_to_libnames(LLVM_LIBS
 )
 
 target_link_libraries(
-    JuneInterpreter
+    JuneCompiler
     stdc++exp
     ffi
     ${LLVM_LIBS}
 )
 
-target_compile_definitions(JuneInterpreter PRIVATE
+target_compile_definitions(JuneCompiler PRIVATE
     ${LLVM_DEFINITIONS}
 )
 
-target_include_directories(JuneInterpreter
+target_include_directories(JuneCompiler
     PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}
     memory

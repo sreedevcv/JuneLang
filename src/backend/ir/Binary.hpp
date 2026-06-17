@@ -41,6 +41,10 @@ namespace ir {
 
         void accept(IRVisitor& visitor) override;
 
+        bool uses(value::Variable var) override;
+
+        void replace(value::Variable from, value::Variable to) override;
+
         value::Variable m_dest;
         value::Variable m_operand_a;
         value::Variable m_operand_b;

@@ -28,3 +28,21 @@ void jl::ir::AllocateList::set_data(void* ptr, uint32_t size)
     auto bytes = static_cast<uint8_t*>(ptr);
     m_data.insert(m_data.end(), bytes, bytes + size);
 }
+
+bool jl::ir::AllocateList::uses(value::Variable var)
+{
+    if (m_fat_ptr.id() == var.id() || m_list.id() == var.id()) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+void jl::ir::AllocateList::replace(value::Variable from, value::Variable to)
+{
+    if (m_fat_ptr == from)
+        m_fat_ptr = to;
+
+    if (m_list == from)
+        m_list = to;
+}

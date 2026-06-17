@@ -27,3 +27,24 @@ void jl::ir::Read::accept(IRVisitor& visitor)
 {
     visitor.visit_read_ir(*this);
 }
+
+bool jl::ir::Read::uses(value::Variable var)
+{
+    if (m_base.id() == var.id() || (m_offset && m_offset.value().id() == var.id())) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+void jl::ir::Read::replace(value::Variable from, value::Variable to)
+{
+    if (m_dest == from)
+        m_dest = to;
+    if (m_base == from)
+        m_base = to;
+    if (m_offset) {
+        if (*m_offset == from)
+            m_offset = to;
+    }
+}

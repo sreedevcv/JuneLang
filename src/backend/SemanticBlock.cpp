@@ -2,7 +2,6 @@
 
 #include "backend/value/Variable.hpp"
 #include "Function.hpp"
-#include "types/TypeContext.hpp"
 
 jl::SemanticBlock::SemanticBlock(const SemanticBlock* parent, Function* function)
     : m_parent(parent)
@@ -18,7 +17,7 @@ jl::value::Variable jl::SemanticBlock::create_varaible(const type::Type* data_ty
 jl::value::Variable jl::SemanticBlock::create_named_variable(const std::string& name, const type::Type* pointer)
 {
     // Create a variable to store the stack address
-    auto var = create_varaible(pointer);    
+    auto var = create_varaible(pointer);
     // Insert into symbol table
     m_symbol_table.insert({ name, var });
     return var;

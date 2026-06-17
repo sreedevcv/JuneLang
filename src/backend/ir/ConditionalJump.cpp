@@ -25,3 +25,18 @@ void jl::ir::CondJump::accept(IRVisitor& visitor)
 {
     visitor.visit_cond_jump_ir(*this);
 }
+
+bool jl::ir::CondJump::uses(value::Variable var)
+{
+    if (m_condition.id() == var.id()) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+void jl::ir::CondJump::replace(value::Variable from, value::Variable to)
+{
+    if (m_condition == from)
+        m_condition = to;
+}

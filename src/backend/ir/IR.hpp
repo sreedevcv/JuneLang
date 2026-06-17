@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ir/IRVisitor.hpp"
+#include "value/Variable.hpp"
 #include <cstdint>
 #include <string>
 
@@ -15,6 +16,10 @@ namespace ir {
 
         virtual void accept(IRVisitor& visitor) = 0;
 
+        virtual bool uses(value::Variable variable) = 0;
+
+        virtual void replace(value::Variable from, value::Variable to) = 0;
+
         uint32_t line() const;
 
         uint32_t m_line;
@@ -22,6 +27,11 @@ namespace ir {
         IR* prev = nullptr;
 
         IR* next = nullptr;
+
+        // Utilities
+        void insert_before(IR* ir);
+
+        void remove();
     };
 }
 }

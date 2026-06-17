@@ -33,3 +33,29 @@ void jl::ir::Call::accept(IRVisitor& visitor)
 {
     visitor.visit_call_ir(*this);
 }
+
+bool jl::ir::Call::uses(value::Variable var)
+{
+    for (const auto& arg : m_args) {
+        if (arg.id() == var.id()) {
+            return true;
+        }
+    }
+
+    if (m_dest.id() == var.id()) {
+        return true;
+    }
+
+    return false;
+}
+
+void jl::ir::Call::replace(value::Variable from, value::Variable to)
+{
+    if (m_dest == from)
+        m_dest = to;
+
+    for (auto& arg : m_args) {
+        if (arg == from)
+            arg = to;
+    }
+}

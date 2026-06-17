@@ -13,6 +13,7 @@ class Module {
 public:
     Function* create_function(std::string_view name, const type::Type* type);
     Function* current_function();
+    Function* get_function(std::string_view name);
     void set_current_function(Function* function);
 
 private:

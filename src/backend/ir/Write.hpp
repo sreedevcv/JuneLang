@@ -22,6 +22,10 @@ namespace ir {
 
         void accept(IRVisitor& visitor) override;
 
+        bool uses(value::Variable var) override;
+
+        void replace(value::Variable from, value::Variable to) override;
+
         value::Variable m_src;
         value::Variable m_base;
         std::optional<value::Variable> m_offset;

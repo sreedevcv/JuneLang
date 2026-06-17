@@ -28,3 +28,14 @@ std::ostream& jl::operator<<(std::ostream& out, const jl::Module& module)
     }
     return out;
 }
+
+jl::Function* jl::Module::get_function(std::string_view name)
+{
+    for (auto& func : m_functions) {
+        if (func->name() == name) {
+            return func.get();
+        }
+    }
+
+    return nullptr;
+}

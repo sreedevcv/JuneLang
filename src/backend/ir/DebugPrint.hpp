@@ -22,6 +22,10 @@ namespace ir {
 
         void accept(IRVisitor& visitor) override;
 
+        bool uses(value::Variable var) override;
+
+        void replace(value::Variable from, value::Variable to) override;
+
         value::Variable m_val;
         type::Builtin::Primitive m_primitive;
         bool m_is_list;

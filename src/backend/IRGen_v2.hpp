@@ -6,7 +6,6 @@
 #include "Stmt.hpp"
 #include "Value.hpp"
 #include "backend/SemanticBlock.hpp"
-// #include "backend/FuncBlock.hpp"
 #include "backend/LiteralValue.hpp"
 #include "backend/ir/InitLiteral.hpp"
 #include "backend/value/Variable.hpp"

@@ -6,8 +6,10 @@
 #include <vector>
 
 #include "BasicBlock.hpp"
+#include "ir/AllocateVar.hpp"
 #include "ir/IR.hpp"
 #include "types/Type.hpp"
+#include "value/Value.hpp"
 #include "value/Variable.hpp"
 
 namespace jl {
@@ -37,6 +39,20 @@ public:
         chain(m_irs.back().get());
     }
 
+    // Specialization for AllocateVar instrs so that they are placed in the entry block
+    void add_ir(ir::AllocateVar alloca)
+    {
+        m_irs.push_back(std::make_unique<ir::AllocateVar>(alloca));
+        auto new_instr = m_irs.back().get();
+
+        entry_block()->tail->next = new_instr;
+        new_instr->next = nullptr;
+        new_instr->prev = entry_block()->tail;
+        entry_block()->tail = new_instr;
+    }
+
+    void replace_value(jl::value::Variable from, jl::value::Variable to);
+
     uint32_t m_var_count = 0;
 
     void add_input_arg(value::Variable var);
@@ -44,6 +60,10 @@ public:
     BasicBlock* entry_block();
 
     std::vector<std::unique_ptr<BasicBlock>>& blocks();
+
+    std::vector<std::unique_ptr<ir::IR>>& irs();
+
+    const std::string& name();
 
 private:
     std::string m_name;

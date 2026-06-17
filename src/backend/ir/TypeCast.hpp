@@ -1,8 +1,8 @@
 #pragma once
 
 #include "backend/ir/IR.hpp"
-#include "types/Type.hpp"
 #include "backend/value/Variable.hpp"
+#include "types/Type.hpp"
 
 #include <cstdint>
 
@@ -21,6 +21,10 @@ namespace ir {
         std::string to_str() const override;
 
         void accept(IRVisitor& visitor) override;
+
+        bool uses(value::Variable var) override;
+
+        void replace(value::Variable from, value::Variable to) override;
 
         value::Variable m_dest;
         value::Variable m_source;

@@ -1,5 +1,7 @@
 #include "Function.hpp"
 #include "BasicBlock.hpp"
+#include "ir/Phi.hpp"
+#include "opt/Optimizer.hpp"
 #include "types/Type.hpp"
 #include "utils/algorithms.hpp"
 #include <iomanip>
@@ -53,6 +55,25 @@ std::vector<std::unique_ptr<jl::BasicBlock>>& jl::Function::blocks()
     return m_blocks;
 }
 
+std::vector<std::unique_ptr<jl::ir::IR>>& jl::Function::irs()
+{
+    return m_irs;
+}
+
+void jl::Function::replace_value(jl::value::Variable from, jl::value::Variable to)
+{
+    for (auto& ir : m_irs) {
+        if (ir->uses(from)) {
+            ir->replace(from, to);
+        }
+    }
+}
+
+const std::string& jl::Function::name()
+{
+    return m_name;
+}
+
 std::ostream& jl::operator<<(std::ostream& out, Function& function)
 {
     // Print the signature
@@ -72,6 +93,14 @@ std::ostream& jl::operator<<(std::ostream& out, Function& function)
 
     // Print the basic blocks
     for (const auto& block : function.m_blocks) {
+        // First print the phi instructions
+
+        for (const auto phi : block->phis) {
+            out << std::right << std::setw(5) << '\t' << phi->to_str() << '\n';
+        }
+
+        // Then print the other instructions
+
         out << block->get_name() << ": \n";
 
         auto ptr = block->head;

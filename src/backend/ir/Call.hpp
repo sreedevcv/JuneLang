@@ -3,7 +3,6 @@
 #include "backend/ir/IR.hpp"
 #include "backend/value/Variable.hpp"
 #include <cstdint>
-#include <memory>
 #include <vector>
 
 namespace jl {
@@ -19,6 +18,10 @@ namespace ir {
         std::string to_str() const override;
 
         void accept(IRVisitor& visitor) override;
+
+        bool uses(value::Variable var) override;
+
+        void replace(value::Variable from, value::Variable to) override;
 
         std::string m_name;
         std::vector<value::Variable> m_args;

@@ -53,15 +53,6 @@ std::unordered_map<jl::BasicBlock*, jl::BasicBlock*> jl::algorithms::dominance_t
     auto predecessors = get_predecessors(function);
     bool changed = true;
 
-    // std::println("Predecessors");
-    // for (const auto& [blk, preds] : predecessors) {
-    //     std::print("{}: ", blk->get_name());
-    //     for (const auto p : preds) {
-    //         std::print("{}, ", p->get_name());
-    //     }
-    //     std::println();
-    // }
-
     std::vector<BasicBlock*> rpo(rpo_map.size(), nullptr);
     for (auto& [block, idx] : rpo_map) {
         rpo[idx] = block;
@@ -74,21 +65,17 @@ std::unordered_map<jl::BasicBlock*, jl::BasicBlock*> jl::algorithms::dominance_t
             auto block = rpo[i];
             auto new_idom = find_first_processed_predecessor(block, dom_tree, predecessors);
 
-            // std::println("Blk[{}]: {}, ndom: {}", i, block->get_name(), new_idom->get_name());
-
             for (auto pred : predecessors[block]) {
                 if (pred != new_idom && dom_tree[pred] != nullptr) {
                     new_idom = intersect(pred, new_idom, rpo_map, dom_tree);
                 }
             }
 
-            // if (dom_tree[block] != new_idom) {
-            //     std::println("Curr dom: {}, new dom: {}", dom_tree[block] ? dom_tree[block]->get_name() : "null", new_idom->get_name());
-            //     dom_tree[block] = new_idom;
-            //     changed = true;
-            // }
+            if (dom_tree[block] != new_idom) {
+                dom_tree[block] = new_idom;
+                changed = true;
+            }
         }
-        std::println();
     }
 
     return dom_tree;

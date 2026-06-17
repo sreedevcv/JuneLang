@@ -58,3 +58,22 @@ void jl::ir::Binary::accept(IRVisitor& visitor)
 {
     visitor.visit_binary_ir(*this);
 }
+
+bool jl::ir::Binary::uses(value::Variable var)
+{
+    if (m_operand_a.id() == var.id() || m_operand_b.id() == var.id()) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+void jl::ir::Binary::replace(value::Variable from, value::Variable to)
+{
+    if (m_operand_a == from)
+        m_operand_a = to;
+    if (m_operand_b == from)
+        m_operand_b = to;
+    if (m_dest == from)
+        m_dest = to;
+}

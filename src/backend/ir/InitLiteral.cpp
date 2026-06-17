@@ -19,3 +19,14 @@ void jl::ir::InitLiteral::accept(IRVisitor& visitor)
 {
     visitor.visit_init_literal_ir(*this);
 }
+
+bool jl::ir::InitLiteral::uses(value::Variable var)
+{
+    return false;
+}
+
+void jl::ir::InitLiteral::replace(value::Variable from, value::Variable to)
+{
+    if (m_dest == from)
+        m_dest = to;
+}

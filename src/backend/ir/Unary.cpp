@@ -29,3 +29,21 @@ void jl::ir::Unary::accept(IRVisitor& visitor)
 {
     visitor.visit_unary_ir(*this);
 }
+
+bool jl::ir::Unary::uses(value::Variable var)
+{
+    if (m_operand.id() == var.id()) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+void jl::ir::Unary::replace(value::Variable from, value::Variable to)
+{
+
+    if (m_dest == from)
+        m_dest = to;
+    if (m_operand == from)
+        m_operand = to;
+}

@@ -1,28 +1,28 @@
-fun get_index(): char [
-    var list = {1, 2, 3, 4, 5};
-    var temp = {1.2, 2.3};
-    var chars = {'1', '2', '4'};
-    var bools = {true, false};
+// fun get_index(): char [
+//     var list = {1, 2, 3, 4, 5};
+//     var temp = {1.2, 2.3};
+//     var chars = {'1', '2', '4'};
+//     var bools = {true, false};
+// 
+//     var sum = "hai";
+//     sum[1] = 'z';
+// 
+//     return sum[1];
+// ]
 
-    var sum = "hai";
-    sum[1] = 'z';
 
-    return sum[1];
-]
-
-
-fun sum(list: [int], size: int): int [
-    var s = 0;
-
-    for (var i = 0; i < size - 1; i += 1) [
-        for (var j = 0; j < size - 1 - i; j += 1) [
-            if (list[j] > list[j + 1]) [
-                var temp = list[j];
-                list[j] = list[j + 1];
-                list[j + 1] = temp;
-            ]
-        ]
-    ]
+//fun sum(list: [int], size: int): int [
+//    var s = 0;
+//
+//    for (var i = 0; i < size - 1; i += 1) [
+//        for (var j = 0; j < size - 1 - i; j += 1) [
+//            if (list[j] > list[j + 1]) [
+//                var temp = list[j];
+//                list[j] = list[j + 1];
+//                list[j + 1] = temp;
+//            ]
+//        ]
+//    ]
 
 //    var p = 0;
 //    while (p < size) [
@@ -30,8 +30,27 @@ fun sum(list: [int], size: int): int [
 //        p += 1;
 //    ]
 //    return s;
-]
+// ]
 
-var l = {1, 2, 3, 4, 5};
-var s = sum(l, 5);
-print l;
+// var l = {1, 2, 3, 4, 5};
+// var s = sum(l, 5);
+// print l;
+
+
+fun fib(n: int): int [
+    var a = 0;
+    var b = 1;
+    var c = 0;
+    var i = 1;
+
+    if (n == 0) return 0;
+
+    while (i < n) [
+        c = b;
+        b = a + b;
+        a = c;
+        i = i + 1;
+    ]
+
+    return b;
+]

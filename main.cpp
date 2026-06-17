@@ -7,6 +7,7 @@
 #include "frontend/SemanticAnalysis.hpp"
 #include "llvm_backend/JuneModule.hpp"
 #include "llvm_backend/LLVMIRGen.hpp"
+#include "opt/Optimizer.hpp"
 
 #include <cassert>
 #include <fstream>
@@ -46,8 +47,8 @@ int main(int argc, char const* argv[])
 
     if (sm.type_check(stmts)) {
 #ifdef CUSTOM_BACKEND
-        jl::ASTPrinter printer;
-        std::println("{}", printer.print(stmts).str());
+        // jl::ASTPrinter printer;
+        // std::println("{}", printer.print(stmts).str());
 
         jl::IRGenv2 cg(type_context);
         auto module = cg.generate(stmts);
@@ -55,6 +56,10 @@ int main(int argc, char const* argv[])
 
         std::println("Functions: ");
         std::cout << module;
+
+        // jl::opt::mem2reg(module.get_function("fib"));
+        // std::cout << "------------------------------------------\n";
+        // std::cout << module;
 
         // auto ir_data = module.basic_blocks();
 

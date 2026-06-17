@@ -16,6 +16,8 @@ namespace ir {
     class AllocateVar;
     class Read;
     class Write;
+    class TypeCast;
+    class Phi;
 
     struct IRVisitor {
         virtual void visit_binary_ir(ir::Binary& binary) = 0;
@@ -45,6 +47,10 @@ namespace ir {
         virtual void visit_init_literal_ir(ir::InitLiteral& literal) = 0;
 
         virtual void visit_debug_print_ir(ir::DebugPrint& print) = 0;
+
+        virtual void visit_type_cast_ir(ir::TypeCast& type_cast) = 0;
+
+        virtual void visit_phi(ir::Phi& phi) = 0;
     };
 }
 

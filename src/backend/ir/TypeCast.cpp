@@ -23,5 +23,22 @@ std::string jl::ir::TypeCast::to_str() const
 
 void jl::ir::TypeCast::accept(IRVisitor& visitor)
 {
+    visitor.visit_type_cast_ir(*this);
+}
 
+bool jl::ir::TypeCast::uses(value::Variable var)
+{
+    if (m_source.id() == var.id()) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+void jl::ir::TypeCast::replace(value::Variable from, value::Variable to)
+{
+    if (m_dest == from)
+        m_dest = to;
+    if (m_source == from)
+        m_source = to;
 }

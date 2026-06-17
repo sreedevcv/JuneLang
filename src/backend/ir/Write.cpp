@@ -30,3 +30,24 @@ void jl::ir::Write::accept(IRVisitor& visitor)
 {
     visitor.visit_write_ir(*this);
 }
+
+bool jl::ir::Write::uses(value::Variable var)
+{
+    if (m_base.id() == var.id() || (m_offset && m_offset.value().id() == var.id())) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+void jl::ir::Write::replace(value::Variable from, value::Variable to)
+{
+    if (m_src == from)
+        m_src = to;
+    if (m_base == from)
+        m_base = to;
+    if (m_offset) {
+        if (*m_offset == from)
+            m_offset = to;
+    }
+}

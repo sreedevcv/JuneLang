@@ -19,3 +19,20 @@ void jl::ir::Return::accept(IRVisitor& visitor)
 {
     visitor.visit_return_ir(*this);
 }
+
+bool jl::ir::Return::uses(value::Variable var)
+{
+    if (m_ret_val && m_ret_val.value().id() == var.id()) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+void jl::ir::Return::replace(value::Variable from, value::Variable to)
+{
+    if (m_ret_val) {
+        if (*m_ret_val == from)
+            m_ret_val = to;
+    }
+}

@@ -33,12 +33,12 @@ if(BUILD_JUNE_EDITOR)
         main.cpp
     )
 
-    target_link_libraries(june PRIVATE JuneEditor JuneInterpreter glfw glm::glm)
+    target_link_libraries(june PRIVATE JuneEditor JuneCompiler glfw glm::glm)
 else()
     add_executable(june
         main.cpp
     )
-    target_link_libraries(june PRIVATE JuneInterpreter)
+    target_link_libraries(june PRIVATE JuneCompiler)
 endif()
 
 if(BUILD_TESTS)

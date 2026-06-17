@@ -6,7 +6,7 @@
 
 namespace jl {
 namespace ir {
-    class AllocateVar : public IR {
+    struct AllocateVar : public IR {
     public:
         AllocateVar(value::Variable addr, const type::Type* var_type, uint32_t line);
 
@@ -16,7 +16,11 @@ namespace ir {
 
         void accept(IRVisitor& visitor) override;
 
-    private:
+        bool uses(value::Variable var) override;
+
+        void replace(value::Variable from, value::Variable to) override;
+
+
         value::Variable m_addr;
         const type::Type* m_var_type;
     };
