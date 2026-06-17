@@ -93,26 +93,22 @@ std::ostream& jl::operator<<(std::ostream& out, Function& function)
 
     // Print the basic blocks
     for (const auto& block : function.m_blocks) {
-        // First print the phi instructions
+        out << block->get_name() << ": \n";
 
+        // First print the phi instructions
         for (const auto phi : block->phis) {
             out << std::right << std::setw(5) << '\t' << phi->to_str() << '\n';
         }
 
         // Then print the other instructions
-
-        out << block->get_name() << ": \n";
-
-        auto ptr = block->head;
-
-        while (ptr != nullptr) {
+        for (auto ptr = block->head; ptr != nullptr; ptr = ptr->next) {
             out << std::right << std::setw(5) << ptr->m_line << '\t' << ptr->to_str() << '\n';
-            ptr = ptr->next;
         }
 
         out << std::endl;
     }
 
+    /*
     // Print rpo
     const auto rpo = algorithms::RPO(function.m_blocks[0].get());
 
@@ -130,6 +126,7 @@ std::ostream& jl::operator<<(std::ostream& out, Function& function)
     }
 
     out << "\n";
+    */
 
     return out;
 }

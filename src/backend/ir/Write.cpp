@@ -33,7 +33,9 @@ void jl::ir::Write::accept(IRVisitor& visitor)
 
 bool jl::ir::Write::uses(value::Variable var)
 {
-    if (m_base.id() == var.id() || (m_offset && m_offset.value().id() == var.id())) {
+    if (m_base.id() == var.id()
+        || (m_offset && m_offset.value().id() == var.id())
+        || m_src.id() == var.id()) {
         return true;
     } else {
         return false;

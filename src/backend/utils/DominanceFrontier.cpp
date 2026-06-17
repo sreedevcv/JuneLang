@@ -36,11 +36,11 @@ jl::algorithms::DominanceFrontier jl::algorithms::dominance_frontier(jl::Functio
         }
     }
 
-    std::println("-------------------------DT-START---------------------------");
-    for (const auto& [block, dom] : dom_tree) {
-        std::println("{} -> {}: ", block->get_name(), dom->get_name());
-    }
-    std::println("-------------------------DT-END---------------------------");
+    // std::println("-------------------------DT-START---------------------------");
+    // for (const auto& [block, dom] : dom_tree) {
+    //     std::println("{} -> {}: ", block->get_name(), dom->get_name());
+    // }
+    // std::println("-------------------------DT-END---------------------------");
 
     std::println("-------------------------DF-START---------------------------");
     for (const auto& [block, frontier] : dom_frontier) {

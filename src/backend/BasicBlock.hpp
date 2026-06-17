@@ -14,14 +14,16 @@ struct BasicBlock {
     std::string name;
     size_t idx;
     Function* parent;
+    std::vector<ir::Phi*> phis;
 
     ir::IR* head = nullptr;
     ir::IR* tail = nullptr;
 
     ir::IR* get_terminator() const;
+    
     std::string get_name() const;
 
-    std::vector<ir::Phi*> phis;
+    void remove_ir(ir::IR* ir);
 
     // Get instructions of a particular type
     template <typename T>

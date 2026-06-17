@@ -20,3 +20,12 @@ std::string jl::BasicBlock::get_name() const
 {
     return std::format("{}.{}", idx, name);
 }
+
+void jl::BasicBlock::remove_ir(ir::IR* ir)
+{
+    if (ir == head) {
+        head = head->next;
+    }
+
+    ir->remove();
+}

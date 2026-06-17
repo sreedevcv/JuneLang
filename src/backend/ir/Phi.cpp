@@ -10,7 +10,11 @@ jl::ir::Phi::Phi(value::Variable dest, value::Variable replacing_addr)
 
 std::string jl::ir::Phi::to_str() const
 {
-    return "phi";
+    auto s = m_dest.to_str() + " = " + "phi ";
+    for (const auto& [var, blk] : m_opers) {
+        s += "[" + var.to_str() + " " + blk->get_name() + "] ";
+    }
+    return s;
 }
 
 void jl::ir::Phi::accept(IRVisitor& visitor)

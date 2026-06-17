@@ -52,35 +52,22 @@ int main(int argc, char const* argv[])
 
         jl::IRGenv2 cg(type_context);
         auto module = cg.generate(stmts);
-        // module.stream(std::cout);
 
-        std::println("Functions: ");
-        std::cout << module;
+        auto test = module.get_function("fib");
+        std::cout << *test;
 
-        // jl::opt::mem2reg(module.get_function("fib"));
-        // std::cout << "------------------------------------------\n";
-        // std::cout << module;
 
-        // auto ir_data = module.basic_blocks();
+        // auto e = test->entry_block();
+        // auto ir = test->irs()[2].get();
+        // std::cout << "-----------------" << ir->to_str() << "\n";
 
-        // for (const auto& data : ir_data) {
-        //     std::println("Fun {}", data.first);
-        //     for (const auto& [idx, data] :
-        //         data.second->var_data.get_offset_map()) {
-        //         const auto& [size, offset, type] = data;
-        //         std::println("{} - size: {} offset: {} type: {}", idx, size, offset,
-        //             type ? type->to_str() : "data");
-        //     }
-        // }
+        // e->remove_ir(ir);
 
-        // jl::x86CodeGen codegen(std::move(ir_data));
-        // const auto ss = codegen.generate();
+        // std::cout << *test;
 
-        // std::println("{}", ss.str());
-
-        // std::ofstream file("test.asm");
-        // file << ss.str();
-        // file.close();
+        jl::opt::mem2reg(test);
+        std::cout << "------------------------------------------\n";
+        std::cout << *test;
 
 #else
         // jl::Module module(file_name);
