@@ -325,7 +325,7 @@ std::any jl::IRGenv2::visit_jlist_expr(JList* expr)
         const auto offset = m_block->create_varaible(&int_type);
         // Move the offset value(i) to a literal
         m_module.current_function()->add_ir<ir::InitLiteral>(
-            std::make_unique<LiteralValue>(i),
+            LiteralValue(i),
             offset,
             expr->m_right_brace.get_line());
 

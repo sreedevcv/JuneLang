@@ -46,8 +46,8 @@ private:
     {
         const auto val = std::get<T>(value);
         const auto var = m_block->create_varaible(size);
-        auto literal = std::make_unique<LiteralValue>(val);
-        m_module.current_function()->add_ir<ir::InitLiteral>(std::move(literal), var, line);
+        auto literal = LiteralValue(val);
+        m_module.current_function()->add_ir<ir::InitLiteral>(literal, var, line);
         return var;
     }
 
