@@ -1,5 +1,6 @@
 #include "Function.hpp"
 #include "BasicBlock.hpp"
+#include "ir/IR.hpp"
 #include "ir/Phi.hpp"
 #include "opt/Optimizer.hpp"
 #include "types/Type.hpp"
@@ -55,7 +56,7 @@ std::vector<std::unique_ptr<jl::BasicBlock>>& jl::Function::blocks()
     return m_blocks;
 }
 
-std::vector<std::unique_ptr<jl::ir::IR>>& jl::Function::irs()
+std::list<std::unique_ptr<jl::ir::IR>>& jl::Function::irs()
 {
     return m_irs;
 }
@@ -67,6 +68,12 @@ void jl::Function::replace_value(jl::value::Variable from, jl::value::Variable t
             ir->replace(from, to);
         }
     }
+}
+
+void jl::Function::remove_ir(BasicBlock* block, ir::IR* ir)
+{
+    block->remove_ir(ir);
+    m_irs.remove_if([&](auto&& uptr) { return uptr.get() == ir; });
 }
 
 const std::string& jl::Function::name()

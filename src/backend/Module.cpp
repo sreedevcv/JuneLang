@@ -39,3 +39,8 @@ jl::Function* jl::Module::get_function(std::string_view name)
 
     return nullptr;
 }
+
+const std::vector<std::unique_ptr<jl::Function>>& jl::Module::functions() const
+{
+    return m_functions;
+}

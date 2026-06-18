@@ -56,14 +56,11 @@ fun fib(n: int): int [
 ]
 
 fun test(n: int): int [
-    var a: int = 200;
-    var b: int = 100;
+    var sum = 0;
 
-    if (n > 10) [
-        n = a;
-    ] else [
-        n = b;
+    for (var i = 0; i < n; i += 1) [
+        sum += i;
     ]
 
-    return n;
+    return sum;
 ]

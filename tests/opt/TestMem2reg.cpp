@@ -120,12 +120,6 @@ fun test(n: int): int [
 
 TEST_CASE("Mem2Reg - Fibonacci", "mem2reg")
 {
-    // entry
-    //  / \
-    // T   F
-    //  \ /
-    //  merge
-
     auto checker = [](jl::Function* func) {
         int phi_count = 0;
         std::optional<jl::value::Variable> ret_val;
@@ -168,3 +162,41 @@ fun test(n: int): int [
 )",
         checker);
 }
+
+TEST_CASE("Mem2Reg - For loop", "mem2reg")
+{
+    auto checker = [](jl::Function* func) {
+        int phi_count = 0;
+        std::optional<jl::value::Variable> ret_val;
+
+        for (auto& block : func->blocks()) {
+            for (auto ir = block->head; ir != nullptr; ir = ir->next) {
+                if (auto ret = dynamic_cast<jl::ir::Return*>(ir)) {
+                    ret_val = ret->m_ret_val;
+                }
+            }
+
+            for (auto phi : block->phis) {
+                phi_count += 1;
+            }
+        }
+
+        REQUIRE(phi_count == 2);
+        REQUIRE(ret_val->id() == 16);
+    };
+
+    transform_to_ir(R"(
+fun test(n: int): int [
+    var sum = 0;
+
+    for (var i = 0; i < n; i += 1) [
+        sum += i;
+    ]
+
+    return sum;
+]
+    
+)",
+        checker);
+}
+

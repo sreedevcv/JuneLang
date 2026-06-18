@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <list>
 #include <memory>
 #include <string>
 #include <vector>
@@ -9,7 +10,6 @@
 #include "ir/AllocateVar.hpp"
 #include "ir/IR.hpp"
 #include "types/Type.hpp"
-#include "value/Value.hpp"
 #include "value/Variable.hpp"
 
 namespace jl {
@@ -51,8 +51,6 @@ public:
         entry_block()->tail = new_instr;
     }
 
-    void replace_value(jl::value::Variable from, jl::value::Variable to);
-
     uint32_t m_var_count = 0;
 
     void add_input_arg(value::Variable var);
@@ -61,15 +59,19 @@ public:
 
     std::vector<std::unique_ptr<BasicBlock>>& blocks();
 
-    std::vector<std::unique_ptr<ir::IR>>& irs();
+    std::list<std::unique_ptr<ir::IR>>& irs();
 
     const std::string& name();
+
+    void replace_value(jl::value::Variable from, jl::value::Variable to);
+
+    void remove_ir(BasicBlock* block, ir::IR* ir);
 
 private:
     std::string m_name;
     const type::Type* m_type;
     std::vector<std::unique_ptr<BasicBlock>> m_blocks;
-    std::vector<std::unique_ptr<ir::IR>> m_irs;
+    std::list<std::unique_ptr<ir::IR>> m_irs;
     BasicBlock* m_current_block = nullptr;
     std::vector<value::Variable> m_input_args;
 

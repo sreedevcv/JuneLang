@@ -58,7 +58,7 @@ void insert_phi_instrs(jl::ir::AllocateVar* alloca,
     std::vector<jl::BasicBlock*> blocks_with_writes;
     std::unordered_set<jl::BasicBlock*> phi_added_blocks;
 
-    std::println("Processing {}", alloca->to_str());
+    // std::println("Processing {}", alloca->to_str());
 
     // Find all the blocks with writes where the alloca is used
     for (auto& block : function->blocks()) {
@@ -66,7 +66,7 @@ void insert_phi_instrs(jl::ir::AllocateVar* alloca,
         for (auto instr : instrs) {
             if (instr->uses(alloca->m_addr)) {
                 blocks_with_writes.push_back(block.get());
-                std::println("\tadding block {} with write: {}", block->get_name(), instr->to_str());
+                // std::println("\tadding block {} with write: {}", block->get_name(), instr->to_str());
             }
         }
     }
@@ -75,7 +75,7 @@ void insert_phi_instrs(jl::ir::AllocateVar* alloca,
         jl::BasicBlock* block = blocks_with_writes.back();
         blocks_with_writes.pop_back();
 
-        std::println("- taking block: {}", block->get_name());
+        // std::println("- taking block: {}", block->get_name());
 
         if (!df.contains(block))
             continue;
@@ -85,7 +85,7 @@ void insert_phi_instrs(jl::ir::AllocateVar* alloca,
                 continue;
             }
 
-            std::println("\tfrontier: {}", frontier->get_name());
+            // std::println("\tfrontier: {}", frontier->get_name());
 
             phi_added_blocks.insert(frontier);
             blocks_with_writes.push_back(frontier);
@@ -127,7 +127,7 @@ void replace_value(
 
             if (it->second.second == from) {
                 it->second.second = to;
-                std::println("Original: {}, After mod: {}", from.to_str(), map.at(it->first).second.to_str());
+                // std::println("Original: {}, After mod: {}", from.to_str(), map.at(it->first).second.to_str());
             }
         }
     }
@@ -139,13 +139,13 @@ void remove_read_and_writes(
     VariableValue& variable_values,
     std::unordered_set<jl::BasicBlock*> visited)
 {
-    std::println("Starting Block - {}", block->get_name());
+    // std::println("Starting Block - {}", block->get_name());
 
     // Set the block and value for each of the phis
     for (auto phi : block->phis) {
         if (auto value = get_current_value(variable_values, phi->m_replacing_addr)) {
             auto [blk, ssa] = *value;
-            std::println("- Inserted value ({}, {}) into phi - {}", blk->get_name(), ssa.to_str(), phi->to_str());
+            // std::println("- Inserted value ({}, {}) into phi - {}", blk->get_name(), ssa.to_str(), phi->to_str());
 
             phi->m_opers.insert({ ssa, blk });
             // Now any query for the alloca address will be returned with phi's value
@@ -171,26 +171,26 @@ void remove_read_and_writes(
             replace_value(function, variable_values, read->m_dest, ssa);
             to_be_removed.push_back(read);
 
-            std::println("\tRead - replacing {} with {}", read->m_dest.to_str(), ssa.to_str());
+            // std::println("\tRead - replacing {} with {}", read->m_dest.to_str(), ssa.to_str());
         } else if (auto write = dynamic_cast<jl::ir::Write*>(instr)) {
             variable_values.back().insert({ write->m_base, { block, write->m_src } });
             to_be_removed.push_back(write);
 
-            std::println("\tWrite - removing {}", write->to_str());
+            // std::println("\tWrite - removing {}", write->to_str());
         } else if (auto branch = dynamic_cast<jl::ir::CondJump*>(instr)) {
-            std::println("[To True Branch] {}", branch->m_true_target->get_name());
+            // std::println("[To True Branch] {}", branch->m_true_target->get_name());
 
             variable_values.push_back({});
             remove_read_and_writes(branch->m_true_target, function, variable_values, visited);
             variable_values.pop_back();
 
-            std::println("[To False Branch] {}", branch->m_false_target->get_name());
+            // std::println("[To False Branch] {}", branch->m_false_target->get_name());
 
             variable_values.push_back({});
             remove_read_and_writes(branch->m_false_target, function, variable_values, visited);
             variable_values.pop_back();
         } else if (auto jmp = dynamic_cast<jl::ir::Jump*>(instr)) {
-            std::println("[To Branch] {}", jmp->m_target->get_name());
+            // std::println("[To Branch] {}", jmp->m_target->get_name());
 
             variable_values.push_back({});
             remove_read_and_writes(jmp->m_target, function, variable_values, visited);
@@ -198,10 +198,11 @@ void remove_read_and_writes(
         }
     }
 
-    std::println("Ending Block - {}", block->get_name());
+    // std::println("Ending Block - {}", block->get_name());
 
     for (auto ir : to_be_removed) {
-        block->remove_ir(ir);
+        // block->remove_ir(ir);
+        function->remove_ir(block, ir);
     }
 }
 
@@ -231,7 +232,7 @@ void jl::opt::mem2reg(Function* function)
         insert_phi_instrs(alloca, function, DF);
     }
 
-    std::println("=========Phis are placed==============");
+    // std::println("=========Phis are placed==============");
 
     VariableValue variable_values;
     std::unordered_set<jl::BasicBlock*> visited;
@@ -240,55 +241,7 @@ void jl::opt::mem2reg(Function* function)
     remove_read_and_writes(function->entry_block(), function, variable_values, visited);
 
     for (auto alloca : allocas) {
-        entry_block->remove_ir(alloca);
+        // entry_block->remove_ir(alloca);
+        function->remove_ir(entry_block, alloca);
     }
 }
-
-/*
-test::(v0: int) -> int
-0.entry:
-   40   v1: *int = allocatevar int
-   41   v2: int = 0
-   41   v3: *int = allocatevar int
-   43   v4: int = (v1: *int)[0 x 8] size 8
-   43   v5: int = 10
-   43   v6: bool = v0: int > v5: int
-   43   jump v6: bool ? 1.cond.true : 2.cond.false
-
-1.cond.true:
-   44   v7: int = 1
-   43   jump 3.cond.after
-
-2.cond.false:
-   46   v8: int = 2
-   43   jump 3.cond.after
-
-3.cond.after:
-        v10: int = phi [v8: int 2.cond.false] [v7: int 1.cond.true]
-   49   v9: int = (v3: *int)[0 x 8] size 8
-   49   ret v7: int
-
-
-test::(v0: int) -> int
-0.entry:
-   40   v1: *int = allocatevar int
-   41   v2: int = 0
-   41   v3: *int = allocatevar int
-   43   v4: int = (v1: *int)[0 x 8] size 8
-   43   v5: int = 10
-   43   v6: bool = v0: int > v5: int
-   43   jump v6: bool ? 1.cond.true : 2.cond.false
-
-1.cond.true:
-   44   v7: int = 1
-   43   jump 3.cond.after
-
-2.cond.false:
-   46   v8: int = 2
-   43   jump 3.cond.after
-
-3.cond.after:
-        v10: int = phi [v8: int 2.cond.false] [v7: int 1.cond.true]
-   49   v9: int = (v3: *int)[0 x 8] size 8
-   49   ret v7: int
-*/
