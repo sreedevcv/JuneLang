@@ -23,8 +23,9 @@ include(AddCatch2)
 # JuneInterpreter
 # )
 add_executable(opt_tests
-    opt/DominanceTree.cpp
-    opt/DominanceFrontier.cpp
+    opt/TestDominanceTree.cpp
+    opt/TestDominanceFrontier.cpp
+    opt/TestMem2reg.cpp
 )
 
 target_link_libraries(opt_tests PRIVATE

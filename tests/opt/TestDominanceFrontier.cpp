@@ -10,7 +10,7 @@
 #include <unordered_map>
 #include <unordered_set>
 
-TEST_CASE("Dominance Frontier - Diamond with merge", "opt")
+TEST_CASE("Dominance Frontier - Diamond with merge", "DF")
 {
     // entry
     //  / \
@@ -60,7 +60,7 @@ TEST_CASE("Dominance Frontier - Diamond with merge", "opt")
     }
 }
 
-TEST_CASE("Dominance Frontier - Linear chain (no branching)", "opt")
+TEST_CASE("Dominance Frontier - Linear chain (no branching)", "DF")
 {
     // entry -> b1 -> b2 -> exit
     auto temp_type = new jl::type::Builtin(jl::type::Builtin::Primitive::BOOL);
@@ -107,7 +107,7 @@ TEST_CASE("Dominance Frontier - Linear chain (no branching)", "opt")
     }
 }
 
-TEST_CASE("Dominance Frontier - If with no else (triangle)", "opt")
+TEST_CASE("Dominance Frontier - If with no else (triangle)", "DF")
 {
     //   entry
     //   /  \
@@ -153,7 +153,7 @@ TEST_CASE("Dominance Frontier - If with no else (triangle)", "opt")
     }
 }
 
-TEST_CASE("Dominance Frontier - Nested diamonds", "opt")
+TEST_CASE("Dominance Frontier - Nested diamonds", "DF")
 {
     //         entry
     //         /  \
@@ -224,7 +224,7 @@ TEST_CASE("Dominance Frontier - Nested diamonds", "opt")
     }
 }
 
-TEST_CASE("Dominance Frontier - Loop (while-style)", "opt")
+TEST_CASE("Dominance Frontier - Loop (while-style)", "DF")
 {
     //   entry
     //     |
@@ -278,7 +278,7 @@ TEST_CASE("Dominance Frontier - Loop (while-style)", "opt")
     }
 }
 
-TEST_CASE("Dominance Frontier - Loop with break (nested branch in body)", "opt")
+TEST_CASE("Dominance Frontier - Loop with break (nested branch in body)", "DF")
 {
     //     entry
     //       |
@@ -352,7 +352,7 @@ TEST_CASE("Dominance Frontier - Loop with break (nested branch in body)", "opt")
     }
 }
 
-TEST_CASE("Dominance Frontier - Diamond of diamonds (4-way merge)", "opt")
+TEST_CASE("Dominance Frontier - Diamond of diamonds (4-way merge)", "DF")
 {
     //              entry
     //             /     \
@@ -438,7 +438,7 @@ TEST_CASE("Dominance Frontier - Diamond of diamonds (4-way merge)", "opt")
     }
 }
 
-TEST_CASE("Dominance Frontier - Irreducible-ish CFG (branch into loop from two preds)", "opt")
+TEST_CASE("Dominance Frontier - Irreducible-ish CFG (branch into loop from two preds)", "DF")
 {
     //     entry
     //     /   \

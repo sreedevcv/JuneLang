@@ -8,7 +8,7 @@
 #include <catch2/catch_test_macros.hpp>
 #include <optional>
 
-TEST_CASE("Dominance Tree", "opt")
+TEST_CASE("Dominance Tree", "DT")
 {
     // entry
     //  / \
@@ -34,7 +34,7 @@ TEST_CASE("Dominance Tree", "opt")
     REQUIRE(df[false_block] == entry_block);
 }
 
-TEST_CASE("Dominance Tree - Diamond with merge", "opt")
+TEST_CASE("Dominance Tree - Diamond with merge", "DT")
 {
     // entry
     //  / \
@@ -69,7 +69,7 @@ TEST_CASE("Dominance Tree - Diamond with merge", "opt")
     REQUIRE(df[merge_block] == entry_block);
 }
 
-TEST_CASE("Dominance Tree - Linear chain", "opt")
+TEST_CASE("Dominance Tree - Linear chain", "DT")
 {
     // entry
     //   |
@@ -106,7 +106,7 @@ TEST_CASE("Dominance Tree - Linear chain", "opt")
     REQUIRE(df[b3] == b2);
 }
 
-TEST_CASE("Dominance Tree - Diamond with early return", "opt")
+TEST_CASE("Dominance Tree - Diamond with early return", "DT")
 {
     // entry
     //  / \
@@ -144,7 +144,7 @@ TEST_CASE("Dominance Tree - Diamond with early return", "opt")
     REQUIRE(df[merge_block] == false_block);
 }
 
-TEST_CASE("Dominance Tree - Nested branches", "opt")
+TEST_CASE("Dominance Tree - Nested branches", "DT")
 {
     //        entry
     //        /   \
@@ -199,7 +199,7 @@ TEST_CASE("Dominance Tree - Nested branches", "opt")
     REQUIRE(df[merge_outer_block] == f1_block);
 }
 
-TEST_CASE("Dominance Tree - Simple loop", "opt")
+TEST_CASE("Dominance Tree - Simple loop", "DT")
 {
     //   entry
     //     |
@@ -235,7 +235,7 @@ TEST_CASE("Dominance Tree - Simple loop", "opt")
     REQUIRE(df[exit_block] == header_block);
 }
 
-TEST_CASE("Dominance Tree - Loop with branch inside body", "opt")
+TEST_CASE("Dominance Tree - Loop with branch inside body", "DT")
 {
     //    entry
     //      |
@@ -289,7 +289,7 @@ TEST_CASE("Dominance Tree - Loop with branch inside body", "opt")
     REQUIRE(df[body_merge_block] == body_block);
 }
 
-TEST_CASE("Dominance Tree - Multiple independent branches with common sink", "opt")
+TEST_CASE("Dominance Tree - Multiple independent branches with common sink", "DT")
 {
     //          entry
     //         /     \

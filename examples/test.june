@@ -54,3 +54,16 @@ fun fib(n: int): int [
 
     return b;
 ]
+
+fun test(n: int): int [
+    var a: int = 200;
+    var b: int = 100;
+
+    if (n > 10) [
+        n = a;
+    ] else [
+        n = b;
+    ]
+
+    return n;
+]
