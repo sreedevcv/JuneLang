@@ -36,6 +36,8 @@ namespace ir {
 
         void replace(value::Variable from, value::Variable to) override;
 
+        std::optional<jl::value::Variable> def() override;
+
         value::Variable m_replacing_addr;
         value::Variable m_dest;
 

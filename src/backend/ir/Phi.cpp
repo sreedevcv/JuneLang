@@ -39,3 +39,8 @@ void jl::ir::Phi::replace(value::Variable from, value::Variable to)
             m_dest = to;
     }
 }
+
+std::optional<jl::value::Variable> jl::ir::Phi::def()
+{
+    return m_dest;
+}

@@ -5,39 +5,9 @@
 #include <cstdint>
 #include <functional>
 #include <string>
-#include <unordered_map>
 
 namespace jl {
 namespace value {
-    // class VarData {
-    // public:
-    //     uint32_t add_variable(uint32_t size);
-
-    //     uint32_t add_variable(const type::Type* m_type);
-
-    //     uint32_t new_label();
-
-    //     uint32_t get_size(uint32_t idx) const;
-
-    //     void reset_offset(uint32_t idx, uint32_t source_idx);
-
-    //     uint32_t total_size() const;
-
-    //     struct Data {
-    //         uint32_t size;
-    //         uint32_t offset;
-    //         const type::Type* m_type;
-    //     };
-
-    //     const std::unordered_map<uint32_t, Data>& get_offset_map() const;
-
-    // private:
-    //     uint32_t m_var_count { 0 };
-    //     uint32_t m_total_size { 0 };
-    //     uint32_t m_label_count { 0 };
-    //     std::unordered_map<uint32_t, Data> m_var_offset;
-    // };
-
     class Variable {
     public:
         Variable(uint32_t id, const type::Type* type);
@@ -53,6 +23,17 @@ namespace value {
     private:
         uint32_t m_id;
         const type::Type* m_type;
+    };
+
+    struct VariableHasher {
+        std::size_t operator()(const Variable& var) const
+        {
+            auto hash1 = std::hash<uint32_t> {}(var.id());
+            auto hash2 = std::hash<const type::Type*> {}(var.type());
+            std::size_t seed = hash1;
+            seed ^= hash2 + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+            return seed;
+        }
     };
 }
 }

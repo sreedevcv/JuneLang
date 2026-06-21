@@ -19,6 +19,8 @@ namespace ir {
 
         void replace(value::Variable from, value::Variable to) override;
 
+        std::optional<jl::value::Variable> def() override;
+
         std::string to_str() const override;
         LiteralValue m_source;
         value::Variable m_dest;

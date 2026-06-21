@@ -46,6 +46,12 @@ int main(int argc, char const* argv[])
 
         std::cout << module;
 
+        std::println("----------------------------------------------------------------");
+
+        auto func = module.get_function("test");
+        jl::opt::sccp(func);
+
+
 #else
         // jl::Module module(file_name);
         // module.module().print(llvm::outs(), nullptr);

@@ -5,5 +5,6 @@
 namespace jl {
 namespace opt {
     void mem2reg(Function* function);
+    void sccp(Function* function);
 }
 }

@@ -40,3 +40,8 @@ void jl::ir::CondJump::replace(value::Variable from, value::Variable to)
     if (m_condition == from)
         m_condition = to;
 }
+
+std::optional<jl::value::Variable> jl::ir::CondJump::def()
+{
+    return std::nullopt;
+}

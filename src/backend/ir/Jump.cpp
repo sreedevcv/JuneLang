@@ -26,3 +26,8 @@ bool jl::ir::Jump::uses(value::Variable var)
 void jl::ir::Jump::replace(value::Variable from, value::Variable to)
 {
 }
+
+std::optional<jl::value::Variable> jl::ir::Jump::def()
+{
+    return std::nullopt;
+}

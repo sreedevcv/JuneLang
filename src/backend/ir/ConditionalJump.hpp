@@ -22,6 +22,8 @@ namespace ir {
 
         void replace(value::Variable from, value::Variable to) override;
 
+        std::optional<jl::value::Variable> def() override;
+
         BasicBlock* m_true_target;
         BasicBlock* m_false_target;
         value::Variable m_condition;

@@ -20,6 +20,8 @@ namespace ir {
 
         void replace(value::Variable from, value::Variable to) override;
 
+        std::optional<jl::value::Variable> def() override;
+
         template <typename T>
         void set_value(const T& data)
         {

@@ -43,6 +43,7 @@ add_library(JuneCompiler
     backend/utils/UseIter.cpp
     # backend/codegen/x86CodeGen.cpp
     backend/opt/mem2reg.cpp
+    backend/opt/sccp.cpp
 
     llvm_backend/JuneModule.cpp
     llvm_backend/LLVMIRGen.cpp

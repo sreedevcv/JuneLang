@@ -42,3 +42,8 @@ void jl::ir::TypeCast::replace(value::Variable from, value::Variable to)
     if (m_source == from)
         m_source = to;
 }
+
+std::optional<jl::value::Variable> jl::ir::TypeCast::def()
+{
+    return m_dest;
+}

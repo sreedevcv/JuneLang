@@ -18,6 +18,8 @@ namespace ir {
 
         void replace(value::Variable from, value::Variable to) override;
 
+        std::optional<jl::value::Variable> def() override;
+
         BasicBlock* m_target;
     };
 }

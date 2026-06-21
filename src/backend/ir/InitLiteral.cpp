@@ -30,3 +30,8 @@ void jl::ir::InitLiteral::replace(value::Variable from, value::Variable to)
     if (m_dest == from)
         m_dest = to;
 }
+
+std::optional<jl::value::Variable> jl::ir::InitLiteral::def()
+{
+    return m_dest;
+}

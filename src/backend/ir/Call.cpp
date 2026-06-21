@@ -59,3 +59,8 @@ void jl::ir::Call::replace(value::Variable from, value::Variable to)
             arg = to;
     }
 }
+
+std::optional<jl::value::Variable> jl::ir::Call::def()
+{
+    return m_dest;
+}

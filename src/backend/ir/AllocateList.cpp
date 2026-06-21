@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include <format>
+#include <optional>
 #include <string>
 
 jl::ir::AllocateList::AllocateList(value::Variable fat_ptr, value::Variable list, uint32_t elem_size, uint32_t elem_count, uint32_t line)
@@ -45,4 +46,9 @@ void jl::ir::AllocateList::replace(value::Variable from, value::Variable to)
 
     if (m_list == from)
         m_list = to;
+}
+
+std::optional<jl::value::Variable> jl::ir::AllocateList::def()
+{
+    return std::nullopt;
 }

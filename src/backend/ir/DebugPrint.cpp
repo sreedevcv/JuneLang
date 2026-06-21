@@ -39,3 +39,8 @@ void jl::ir::DebugPrint::replace(value::Variable from, value::Variable to)
     if (m_val == from)
         m_val = to;
 }
+
+std::optional<jl::value::Variable> jl::ir::DebugPrint::def()
+{
+    return std::nullopt;
+}

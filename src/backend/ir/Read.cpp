@@ -48,3 +48,8 @@ void jl::ir::Read::replace(value::Variable from, value::Variable to)
             m_offset = to;
     }
 }
+
+std::optional<jl::value::Variable> jl::ir::Read::def()
+{
+    return m_dest;
+}

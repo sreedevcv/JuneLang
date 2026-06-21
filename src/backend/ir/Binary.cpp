@@ -51,6 +51,8 @@ std::string jl::ir::Binary::to_str() const
         return m_dest.to_str() + " = " + m_operand_a.to_str() + " && " + m_operand_b.to_str();
     case LOG_OR:
         return m_dest.to_str() + " = " + m_operand_a.to_str() + " || " + m_operand_b.to_str();
+    default:
+        return "default-symbol";
     }
 }
 
@@ -76,4 +78,9 @@ void jl::ir::Binary::replace(value::Variable from, value::Variable to)
         m_operand_b = to;
     if (m_dest == from)
         m_dest = to;
+}
+
+std::optional<jl::value::Variable> jl::ir::Binary::def()
+{
+    return m_dest;
 }

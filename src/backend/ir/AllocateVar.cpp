@@ -30,3 +30,8 @@ void jl::ir::AllocateVar::replace(value::Variable from, value::Variable to)
         m_addr = to;
     }
 }
+
+std::optional<jl::value::Variable> jl::ir::AllocateVar::def()
+{
+    return std::nullopt;
+}

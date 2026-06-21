@@ -77,6 +77,8 @@ private:
 
     void chain(ir::IR* ir)
     {
+        ir->parent = m_current_block;
+
         if (m_current_block->head == nullptr) {
             m_current_block->head = ir;
             m_current_block->tail = m_current_block->head;

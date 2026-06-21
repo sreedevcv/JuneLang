@@ -26,6 +26,8 @@ namespace ir {
 
         void replace(value::Variable from, value::Variable to) override;
 
+        std::optional<jl::value::Variable> def() override;
+
         value::Variable m_val;
         type::Builtin::Primitive m_primitive;
         bool m_is_list;

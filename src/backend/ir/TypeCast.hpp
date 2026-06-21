@@ -26,6 +26,8 @@ namespace ir {
 
         void replace(value::Variable from, value::Variable to) override;
 
+        std::optional<jl::value::Variable> def() override;
+
         value::Variable m_dest;
         value::Variable m_source;
 

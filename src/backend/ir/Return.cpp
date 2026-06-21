@@ -2,6 +2,7 @@
 
 #include "backend/ir/IR.hpp"
 
+#include <optional>
 #include <utility>
 
 jl::ir::Return::Return(std::optional<value::Variable> ret_val, uint32_t line)
@@ -35,4 +36,10 @@ void jl::ir::Return::replace(value::Variable from, value::Variable to)
         if (*m_ret_val == from)
             m_ret_val = to;
     }
+}
+
+
+std::optional<jl::value::Variable> jl::ir::Return::def()
+{
+    return std::nullopt;
 }

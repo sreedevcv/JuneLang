@@ -55,11 +55,13 @@ fun fib(n: int): int [
     return b;
 ]
 
-fun test(n: int): int [
-    var sum = 0;
+fun test(): int [
+    var sum = 10;
 
-    for (var i = 0; i < n; i += 1) [
-        sum += i;
+    if (sum < 3) [
+        sum = 3;
+    ] else [
+        sum = 12 * 8;
     ]
 
     return sum;

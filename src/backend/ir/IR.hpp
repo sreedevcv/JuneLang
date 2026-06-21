@@ -6,6 +6,7 @@
 #include <string>
 
 namespace jl {
+class BasicBlock;
 namespace ir {
     struct IR {
         IR(uint32_t line);
@@ -20,6 +21,8 @@ namespace ir {
 
         virtual void replace(value::Variable from, value::Variable to) = 0;
 
+        virtual std::optional<value::Variable> def() = 0;
+
         uint32_t line() const;
 
         uint32_t m_line;
@@ -27,6 +30,8 @@ namespace ir {
         IR* prev = nullptr;
 
         IR* next = nullptr;
+
+        BasicBlock* parent = nullptr;
 
         // Utilities
         void insert_before(IR* ir);

@@ -53,3 +53,8 @@ void jl::ir::Write::replace(value::Variable from, value::Variable to)
             m_offset = to;
     }
 }
+
+std::optional<jl::value::Variable> jl::ir::Write::def()
+{
+    return std::nullopt;
+}

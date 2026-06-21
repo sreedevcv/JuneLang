@@ -23,6 +23,8 @@ namespace ir {
 
         void replace(value::Variable from, value::Variable to) override;
 
+        std::optional<jl::value::Variable> def() override;
+
         std::string m_name;
         std::vector<value::Variable> m_args;
         value::Variable m_dest;

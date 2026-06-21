@@ -95,6 +95,7 @@ void insert_phi_instrs(jl::ir::AllocateVar* alloca,
             auto phi = new jl::ir::Phi(var, alloca->m_addr);
             function->irs().emplace_back(phi);
             frontier->phis.push_back(phi);
+            phi->parent = frontier;
         }
     }
 }
