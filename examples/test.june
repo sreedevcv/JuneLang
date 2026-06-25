@@ -66,3 +66,14 @@ fun test(): int [
 
     return sum;
 ]
+
+
+fun test2(): float [
+    var a = 20.5;
+
+    while (1 < 2) [
+        a += 1.0;    
+    ]
+
+    return a;
+]

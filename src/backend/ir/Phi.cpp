@@ -24,6 +24,12 @@ void jl::ir::Phi::accept(IRVisitor& visitor)
 
 bool jl::ir::Phi::uses(value::Variable variable)
 {
+    for (auto& [var, _] : m_opers) {
+        if (var == variable) {
+            return true;
+        }
+    }
+
     return false;
 }
 

@@ -39,6 +39,23 @@ public:
         chain(m_irs.back().get());
     }
 
+    template <typename T>
+    void add_ir_to_front(T&& ir)
+    {
+        m_irs.push_back(std::make_unique<T>(std::forward<T>(ir)));
+
+        auto new_ir = m_irs.back().get();
+        new_ir->parent = m_current_block;
+
+        if (m_current_block->head == nullptr) {
+            m_current_block->head = new_ir;
+        } else {
+            m_current_block->head->prev = new_ir;
+            new_ir->next = m_current_block->head;
+            m_current_block->head = new_ir;
+        }
+    }
+
     // Specialization for AllocateVar instrs so that they are placed in the entry block
     void add_ir(ir::AllocateVar alloca)
     {
@@ -57,9 +74,11 @@ public:
 
     BasicBlock* entry_block();
 
-    std::vector<std::unique_ptr<BasicBlock>>& blocks();
+    std::list<std::unique_ptr<BasicBlock>>& blocks();
 
     std::list<std::unique_ptr<ir::IR>>& irs();
+
+    const std::vector<value::Variable>& args();
 
     const std::string& name();
 
@@ -67,10 +86,12 @@ public:
 
     void remove_ir(BasicBlock* block, ir::IR* ir);
 
+    void remove_block(BasicBlock* block);
+
 private:
     std::string m_name;
     const type::Type* m_type;
-    std::vector<std::unique_ptr<BasicBlock>> m_blocks;
+    std::list<std::unique_ptr<BasicBlock>> m_blocks;
     std::list<std::unique_ptr<ir::IR>> m_irs;
     BasicBlock* m_current_block = nullptr;
     std::vector<value::Variable> m_input_args;

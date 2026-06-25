@@ -35,7 +35,6 @@ add_library(JuneCompiler
     backend/ir/Read.cpp
     backend/ir/Write.cpp
     backend/ir/Phi.cpp
-    backend/value/Integer.cpp
     backend/value/Variable.cpp
     backend/utils/RPO.cpp
     backend/utils/DominanceTree.cpp

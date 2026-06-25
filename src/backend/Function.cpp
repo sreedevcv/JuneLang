@@ -2,9 +2,7 @@
 #include "BasicBlock.hpp"
 #include "ir/IR.hpp"
 #include "ir/Phi.hpp"
-#include "opt/Optimizer.hpp"
 #include "types/Type.hpp"
-#include "utils/algorithms.hpp"
 #include <iomanip>
 #include <ios>
 #include <ostream>
@@ -51,7 +49,7 @@ jl::BasicBlock* jl::Function::entry_block()
     }
 }
 
-std::vector<std::unique_ptr<jl::BasicBlock>>& jl::Function::blocks()
+std::list<std::unique_ptr<jl::BasicBlock>>& jl::Function::blocks()
 {
     return m_blocks;
 }
@@ -59,6 +57,11 @@ std::vector<std::unique_ptr<jl::BasicBlock>>& jl::Function::blocks()
 std::list<std::unique_ptr<jl::ir::IR>>& jl::Function::irs()
 {
     return m_irs;
+}
+
+const std::vector<jl::value::Variable>& jl::Function::args()
+{
+    return m_input_args;
 }
 
 void jl::Function::replace_value(jl::value::Variable from, jl::value::Variable to)
@@ -79,6 +82,19 @@ void jl::Function::remove_ir(BasicBlock* block, ir::IR* ir)
 const std::string& jl::Function::name()
 {
     return m_name;
+}
+
+void jl::Function::remove_block(BasicBlock* block)
+{
+    for (auto phi : block->phis) {
+        m_irs.remove_if([&](auto&& uptr) { return uptr.get() == phi; });
+    }
+
+    for (auto ir = block->head; ir != nullptr; ir = ir->next) {
+        m_irs.remove_if([&](auto&& uptr) { return uptr.get() == ir; });
+    }
+
+    m_blocks.remove_if([&](auto&& uptr) { return uptr.get() == block; });
 }
 
 std::ostream& jl::operator<<(std::ostream& out, Function& function)

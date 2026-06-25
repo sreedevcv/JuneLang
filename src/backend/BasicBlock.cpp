@@ -2,6 +2,7 @@
 
 #include "ir/ConditionalJump.hpp"
 #include "ir/Jump.hpp"
+#include "ir/Phi.hpp"
 #include "ir/Return.hpp"
 #include <format>
 
@@ -25,6 +26,16 @@ void jl::BasicBlock::remove_ir(ir::IR* ir)
 {
     if (ir == head) {
         head = head->next;
+    } else if (ir == tail) {
+        tail = tail->prev;
+    }
+
+    if (auto phi = dynamic_cast<ir::Phi*>(ir)) {
+        for (int i = 0; i < phis.size(); i++) {
+            if (phis[i] == ir) {
+                phis.erase(phis.begin() + i);
+            }
+        }
     }
 
     ir->remove();

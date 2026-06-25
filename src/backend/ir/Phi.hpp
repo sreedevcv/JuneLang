@@ -47,10 +47,8 @@ namespace ir {
                 seed ^= value + 0x9e3779b9 + (seed << 6) + (seed >> 2);
             }
 
-            // Crucial Change: Accept the exact pair instance used as the key
             std::size_t operator()(const std::pair<value::Variable, BasicBlock*>& p) const
             {
-                // Access fields cleanly via p.first and p.second
                 auto h1 = std::hash<const BasicBlock*> {}(p.second);
                 auto h2 = std::hash<const type::Type*> {}(p.first.type());
                 auto h3 = std::hash<uint32_t> {}(p.first.id());
@@ -69,7 +67,7 @@ namespace ir {
             }
         };
 
-        std::unordered_set<std::pair<value::Variable, BasicBlock*>, HashType /*, EqualType*/> m_opers;
+        std::unordered_set<std::pair<value::Variable, BasicBlock*>, HashType> m_opers;
     };
 
 }

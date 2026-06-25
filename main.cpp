@@ -6,6 +6,7 @@
 #include "opt/Optimizer.hpp"
 
 #include <cassert>
+#include <iostream>
 #include <print>
 #include <string>
 
@@ -38,20 +39,31 @@ int main(int argc, char const* argv[])
         jl::IRGenv2 cg(type_context);
         auto module = cg.generate(stmts);
 
-        for (auto& function : module.functions()) {
-            std::println("before mem2reg ir count: {}", function.get()->irs().size());
-            jl::opt::mem2reg(function.get());
-            std::println("after mem2reg ir count: {}", function.get()->irs().size());
-        }
+        // for (auto& function : module.functions()) {
+        //     std::println("before mem2reg ir count: {}", function.get()->irs().size());
+        //     jl::opt::mem2reg(function.get());
+        //     std::println("after mem2reg ir count: {}", function.get()->irs().size());
+        // }
 
-        std::cout << module;
+        // std::cout << module;
+
+        auto func = module.get_function("fib");
+        jl::opt::mem2reg(func);
+
+        std::cout << *func;
 
         std::println("----------------------------------------------------------------");
 
-        auto func = module.get_function("test");
         jl::opt::sccp(func);
 
+        // for (auto& function : module.functions()) {
+        //     jl::opt::sccp(function.get());
+        // }
 
+        std::println("----------------------------------------------------------------");
+
+        std::cout << *func;
+        // std::cout << module;
 #else
         // jl::Module module(file_name);
         // module.module().print(llvm::outs(), nullptr);
