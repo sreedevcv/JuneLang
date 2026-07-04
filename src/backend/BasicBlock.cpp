@@ -40,3 +40,34 @@ void jl::BasicBlock::remove_ir(ir::IR* ir)
 
     ir->remove();
 }
+
+void jl::BasicBlock::replace_ir(ir::IR* ir, ir::IR* new_ir)
+{
+    if (ir == head) {
+        new_ir = head;
+    } else if (ir == tail) {
+        new_ir = tail;
+    }
+
+    if (auto phi = dynamic_cast<ir::Phi*>(ir)) {
+        std::erase(phis, phi);
+        ir->parent->insert_before(ir->parent->head, new_ir);
+    } else {
+        ir->replace(new_ir);
+    }
+}
+
+void jl::BasicBlock::insert_before(ir::IR* ir, ir::IR* new_ir)
+{
+    new_ir->next = ir;
+    new_ir->prev = ir->prev;
+
+    if (ir == head) {
+        head = new_ir;
+        head->prev = nullptr;
+    } else {
+        ir->prev->next = new_ir;
+    }
+
+    ir->prev = new_ir;
+}

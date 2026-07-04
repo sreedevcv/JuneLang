@@ -137,7 +137,7 @@ TEST_CASE("Mem2Reg - Fibonacci", "mem2reg")
         }
 
         REQUIRE(phi_count == 4);
-        REQUIRE(ret_val->id() == 27);
+        REQUIRE(ret_val->id() == 28);
     };
 
     transform_to_ir(R"(
@@ -182,7 +182,7 @@ TEST_CASE("Mem2Reg - For loop", "mem2reg")
         }
 
         REQUIRE(phi_count == 2);
-        REQUIRE(ret_val->id() == 16);
+        REQUIRE(ret_val->id() == 17);
     };
 
     transform_to_ir(R"(

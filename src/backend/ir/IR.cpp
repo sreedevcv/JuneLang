@@ -33,3 +33,20 @@ void jl::ir::IR::remove()
     prev = nullptr;
     next = nullptr;
 }
+
+void jl::ir::IR::replace(IR* ir)
+{
+    ir->prev = prev;
+    ir->next = next;
+    ir->parent = parent;
+
+    if (prev != nullptr) {
+        prev->next = ir;
+        prev = nullptr;
+    }
+
+    if (next != nullptr) {
+        next->prev = ir;
+        next = nullptr;
+    }
+}

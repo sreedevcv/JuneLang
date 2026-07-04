@@ -519,7 +519,7 @@ struct SCCPState {
                 continue;
             }
 
-            std::println("DEL {} {}", block->get_name(), val);
+            // std::println("DEL {} {}", block->get_name(), val);
 
             // Mark the block to be deleted later
             //
@@ -534,7 +534,7 @@ struct SCCPState {
                 if (auto jump = dynamic_cast<jl::ir::CondJump*>(terminator)) {
                     auto [succ1, succ2] = jl::algorithms::get_sucessors(pred);
                     auto remaining_target = jump->m_true_target == block ? jump->m_false_target : jump->m_true_target;
-                    function->remove_ir(pred, jump);
+                    function->remove_ir(jump);
                     function->set_current_block(pred);
                     function->add_ir(jl::ir::Jump(remaining_target, 0));
                 }
@@ -557,15 +557,16 @@ struct SCCPState {
         }
 
         for (auto block : blocks_to_be_deleted) {
+            std::println("Deleting {}", block->get_name());
             function->remove_block(block);
         }
     }
 
     // Removes all defs that have a CONSTAT lattice value since
     // we now know what its value is
-    void remove_constant_defs()
+    std::unordered_map<jl::value::Variable, jl::ir::IR*> remove_constant_defs()
     {
-        std::vector<jl::ir::IR*> to_be_removed;
+        std::unordered_map<jl::value::Variable, jl::ir::IR*> to_be_removed;
 
         constexpr auto is_used = [](jl::Function* function, jl::value::Variable def) {
             for (auto& ir : function->irs()) {
@@ -586,40 +587,59 @@ struct SCCPState {
                     }
                 }
 
-                std::println("Removing ir: {}", ir->to_str());
-                to_be_removed.push_back(ir.get());
+                to_be_removed[*def] = ir.get();
             }
         }
 
-        for (auto ir : to_be_removed) {
-            function->remove_ir(ir->parent, ir);
-        }
+        return to_be_removed;
     }
 
     // Add a constant literal for all uses which has a constant value
-    void add_used_constants_as_literals()
+    void add_used_constants_as_literals(std::unordered_map<jl::value::Variable, jl::ir::IR*>& to_be_removed)
     {
         class IRVisitorForUses : public jl::ir::IRVisitor {
             const ValueMap& lattice_values;
             jl::Function* function;
             std::unordered_set<uint32_t> added;
+            std::unordered_map<jl::value::Variable, jl::ir::IR*>& to_be_removed;
 
         public:
-            IRVisitorForUses(const ValueMap& lattice_values, jl::Function* function)
+            IRVisitorForUses(const ValueMap& lattice_values,
+                jl::Function* function,
+                std::unordered_map<jl::value::Variable, jl::ir::IR*>& to_be_removed)
                 : lattice_values(lattice_values)
                 , function(function)
+                , to_be_removed(to_be_removed)
             {
             }
 
             std::vector<jl::ir::InitLiteral> new_literals;
 
         private:
+            // If this variable has a constant value then add it as constant literal
+            // in our CFG
             void add_literal_ir_if_constant(const jl::value::Variable& var)
             {
+                // Add this only if its a constant and has not already been added
                 if (lattice_values.at(var).type == CONSTANT && !added.contains(var.id())) {
-                    auto literal = jl::LiteralValue(*lattice_values.at(var).value);
-                    // function->add_ir(jl::ir::InitLiteral(literal, var, 0));
-                    new_literals.emplace_back(std::move(literal), var, 0);
+                    // If the variable is already marked for removal then remove it from the list
+                    // Check if its a constant literal, if its not then replace it with one
+                    if (to_be_removed.contains(var)) {
+                        auto ir = to_be_removed[var];
+                        if (!dynamic_cast<jl::ir::InitLiteral*>(ir)) {
+                            // This is not constant literal so we replace this ir with a constant literal
+                            auto literal = jl::LiteralValue(*lattice_values.at(var).value);
+                            auto init_literal = new jl::ir::InitLiteral(std::move(literal), var, 0);
+                            function->irs().emplace_back(init_literal);
+                            function->replace_ir(ir, init_literal);
+                        }
+                        // Already present, but marked for deletion, so remove it from the to_be_removed list
+                        to_be_removed.erase(var);
+                    } else {
+                        // Add as a new literal
+                        auto literal = jl::LiteralValue(*lattice_values.at(var).value);
+                        new_literals.emplace_back(std::move(literal), var, 0);
+                    }
                     added.insert(var.id());
                 }
             }
@@ -704,9 +724,17 @@ struct SCCPState {
             void visit_init_literal_ir(jl::ir::InitLiteral& literal) { }
         };
 
-        IRVisitorForUses visitor(lattice_values, function);
+        IRVisitorForUses visitor(lattice_values, function, to_be_removed);
 
         for (auto& ir : function->irs()) {
+
+            if (auto def = ir->def()) {
+                // Only consider those instructions which have not been marked for removal
+                if (to_be_removed.contains(*def)) {
+                    continue;
+                }
+            }
+
             ir->accept(visitor);
         }
 
@@ -715,7 +743,29 @@ struct SCCPState {
         function->set_current_block(entry);
 
         for (auto literal : visitor.new_literals) {
-            function->add_ir_to_front(std::move(literal));
+            auto var = literal.m_dest;
+
+            // If the variable is already marked for removal then remove it from the list
+            // Check if its a constant literal, if its not then replace it with one
+            if (to_be_removed.contains(var)) {
+                auto ir = to_be_removed[var];
+                if (!dynamic_cast<jl::ir::InitLiteral*>(ir)) {
+                    // This is not constant literal so we replace this ir with a constant literal
+                    auto literal = jl::LiteralValue(*lattice_values.at(var).value);
+                    auto init_literal = new jl::ir::InitLiteral(std::move(literal), var, 0);
+                    function->irs().emplace_back(init_literal);
+                    function->replace_ir(ir, init_literal);
+                }
+                to_be_removed.erase(var);
+            } else {
+                // Add as a new literal
+                function->add_ir_to_front(std::move(literal));
+            }
+        }
+
+        for (auto [_, ir] : to_be_removed) {
+            std::println("Removing ir: {}", ir->to_str());
+            function->remove_ir(ir);
         }
     }
 
@@ -727,7 +777,6 @@ struct SCCPState {
         std::stack<jl::BasicBlock*> stk;
         stk.push(function->entry_block());
 
-        // auto helper = [&](this auto self, jl::BasicBlock* block) {
         while (!stk.empty()) {
             auto block = stk.top();
             stk.pop();
@@ -738,16 +787,12 @@ struct SCCPState {
 
             visited.insert(block);
 
-            size_t instr_count = 0;
+            size_t instr_count = block->phis.size();
             for (auto ir = block->head; ir != nullptr; ir = ir->next) {
                 instr_count += 1;
             }
 
-            // assert(instr_count != 0);
-
             auto terminator = block->get_terminator();
-
-            std::println("Selected {} to collapse", block->get_name());
 
             // add the blocks to consider next
             if (auto jmp = dynamic_cast<jl::ir::Jump*>(terminator)) {
@@ -793,9 +838,9 @@ struct SCCPState {
                 }
             }
         }
-        // };
 
         for (auto block : to_be_removed) {
+            std::println("Removing block: {}", block->get_name());
             function->remove_block(block);
         }
     }
@@ -852,7 +897,7 @@ void jl::opt::sccp(jl::Function* function)
     }
 
     state.remove_unexecuted_blocks();
-    state.remove_constant_defs();
-    state.add_used_constants_as_literals();
+    auto to_be_removed = state.remove_constant_defs();
+    state.add_used_constants_as_literals(to_be_removed);
     state.collapse_empty_blocks();
 }

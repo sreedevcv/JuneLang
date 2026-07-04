@@ -110,6 +110,15 @@ void jl::IRGenv2::pop_block()
     m_block = &m_env.top();
 }
 
+void jl::IRGenv2::allocate_variable(value::Variable address_var, const type::Type* type, uint32_t line)
+{
+
+    auto curr_block = m_module.current_function()->current_block();
+    m_module.current_function()->set_current_block(m_module.current_function()->entry_block());
+    m_module.current_function()->add_ir_to_front(ir::AllocateVar(address_var, type, line));
+    m_module.current_function()->set_current_block(curr_block);
+}
+
 //---------------------------------------------EXPR----------------------------------------------
 
 std::any jl::IRGenv2::visit_assign_expr(Assign* expr)
@@ -182,7 +191,7 @@ std::any jl::IRGenv2::visit_binary_expr(Binary* expr)
     const auto operand_a = emit(expr->m_left.get());
     const auto operand_b = emit(expr->m_right.get());
     const auto dest = m_block->create_varaible(expr->m_type);
-    const auto is_float = dynamic_cast<const type::Builtin*>(expr->m_type)->m_primitive == type::Builtin::FLOAT;
+    const auto is_float = dynamic_cast<const type::Builtin*>(expr->m_left->m_type)->m_primitive == type::Builtin::FLOAT;
     m_module.current_function()->add_ir<ir::Binary>(dest, operand_a, operand_b, operation, is_float, expr->m_oper.get_line());
 
     return dest;
@@ -421,7 +430,8 @@ std::any jl::IRGenv2::visit_var_stmt(VarStmt* stmt)
     const auto src = emit(stmt->m_initializer->get());
     auto pointer = m_type_context.create_pointer(type::Pointer(stmt->m_initializer->get()->m_type));
     const auto addr_var = m_block->create_named_variable(stmt->m_name.get_lexeme(), pointer);
-    m_module.current_function()->add_ir<ir::AllocateVar>(addr_var, src.type(), stmt->m_line);
+    // m_module.current_function()->add_ir<ir::AllocateVar>(addr_var, src.type(), stmt->m_line);
+    allocate_variable(addr_var, src.type(), stmt->m_line);
     m_module.current_function()->add_ir<ir::Write>(
         src,
         addr_var,
@@ -536,6 +546,7 @@ std::any jl::IRGenv2::visit_func_stmt(FuncStmt* stmt)
         auto addr_var = m_block->create_named_variable(stmt->m_params[i]->get_lexeme(), pointer);
         // Allocate it on the stack
         m_module.current_function()->add_ir<ir::AllocateVar>(addr_var, param_type, stmt->m_line);
+        // allocate_variable(addr_var, param_type, stmt->m_line);
         // Store the value
         m_module.current_function()->add_ir<ir::Write>(input_arg,
             addr_var,

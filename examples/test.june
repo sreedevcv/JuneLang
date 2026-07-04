@@ -55,7 +55,28 @@ fun fib(n: int): int [
     return b;
 ]
 
-fun test(): int [
+fun test2(n: int): int [
+    var sum = 0;
+
+    for (var i = 0; i < n; i += 1) [
+        sum += i;
+    ]
+
+    return sum;
+]
+
+fun x(): float [
+    var a = 20.5;
+
+    while (1 < 2) [
+        var c = 12.0;
+        a += 1.0 + c;    
+    ]
+
+    return a;
+]
+
+fun simulate_drone_flight(): int [
     var sum = 10;
 
     if (sum < 3) [
@@ -65,15 +86,14 @@ fun test(): int [
     ]
 
     return sum;
-]
+]   
 
-
-fun test2(): float [
-    var a = 20.5;
-
-    while (1 < 2) [
-        a += 1.0;    
+fun test(): int [
+    var i = 0;
+    var sum = 0;
+    while (i < 10) [
+        sum += i;
+        i += 1;
     ]
-
-    return a;
+    return sum;
 ]

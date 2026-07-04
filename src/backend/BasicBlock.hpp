@@ -20,10 +20,14 @@ struct BasicBlock {
     ir::IR* tail = nullptr;
 
     ir::IR* get_terminator() const;
-    
+
     std::string get_name() const;
 
     void remove_ir(ir::IR* ir);
+
+    void replace_ir(ir::IR* ir, ir::IR* new_ir);
+
+    void insert_before(ir::IR* ir, ir::IR* new_ir);
 
     // Get instructions of a particular type
     template <typename T>

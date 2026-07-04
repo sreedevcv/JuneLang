@@ -9,6 +9,7 @@
 #include "backend/LiteralValue.hpp"
 #include "backend/ir/InitLiteral.hpp"
 #include "backend/value/Variable.hpp"
+#include "types/Type.hpp"
 #include "types/TypeContext.hpp"
 
 #include <cstdint>
@@ -54,6 +55,9 @@ private:
     void push_block();
 
     void pop_block();
+
+    void allocate_variable(value::Variable address_var, const type::Type* type, uint32_t line);
+    
 
     std::any visit_assign_expr(Assign* expr) override;
     std::any visit_binary_expr(Binary* expr) override;

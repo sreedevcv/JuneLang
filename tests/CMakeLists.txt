@@ -26,13 +26,13 @@ add_executable(opt_tests
     opt/TestDominanceTree.cpp
     opt/TestDominanceFrontier.cpp
     opt/TestMem2reg.cpp
+    opt/TestSCCP.cpp
 )
 
 target_link_libraries(opt_tests PRIVATE
     Catch2::Catch2WithMain
     JuneCompiler
 )
-
 
 include(CTest)
 include(Catch)

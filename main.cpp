@@ -3,6 +3,7 @@
 #include "Parser.hpp"
 #include "backend/IRGen_v2.hpp"
 #include "frontend/SemanticAnalysis.hpp"
+#include "ir/Return.hpp"
 #include "opt/Optimizer.hpp"
 
 #include <cassert>
@@ -47,7 +48,10 @@ int main(int argc, char const* argv[])
 
         // std::cout << module;
 
-        auto func = module.get_function("fib");
+        auto func = module.get_function("test");
+        // std::cout << *func;
+        // std::println("----------------------------------------------------------------");
+
         jl::opt::mem2reg(func);
 
         std::cout << *func;
@@ -63,6 +67,21 @@ int main(int argc, char const* argv[])
         std::println("----------------------------------------------------------------");
 
         std::cout << *func;
+
+        std::unordered_map<uint32_t, jl::LiteralValue> values;
+
+        for (auto& blk : func->blocks()) {
+            for (auto ir = blk->head; ir != nullptr; ir = ir->next) {
+                if (auto ret = dynamic_cast<jl::ir::Return*>(ir)) {
+                    if (ret->m_ret_val) {
+                        (void)(values.at(ret->m_ret_val->id()).data);
+                    }
+                } else if (auto init = dynamic_cast<jl::ir::InitLiteral*>(ir)) {
+                    values.emplace(init->m_dest.id(), init->m_source);
+                }
+            }
+        }
+
         // std::cout << module;
 #else
         // jl::Module module(file_name);

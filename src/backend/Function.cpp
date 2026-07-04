@@ -73,9 +73,15 @@ void jl::Function::replace_value(jl::value::Variable from, jl::value::Variable t
     }
 }
 
-void jl::Function::remove_ir(BasicBlock* block, ir::IR* ir)
+void jl::Function::remove_ir(ir::IR* ir)
 {
-    block->remove_ir(ir);
+    ir->parent->remove_ir(ir);
+    m_irs.remove_if([&](auto&& uptr) { return uptr.get() == ir; });
+}
+
+void jl::Function::replace_ir(ir::IR* ir, ir::IR* new_ir)
+{
+    ir->parent->replace_ir(ir, new_ir);
     m_irs.remove_if([&](auto&& uptr) { return uptr.get() == ir; });
 }
 

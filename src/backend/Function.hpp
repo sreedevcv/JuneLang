@@ -84,7 +84,9 @@ public:
 
     void replace_value(jl::value::Variable from, jl::value::Variable to);
 
-    void remove_ir(BasicBlock* block, ir::IR* ir);
+    void remove_ir(ir::IR* ir);
+
+    void replace_ir(ir::IR* ir, ir::IR* new_ir);
 
     void remove_block(BasicBlock* block);
 

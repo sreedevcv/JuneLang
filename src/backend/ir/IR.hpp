@@ -37,6 +37,8 @@ namespace ir {
         void insert_before(IR* ir);
 
         void remove();
+
+        void replace(IR* ir);
     };
 }
 }

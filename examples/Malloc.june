@@ -1,0 +1,12 @@
+fun simulate_drone_flight(start_altitude: int, target_distance: float): bool [
+    var is_flight_active = true;
+
+    while (is_flight_active) [
+        var wind_factor = 0.0;
+
+        for (var i = 1; i < 5; i += 1) [
+        ]
+    ]
+
+    return false;
+]

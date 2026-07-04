@@ -1,0 +1,76 @@
+fun simulate_drone_flight(start_altitude: int, target_distance: float): bool [
+    var altitude = start_altitude;
+    var distance_traveled = 0.0;
+    var fuel = 100.0;
+    var is_flight_active = true;
+    var success = false;
+    
+    var step_count = 0;
+
+    // Flight started. Target and Initial Altitude set.
+
+    while (is_flight_active) [
+        step_count += 1;
+        fuel -= 1.5;  // Base fuel burn per step
+        
+        // 1. Complex environmental calculation using a FOR loop
+        var wind_factor = 0.0;
+        for (var i = 1; i < 5; i += 1) [
+            if ((step_count + i) % 2 == 0) [
+                wind_factor += 0.25;
+            ] else [
+                wind_factor -= 0.15;
+            ]
+        ]
+
+        // 2. Update distance based on altitude and wind
+        if (altitude > 500) [
+            distance_traveled += 2.5 + wind_factor;
+        ] else [
+            distance_traveled += 1.2 + (wind_factor * 0.5);
+        ]
+
+        // 3. Collatz-inspired altitude fluctuation
+        if (altitude % 2 == 0) [
+            altitude = altitude / 2;
+        ] else [
+            altitude = (altitude * 3) + 1;
+        ]
+        
+        // Apply minor corrections so it doesn't instantly crash
+        if (altitude < 10) [
+            altitude += 45;  // Auto-thrust recovery
+        ] else [
+            if (altitude > 2000) [
+                altitude -= 800; // Airbrakes
+                fuel -= 3.0;     // Heavy fuel penalty
+            ]
+        ]
+
+        // 4. Flight Status Check
+        if (fuel <= 0.0) [
+            // Out of fuel! Crashed.
+            is_flight_active = false;
+            success = false;
+        ] else [
+            if (distance_traveled >= target_distance) [
+                if (altitude <= 100) [
+                    // Safe landing achieved!
+                    success = true;
+                ] else [
+                    // Overshot destination or too high to land. Crashed!
+                    success = false;
+                ]
+                is_flight_active = false;
+            ] else [
+                if (step_count > 50) [
+                    // Flight timed out. Emergency landing initiated.
+                    is_flight_active = false;
+                    success = (altitude <= 150);
+                ]
+            ]
+        ]
+    ]
+
+    return success;
+]

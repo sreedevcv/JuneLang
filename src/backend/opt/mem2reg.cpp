@@ -151,8 +151,6 @@ void remove_read_and_writes(
             phi->m_opers.insert({ ssa, blk });
             // Now any query for the alloca address will be returned with phi's value
             variable_values.back().insert({ phi->m_replacing_addr, { block, phi->m_dest } });
-        } else {
-            unimplemented("Should not reach here");
         }
     }
 
@@ -202,8 +200,7 @@ void remove_read_and_writes(
     // std::println("Ending Block - {}", block->get_name());
 
     for (auto ir : to_be_removed) {
-        // block->remove_ir(ir);
-        function->remove_ir(block, ir);
+        function->remove_ir(ir);
     }
 }
 
@@ -242,7 +239,6 @@ void jl::opt::mem2reg(Function* function)
     remove_read_and_writes(function->entry_block(), function, variable_values, visited);
 
     for (auto alloca : allocas) {
-        // entry_block->remove_ir(alloca);
-        function->remove_ir(entry_block, alloca);
+        function->remove_ir(alloca);
     }
 }
