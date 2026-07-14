@@ -9,7 +9,7 @@
 
 jl::Function::Function(std::string name, const type::Type* type)
     : m_name(name)
-    , m_type(type)
+    , m_type(static_cast<const type::Func*>(type))
 {
 }
 
@@ -59,7 +59,7 @@ std::list<std::unique_ptr<jl::ir::IR>>& jl::Function::irs()
     return m_irs;
 }
 
-const std::vector<jl::value::Variable>& jl::Function::args()
+const std::vector<jl::value::Variable>& jl::Function::args() const
 {
     return m_input_args;
 }
@@ -85,9 +85,14 @@ void jl::Function::replace_ir(ir::IR* ir, ir::IR* new_ir)
     m_irs.remove_if([&](auto&& uptr) { return uptr.get() == ir; });
 }
 
-const std::string& jl::Function::name()
+const std::string& jl::Function::name() const
 {
     return m_name;
+}
+
+const jl::type::Func* jl::Function::type() const
+{
+    return m_type;
 }
 
 void jl::Function::remove_block(BasicBlock* block)

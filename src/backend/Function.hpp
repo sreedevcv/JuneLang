@@ -40,7 +40,7 @@ public:
     }
 
     template <typename T>
-    void add_ir_to_front(T&& ir)
+    T* add_ir_to_front(T&& ir)
     {
         m_irs.push_back(std::make_unique<T>(std::forward<T>(ir)));
 
@@ -49,13 +49,58 @@ public:
 
         if (m_current_block->head == nullptr) {
             m_current_block->head = new_ir;
+            m_current_block->tail = new_ir;
         } else {
             m_current_block->head->prev = new_ir;
             new_ir->next = m_current_block->head;
             m_current_block->head = new_ir;
         }
+
+        return static_cast<T*>(m_irs.back().get());
     }
 
+    template <typename T>
+    T* add_ir_before(T&& ir, ir::IR* point)
+    {
+        m_irs.push_back(std::make_unique<T>(std::forward<T>(ir)));
+
+        auto new_ir = m_irs.back().get();
+        new_ir->parent = m_current_block;
+
+        if (m_current_block->head == point) {
+            m_current_block->head = new_ir;
+            new_ir->next = point;
+            point->prev = new_ir;
+        } else {
+            new_ir->prev = point->prev;
+            new_ir->next = point;
+            point->prev->next = new_ir;
+            point->prev = new_ir;
+        }
+
+        return static_cast<T*>(m_irs.back().get());
+    }
+    template <typename T>
+    T* add_ir_after(T&& ir, ir::IR* point)
+    {
+        m_irs.push_back(std::make_unique<T>(std::forward<T>(ir)));
+
+        auto new_ir = m_irs.back().get();
+        new_ir->parent = m_current_block;
+
+        if (m_current_block->tail == point) {
+            m_current_block->tail = new_ir;
+            new_ir->prev = point;
+            point->next = new_ir;
+        } else {
+            new_ir->next = point->next;
+            new_ir->prev = point;
+            point->next->prev = new_ir;
+            point->next = new_ir;
+        }
+
+        return static_cast<T*>(m_irs.back().get());
+    }
     // Specialization for AllocateVar instrs so that they are placed in the entry block
     void add_ir(ir::AllocateVar alloca)
     {
@@ -78,9 +123,11 @@ public:
 
     std::list<std::unique_ptr<ir::IR>>& irs();
 
-    const std::vector<value::Variable>& args();
+    const std::vector<value::Variable>& args() const;
 
-    const std::string& name();
+    const std::string& name() const;
+
+    const type::Func* type() const;
 
     void replace_value(jl::value::Variable from, jl::value::Variable to);
 
@@ -92,7 +139,7 @@ public:
 
 private:
     std::string m_name;
-    const type::Type* m_type;
+    const type::Func* m_type;
     std::list<std::unique_ptr<BasicBlock>> m_blocks;
     std::list<std::unique_ptr<ir::IR>> m_irs;
     BasicBlock* m_current_block = nullptr;

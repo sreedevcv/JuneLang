@@ -2,7 +2,6 @@
 #include "Function.hpp"
 #include "Optimizer.hpp"
 
-#include "Utils.hpp"
 #include "ir/AllocateVar.hpp"
 #include "ir/ConditionalJump.hpp"
 #include "ir/IR.hpp"

@@ -13,7 +13,7 @@ add_library(JuneCompiler
     ArgParser.cpp
     backend/SemanticBlock.cpp
     backend/BasicBlock.cpp
-    # backend/FuncBlock.cpp
+
     # backend/IRGen.cpp
     backend/LiteralValue.cpp
     backend/Module.cpp
@@ -40,21 +40,23 @@ add_library(JuneCompiler
     backend/utils/DominanceTree.cpp
     backend/utils/DominanceFrontier.cpp
     backend/utils/UseIter.cpp
+
     # backend/codegen/x86CodeGen.cpp
     backend/opt/mem2reg.cpp
     backend/opt/sccp.cpp
+    backend/opt/RemovePhiNodes.cpp
 
+    # backend/opt/RegAlloc.cpp
     llvm_backend/JuneModule.cpp
     llvm_backend/LLVMIRGen.cpp
     llvm_backend/JuneFunction.cpp
 )
 
 # target_compile_options(JuneInterpreter
-#     PRIVATE
-#     "$<$<COMPILE_LANG_AND_ID:CXX,GNU>:-fconcepts-diagnostics-depth=3>"
-#     "$<$<COMPILE_LANG_AND_ID:CXX,GNU>:-fdiagnostics-all-candidates>"
+# PRIVATE
+# "$<$<COMPILE_LANG_AND_ID:CXX,GNU>:-fconcepts-diagnostics-depth=3>"
+# "$<$<COMPILE_LANG_AND_ID:CXX,GNU>:-fdiagnostics-all-candidates>"
 # )
-
 find_package(LLVM REQUIRED CONFIG)
 message(STATUS "Found LLVM ${LLVM_PACKAGE_VERSION}")
 

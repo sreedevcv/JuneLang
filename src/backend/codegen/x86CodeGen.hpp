@@ -1,6 +1,7 @@
 #pragma once
 
-#include "FuncBlock.hpp"
+#include "Function.hpp"
+#include "Module.hpp"
 #include "ir/Binary.hpp"
 #include "ir/IRVisitor.hpp"
 #include "types/Type.hpp"
@@ -16,17 +17,16 @@
 namespace jl {
 class x86CodeGen : ir::IRVisitor {
 public:
-    x86CodeGen(std::unordered_map<std::string, std::unique_ptr<FuncBlock::BasicBlock>> ir_data);
+    x86CodeGen(Module& module);
 
     std::stringstream generate();
 
 private:
-    std::unordered_map<std::string, std::unique_ptr<FuncBlock::BasicBlock>> m_ir_data;
-
+    Module& m_mod;
     std::stringstream m_out;
     std::stringstream m_data_section_out;
 
-    void generate(const std::string& func_name, const FuncBlock::BasicBlock& func_data);
+    void generate(const std::string& func_name, Function* function);
 
     struct VarInfo {
         uint32_t size;
@@ -63,11 +63,15 @@ private:
 
     void visit_jump_ir(ir::Jump& jump) override;
 
+    void visit_cond_jump_ir(ir::CondJump& jump) override;
+
     void visit_unary_ir(ir::Unary& unary) override;
 
     void visit_label_ir(ir::Label& label) override;
 
-    void visit_allocate_ir(ir::AllocateList& allocate) override;
+    void visit_allocate_list_ir(ir::AllocateList& allocate) override;
+
+    void visit_allocate_var_ir(ir::AllocateVar& allocate) override;
 
     void visit_read_ir(ir::Read& read) override;
 
@@ -115,7 +119,7 @@ private:
         { ir::Binary::BANG_EQUAL, { "setne", "setne" } },
     };
 
-    const FuncBlock::BasicBlock* m_current_func;
+    const Function* m_current_func;
     const std::string* m_current_func_name;
 };
 }

@@ -52,37 +52,26 @@ int main(int argc, char const* argv[])
         // std::cout << *func;
         // std::println("----------------------------------------------------------------");
 
-        jl::opt::mem2reg(func);
+        // jl::opt::mem2reg(func);
 
         std::cout << *func;
 
         std::println("----------------------------------------------------------------");
 
-        jl::opt::sccp(func);
+        //        jl::opt::sccp(func);
+        //       jl::opt::remove_phi_nodes(func);
 
-        // for (auto& function : module.functions()) {
-        //     jl::opt::sccp(function.get());
-        // }
-
-        std::println("----------------------------------------------------------------");
-
-        std::cout << *func;
-
-        std::unordered_map<uint32_t, jl::LiteralValue> values;
-
-        for (auto& blk : func->blocks()) {
-            for (auto ir = blk->head; ir != nullptr; ir = ir->next) {
-                if (auto ret = dynamic_cast<jl::ir::Return*>(ir)) {
-                    if (ret->m_ret_val) {
-                        (void)(values.at(ret->m_ret_val->id()).data);
-                    }
-                } else if (auto init = dynamic_cast<jl::ir::InitLiteral*>(ir)) {
-                    values.emplace(init->m_dest.id(), init->m_source);
-                }
-            }
+        for (auto& function : module.functions()) {
+            jl::opt::mem2reg(function.get());
+            jl::opt::sccp(function.get());
+            jl::opt::remove_phi_nodes(function.get());
         }
 
-        // std::cout << module;
+        std::println("----------------------------------------------------------------");
+
+        //      std::cout << *func;
+
+        std::cout << module;
 #else
         // jl::Module module(file_name);
         // module.module().print(llvm::outs(), nullptr);
