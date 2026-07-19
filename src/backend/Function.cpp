@@ -3,8 +3,10 @@
 #include "ir/IR.hpp"
 #include "ir/Phi.hpp"
 #include "types/Type.hpp"
+#include <cstdio>
 #include <iomanip>
 #include <ios>
+#include <iostream>
 #include <ostream>
 
 jl::Function::Function(std::string name, const type::Type* type)
@@ -136,7 +138,11 @@ std::ostream& jl::operator<<(std::ostream& out, Function& function)
 
         // Then print the other instructions
         for (auto ptr = block->head; ptr != nullptr; ptr = ptr->next) {
+            //          std::cout << std::right << std::setw(5) << ptr->m_line << '\t' << ptr->to_str()
+            //                      << std::endl;
+
             out << std::right << std::setw(5) << ptr->m_line << '\t' << ptr->to_str() << '\n';
+            fflush(stdout);
         }
 
         out << std::endl;

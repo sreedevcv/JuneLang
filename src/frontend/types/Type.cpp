@@ -7,7 +7,6 @@
 #include <llvm/Support/Casting.h>
 #include <string>
 
-
 llvm::Value* jl::type::Type::llvm_default_value(llvm::LLVMContext& context) const
 {
     return nullptr;
@@ -53,6 +52,25 @@ uint32_t jl::type::Builtin::size() const
     return 0;
 }
 
+uint32_t jl::type::Builtin::alignment() const
+{
+    switch (m_primitive) {
+    case INT:
+        return 8;
+    case FLOAT:
+        return 8;
+    case BOOL:
+        return 1;
+    case CHAR:
+        return 1;
+    case VOID:
+        return 1;
+    case PRIMITIVE_MAX:
+        unimplemented();
+        return 0;
+        break;
+    }
+}
 llvm::Type* jl::type::Builtin::llvm_type(llvm::LLVMContext& context) const
 {
     switch (m_primitive) {
@@ -109,6 +127,11 @@ uint32_t jl::type::Pointer::size() const
     return 8;
 }
 
+uint32_t jl::type::Pointer::alignment() const
+{
+    return 8;
+}
+
 llvm::Type* jl::type::Pointer::llvm_type(llvm::LLVMContext& context) const
 {
     unimplemented();
@@ -143,6 +166,11 @@ uint32_t jl::type::Func::size() const
     return 0;
 }
 
+uint32_t jl::type::Func::alignment() const
+{
+    return 8;
+}
+
 llvm::Type* jl::type::Func::llvm_type(llvm::LLVMContext& context) const
 {
     unimplemented();
@@ -163,7 +191,12 @@ std::string jl::type::List::to_str() const
 
 uint32_t jl::type::List::size() const
 {
-    return 16;
+    return 8;
+}
+
+uint32_t jl::type::List::alignment() const
+{
+    return 8;
 }
 
 llvm::Type* jl::type::List::llvm_type(llvm::LLVMContext& context) const

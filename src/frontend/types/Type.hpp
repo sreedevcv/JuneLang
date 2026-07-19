@@ -25,6 +25,7 @@ namespace type {
         virtual ~Type() = default;
         virtual std::string to_str() const = 0;
         virtual uint32_t size() const = 0;
+        virtual uint32_t alignment() const = 0;
         virtual llvm::Type* llvm_type(llvm::LLVMContext& context) const = 0;
         virtual llvm::Value* llvm_default_value(llvm::LLVMContext& context) const;
     };
@@ -50,6 +51,7 @@ namespace type {
 
         std::string to_str() const override;
         uint32_t size() const override;
+        uint32_t alignment() const override;
         llvm::Type* llvm_type(llvm::LLVMContext& context) const override;
         llvm::Value* llvm_default_value(llvm::LLVMContext& context) const override;
     };
@@ -62,6 +64,7 @@ namespace type {
 
         std::string to_str() const override;
         uint32_t size() const override;
+        uint32_t alignment() const override;
         llvm::Type* llvm_type(llvm::LLVMContext& context) const override;
     };
 
@@ -74,6 +77,7 @@ namespace type {
 
         std::string to_str() const override;
         uint32_t size() const override;
+        uint32_t alignment() const override;
         llvm::Type* llvm_type(llvm::LLVMContext& context) const override;
     };
 
@@ -85,6 +89,7 @@ namespace type {
         virtual ~List() = default;
         std::string to_str() const override;
         uint32_t size() const override;
+        uint32_t alignment() const override;
         llvm::Type* llvm_type(llvm::LLVMContext& context) const override;
     };
 

@@ -1,9 +1,10 @@
 #include "ErrorHandler.hpp"
+#include "Function.hpp"
 #include "Lexer.hpp"
 #include "Parser.hpp"
 #include "backend/IRGen_v2.hpp"
+#include "codegen/x86/Generator.hpp"
 #include "frontend/SemanticAnalysis.hpp"
-#include "ir/Return.hpp"
 #include "opt/Optimizer.hpp"
 
 #include <cassert>
@@ -12,6 +13,15 @@
 #include <string>
 
 #define CUSTOM_BACKEND
+
+void compile_function(jl::Function* function)
+{
+    jl::opt::mem2reg(function);
+    jl::opt::sccp(function);
+    jl::opt::remove_phi_nodes(function);
+
+    std::cout << *function;
+}
 
 int main(int argc, char const* argv[])
 {
@@ -41,31 +51,25 @@ int main(int argc, char const* argv[])
         auto module = cg.generate(stmts);
 
         // for (auto& function : module.functions()) {
-        //     std::println("before mem2reg ir count: {}", function.get()->irs().size());
-        //     jl::opt::mem2reg(function.get());
-        //     std::println("after mem2reg ir count: {}", function.get()->irs().size());
-        // }
-
-        // std::cout << module;
+        //   compile_function(function.get());
+        //}
 
         auto func = module.get_function("test");
 
         std::cout << *func;
         std::println("----------------------------------------------------------------");
-
         jl::opt::mem2reg(func);
-
         std::cout << *func;
         std::println("----------------------------------------------------------------");
-
         jl::opt::sccp(func);
-        jl::opt::remove_phi_nodes(func);
-
+        std::cout << *func;
         std::println("----------------------------------------------------------------");
 
-        std::cout << *func;
-        std::cout << func->entry_block()->get_name();
+        jl::x86::Generator x86gen(func);
+        auto x86func = x86gen.generate();
 
+        std::println("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~X86_64~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
+        std::println("{}", x86func.to_string());
 #else
         // jl::Module module(file_name);
         // module.module().print(llvm::outs(), nullptr);

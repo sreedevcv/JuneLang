@@ -45,6 +45,9 @@ add_library(JuneCompiler
     backend/opt/mem2reg.cpp
     backend/opt/sccp.cpp
     backend/opt/RemovePhiNodes.cpp
+    backend/codegen/x86/Generator.cpp
+    backend/codegen/x86/MachineBlock.cpp
+    backend/codegen/x86/MachineFunction.cpp
 
     # backend/opt/RegAlloc.cpp
     llvm_backend/JuneModule.cpp

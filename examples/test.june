@@ -88,8 +88,7 @@ fun simulate_drone_flight(): int [
     return sum;
 ]   
 
-fun test(): int [
-    var i = 0;
+fun test(i: int): int [
     var sum = 0;
     while (i < 10) [
         sum += i;
@@ -99,10 +98,7 @@ fun test(): int [
     return sum;
 ]
 
-fun breaking(): int [
-    var sum = 0;
-    while (sum < 10) [
-        return 7;
-    ]
-    return sum;
+fun test3(x: int): int [
+    var a = x + 4;
+    return a;
 ]
