@@ -49,29 +49,23 @@ int main(int argc, char const* argv[])
         // std::cout << module;
 
         auto func = module.get_function("test");
-        // std::cout << *func;
-        // std::println("----------------------------------------------------------------");
-
-        // jl::opt::mem2reg(func);
 
         std::cout << *func;
+        std::println("----------------------------------------------------------------");
+
+        jl::opt::mem2reg(func);
+
+        std::cout << *func;
+        std::println("----------------------------------------------------------------");
+
+        jl::opt::sccp(func);
+        jl::opt::remove_phi_nodes(func);
 
         std::println("----------------------------------------------------------------");
 
-        //        jl::opt::sccp(func);
-        //       jl::opt::remove_phi_nodes(func);
+        std::cout << *func;
+        std::cout << func->entry_block()->get_name();
 
-        for (auto& function : module.functions()) {
-            jl::opt::mem2reg(function.get());
-            jl::opt::sccp(function.get());
-            jl::opt::remove_phi_nodes(function.get());
-        }
-
-        std::println("----------------------------------------------------------------");
-
-        //      std::cout << *func;
-
-        std::cout << module;
 #else
         // jl::Module module(file_name);
         // module.module().print(llvm::outs(), nullptr);

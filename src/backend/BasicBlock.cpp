@@ -43,17 +43,18 @@ void jl::BasicBlock::remove_ir(ir::IR* ir)
 
 void jl::BasicBlock::replace_ir(ir::IR* ir, ir::IR* new_ir)
 {
-    if (ir == head) {
-        new_ir = head;
-    } else if (ir == tail) {
-        new_ir = tail;
-    }
 
     if (auto phi = dynamic_cast<ir::Phi*>(ir)) {
         std::erase(phis, phi);
         ir->parent->insert_before(ir->parent->head, new_ir);
     } else {
         ir->replace(new_ir);
+    }
+
+    if (ir == head) {
+        head = new_ir;
+    } else if (ir == tail) {
+        tail = new_ir;
     }
 }
 

@@ -94,6 +94,15 @@ fun test(): int [
     while (i < 10) [
         sum += i;
         i += 1;
+        return sum;
+    ]
+    return sum;
+]
+
+fun breaking(): int [
+    var sum = 0;
+    while (sum < 10) [
+        return 7;
     ]
     return sum;
 ]

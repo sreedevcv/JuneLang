@@ -1,6 +1,6 @@
-#include "BasicBlock.hpp"
 #include "Optimizer.hpp"
 
+#include "BasicBlock.hpp"
 #include "Function.hpp"
 #include "LiteralValue.hpp"
 #include "Utils.hpp"
@@ -519,30 +519,26 @@ struct SCCPState {
                 continue;
             }
 
-            // std::println("DEL {} {}", block->get_name(), val);
-
             // Mark the block to be deleted later
-            //
             blocks_to_be_deleted.push_back(block);
 
             // If an predecessors of the block have a conditional jump to this block,
             // then change it a unconditional jump and remove the reference this to block
-            //
             for (auto pred : predecessors[block]) {
                 auto terminator = pred->get_terminator();
 
                 if (auto jump = dynamic_cast<jl::ir::CondJump*>(terminator)) {
                     auto [succ1, succ2] = jl::algorithms::get_sucessors(pred);
                     auto remaining_target = jump->m_true_target == block ? jump->m_false_target : jump->m_true_target;
+                    assert(remaining_target != nullptr && "atleast one live target to jump to");
                     function->remove_ir(jump);
                     function->set_current_block(pred);
-                    function->add_ir(jl::ir::Jump(remaining_target, 0));
+                    function->add_ir(jl::ir::Jump(remaining_target, jump->m_line));
                 }
             }
 
             // If this block is being used by a phi node, then remove the block from its
             // list of operands
-            //
             for (auto& blk : function->blocks()) {
                 for (auto phi : blk->phis) {
                     auto iter = std::find_if(phi->m_opers.begin(),
