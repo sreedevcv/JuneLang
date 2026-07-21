@@ -1,25 +1,12 @@
 #pragma once
 
 #include <cstdint>
+#include <optional>
 #include <string>
 #include <variant>
 
 namespace jl {
 namespace x86 {
-    struct VirtualRegister {
-        uint32_t id;
-
-        inline VirtualRegister(uint32_t idx)
-            : id(idx)
-        {
-        }
-
-        inline std::string to_string() const
-        {
-            return "t" + std::to_string(id);
-        }
-    };
-
     struct PhysicalRegister {
         enum Type {
             rax,
@@ -77,6 +64,32 @@ namespace x86 {
                 return "r15";
                 break;
             }
+        }
+    };
+
+    struct VirtualRegister {
+        uint32_t id;
+        std::optional<PhysicalRegister> hint;
+
+        inline VirtualRegister()
+            : id(UINT32_MAX)
+            , hint(std::nullopt)
+        {
+        }
+
+        inline VirtualRegister(uint32_t idx, std::optional<PhysicalRegister> hint = std::nullopt)
+            : id(idx)
+            , hint(hint)
+        {
+        }
+
+        inline std::string to_string() const
+        {
+            std::string s = "t" + std::to_string(id);
+            if (hint) {
+                s += "(" + hint->to_string() + ")";
+            }
+            return s;
         }
     };
 

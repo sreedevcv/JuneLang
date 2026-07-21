@@ -1,5 +1,6 @@
 #pragma once
 
+#include "codegen/x86/MachineBlock.hpp"
 #include "codegen/x86/Register.hpp"
 
 #include <cstdint>
@@ -10,49 +11,9 @@
 namespace jl {
 namespace x86 {
     struct Instruction {
-        uint32_t m_line = 0;
+        uint32_t m_id = 0;
         virtual std::string to_string() const = 0;
         virtual ~Instruction() = default;
-    };
-
-    struct MemoryOperand {
-        // [base + scale * index + displacement]
-        Register base;
-        std::optional<Register> index;
-        uint32_t scale = 1;
-        int32_t displacement = 0;
-
-        inline std::string to_string() const
-        {
-            std::string addr = std::visit(RegisterPrinter {}, base);
-            if (index) {
-                addr += std::to_string(scale) + " * " + std::visit(RegisterPrinter {}, *index);
-            }
-            if (displacement != 0) {
-                addr += std::to_string(displacement);
-            }
-            return "[" + addr + "]";
-        }
-    };
-
-    using Operand = std::variant<Register, MemoryOperand, int64_t>;
-
-    struct OperandPrinter {
-
-        std::string operator()(const Register& reg) const
-        {
-            return std::visit(RegisterPrinter {}, reg);
-        }
-
-        std::string operator()(const MemoryOperand& mem) const
-        {
-            return mem.to_string();
-        }
-
-        std::string operator()(const int64_t& imm) const
-        {
-            return std::to_string(imm);
-        }
     };
 
     enum class SizeDirective {
@@ -76,10 +37,51 @@ namespace x86 {
         }
     }
 
+    struct MemoryOperand {
+        // [base + scale * index + displacement]
+        Register base;
+        std::optional<Register> index;
+        uint32_t scale = 1;
+        int32_t displacement = 0;
+        std::optional<SizeDirective> size;
+
+        inline std::string to_string() const
+        {
+            std::string addr = std::visit(RegisterPrinter {}, base);
+            auto size_dir = (size ? jl::x86::to_string(*size) + " PTR " : "");
+            if (index) {
+                addr += std::to_string(scale) + " * " + std::visit(RegisterPrinter {}, *index);
+            }
+            if (displacement != 0) {
+                addr += std::to_string(displacement);
+            }
+            return size_dir + "[" + addr + "]";
+        }
+    };
+
+    using Operand = std::variant<Register, MemoryOperand, int64_t>;
+
+    struct OperandPrinter {
+
+        std::string operator()(const Register& reg) const
+        {
+            return std::visit(RegisterPrinter {}, reg);
+        }
+
+        std::string operator()(const MemoryOperand& mem) const
+        {
+            return mem.to_string();
+        }
+
+        std::string operator()(const int64_t& imm) const
+        {
+            return std::to_string(imm);
+        }
+    };
+
     struct Mov : public Instruction {
         Operand source;
         Operand dest;
-        std::optional<SizeDirective> size;
         bool is_float;
 
         ~Mov() = default;
@@ -88,7 +90,6 @@ namespace x86 {
         {
             OperandPrinter printer;
             return "mov "
-                + (size ? jl::x86::to_string(*size) + " PTR " : "")
                 + std::visit(printer, dest)
                 + ", " + std::visit(printer, source);
         }
@@ -97,7 +98,6 @@ namespace x86 {
     struct Add : public Instruction {
         Operand source;
         Operand dest;
-        std::optional<SizeDirective> size;
         bool is_float;
 
         ~Add() = default;
@@ -106,7 +106,6 @@ namespace x86 {
         {
             OperandPrinter printer;
             return "add "
-                + (size ? jl::x86::to_string(*size) + " PTR " : "")
                 + std::visit(printer, dest)
                 + ", " + std::visit(printer, source);
         }
@@ -115,7 +114,6 @@ namespace x86 {
     struct Sub : public Instruction {
         Operand source;
         Operand dest;
-        std::optional<SizeDirective> size;
         bool is_float;
 
         ~Sub() = default;
@@ -124,27 +122,32 @@ namespace x86 {
         {
             OperandPrinter printer;
             return "sub "
-                + (size ? jl::x86::to_string(*size) + " PTR " : "")
                 + std::visit(printer, dest)
                 + ", " + std::visit(printer, source);
         }
     };
 
     struct Less : public Instruction {
-        Operand source;
-        Operand dest;
-        std::optional<SizeDirective> size;
+        VirtualRegister reg;
         bool is_float;
 
         ~Less() = default;
 
         inline std::string to_string() const override
         {
-            OperandPrinter printer;
-            return "setl "
-                + (size ? jl::x86::to_string(*size) + " PTR " : "")
-                + std::visit(printer, dest)
-                + ", " + std::visit(printer, source);
+            return "setl " + reg.to_string();
+        }
+    };
+
+    struct Equals : public Instruction {
+        VirtualRegister reg;
+        bool is_float;
+
+        ~Equals() = default;
+
+        inline std::string to_string() const override
+        {
+            return "sete " + reg.to_string();
         }
     };
 
@@ -180,31 +183,28 @@ namespace x86 {
     };
 
     struct Jump : public Instruction {
-        std::string label;
+        MachineBlock* target;
 
         ~Jump() = default;
 
         inline std::string to_string() const override
         {
-            return "jmp " + label;
+            return "jmp " + target->m_name;
         }
     };
 
-    struct JumpEqual : public Instruction {
-        std::string label;
-
+    struct JumpEqual : public Jump {
         ~JumpEqual() = default;
 
         inline std::string to_string() const override
         {
-            return "je " + label;
+            return "je " + target->m_name;
         }
     };
 
     struct Cmp : public Instruction {
-        Operand source;
-        Operand dest;
-        std::optional<SizeDirective> size;
+        Operand a;
+        Operand b;
         bool is_float;
 
         ~Cmp() = default;
@@ -213,9 +213,32 @@ namespace x86 {
         {
             OperandPrinter printer;
             return "cmp "
-                + (size ? jl::x86::to_string(*size) + " PTR " : "")
-                + std::visit(printer, dest)
-                + ", " + std::visit(printer, source);
+                + std::visit(printer, a)
+                + ", " + std::visit(printer, b);
+        }
+    };
+
+    struct Lea : public Instruction {
+        MemoryOperand source;
+        VirtualRegister dest;
+        bool is_float;
+
+        Lea(
+            MemoryOperand source,
+            VirtualRegister dest)
+            : source(source)
+            , dest(dest)
+        {
+        }
+
+        ~Lea() = default;
+
+        inline std::string to_string() const override
+        {
+            OperandPrinter printer;
+            return "lea "
+                + dest.to_string()
+                + ", " + source.to_string();
         }
     };
 }

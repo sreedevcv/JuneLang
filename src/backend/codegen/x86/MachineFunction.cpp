@@ -1,9 +1,18 @@
 #include "MachineFunction.hpp"
+#include "Instruction.hpp"
+
 #include "Function.hpp"
+#include "codegen/x86/MachineBlock.hpp"
 #include "codegen/x86/Register.hpp"
 #include "ir/AllocateVar.hpp"
+#include <algorithm>
 #include <cstdint>
+#include <memory>
 #include <sstream>
+#include <stack>
+#include <unordered_map>
+#include <unordered_set>
+#include <vector>
 
 jl::x86::MachineFunction::MachineFunction(const std::string& name, Function* function)
     : m_name(name)
@@ -28,22 +37,36 @@ jl::x86::MachineFunction::MachineFunction(const std::string& name, Function* fun
     total_stack_space = offset;
 }
 
-jl::x86::Register jl::x86::MachineFunction::get_register(value::Variable var)
+jl::x86::MachineFunction::~MachineFunction() = default;
+
+jl::x86::VirtualRegister jl::x86::MachineFunction::new_register(std::optional<PhysicalRegister> hint)
+{
+    return VirtualRegister(m_reg_count++, hint);
+}
+
+jl::x86::VirtualRegister jl::x86::MachineFunction::get_register(value::Variable var)
 {
     if (m_register_map.contains(var.id())) {
         return m_register_map[var.id()];
     }
 
-    Register r(m_reg_count++);
+    VirtualRegister r(m_reg_count++);
     m_register_map[var.id()] = r;
     return r;
 }
-jl::x86::Register jl::x86::MachineFunction::new_register()
+
+jl::x86::MachineBlock* jl::x86::MachineFunction::get_block(const std::string& name)
 {
-    //            return Register;
+    if (m_block_map.contains(name)) {
+        return m_block_map[name];
+    } else {
+        m_blocks.push_back(std::make_unique<MachineBlock>(MachineBlock(name)));
+        m_block_map[name] = m_blocks.back().get();
+        return m_blocks.back().get();
+    }
 }
 
-std::list<jl::x86::MachineBlock>& jl::x86::MachineFunction::blocks()
+std::list<std::unique_ptr<jl::x86::MachineBlock>>& jl::x86::MachineFunction::blocks()
 {
     return m_blocks;
 }
@@ -55,7 +78,7 @@ std::string jl::x86::MachineFunction::to_string() const
     ss << m_name << ": \n";
 
     for (const auto& block : m_blocks) {
-        ss << block.to_string();
+        ss << block->to_string();
         ss << "\n";
     }
 
@@ -63,7 +86,7 @@ std::string jl::x86::MachineFunction::to_string() const
     return ss.str();
 }
 
-jl::x86::Register jl::x86::MachineFunction::map_register(value::Variable var, Register reg)
+jl::x86::Register jl::x86::MachineFunction::map_register(value::Variable var, VirtualRegister reg)
 {
     m_register_map[var.id()] = reg;
     return reg;
@@ -72,4 +95,59 @@ jl::x86::Register jl::x86::MachineFunction::map_register(value::Variable var, Re
 int32_t jl::x86::MachineFunction::get_ssa_offset(value::Variable var) const
 {
     return m_stk_offset.at(var.id());
+}
+
+std::unordered_map<jl::x86::MachineBlock*, std::vector<jl::x86::MachineBlock*>> jl::x86::MachineFunction::predecessors() const
+{
+    std::unordered_map<MachineBlock*, std::vector<MachineBlock*>> preds;
+
+    for (auto& block : m_blocks) {
+        auto successors = block->successors();
+
+        for (auto succ : successors) {
+            preds[succ].push_back(block.get());
+        }
+    }
+
+    return preds;
+}
+
+std::vector<jl::x86::MachineBlock*> jl::x86::MachineFunction::rpo() const
+{
+    std::unordered_set<MachineBlock*> visited;
+    std::stack<MachineBlock*> stk;
+    std::vector<MachineBlock*> post_order;
+    auto entry_block = m_blocks.front().get();
+
+    if (entry_block) {
+        stk.push(entry_block);
+        visited.insert(entry_block);
+    }
+
+    while (!stk.empty()) {
+        auto node = stk.top();
+
+        auto successors = node->successors();
+
+        // Find an unvisited child to descend into
+        bool pushed = false;
+
+        for (auto succ : successors) {
+            if (succ != nullptr && !visited.contains(succ)) {
+                visited.insert(succ);
+                stk.push(succ);
+                pushed = true;
+            }
+        }
+
+        if (!pushed) {
+            // All children processed — emit this node
+            post_order.push_back(node);
+            stk.pop();
+        }
+    }
+
+    std::reverse(post_order.begin(), post_order.end());
+
+    return post_order;
 }

@@ -20,6 +20,8 @@ void compile_function(jl::Function* function)
     jl::opt::sccp(function);
     jl::opt::remove_phi_nodes(function);
 
+    jl::x86::Generator x86gen(function);
+    auto x86func = x86gen.generate();
     std::cout << *function;
 }
 
@@ -54,7 +56,7 @@ int main(int argc, char const* argv[])
         //   compile_function(function.get());
         //}
 
-        auto func = module.get_function("test");
+        auto func = module.get_function("fib");
 
         std::cout << *func;
         std::println("----------------------------------------------------------------");
@@ -62,6 +64,9 @@ int main(int argc, char const* argv[])
         std::cout << *func;
         std::println("----------------------------------------------------------------");
         jl::opt::sccp(func);
+        std::cout << *func;
+        std::println("----------------------------------------------------------------");
+        jl::opt::remove_phi_nodes(func);
         std::cout << *func;
         std::println("----------------------------------------------------------------");
 

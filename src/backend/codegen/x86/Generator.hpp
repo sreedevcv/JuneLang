@@ -9,6 +9,7 @@
 #include "ir/IRVisitor.hpp"
 #include "value/Variable.hpp"
 #include <optional>
+#include <unordered_map>
 
 namespace jl {
 namespace x86 {
@@ -16,14 +17,18 @@ namespace x86 {
     public:
         Generator(Function* function);
 
+        ~Generator() = default;
+
         MachineFunction generate();
 
-        MachineBlock generate(BasicBlock* function);
+        void generate(BasicBlock* function);
 
     private:
         Function* m_function;
         MachineFunction m_out;
         MachineBlock* m_curr_block;
+        MachineBlock* m_epilogue_block;
+        std::unordered_map<value::Variable, MemoryOperand> m_memory_locs;
 
         void set_current_block(MachineBlock* block);
 
