@@ -48,6 +48,7 @@ add_library(JuneCompiler
     backend/codegen/x86/Generator.cpp
     backend/codegen/x86/MachineBlock.cpp
     backend/codegen/x86/MachineFunction.cpp
+    backend/codegen/x86/LivenessAnalysis.cpp
 
     # backend/opt/RegAlloc.cpp
     llvm_backend/JuneModule.cpp

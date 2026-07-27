@@ -151,3 +151,13 @@ std::vector<jl::x86::MachineBlock*> jl::x86::MachineFunction::rpo() const
 
     return post_order;
 }
+
+void jl::x86::MachineFunction::map_physical_register(PhysicalRegister::Type reg)
+{
+    m_physical_register_map[reg] = new_register(PhysicalRegister(reg));
+}
+
+jl::x86::VirtualRegister jl::x86::MachineFunction::get_physical_register(PhysicalRegister::Type reg) const
+{
+    return m_physical_register_map.at(reg);
+}

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <functional>
 #include <optional>
 #include <string>
 #include <variant>
@@ -91,9 +92,23 @@ namespace x86 {
             }
             return s;
         }
+
+        inline bool operator==(const VirtualRegister& reg) const
+        {
+            return id == reg.id;
+        }
     };
 
-    using Register = std::variant<PhysicalRegister, VirtualRegister>;
+    struct VirtualRegisterHasher {
+        std::size_t operator()(const VirtualRegister& reg) const
+        {
+            auto hash1 = std::hash<uint32_t> {}(reg.id);
+            return hash1;
+        }
+    };
+
+    using Register
+        = std::variant<PhysicalRegister, VirtualRegister>;
 
     struct RegisterPrinter {
         std::string operator()(const PhysicalRegister& reg) const

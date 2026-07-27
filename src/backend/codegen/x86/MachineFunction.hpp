@@ -33,6 +33,10 @@ namespace x86 {
 
         Register map_register(value::Variable var, VirtualRegister reg);
 
+        void map_physical_register(PhysicalRegister::Type reg);
+
+        VirtualRegister get_physical_register(PhysicalRegister::Type reg) const;
+
         MachineBlock* get_block(const std::string& name);
 
         std::list<std::unique_ptr<MachineBlock>>& blocks();
@@ -54,6 +58,7 @@ namespace x86 {
         std::unordered_map<uint32_t, VirtualRegister> m_register_map;
         std::unordered_map<uint32_t, int32_t> m_stk_offset;
         std::unordered_map<std::string, MachineBlock*> m_block_map;
+        std::unordered_map<PhysicalRegister::Type, VirtualRegister> m_physical_register_map;
     };
 }
 }

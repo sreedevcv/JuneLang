@@ -5,7 +5,7 @@
 namespace jl {
 namespace x86 {
     namespace pass {
-        void number_instructions(MachineFunction* function);
+        void liveness_analysis(MachineFunction* function);
     }
 }
 }

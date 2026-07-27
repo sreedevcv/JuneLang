@@ -1,4 +1,5 @@
 #include "Generator.hpp"
+
 #include "Function.hpp"
 #include "LiteralValue.hpp"
 #include "Utils.hpp"
@@ -47,27 +48,21 @@ jl::x86::Generator::Generator(jl::Function* function)
 
 jl::x86::MachineFunction jl::x86::Generator::generate()
 {
-    auto epilogue = std::make_unique<MachineBlock>(m_function->name() + "_epilogue");
-    m_epilogue_block = epilogue.get();
-
-    for (auto& block : m_function->blocks()) {
-        generate(block.get());
-        // m_out.blocks().push_back(std::make_unique<MachineBlock>(generate(block.get())));
-    }
-
     // Insert prologue
-    auto& entry = m_out.blocks().front();
+    auto entry = m_out.get_block(m_function->entry_block()->get_name());
+    m_out.map_physical_register(PhysicalRegister::rbp);
+    m_out.map_physical_register(PhysicalRegister::rsp);
 
     Push* push_instr = new Push();
-    push_instr->value = PhysicalRegister(PhysicalRegister::rbp);
+    push_instr->value = m_out.get_physical_register(PhysicalRegister::rbp);
 
     Mov* mov_instr = new Mov();
-    mov_instr->dest = PhysicalRegister(PhysicalRegister::rbp);
-    mov_instr->source = PhysicalRegister(PhysicalRegister::rsp);
+    mov_instr->dest = m_out.get_physical_register(PhysicalRegister::rbp);
+    mov_instr->source = m_out.get_physical_register(PhysicalRegister::rsp);
     mov_instr->is_float = false;
 
     Sub* sub_instr = new Sub();
-    sub_instr->dest = PhysicalRegister(PhysicalRegister::rsp);
+    sub_instr->dest = m_out.get_physical_register(PhysicalRegister::rsp);
     sub_instr->source = m_out.total_stack_space;
     sub_instr->is_float = false;
 
@@ -75,14 +70,23 @@ jl::x86::MachineFunction jl::x86::Generator::generate()
     entry->m_instructions.insert(entry->m_instructions.begin(), std::unique_ptr<Instruction>(std::move(mov_instr)));
     entry->m_instructions.insert(entry->m_instructions.begin(), std::unique_ptr<Instruction>(std::move(push_instr)));
 
+    // Create an epilogue block that can be reference by the return generator
+    auto epilogue = std::make_unique<MachineBlock>(m_function->name() + "_epilogue");
+    m_epilogue_block = epilogue.get();
+
+    // Generate x86 instructions for each of the june ir
+    for (auto& block : m_function->blocks()) {
+        generate(block.get());
+    }
+
     // Insert epilogue block
     auto eplg_mov_instr = new Mov();
-    eplg_mov_instr->dest = PhysicalRegister(PhysicalRegister::rsp);
-    eplg_mov_instr->source = PhysicalRegister(PhysicalRegister::rbp);
+    eplg_mov_instr->dest = m_out.new_register(PhysicalRegister(PhysicalRegister::rsp));
+    eplg_mov_instr->source = m_out.get_physical_register(PhysicalRegister::rbp);
     mov_instr->is_float = false;
 
     auto pop_instr = new Pop();
-    pop_instr->value = PhysicalRegister(PhysicalRegister::rbp);
+    pop_instr->value = m_out.get_physical_register(PhysicalRegister::rbp);
 
     auto ret_instr = new Return;
 
@@ -240,7 +244,7 @@ void jl::x86::Generator::visit_allocate_list_ir(ir::AllocateList& allocate)
 void jl::x86::Generator::visit_allocate_var_ir(ir::AllocateVar& allocate)
 {
     MemoryOperand stack_source;
-    stack_source.base = m_out.new_register(PhysicalRegister(PhysicalRegister::rbp));
+    stack_source.base = m_out.get_physical_register(PhysicalRegister::rbp);
     stack_source.displacement = get_stack_offset(allocate.m_addr);
     stack_source.index = std::nullopt;
 

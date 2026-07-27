@@ -4,6 +4,7 @@
 #include "Parser.hpp"
 #include "backend/IRGen_v2.hpp"
 #include "codegen/x86/Generator.hpp"
+#include "codegen/x86/Passes.hpp"
 #include "frontend/SemanticAnalysis.hpp"
 #include "opt/Optimizer.hpp"
 
@@ -23,6 +24,10 @@ void compile_function(jl::Function* function)
     jl::x86::Generator x86gen(function);
     auto x86func = x86gen.generate();
     std::cout << *function;
+
+    std::println("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~X86_64~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
+    std::println("{}", x86func.to_string());
+    jl::x86::pass::liveness_analysis(&x86func);
 }
 
 int main(int argc, char const* argv[])
@@ -75,6 +80,7 @@ int main(int argc, char const* argv[])
 
         std::println("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~X86_64~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
         std::println("{}", x86func.to_string());
+        jl::x86::pass::liveness_analysis(&x86func);
 #else
         // jl::Module module(file_name);
         // module.module().print(llvm::outs(), nullptr);
