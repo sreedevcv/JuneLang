@@ -1,9 +1,11 @@
+#include "Utils.hpp"
 #include "codegen/x86/Passes.hpp"
 
 #include "codegen/x86/Instruction.hpp"
 #include "codegen/x86/MachineBlock.hpp"
 #include "codegen/x86/MachineFunction.hpp"
 #include "codegen/x86/Register.hpp"
+#include <algorithm>
 #include <cstdint>
 #include <print>
 #include <unordered_map>
@@ -92,12 +94,98 @@ struct LivenessAnalysis {
             }
         }
     }
+
+    // LiveIntervalMap calculate_live_intervals()
+    // {
+    // auto successors = function->successors();
+    // number_instructions();
+    //
+    // LiveIntervalMap intervals;
+    //
+    // for (uint32_t i = 0; i < rpo.size(); i++) {
+    // auto block = rpo[i];
+    //
+    // for (auto in_reg : live_in[block]) {
+    // intervals[in_reg].start = std::min(intervals[in_reg].start, i);
+    // }
+    //
+    // for (auto out_reg : live_out[block]) {
+    // intervals[out_reg].end = std::max(intervals[out_reg].end, i);
+    // }
+    // }
+    //
+    // return intervals;
+    // }
+
+    jl::x86::pass::LiveIntervalMap calculate_live_intervals()
+    {
+        number_instructions();
+
+        jl::x86::pass::LiveIntervalMap intervals;
+
+        for (auto& input : function->inputs()) {
+            intervals[input].start = 0;
+            intervals[input].end = 0;
+        }
+
+        for (const auto& block : rpo) {
+            const auto& live_in_set = live_in[block];
+            const auto& live_out_set = live_out[block];
+
+            // Process definitions (use first definition point)
+            for (const auto& instr : block->m_instructions) {
+                for (const auto reg : instr->defs()) {
+                    intervals[reg].start = std::min(intervals[reg].start, instr->m_id);
+                }
+            }
+
+            // Process live-out (use last point where reg is live)
+            for (const auto reg : live_out_set) {
+                // Find the last instruction in this block where 'reg' is live
+                // (either defined here or in live_in and still live)
+                for (auto instr_iter = block->m_instructions.rbegin();
+                     instr_iter != block->m_instructions.rend();
+                     ++instr_iter) {
+                    const auto& instr = *instr_iter;
+
+                    // If reg is used or defined in this instruction, it's the last point
+                    bool is_used = std::find(instr->uses().begin(), instr->uses().end(), reg) != instr->uses().end();
+                    bool is_defined = std::find(instr->defs().begin(), instr->defs().end(), reg) != instr->defs().end();
+
+                    if (is_used || is_defined) {
+                        intervals[reg].end = std::max(intervals[reg].end, instr->m_id);
+                        break;
+                    }
+
+                    // Also stop if we hit an instruction where reg is killed (redefined)
+                    if (is_defined) {
+                        break;
+                    }
+                }
+            }
+        }
+
+        for (auto& [reg, interval] : intervals) {
+            if (interval.end < interval.start) {
+                if (interval.end == 0) {
+                    // This is a variable that is just used for this particular instruction (regs like rax for return)
+                    // For now make this live for just a single instruction
+                    interval.end = interval.start;
+                } else {
+                    unimplemented("Something went wrong with liveness_analysis");
+                }
+            }
+        }
+
+        return intervals;
+    }
 };
 
-void jl::x86::pass::liveness_analysis(jl::x86::MachineFunction* function)
+jl::x86::pass::LiveIntervalMap jl::x86::pass::liveness_analysis(jl::x86::MachineFunction* function)
 {
     LivenessAnalysis la(function);
     la.liveness_analysis();
+    auto intervals = la.calculate_live_intervals();
 
     std::println("~~~~~~~~~~~~~~~~~~Liveness Analysis~~~~~~~~~~~~~~~~~~~~~~");
 
@@ -116,4 +204,16 @@ void jl::x86::pass::liveness_analysis(jl::x86::MachineFunction* function)
 
         std::println("\n{}", block->to_string());
     }
+
+    std::println("\nRPO Indices: ");
+
+    for (int i = 0; i < la.rpo.size(); i++) {
+        std::println("{}: {}", i, la.rpo[i]->m_name);
+    }
+
+    for (const auto& [reg, interval] : intervals) {
+        std::println("{}: [{}, {}]", reg.to_string(), interval.start, interval.end);
+    }
+
+    return intervals;
 }

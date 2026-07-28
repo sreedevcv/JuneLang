@@ -41,7 +41,8 @@ jl::x86::Generator::Generator(jl::Function* function)
             && static_cast<const type::Builtin*>(arg.type())->m_primitive != type::Builtin::FLOAT
             && "floats support");
         ;
-        m_out.map_register(arg, m_out.new_register(PhysicalRegister(arg_registers[count])));
+        auto reg = m_out.map_register(arg, m_out.new_register(PhysicalRegister(arg_registers[count])));
+        m_out.inputs().push_back(reg);
         count += 1;
     }
 }

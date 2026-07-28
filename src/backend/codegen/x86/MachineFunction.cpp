@@ -71,6 +71,11 @@ std::list<std::unique_ptr<jl::x86::MachineBlock>>& jl::x86::MachineFunction::blo
     return m_blocks;
 }
 
+std::vector<jl::x86::VirtualRegister>& jl::x86::MachineFunction::inputs()
+{
+    return m_inputs;
+}
+
 std::string jl::x86::MachineFunction::to_string() const
 {
     std::stringstream ss;
@@ -86,7 +91,7 @@ std::string jl::x86::MachineFunction::to_string() const
     return ss.str();
 }
 
-jl::x86::Register jl::x86::MachineFunction::map_register(value::Variable var, VirtualRegister reg)
+jl::x86::VirtualRegister jl::x86::MachineFunction::map_register(value::Variable var, VirtualRegister reg)
 {
     m_register_map[var.id()] = reg;
     return reg;
@@ -110,6 +115,18 @@ std::unordered_map<jl::x86::MachineBlock*, std::vector<jl::x86::MachineBlock*>> 
     }
 
     return preds;
+}
+
+std::unordered_map<jl::x86::MachineBlock*, std::vector<jl::x86::MachineBlock*>> jl::x86::MachineFunction::successors() const
+{
+
+    std::unordered_map<MachineBlock*, std::vector<MachineBlock*>> succ;
+
+    for (auto& block : m_blocks) {
+        succ[block.get()] = block->successors();
+    }
+
+    return succ;
 }
 
 std::vector<jl::x86::MachineBlock*> jl::x86::MachineFunction::rpo() const
