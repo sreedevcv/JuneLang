@@ -17,6 +17,8 @@ namespace x86 {
 
         std::vector<MachineBlock*> successors() const;
 
+        std::string text() const;
+
         std::string m_name;
         std::list<std::unique_ptr<Instruction>> m_instructions;
     };

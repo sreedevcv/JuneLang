@@ -2,6 +2,7 @@
 #include "Instruction.hpp"
 
 #include "Function.hpp"
+#include "Utils.hpp"
 #include "codegen/x86/MachineBlock.hpp"
 #include "codegen/x86/Register.hpp"
 #include "ir/AllocateVar.hpp"
@@ -46,12 +47,12 @@ jl::x86::VirtualRegister jl::x86::MachineFunction::new_register(std::optional<Ph
 
 jl::x86::VirtualRegister jl::x86::MachineFunction::get_register(value::Variable var)
 {
-    if (m_register_map.contains(var.id())) {
-        return m_register_map[var.id()];
+    if (m_register_map.contains(var)) {
+        return m_register_map[var];
     }
 
     VirtualRegister r(m_reg_count++);
-    m_register_map[var.id()] = r;
+    m_register_map[var] = r;
     return r;
 }
 
@@ -93,7 +94,7 @@ std::string jl::x86::MachineFunction::to_string() const
 
 jl::x86::VirtualRegister jl::x86::MachineFunction::map_register(value::Variable var, VirtualRegister reg)
 {
-    m_register_map[var.id()] = reg;
+    m_register_map[var] = reg;
     return reg;
 }
 
@@ -177,4 +178,34 @@ void jl::x86::MachineFunction::map_physical_register(PhysicalRegister::Type reg)
 jl::x86::VirtualRegister jl::x86::MachineFunction::get_physical_register(PhysicalRegister::Type reg) const
 {
     return m_physical_register_map.at(reg);
+}
+
+uint32_t jl::x86::MachineFunction::get_data_size_from_virtual_register(VirtualRegister vreg) const
+{
+    for (auto [ssa, reg] : m_register_map) {
+        if (reg.id == vreg.id) {
+            return ssa.type()->size();
+        }
+    }
+
+    return unreachable(10);
+}
+
+std::string jl::x86::MachineFunction::text() const
+{
+    std::stringstream ss;
+    ss << "; Function\n";
+    ss << m_name << ": \n";
+
+    VirtualRegister::debug_print = false;
+
+    for (const auto& block : m_blocks) {
+        ss << block->text();
+        ss << "\n";
+    }
+
+    VirtualRegister::debug_print = true;
+
+    ss << "\n";
+    return ss.str();
 }

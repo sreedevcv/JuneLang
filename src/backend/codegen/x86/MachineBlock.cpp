@@ -32,3 +32,15 @@ std::vector<jl::x86::MachineBlock*> jl::x86::MachineBlock::successors() const
 
     return successors;
 }
+
+std::string jl::x86::MachineBlock::text() const
+{
+    std::stringstream ss;
+    ss << m_name << ": \n";
+
+    for (const auto& instr : m_instructions) {
+        ss << '\t' << instr->to_string() << '\n';
+    }
+
+    return ss.str();
+}

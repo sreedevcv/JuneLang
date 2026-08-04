@@ -1,4 +1,3 @@
-#include "Utils.hpp"
 #include "codegen/x86/Passes.hpp"
 
 #include "codegen/x86/Instruction.hpp"
@@ -129,53 +128,29 @@ struct LivenessAnalysis {
         }
 
         for (const auto& block : rpo) {
-            const auto& live_in_set = live_in[block];
-            const auto& live_out_set = live_out[block];
-
             // Process definitions (use first definition point)
             for (const auto& instr : block->m_instructions) {
                 for (const auto reg : instr->defs()) {
                     intervals[reg].start = std::min(intervals[reg].start, instr->m_id);
+                    intervals[reg].end = intervals[reg].start;
                 }
-            }
-
-            // Process live-out (use last point where reg is live)
-            for (const auto reg : live_out_set) {
-                // Find the last instruction in this block where 'reg' is live
-                // (either defined here or in live_in and still live)
-                for (auto instr_iter = block->m_instructions.rbegin();
-                     instr_iter != block->m_instructions.rend();
-                     ++instr_iter) {
-                    const auto& instr = *instr_iter;
-
-                    // If reg is used or defined in this instruction, it's the last point
-                    bool is_used = std::find(instr->uses().begin(), instr->uses().end(), reg) != instr->uses().end();
-                    bool is_defined = std::find(instr->defs().begin(), instr->defs().end(), reg) != instr->defs().end();
-
-                    if (is_used || is_defined) {
-                        intervals[reg].end = std::max(intervals[reg].end, instr->m_id);
-                        break;
-                    }
-
-                    // Also stop if we hit an instruction where reg is killed (redefined)
-                    if (is_defined) {
-                        break;
-                    }
+                for (const auto use : instr->uses()) {
+                    intervals[use].end = std::max(intervals[use].end, instr->m_id);
                 }
             }
         }
 
-        for (auto& [reg, interval] : intervals) {
-            if (interval.end < interval.start) {
-                if (interval.end == 0) {
-                    // This is a variable that is just used for this particular instruction (regs like rax for return)
-                    // For now make this live for just a single instruction
-                    interval.end = interval.start;
-                } else {
-                    unimplemented("Something went wrong with liveness_analysis");
-                }
-            }
-        }
+        // for (auto& [reg, interval] : intervals) {
+        // if (interval.end < interval.start) {
+        // if (interval.end == 0) {
+        // // This is a variable that is just used for this particular instruction (regs like rax for return)
+        // // For now make this live for just a single instruction
+        // interval.end = interval.start;
+        // } else {
+        // unimplemented("Something went wrong with liveness_analysis");
+        // }
+        // }
+        // }
 
         return intervals;
     }
@@ -188,29 +163,30 @@ jl::x86::pass::LiveIntervalMap jl::x86::pass::liveness_analysis(jl::x86::Machine
     auto intervals = la.calculate_live_intervals();
 
     std::println("~~~~~~~~~~~~~~~~~~Liveness Analysis~~~~~~~~~~~~~~~~~~~~~~");
+    //
+    // for (const auto& block : function->blocks()) {
+    // std::println("Block {}", block->m_name);
+    // std::print("Live in: ");
+    //
+    // for (auto vr : la.live_in[block.get()]) {
+    // std::print("{}, ", vr.to_string());
+    // }
+    //
+    // std::print("\nLive out: ");
+    // for (auto vr : la.live_out[block.get()]) {
+    // std::print("{}, ", vr.to_string());
+    // }
+    //
+    // std::println("\n{}", block->to_string());
+    // }
+    //
+    // std::println("\nRPO Indices: ");
+    //
+    // for (int i = 0; i < la.rpo.size(); i++) {
+    // std::println("{}: {}", i, la.rpo[i]->m_name);
+    // }
 
-    for (const auto& block : function->blocks()) {
-        std::println("Block {}", block->m_name);
-        std::print("Live in: ");
-
-        for (auto vr : la.live_in[block.get()]) {
-            std::print("{}, ", vr.to_string());
-        }
-
-        std::print("\nLive out: ");
-        for (auto vr : la.live_out[block.get()]) {
-            std::print("{}, ", vr.to_string());
-        }
-
-        std::println("\n{}", block->to_string());
-    }
-
-    std::println("\nRPO Indices: ");
-
-    for (int i = 0; i < la.rpo.size(); i++) {
-        std::println("{}: {}", i, la.rpo[i]->m_name);
-    }
-
+    std::println("{}", function->to_string());
     for (const auto& [reg, interval] : intervals) {
         std::println("{}: [{}, {}]", reg.to_string(), interval.start, interval.end);
     }

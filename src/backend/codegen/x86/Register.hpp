@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Utils.hpp"
 #include <cstdint>
 #include <functional>
 #include <optional>
@@ -25,7 +26,8 @@ namespace x86 {
             r12,
             r13,
             r14,
-            r15
+            r15,
+            REGISTER_MAX
         } reg;
 
         inline std::string to_string() const
@@ -63,14 +65,20 @@ namespace x86 {
                 return "r14";
             case r15:
                 return "r15";
-                break;
+            case REGISTER_MAX:
+                return "REGISTER_MAX";
             }
+
+            unimplemented();
+            return "";
         }
     };
 
     struct VirtualRegister {
         uint32_t id;
         std::optional<PhysicalRegister> hint;
+
+        static inline bool debug_print = true;
 
         inline VirtualRegister()
             : id(UINT32_MAX)
@@ -86,11 +94,15 @@ namespace x86 {
 
         inline std::string to_string() const
         {
-            std::string s = "t" + std::to_string(id);
-            if (hint) {
-                s += "(" + hint->to_string() + ")";
+            if (!debug_print) {
+                return hint->to_string();
+            } else {
+                std::string s = "t" + std::to_string(id);
+                if (hint) {
+                    s += "(" + hint->to_string() + ")";
+                }
+                return s;
             }
-            return s;
         }
 
         inline bool operator==(const VirtualRegister& reg) const

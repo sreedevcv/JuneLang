@@ -1,6 +1,7 @@
 #pragma once
 
 #include "codegen/x86/MachineBlock.hpp"
+#include "codegen/x86/Operand.hpp"
 #include "codegen/x86/Register.hpp"
 
 #include <cstdint>
@@ -11,6 +12,7 @@
 
 namespace jl {
 namespace x86 {
+
     struct Instruction {
         uint32_t m_id = 0;
 
@@ -21,102 +23,8 @@ namespace x86 {
         virtual std::vector<VirtualRegister> defs() const = 0;
 
         virtual std::vector<VirtualRegister> uses() const = 0;
-    };
 
-    enum class SizeDirective {
-        BYTE,
-        WORD,
-        DWORD,
-        QWORD,
-    };
-
-    inline std::string to_string(const SizeDirective& dir)
-    {
-        switch (dir) {
-        case SizeDirective::BYTE:
-            return "BYTE";
-        case SizeDirective::WORD:
-            return "WORD";
-        case SizeDirective::DWORD:
-            return "DWORD";
-        case SizeDirective::QWORD:
-            return "QWORD";
-        }
-    }
-
-    struct MemoryOperand {
-        // [base + scale * index + displacement]
-        VirtualRegister base;
-        std::optional<VirtualRegister> index;
-        uint32_t scale = 1;
-        int32_t displacement = 0;
-        std::optional<SizeDirective> size;
-
-        inline std::string to_string() const
-        {
-            std::string addr = base.to_string();
-            auto size_dir = (size ? jl::x86::to_string(*size) + " PTR " : "");
-            if (index) {
-                addr += std::to_string(scale) + " * " + index->to_string();
-            }
-            if (displacement != 0) {
-                addr += std::to_string(displacement);
-            }
-            return size_dir + "[" + addr + "]";
-        }
-    };
-
-    using Operand = std::variant<VirtualRegister, MemoryOperand, int64_t>;
-
-    struct GetDefinedRegs {
-        std::vector<VirtualRegister> operator()(const VirtualRegister& vreg) const
-        {
-            return { vreg };
-        }
-        std::vector<VirtualRegister> operator()(const MemoryOperand&) const
-        {
-            return {}; // Writing to memory does NOT define a register
-        }
-        std::vector<VirtualRegister> operator()(const int64_t&) const
-        {
-            return {};
-        }
-    };
-
-    struct GetUsedRegs {
-        std::vector<VirtualRegister> operator()(const MemoryOperand& mem) const
-        {
-            std::vector<VirtualRegister> regs = { mem.base };
-            if (mem.index) {
-                regs.push_back(*mem.index);
-            }
-            return regs;
-        }
-        std::vector<VirtualRegister> operator()(const VirtualRegister& vreg) const
-        {
-            return { vreg };
-        }
-        std::vector<VirtualRegister> operator()(const int64_t&) const
-        {
-            return {};
-        }
-    };
-
-    struct OperandPrinter {
-        std::string operator()(const Register& reg) const
-        {
-            return std::visit(RegisterPrinter {}, reg);
-        }
-
-        std::string operator()(const MemoryOperand& mem) const
-        {
-            return mem.to_string();
-        }
-
-        std::string operator()(const int64_t& imm) const
-        {
-            return std::to_string(imm);
-        }
+        virtual void replace(VirtualRegister reg, Operand operand) = 0;
     };
 
     struct Mov : public Instruction {
@@ -148,6 +56,17 @@ namespace x86 {
             }
 
             return src_uses;
+        }
+
+        inline void replace(VirtualRegister reg, Operand operand) override
+        {
+            if (auto vreg = std::get_if<VirtualRegister>(&source); vreg && vreg->id == reg.id) {
+                source = operand;
+            }
+            if (auto vreg = std::get_if<VirtualRegister>(&dest); vreg && vreg->id == reg.id) {
+                dest = operand;
+            }
+            // std::visit(OperandReplacer(reg, operand), source, dest);
         }
     };
 
@@ -181,6 +100,16 @@ namespace x86 {
 
             return src_uses;
         }
+
+        inline void replace(VirtualRegister reg, Operand operand) override
+        {
+            if (auto vreg = std::get_if<VirtualRegister>(&source); vreg && vreg->id == reg.id) {
+                source = operand;
+            }
+            if (auto vreg = std::get_if<VirtualRegister>(&dest); vreg && vreg->id == reg.id) {
+                dest = operand;
+            }
+        }
     };
 
     struct Sub : public Instruction {
@@ -213,6 +142,16 @@ namespace x86 {
 
             return src_uses;
         }
+
+        inline void replace(VirtualRegister reg, Operand operand) override
+        {
+            if (auto vreg = std::get_if<VirtualRegister>(&source); vreg && vreg->id == reg.id) {
+                source = operand;
+            }
+            if (auto vreg = std::get_if<VirtualRegister>(&dest); vreg && vreg->id == reg.id) {
+                dest = operand;
+            }
+        }
     };
 
     struct Less : public Instruction {
@@ -234,6 +173,16 @@ namespace x86 {
         std::vector<VirtualRegister> uses() const override
         {
             return {};
+        }
+
+        inline void replace(VirtualRegister r, Operand operand) override
+        {
+            if (reg.id == r.id) {
+                // if (auto vreg = std::get_if<VirtualRegister>(&operand)) {
+                //     reg = *vreg;
+                // }
+                reg = std::get<VirtualRegister>(operand);
+            }
         }
     };
 
@@ -257,6 +206,13 @@ namespace x86 {
         {
             return {};
         }
+
+        inline void replace(VirtualRegister r, Operand operand) override
+        {
+            if (reg.id == r.id) {
+                reg = std::get<VirtualRegister>(operand);
+            }
+        }
     };
 
     struct Return : public Instruction {
@@ -276,6 +232,8 @@ namespace x86 {
         {
             return {};
         }
+
+        inline void replace(VirtualRegister, Operand) override { }
     };
 
     struct Push : public Instruction {
@@ -296,6 +254,15 @@ namespace x86 {
         std::vector<VirtualRegister> uses() const override
         {
             return std::visit(GetUsedRegs {}, value);
+        }
+
+        inline void replace(VirtualRegister r, Operand operand) override
+        {
+            if (auto vreg = std::get_if<VirtualRegister>(&value); vreg) {
+                if (vreg->id == r.id) {
+                    value = operand;
+                }
+            }
         }
     };
 
@@ -321,6 +288,15 @@ namespace x86 {
             }
             return {};
         }
+
+        inline void replace(VirtualRegister r, Operand operand) override
+        {
+            if (auto vreg = std::get_if<VirtualRegister>(&value); vreg) {
+                if (vreg->id == r.id) {
+                    value = operand;
+                }
+            }
+        }
     };
 
     struct Jump : public Instruction {
@@ -342,6 +318,8 @@ namespace x86 {
         {
             return {};
         }
+
+        inline void replace(VirtualRegister reg, Operand operand) override { }
     };
 
     struct JumpEqual : public Jump {
@@ -361,6 +339,8 @@ namespace x86 {
         {
             return {};
         }
+
+        inline void replace(VirtualRegister reg, Operand operand) override { }
     };
 
     struct Cmp : public Instruction {
@@ -387,8 +367,22 @@ namespace x86 {
         {
             auto a_uses = std::visit(GetUsedRegs {}, a);
             auto b_uses = std::visit(GetUsedRegs {}, b);
-            a_uses.insert(a_uses.begin(), b_uses.begin(), b_uses.end());
+            a_uses.insert(a_uses.end(), b_uses.begin(), b_uses.end());
             return a_uses;
+        }
+
+        inline void replace(VirtualRegister r, Operand operand) override
+        {
+            if (auto vreg = std::get_if<VirtualRegister>(&a); vreg) {
+                if (vreg->id == r.id) {
+                    a = operand;
+                }
+            }
+            if (auto vreg = std::get_if<VirtualRegister>(&b); vreg) {
+                if (vreg->id == r.id) {
+                    b = operand;
+                }
+            }
         }
     };
 
@@ -423,6 +417,19 @@ namespace x86 {
         std::vector<VirtualRegister> uses() const override
         {
             return std::visit(GetUsedRegs {}, Operand(source));
+        }
+
+        inline void replace(VirtualRegister r, Operand operand) override
+        {
+            if (dest.id == r.id) {
+                dest = std::get<VirtualRegister>(operand);
+            }
+            if (source.base.id == r.id) {
+                source.base = std::get<VirtualRegister>(operand);
+            }
+            if (source.index && source.index->id == r.id) {
+                source.index = std::get<VirtualRegister>(operand);
+            }
         }
     };
 }

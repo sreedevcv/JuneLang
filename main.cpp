@@ -27,7 +27,8 @@ void compile_function(jl::Function* function)
 
     std::println("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~X86_64~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
     std::println("{}", x86func.to_string());
-    jl::x86::pass::liveness_analysis(&x86func);
+    auto intervals = jl::x86::pass::liveness_analysis(&x86func);
+    jl::x86::pass::linear_scan_reg_allocation(&x86func, intervals);
 }
 
 int main(int argc, char const* argv[])
@@ -79,8 +80,8 @@ int main(int argc, char const* argv[])
         auto x86func = x86gen.generate();
 
         std::println("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~X86_64~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
-        std::println("{}", x86func.to_string());
-        jl::x86::pass::liveness_analysis(&x86func);
+        auto intervals = jl::x86::pass::liveness_analysis(&x86func);
+        jl::x86::pass::linear_scan_reg_allocation(&x86func, intervals);
 #else
         // jl::Module module(file_name);
         // module.module().print(llvm::outs(), nullptr);
