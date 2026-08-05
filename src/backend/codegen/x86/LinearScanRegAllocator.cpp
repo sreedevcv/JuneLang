@@ -272,7 +272,7 @@ jl::x86::pass::RegisterAllocationMap jl::x86::pass::linear_scan_reg_allocation(j
     }
     annotate_instructions(function, allocator.allocations);
 
-    const auto replaced = function->to_string();
+    const auto replaced = function->text();
 
     std::println("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
     std::println("{}", replaced);

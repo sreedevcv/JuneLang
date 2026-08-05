@@ -50,7 +50,7 @@ jl::x86::Generator::Generator(jl::Function* function)
 jl::x86::MachineFunction jl::x86::Generator::generate()
 {
     // Insert prologue
-    auto entry = m_out.get_block(m_function->entry_block()->get_name());
+    auto entry = m_out.get_block(m_function->name() + "." + m_function->entry_block()->get_name());
     m_out.map_physical_register(PhysicalRegister::rbp);
     m_out.map_physical_register(PhysicalRegister::rsp);
 
@@ -102,7 +102,7 @@ jl::x86::MachineFunction jl::x86::Generator::generate()
 
 void jl::x86::Generator::generate(BasicBlock* block)
 {
-    auto mblock = m_out.get_block(block->get_name());
+    auto mblock = m_out.get_block(m_function->name() + "." + block->get_name());
 
     set_current_block(mblock);
     for (auto ir = block->head; ir != nullptr; ir = ir->next) {
@@ -205,7 +205,7 @@ void jl::x86::Generator::visit_call_ir(ir::Call& call)
 void jl::x86::Generator::visit_jump_ir(ir::Jump& jump)
 {
     auto jmp = new Jump();
-    jmp->target = m_out.get_block(jump.m_target->get_name());
+    jmp->target = m_out.get_block(m_function->name() + "." + jump.m_target->get_name());
 
     m_curr_block->m_instructions.emplace_back(jmp);
 }
@@ -217,10 +217,10 @@ void jl::x86::Generator::visit_cond_jump_ir(ir::CondJump& jump)
     cmp->b = 1;
 
     auto je = new JumpEqual();
-    je->target = m_out.get_block(jump.m_true_target->get_name());
+    je->target = m_out.get_block(m_function->name() + "." + jump.m_true_target->get_name());
 
     auto jmp = new Jump();
-    jmp->target = m_out.get_block(jump.m_false_target->get_name());
+    jmp->target = m_out.get_block(m_function->name() + "." + jump.m_false_target->get_name());
 
     m_curr_block->m_instructions.emplace_back(cmp);
     m_curr_block->m_instructions.emplace_back(je);
@@ -249,15 +249,12 @@ void jl::x86::Generator::visit_allocate_var_ir(ir::AllocateVar& allocate)
     stack_source.displacement = get_stack_offset(allocate.m_addr);
     stack_source.index = std::nullopt;
 
-    auto lea = new Lea(stack_source, m_out.get_register(allocate.m_addr));
-    m_curr_block->m_instructions.emplace_back(lea);
+    m_out.map_operand(allocate.m_addr, stack_source);
 }
 
 void jl::x86::Generator::visit_read_ir(ir::Read& read)
 {
-    MemoryOperand stack_source;
-    stack_source.base = m_out.get_register(read.m_base);
-    stack_source.displacement = 0;
+    MemoryOperand stack_source = std::get<MemoryOperand>(m_out.get_operand(read.m_base));
     if (read.m_offset) {
         stack_source.index = m_out.get_register(*read.m_offset);
         stack_source.scale = read.m_offset_multiplier;
@@ -280,9 +277,7 @@ void jl::x86::Generator::visit_read_ir(ir::Read& read)
 
 void jl::x86::Generator::visit_write_ir(ir::Write& write)
 {
-    MemoryOperand stack_source;
-    stack_source.base = m_out.get_register(write.m_base);
-    stack_source.displacement = 0;
+    MemoryOperand stack_source = std::get<MemoryOperand>(m_out.get_operand(write.m_base));
     if (write.m_offset) {
         stack_source.index = m_out.get_register(*write.m_offset);
         stack_source.scale = write.m_offset_multiplier;
@@ -357,7 +352,7 @@ jl::x86::Operand jl::x86::Generator::get_operand(value::Variable var)
     if (is_contant(def)) {
         a = std::get<LiteralValue::int_type>(static_cast<ir::InitLiteral*>(def)->m_source.data);
     } else {
-        a = m_out.get_register(var);
+        a = m_out.get_operand(var);
     }
 
     return a;

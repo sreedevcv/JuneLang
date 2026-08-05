@@ -38,7 +38,7 @@ namespace x86 {
         inline std::string to_string() const
         {
             std::string addr = base.to_string();
-            auto size_dir = (size ? jl::x86::to_string(*size) + " PTR " : "");
+            auto size_dir = (size ? jl::x86::to_string(*size) : "");
             if (index) {
                 addr += std::to_string(scale) + " * " + index->to_string();
             }

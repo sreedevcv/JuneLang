@@ -64,17 +64,17 @@ int main(int argc, char const* argv[])
 
         auto func = module.get_function("fib");
 
-        std::cout << *func;
-        std::println("----------------------------------------------------------------");
+        // std::cout << *func;
+        // std::println("----------------------------------------------------------------");
         jl::opt::mem2reg(func);
-        std::cout << *func;
-        std::println("----------------------------------------------------------------");
+        // std::cout << *func;
+        // std::println("----------------------------------------------------------------");
         jl::opt::sccp(func);
-        std::cout << *func;
-        std::println("----------------------------------------------------------------");
+        // std::cout << *func;
+        // std::println("----------------------------------------------------------------");
         jl::opt::remove_phi_nodes(func);
-        std::cout << *func;
-        std::println("----------------------------------------------------------------");
+        // std::cout << *func;
+        // std::println("----------------------------------------------------------------");
 
         jl::x86::Generator x86gen(func);
         auto x86func = x86gen.generate();

@@ -28,7 +28,6 @@ namespace x86 {
         MachineFunction m_out;
         MachineBlock* m_curr_block;
         MachineBlock* m_epilogue_block;
-        std::unordered_map<value::Variable, MemoryOperand> m_memory_locs;
 
         void set_current_block(MachineBlock* block);
 

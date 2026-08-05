@@ -10,6 +10,7 @@
 
 #include "Function.hpp"
 #include "MachineBlock.hpp"
+#include "codegen/x86/Operand.hpp"
 #include "codegen/x86/Register.hpp"
 #include "value/Variable.hpp"
 
@@ -28,6 +29,10 @@ namespace x86 {
         MachineFunction& operator=(MachineFunction&&) noexcept = default;
 
         VirtualRegister new_register(std::optional<PhysicalRegister> hint = std::nullopt);
+
+        Operand get_operand(value::Variable var);
+
+        Operand map_operand(value::Variable var, Operand operand);
 
         VirtualRegister get_register(value::Variable var);
 
@@ -64,7 +69,7 @@ namespace x86 {
         std::list<std::unique_ptr<MachineBlock>> m_blocks;
         uint32_t m_reg_count = 0;
         std::vector<VirtualRegister> m_inputs;
-        std::unordered_map<value::Variable, VirtualRegister, value::VariableHasher> m_register_map;
+        std::unordered_map<value::Variable, Operand, value::VariableHasher> m_register_map;
         std::unordered_map<uint32_t, int32_t> m_stk_offset;
         std::unordered_map<std::string, MachineBlock*> m_block_map;
         std::unordered_map<PhysicalRegister::Type, VirtualRegister> m_physical_register_map;

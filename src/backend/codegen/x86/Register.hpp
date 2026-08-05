@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <functional>
 #include <optional>
+#include <print>
 #include <string>
 #include <variant>
 
@@ -69,6 +70,7 @@ namespace x86 {
                 return "REGISTER_MAX";
             }
 
+            std::println("invalid register: {}", static_cast<int>(reg));
             unimplemented();
             return "";
         }

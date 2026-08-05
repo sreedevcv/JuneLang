@@ -275,23 +275,23 @@ struct SCCPState {
 
         LatticeValue acc = { TOP, std::nullopt };
 
-        std::println("\t-visit_phi: {}, current val: ({})", phi->to_str(), lattice_values[phi->m_dest].to_str());
+        // std::println("\t-visit_phi: {}, current val: ({})", phi->to_str(), lattice_values[phi->m_dest].to_str());
 
         for (auto [val, blk] : phi->m_opers) {
-            std::println("\t\t*val: {}, edge {} -> {}", val.to_str(), blk->get_name(), phi->parent->get_name());
+            // std::println("\t\t*val: {}, edge {} -> {}", val.to_str(), blk->get_name(), phi->parent->get_name());
 
             // Only select the value if the edge has been already executed.
             // Otherwise meet with TOP for unexecuted edges
             //
             if (is_edge_executed(blk, phi->parent)) {
-                std::println("\t\t* from exec blk: {}", lattice_values[val].to_str());
+                // std::println("\t\t* from exec blk: {}", lattice_values[val].to_str());
                 acc = acc.meet(lattice_values[val]);
             } else {
                 acc = acc.meet({ TOP, std::nullopt });
             }
         }
 
-        std::println("\t- Final meet: {}, Current: {} ", acc.to_str(), lattice_values[phi->m_dest].to_str());
+        // std::println("\t- Final meet: {}, Current: {} ", acc.to_str(), lattice_values[phi->m_dest].to_str());
 
         // NOTE replace wiht overloaded ==
         if (acc.type != lattice_values[phi->m_dest].type) {
@@ -303,15 +303,15 @@ struct SCCPState {
     // Add all uses of a ssa value to the ssa worklist only if the edge has been executed
     void add_uses_to_ssa_worklist(jl::value::Variable def, jl::BasicBlock* curr_block)
     {
-        std::println("\t-Adding uses for {}", def.to_str());
+        // std::println("\t-Adding uses for {}", def.to_str());
 
         for (auto& ir : function->irs()) {
             // if (ir->uses(def) && is_edge_executed(curr_block, ir->parent)) {
             if (ir->uses(def)) {
-                std::println("\t\t*Used by: {}, exec: {}", ir->to_str(), is_edge_executed(curr_block, ir->parent));
+                // std::println("\t\t*Used by: {}, exec: {}", ir->to_str(), is_edge_executed(curr_block, ir->parent));
 
                 if (is_edge_executed(curr_block, ir->parent)) {
-                    std::println("\t\t*Added {}", ir->to_str());
+                    // std::println("\t\t*Added {}", ir->to_str());
                     ssa_work_list.push(ir.get());
                 }
             }
@@ -330,7 +330,7 @@ struct SCCPState {
     // if the value changes, add all the uses to the ssa work list
     void visit_expression(jl::ir::IR* ir)
     {
-        std::println("\t-visit_expr: {}", ir->to_str());
+        // std::println("\t-visit_expr: {}", ir->to_str());
 
         if (auto jump = dynamic_cast<jl::ir::CondJump*>(ir)) {
             auto lat_val = lattice_values[jump->m_condition];
@@ -338,7 +338,7 @@ struct SCCPState {
             switch (lat_val.type) {
             case CONSTANT: {
                 bool const_val = std::get<jl::LiteralValue::bool_type>(lat_val.value->data);
-                std::println("\t\t*CondJump - CONSTANT: selecting {} branch", const_val);
+                // std::println("\t\t*CondJump - CONSTANT: selecting {} branch", const_val);
 
                 if (const_val == true) {
                     flow_work_list.push({ ir->parent, jump->m_true_target });
@@ -347,7 +347,7 @@ struct SCCPState {
                 }
             } break;
             case BOTTOM:
-                std::println("\t\t*CondJump - BOTTOM: selecting both branches");
+                // std::println("\t\t*CondJump - BOTTOM: selecting both branches");
                 flow_work_list.push({ ir->parent, jump->m_true_target });
                 flow_work_list.push({ ir->parent, jump->m_false_target });
                 break;
@@ -356,7 +356,7 @@ struct SCCPState {
                 break;
             }
         } else if (auto jump = dynamic_cast<jl::ir::Jump*>(ir)) {
-            std::println("\t\t*Jump");
+            // std::println("\t\t*Jump");
             flow_work_list.push({ ir->parent, jump->m_target });
         } else if (auto def = ir->def()) {
 
@@ -371,8 +371,8 @@ struct SCCPState {
             auto new_lattice = visitor.value;
             auto original_value = lattice_values[*ir->def()];
 
-            std::println("\t\t-Considering {}", ir->to_str());
-            std::println("\t\t-Original: {}, new: {}", original_value.to_str(), new_lattice.to_str());
+            // std::println("\t\t-Considering {}", ir->to_str());
+            // std::println("\t\t-Original: {}, new: {}", original_value.to_str(), new_lattice.to_str());
 
             // if the computed value is different from the current value
             // TODO replace wiht overloaded ==
@@ -553,7 +553,7 @@ struct SCCPState {
         }
 
         for (auto block : blocks_to_be_deleted) {
-            std::println("Deleting {}", block->get_name());
+            // std::println("Deleting {}", block->get_name());
             function->remove_block(block);
         }
     }
@@ -760,7 +760,7 @@ struct SCCPState {
         }
 
         for (auto [_, ir] : to_be_removed) {
-            std::println("Removing ir: {}", ir->to_str());
+            // std::println("Removing ir: {}", ir->to_str());
             function->remove_ir(ir);
         }
     }
@@ -836,7 +836,7 @@ struct SCCPState {
         }
 
         for (auto block : to_be_removed) {
-            std::println("Removing block: {}", block->get_name());
+            // std::println("Removing block: {}", block->get_name());
             function->remove_block(block);
         }
     }
@@ -859,8 +859,8 @@ void jl::opt::sccp(jl::Function* function)
             }
 
             state.exec_map[edge] = true;
-            std::println("Marking edge {} -> {}", start->get_name(), dest->get_name());
-            std::println("Evaluating block: {}", dest->get_name());
+            // std::println("Marking edge {} -> {}", start->get_name(), dest->get_name());
+            // std::println("Evaluating block: {}", dest->get_name());
 
             for (auto phi : dest->phis) {
                 state.visit_phi(phi);
@@ -882,14 +882,14 @@ void jl::opt::sccp(jl::Function* function)
         }
     }
 
-    std::println("Final Lattice Values:");
+    // std::println("Final Lattice Values:");
     for (const auto [var, val] : state.lattice_values) {
-        std::println("{} -> {}", var.to_str(), val.to_str());
+        // std::println("{} -> {}", var.to_str(), val.to_str());
     }
 
-    std::println("\nFinal ExecMap Values:");
+    // std::println("\nFinal ExecMap Values:");
     for (const auto [edge, flag] : state.exec_map) {
-        std::println("{} -> {}: {}", edge.first->get_name(), edge.second->get_name(), flag);
+        // std::println("{} -> {}: {}", edge.first->get_name(), edge.second->get_name(), flag);
     }
 
     state.remove_unexecuted_blocks();

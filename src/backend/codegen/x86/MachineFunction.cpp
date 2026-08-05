@@ -7,6 +7,7 @@
 #include "codegen/x86/Register.hpp"
 #include "ir/AllocateVar.hpp"
 #include <algorithm>
+#include <variant>
 #include <cstdint>
 #include <memory>
 #include <sstream>
@@ -45,7 +46,7 @@ jl::x86::VirtualRegister jl::x86::MachineFunction::new_register(std::optional<Ph
     return VirtualRegister(m_reg_count++, hint);
 }
 
-jl::x86::VirtualRegister jl::x86::MachineFunction::get_register(value::Variable var)
+jl::x86::Operand jl::x86::MachineFunction::get_operand(value::Variable var)
 {
     if (m_register_map.contains(var)) {
         return m_register_map[var];
@@ -54,6 +55,11 @@ jl::x86::VirtualRegister jl::x86::MachineFunction::get_register(value::Variable 
     VirtualRegister r(m_reg_count++);
     m_register_map[var] = r;
     return r;
+}
+
+jl::x86::VirtualRegister jl::x86::MachineFunction::get_register(value::Variable var)
+{
+    return std::get<VirtualRegister>(get_operand(var));
 }
 
 jl::x86::MachineBlock* jl::x86::MachineFunction::get_block(const std::string& name)
@@ -92,9 +98,15 @@ std::string jl::x86::MachineFunction::to_string() const
     return ss.str();
 }
 
+jl::x86::Operand jl::x86::MachineFunction::map_operand(value::Variable var, Operand operand)
+{
+    m_register_map[var] = operand;
+    return operand;
+}
+
 jl::x86::VirtualRegister jl::x86::MachineFunction::map_register(value::Variable var, VirtualRegister reg)
 {
-    m_register_map[var] = reg;
+    map_operand(var, reg);
     return reg;
 }
 
@@ -182,13 +194,14 @@ jl::x86::VirtualRegister jl::x86::MachineFunction::get_physical_register(Physica
 
 uint32_t jl::x86::MachineFunction::get_data_size_from_virtual_register(VirtualRegister vreg) const
 {
-    for (auto [ssa, reg] : m_register_map) {
-        if (reg.id == vreg.id) {
+    for (const auto& [ssa, operand] : m_register_map) {
+        if (auto reg = std::get_if<VirtualRegister>(&operand); reg && reg->id == vreg.id) {
             return ssa.type()->size();
         }
     }
 
-    return unreachable(10);
+    unimplemented();
+    return 0;
 }
 
 std::string jl::x86::MachineFunction::text() const
