@@ -136,6 +136,11 @@ void jl::x86::Generator::visit_binary_ir(ir::Binary& binary)
         cmp->b = b;
         cmp->is_float = binary.m_is_float;
 
+        // REGISTER_MAX is used as a sentinel to tell the register allocator that
+        // this register should be always given a register and not a stack slot
+        result.hint = PhysicalRegister(PhysicalRegister::REGISTER_MAX);
+        m_out.map_register(binary.m_dest, result);
+
         oper->reg = result;
         oper->is_float = binary.m_is_float;
 

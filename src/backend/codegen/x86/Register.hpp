@@ -31,43 +31,45 @@ namespace x86 {
             REGISTER_MAX
         } reg;
 
+        bool is_byte = false;
+
         inline std::string to_string() const
         {
             switch (reg) {
             case rax:
-                return "rax";
+                return is_byte ? "al" : "rax";
             case rbx:
-                return "rbx";
+                return is_byte ? "bl" : "rbx";
             case rcx:
-                return "rcx";
+                return is_byte ? "cl" : "rcx";
             case rdx:
-                return "rdx";
+                return is_byte ? "dl" : "rdx";
             case rsi:
-                return "rsi";
+                return is_byte ? "sil" : "rsi";
             case rdi:
-                return "rdi";
+                return is_byte ? "dil" : "rdi";
             case rbp:
-                return "rbp";
+                return is_byte ? "bpl" : "rbp";
             case rsp:
-                return "rsp";
+                return is_byte ? "spl" : "rsp";
             case r8:
-                return "r8";
+                return is_byte ? "r8b" : "r8";
             case r9:
-                return "r9";
+                return is_byte ? "r9b" : "r9";
             case r10:
-                return "r10";
+                return is_byte ? "r10b" : "r10";
             case r11:
-                return "r11";
+                return is_byte ? "r11b" : "r11";
             case r12:
-                return "r12";
+                return is_byte ? "r12b" : "r12";
             case r13:
-                return "r13";
+                return is_byte ? "r13b" : "r13";
             case r14:
-                return "r14";
+                return is_byte ? "r14b" : "r14";
             case r15:
-                return "r15";
+                return is_byte ? "r15b" : "r15";
             case REGISTER_MAX:
-                return "REGISTER_MAX";
+                return is_byte ? "REGISTER_MAX" : "REGISTER_MAX";
             }
 
             std::println("invalid register: {}", static_cast<int>(reg));
@@ -79,6 +81,7 @@ namespace x86 {
     struct VirtualRegister {
         uint32_t id;
         std::optional<PhysicalRegister> hint;
+        bool is_byte = false;
 
         static inline bool debug_print = true;
 

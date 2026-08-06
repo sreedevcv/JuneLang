@@ -10,6 +10,7 @@
 #include <set>
 #include <unordered_set>
 #include <variant>
+#include <vector>
 
 using VRegPair = std::pair<jl::x86::VirtualRegister, jl::x86::pass::LiveInterval>;
 using PRegPair = std::pair<jl::x86::PhysicalRegister, jl::x86::pass::LiveInterval>;
@@ -74,22 +75,6 @@ private:
         if (active.size() == max_registers) {
             spill_at_interval(reg, interval);
         } else {
-            //// Extract a register from available
-            // int new_reg = *available.begin();
-            // available.erase(new_reg);
-            //
-            // auto phys_reg = jl::x86::PhysicalRegister(static_cast<jl::x86::PhysicalRegister::Type>(new_reg));
-            // reg.hint = phys_reg;
-            //
-            //// Store it in allocations
-            // allocations[reg].push_back(jl::x86::pass::AllocationRange {
-            //.allocation = phys_reg,
-            //.interval = interval,
-            //});
-            //
-            //// Insert the register and interval into active
-            // active.insert({ reg, interval });
-
             allocate_or_spill(reg, interval);
         }
     }
@@ -102,18 +87,31 @@ private:
             if (available.contains(phys_reg->reg)) {
                 // Extract a register from available
                 available.erase(phys_reg->reg);
+            } else if (available.size() > 0 && reg.hint->reg == jl::x86::PhysicalRegister::REGISTER_MAX) {
+                // We must allocate any register to this virtual register
+                int new_reg = *available.begin();
+                available.erase(new_reg);
+                phys_reg = jl::x86::PhysicalRegister(static_cast<jl::x86::PhysicalRegister::Type>(new_reg));
             } else {
                 // Find and remove the already allocated register
-                auto already_allocated = *std::find_if(
+                auto iter = std::find_if(
                     active.begin(),
                     active.end(),
                     [&](auto&& pair) {
                         return pair.first.hint->reg == phys_reg->reg;
                     });
-                active.erase(already_allocated);
 
-                already_allocated.first.hint = std::nullopt;
-                allocate(already_allocated.first, { .start = interval.start, .end = already_allocated.second.end });
+                // If we are looking for a normal register, we will find it here but we might also be looking
+                // for REGISTER_MAX(will never be present in active), which indicates we must allocate this
+                // virtual register to any physical register, so for that we will select the active register
+                // with the longest interval
+                auto selected_to_spill = iter == active.end() ? *active.rbegin() : *iter;
+
+                phys_reg = selected_to_spill.first.hint;
+                active.erase(selected_to_spill);
+
+                selected_to_spill.first.hint = std::nullopt;
+                allocate(selected_to_spill.first, { .start = interval.start, .end = selected_to_spill.second.end });
             }
 
             physical_register = *phys_reg;
@@ -187,6 +185,31 @@ private:
     }
 };
 
+static void change_register_sizes_for_cmp_instrs(jl::x86::MachineFunction* function)
+{
+    std::vector<jl::x86::VirtualRegister> byte_regs;
+
+    for (auto& block : function->blocks()) {
+        for (auto& instr : block->m_instructions) {
+            if (auto less = dynamic_cast<jl::x86::Less*>(instr.get())) {
+                less->reg.hint->is_byte = true;
+                byte_regs.push_back(less->reg);
+            } else if (auto equals = dynamic_cast<jl::x86::Equals*>(instr.get())) {
+                equals->reg.hint->is_byte = true;
+                byte_regs.push_back(equals->reg);
+            }
+        }
+    }
+
+    for (auto& block : function->blocks()) {
+        for (auto& instr : block->m_instructions) {
+            for (auto reg : byte_regs) {
+                instr->replace(reg, reg);
+            }
+        }
+    }
+}
+
 static void annotate_instructions(jl::x86::MachineFunction* function,
     jl::x86::pass::RegisterAllocationMap& allocations)
 {
@@ -230,8 +253,6 @@ static void annotate_instructions(jl::x86::MachineFunction* function,
     for (const auto [reg, ranges] : allocations) {
         for (auto block : rpo) {
             for (auto& instr : block->m_instructions) {
-                // const auto defs = instr->defs();
-                // const auto uses = instr->uses();
                 for (const auto& range : ranges) {
                     if (range.interval.contains(instr->m_id)) {
                         auto operand = std::visit(OperandFromAllocation(reg, function), range.allocation);
@@ -241,6 +262,8 @@ static void annotate_instructions(jl::x86::MachineFunction* function,
             }
         }
     }
+
+    change_register_sizes_for_cmp_instrs(function);
 }
 
 jl::x86::pass::RegisterAllocationMap jl::x86::pass::linear_scan_reg_allocation(jl::x86::MachineFunction* function, const jl::x86::pass::LiveIntervalMap& intervals)
