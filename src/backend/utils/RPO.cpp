@@ -8,7 +8,7 @@
 #include "ir/ConditionalJump.hpp"
 #include "ir/Jump.hpp"
 
-std::pair<jl::BasicBlock*, jl::BasicBlock*> jl::algorithms::get_sucessors(BasicBlock* block)
+std::pair<jl::BasicBlock*, jl::BasicBlock*> jl::algorithms::get_successors(BasicBlock* block)
 {
     const auto terminator = block->get_terminator();
 
@@ -26,7 +26,7 @@ std::unordered_map<jl::BasicBlock*, std::vector<jl::BasicBlock*>> jl::algorithms
     std::unordered_map<BasicBlock*, std::vector<BasicBlock*>> preds;
 
     for (auto& block : function->blocks()) {
-        auto [l, r] = get_sucessors(block.get());
+        auto [l, r] = get_successors(block.get());
         if (l != nullptr)
             preds[l].push_back(block.get());
         if (r != nullptr)
@@ -50,7 +50,7 @@ std::unordered_map<jl::BasicBlock*, uint32_t> jl::algorithms::RPO(BasicBlock* en
     while (!stk.empty()) {
         auto node = stk.top();
 
-        auto [left, right] = jl::algorithms::get_sucessors(node);
+        auto [left, right] = jl::algorithms::get_successors(node);
 
         // Find an unvisited child to descend into
         bool pushed = false;

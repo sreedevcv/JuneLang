@@ -18,9 +18,14 @@ void jl::ir::Jump::accept(IRVisitor& visitor)
     visitor.visit_jump_ir(*this);
 }
 
-bool jl::ir::Jump::uses(value::Variable var)
+bool jl::ir::Jump::is_used(value::Variable var)
 {
     return false;
+}
+
+std::vector<jl::value::Variable> jl::ir::Jump::uses() const
+{
+    return {};
 }
 
 void jl::ir::Jump::replace(value::Variable from, value::Variable to)

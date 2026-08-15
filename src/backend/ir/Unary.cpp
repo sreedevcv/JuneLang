@@ -32,13 +32,18 @@ void jl::ir::Unary::accept(IRVisitor& visitor)
     visitor.visit_unary_ir(*this);
 }
 
-bool jl::ir::Unary::uses(value::Variable var)
+bool jl::ir::Unary::is_used(value::Variable var)
 {
     if (m_operand.id() == var.id()) {
         return true;
     } else {
         return false;
     }
+}
+
+std::vector<jl::value::Variable> jl::ir::Unary::uses() const
+{
+    return { m_operand };
 }
 
 void jl::ir::Unary::replace(value::Variable from, value::Variable to)

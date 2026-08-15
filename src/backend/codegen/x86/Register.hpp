@@ -28,7 +28,7 @@ namespace x86 {
             r13,
             r14,
             r15,
-            REGISTER_MAX
+            REG_SENTINEL
         } reg;
 
         bool is_byte = false;
@@ -68,7 +68,7 @@ namespace x86 {
                 return is_byte ? "r14b" : "r14";
             case r15:
                 return is_byte ? "r15b" : "r15";
-            case REGISTER_MAX:
+            case REG_SENTINEL:
                 return is_byte ? "REGISTER_MAX" : "REGISTER_MAX";
             }
 
@@ -76,6 +76,11 @@ namespace x86 {
             unimplemented();
             return "";
         }
+    };
+
+    enum class RegisterHint {
+        RETURN,
+        BYTE,
     };
 
     struct VirtualRegister {

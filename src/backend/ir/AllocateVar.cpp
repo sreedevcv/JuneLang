@@ -19,9 +19,14 @@ void jl::ir::AllocateVar::accept(IRVisitor& visitor)
     visitor.visit_allocate_var_ir(*this);
 }
 
-bool jl::ir::AllocateVar::uses(value::Variable var)
+bool jl::ir::AllocateVar::is_used(value::Variable var)
 {
     return false;
+}
+
+std::vector<jl::value::Variable> jl::ir::AllocateVar::uses() const
+{
+    return {};
 }
 
 void jl::ir::AllocateVar::replace(value::Variable from, value::Variable to)
@@ -33,5 +38,5 @@ void jl::ir::AllocateVar::replace(value::Variable from, value::Variable to)
 
 std::optional<jl::value::Variable> jl::ir::AllocateVar::def()
 {
-    return std::nullopt;
+    return m_addr;
 }

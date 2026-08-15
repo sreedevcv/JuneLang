@@ -61,13 +61,18 @@ void jl::ir::Binary::accept(IRVisitor& visitor)
     visitor.visit_binary_ir(*this);
 }
 
-bool jl::ir::Binary::uses(value::Variable var)
+bool jl::ir::Binary::is_used(value::Variable var)
 {
     if (m_operand_a.id() == var.id() || m_operand_b.id() == var.id()) {
         return true;
     } else {
         return false;
     }
+}
+
+std::vector<jl::value::Variable> jl::ir::Binary::uses() const
+{
+    return { m_operand_a, m_operand_b };
 }
 
 void jl::ir::Binary::replace(value::Variable from, value::Variable to)

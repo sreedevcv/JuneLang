@@ -21,13 +21,21 @@ void jl::ir::Return::accept(IRVisitor& visitor)
     visitor.visit_return_ir(*this);
 }
 
-bool jl::ir::Return::uses(value::Variable var)
+bool jl::ir::Return::is_used(value::Variable var)
 {
     if (m_ret_val && m_ret_val.value().id() == var.id()) {
         return true;
     } else {
         return false;
     }
+}
+
+std::vector<jl::value::Variable> jl::ir::Return::uses() const
+{
+    if (m_ret_val) {
+        return { m_ret_val.value() };
+    }
+    return {};
 }
 
 void jl::ir::Return::replace(value::Variable from, value::Variable to)
@@ -37,7 +45,6 @@ void jl::ir::Return::replace(value::Variable from, value::Variable to)
             m_ret_val = to;
     }
 }
-
 
 std::optional<jl::value::Variable> jl::ir::Return::def()
 {

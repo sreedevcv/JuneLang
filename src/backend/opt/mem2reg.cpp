@@ -23,7 +23,7 @@ bool is_promotable(jl::ir::AllocateVar* alloca, jl::Function* parent)
 {
     for (auto& block : parent->blocks()) {
         for (auto ir = block->head; ir != nullptr; ir = ir->next) {
-            if (!ir->uses(alloca->m_addr))
+            if (!ir->is_used(alloca->m_addr))
                 continue;
 
             // If a write uses
@@ -63,7 +63,7 @@ void insert_phi_instrs(jl::ir::AllocateVar* alloca,
     for (auto& block : function->blocks()) {
         const auto instrs = block->get_instrs<jl::ir::Write*>();
         for (auto instr : instrs) {
-            if (instr->uses(alloca->m_addr)) {
+            if (instr->is_used(alloca->m_addr)) {
                 blocks_with_writes.push_back(block.get());
                 // std::println("\tadding block {} with write: {}", block->get_name(), instr->to_str());
             }

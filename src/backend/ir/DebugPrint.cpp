@@ -25,13 +25,18 @@ void jl::ir::DebugPrint::accept(IRVisitor& visitor)
     visitor.visit_debug_print_ir(*this);
 }
 
-bool jl::ir::DebugPrint::uses(value::Variable var)
+bool jl::ir::DebugPrint::is_used(value::Variable var)
 {
     if (m_val.id() == var.id()) {
         return true;
     } else {
         return false;
     }
+}
+
+std::vector<jl::value::Variable> jl::ir::DebugPrint::uses() const
+{
+    return { m_val };
 }
 
 void jl::ir::DebugPrint::replace(value::Variable from, value::Variable to)

@@ -28,13 +28,23 @@ void jl::ir::Read::accept(IRVisitor& visitor)
     visitor.visit_read_ir(*this);
 }
 
-bool jl::ir::Read::uses(value::Variable var)
+bool jl::ir::Read::is_used(value::Variable var)
 {
     if (m_base.id() == var.id() || (m_offset && m_offset.value().id() == var.id())) {
         return true;
     } else {
         return false;
     }
+}
+
+std::vector<jl::value::Variable> jl::ir::Read::uses() const
+{
+    std::vector<value::Variable> result;
+    result.push_back(m_base);
+    if (m_offset) {
+        result.push_back(m_offset.value());
+    }
+    return result;
 }
 
 void jl::ir::Read::replace(value::Variable from, value::Variable to)

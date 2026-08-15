@@ -26,13 +26,18 @@ void jl::ir::TypeCast::accept(IRVisitor& visitor)
     visitor.visit_type_cast_ir(*this);
 }
 
-bool jl::ir::TypeCast::uses(value::Variable var)
+bool jl::ir::TypeCast::is_used(value::Variable var)
 {
     if (m_source.id() == var.id()) {
         return true;
     } else {
         return false;
     }
+}
+
+std::vector<jl::value::Variable> jl::ir::TypeCast::uses() const
+{
+    return { m_source };
 }
 
 void jl::ir::TypeCast::replace(value::Variable from, value::Variable to)

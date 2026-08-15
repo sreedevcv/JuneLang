@@ -29,11 +29,11 @@ jl::x86::Generator::Generator(jl::Function* function)
     int count = 0;
     const PhysicalRegister::Type arg_registers[] = {
         PhysicalRegister::rdi,
-        PhysicalRegister::rsi,
-        PhysicalRegister::rdx,
-        PhysicalRegister::rcx,
-        PhysicalRegister::r8,
-        PhysicalRegister::r9
+        // PhysicalRegister::rsi,
+        // PhysicalRegister::rdx,
+        // PhysicalRegister::rcx,
+        // PhysicalRegister::r8,
+        // PhysicalRegister::r9
     };
 
     for (auto arg : function->args()) {
@@ -138,7 +138,7 @@ void jl::x86::Generator::visit_binary_ir(ir::Binary& binary)
 
         // REGISTER_MAX is used as a sentinel to tell the register allocator that
         // this register should be always given a register and not a stack slot
-        result.hint = PhysicalRegister(PhysicalRegister::REGISTER_MAX);
+        result.hint = PhysicalRegister(PhysicalRegister::REG_SENTINEL);
         m_out.map_register(binary.m_dest, result);
 
         oper->reg = result;

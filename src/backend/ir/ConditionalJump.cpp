@@ -26,13 +26,18 @@ void jl::ir::CondJump::accept(IRVisitor& visitor)
     visitor.visit_cond_jump_ir(*this);
 }
 
-bool jl::ir::CondJump::uses(value::Variable var)
+bool jl::ir::CondJump::is_used(value::Variable var)
 {
     if (m_condition.id() == var.id()) {
         return true;
     } else {
         return false;
     }
+}
+
+std::vector<jl::value::Variable> jl::ir::CondJump::uses() const
+{
+    return { m_condition };
 }
 
 void jl::ir::CondJump::replace(value::Variable from, value::Variable to)

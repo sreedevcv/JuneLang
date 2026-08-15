@@ -1,4 +1,5 @@
 #include "AllocateList.hpp"
+#include "Utils.hpp"
 
 #include <cstdint>
 #include <format>
@@ -30,13 +31,18 @@ void jl::ir::AllocateList::set_data(void* ptr, uint32_t size)
     m_data.insert(m_data.end(), bytes, bytes + size);
 }
 
-bool jl::ir::AllocateList::uses(value::Variable var)
+bool jl::ir::AllocateList::is_used(value::Variable var)
 {
     if (m_fat_ptr.id() == var.id() || m_list.id() == var.id()) {
         return true;
     } else {
         return false;
     }
+}
+
+std::vector<jl::value::Variable> jl::ir::AllocateList::uses() const
+{
+    return { m_fat_ptr, m_list };
 }
 
 void jl::ir::AllocateList::replace(value::Variable from, value::Variable to)
@@ -50,5 +56,6 @@ void jl::ir::AllocateList::replace(value::Variable from, value::Variable to)
 
 std::optional<jl::value::Variable> jl::ir::AllocateList::def()
 {
+    unimplemented();
     return std::nullopt;
 }

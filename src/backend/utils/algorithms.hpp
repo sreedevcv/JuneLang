@@ -9,7 +9,7 @@
 namespace jl {
 namespace algorithms {
 
-    std::pair<BasicBlock*, BasicBlock*> get_sucessors(BasicBlock* block);
+    std::pair<BasicBlock*, BasicBlock*> get_successors(BasicBlock* block);
 
     std::unordered_map<BasicBlock*, std::vector<BasicBlock*>> get_predecessors(Function* function);
 

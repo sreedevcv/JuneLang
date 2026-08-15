@@ -6,14 +6,31 @@
 #include "codegen/x86/Register.hpp"
 #include <algorithm>
 #include <cstdint>
+#include <iterator>
+#include <memory>
 #include <optional>
+#include <print>
 #include <set>
+#include <sys/types.h>
 #include <unordered_set>
+#include <utility>
 #include <variant>
 #include <vector>
 
 using VRegPair = std::pair<jl::x86::VirtualRegister, jl::x86::pass::LiveInterval>;
 using PRegPair = std::pair<jl::x86::PhysicalRegister, jl::x86::pass::LiveInterval>;
+
+struct AllocationPrinter {
+    void operator()(const jl::x86::PhysicalRegister& reg) const
+    {
+        std::print("reg: {}", reg.to_string());
+    }
+
+    void operator()(const uint32_t stack_slot) const
+    {
+        std::print("stack: {}", stack_slot);
+    }
+};
 
 struct IntervalCompare {
     bool operator()(const VRegPair& a, const VRegPair& b) const
@@ -38,7 +55,7 @@ struct LinerarScanRegisterAllocator {
     std::vector<VRegPair> intervals;
     std::unordered_set<int> available;
     std::set<VRegPair, ActiveCompare> active;
-    std::vector<int> locations;
+    std::vector<jl::x86::VirtualRegister> stack_slots;
     jl::x86::pass::RegisterAllocationMap allocations;
 
     LinerarScanRegisterAllocator(jl::x86::MachineFunction* function,
@@ -46,7 +63,7 @@ struct LinerarScanRegisterAllocator {
         : function(function)
         , interval_map(interval_map)
     {
-        max_registers = static_cast<int>(jl::x86::PhysicalRegister::REGISTER_MAX);
+        max_registers = static_cast<int>(jl::x86::PhysicalRegister::REG_SENTINEL);
         //        max_registers = 3;
 
         for (auto& [reg, interval] : interval_map) {
@@ -87,7 +104,7 @@ private:
             if (available.contains(phys_reg->reg)) {
                 // Extract a register from available
                 available.erase(phys_reg->reg);
-            } else if (available.size() > 0 && reg.hint->reg == jl::x86::PhysicalRegister::REGISTER_MAX) {
+            } else if (available.size() > 0 && reg.hint->reg == jl::x86::PhysicalRegister::REG_SENTINEL) {
                 // We must allocate any register to this virtual register
                 int new_reg = *available.begin();
                 available.erase(new_reg);
@@ -163,7 +180,8 @@ private:
             active.insert({ new_reg, interval });
 
             // Allocate a stack_slot for the spilled register for the rest of its interval
-            allocations[spill.first].back().interval.end -= interval.start - 1;
+            allocations[spill.first].back().interval.end = interval.start - 1;
+            stack_slots.push_back(reg);
             allocations[spill.first].push_back({ .allocation = stack_slot++,
                 .interval = {
                     .start = interval.start,
@@ -174,7 +192,7 @@ private:
                     .start = interval.start,
                     .end = spill.second.end } };
         } else {
-            locations.push_back(reg.id);
+            stack_slots.push_back(reg);
             allocation_range = {
                 .allocation = stack_slot++,
                 .interval = interval
@@ -210,10 +228,48 @@ static void change_register_sizes_for_cmp_instrs(jl::x86::MachineFunction* funct
     }
 }
 
+static std::vector<jl::x86::MemoryOperand> compute_stack_addresses(
+    jl::x86::MachineFunction* function,
+    std::vector<jl::x86::VirtualRegister>& stack_slots)
+{
+    std::vector<jl::x86::MemoryOperand> addresses(stack_slots.size());
+
+    for (int i = 0; i < stack_slots.size(); i++) {
+        const auto data_size = function->get_data_size_from_virtual_register(stack_slots[i]);
+        const int32_t offset = -(function->total_stack_space + data_size);
+        function->total_stack_space += data_size;
+
+        jl::x86::MemoryOperand address;
+        address.base = function->get_physical_register(jl::x86::PhysicalRegister::rbp);
+        address.displacement = offset;
+        address.index = std::nullopt;
+
+        addresses[i] = std::move(address);
+    }
+
+    return addresses;
+}
+
 static void annotate_instructions(jl::x86::MachineFunction* function,
-    jl::x86::pass::RegisterAllocationMap& allocations)
+    jl::x86::pass::RegisterAllocationMap& allocations,
+    std::vector<jl::x86::VirtualRegister>& stack_slots)
 {
     auto rpo = function->rpo();
+    auto stack_address = compute_stack_addresses(function, stack_slots);
+
+    const auto allocation_to_operand = [&](jl::x86::pass::Allocation allocation,
+                                           jl::x86::VirtualRegister replacer) -> jl::x86::Operand {
+        if (auto reg = std::get_if<jl::x86::PhysicalRegister>(&allocation)) {
+            jl::x86::VirtualRegister vreg;
+            vreg.id = replacer.id;
+            vreg.hint = *reg;
+
+            return vreg;
+        } else {
+            auto slot = std::get<uint32_t>(allocation);
+            return stack_address[slot];
+        }
+    };
 
     struct OperandFromAllocation {
         const jl::x86::VirtualRegister& replacer;
@@ -235,10 +291,10 @@ static void annotate_instructions(jl::x86::MachineFunction* function,
             return vreg;
         }
 
-        jl::x86::Operand operator()(const jl::x86::pass::StackSlot& reg) const
+        jl::x86::Operand operator()(const jl::x86::pass::StackSlot& slot) const
         {
             const auto data_size = function->get_data_size_from_virtual_register(replacer);
-            const auto offset = -(function->total_stack_space + data_size);
+            const int32_t offset = -(function->total_stack_space + data_size);
             function->total_stack_space += data_size;
 
             jl::x86::MemoryOperand stack_source;
@@ -250,15 +306,43 @@ static void annotate_instructions(jl::x86::MachineFunction* function,
         }
     };
 
+    // Give each vistual register its allocated operand
     for (const auto [reg, ranges] : allocations) {
         for (auto block : rpo) {
-            for (auto& instr : block->m_instructions) {
-                for (const auto& range : ranges) {
+            for (int i = 0; i < ranges.size(); i++) {
+                const auto& range = ranges[i];
+
+                for (auto it = block->m_instructions.begin(); it != block->m_instructions.end(); ++it) {
+                    auto& instr = *it;
+
                     if (range.interval.contains(instr->m_id)) {
-                        auto operand = std::visit(OperandFromAllocation(reg, function), range.allocation);
+                        // auto operand = std::visit(OperandFromAllocation(reg, function), range.allocation);
+                        auto operand = allocation_to_operand(range.allocation, reg);
                         instr->replace(reg, operand);
                     }
+
+                    // Insert a move at the end of the range
+                    if (i < ranges.size() - 1 && instr->m_id == range.interval.end) {
+                        auto move = new jl::x86::Mov();
+                        move->m_id = 1000;
+                        // auto operand = allocation_to_operand(range.allocation, reg);
+                        // move->dest = std::visit(OperandFromAllocation(reg, function), ranges[i + 1].allocation);
+                        // move->source = std::visit(OperandFromAllocation(reg, function), ranges[i].allocation);
+                        move->source = allocation_to_operand(ranges[i].allocation, reg);
+                        move->dest = allocation_to_operand(ranges[i + 1].allocation, reg);
+                        move->is_float = false;
+
+                        auto uses = instr->uses();
+                        block->m_instructions.insert(it, std::unique_ptr<jl::x86::Instruction>(move));
+                    }
                 }
+            }
+        }
+
+        for (const auto [reg, ranges] : allocations) {
+            for (int i = 0; i < ranges.size() - 1; i++) {
+                auto source = ranges[i];
+                auto dest = ranges[i + 1];
             }
         }
     }
@@ -271,18 +355,6 @@ jl::x86::pass::RegisterAllocationMap jl::x86::pass::linear_scan_reg_allocation(j
     LinerarScanRegisterAllocator allocator(function, intervals);
     allocator.calculate();
 
-    struct AllocationPrinter {
-        void operator()(const PhysicalRegister& reg) const
-        {
-            std::print("reg: {}", reg.to_string());
-        }
-
-        void operator()(const uint32_t stack_slot) const
-        {
-            std::print("stack: {}", stack_slot);
-        }
-    };
-
     std::println("Allocations: ");
     for (const auto& [reg, ranges] : allocator.allocations) {
         std::print("{}: ", reg.to_string());
@@ -293,9 +365,9 @@ jl::x86::pass::RegisterAllocationMap jl::x86::pass::linear_scan_reg_allocation(j
         }
         std::println();
     }
-    annotate_instructions(function, allocator.allocations);
+    annotate_instructions(function, allocator.allocations, allocator.stack_slots);
 
-    const auto replaced = function->text();
+    const auto replaced = function->to_string();
 
     std::println("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
     std::println("{}", replaced);

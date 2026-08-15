@@ -32,7 +32,9 @@ namespace ir {
 
         void accept(IRVisitor& visitor) override;
 
-        bool uses(value::Variable variable) override;
+        bool is_used(value::Variable variable) override;
+
+        std::vector<value::Variable> uses() const override;
 
         void replace(value::Variable from, value::Variable to) override;
 

@@ -22,7 +22,7 @@ void jl::ir::Phi::accept(IRVisitor& visitor)
     visitor.visit_phi(*this);
 }
 
-bool jl::ir::Phi::uses(value::Variable variable)
+bool jl::ir::Phi::is_used(value::Variable variable)
 {
     for (auto& [var, _] : m_opers) {
         if (var == variable) {
@@ -31,6 +31,15 @@ bool jl::ir::Phi::uses(value::Variable variable)
     }
 
     return false;
+}
+
+std::vector<jl::value::Variable> jl::ir::Phi::uses() const
+{
+    std::vector<value::Variable> result;
+    for (const auto& [var, _] : m_opers) {
+        result.push_back(var);
+    }
+    return result;
 }
 
 void jl::ir::Phi::replace(value::Variable from, value::Variable to)

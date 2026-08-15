@@ -31,7 +31,7 @@ void jl::ir::Write::accept(IRVisitor& visitor)
     visitor.visit_write_ir(*this);
 }
 
-bool jl::ir::Write::uses(value::Variable var)
+bool jl::ir::Write::is_used(value::Variable var)
 {
     if (m_base.id() == var.id()
         || (m_offset && m_offset.value().id() == var.id())
@@ -40,6 +40,17 @@ bool jl::ir::Write::uses(value::Variable var)
     } else {
         return false;
     }
+}
+
+std::vector<jl::value::Variable> jl::ir::Write::uses() const
+{
+    std::vector<value::Variable> result;
+    result.push_back(m_src);
+    result.push_back(m_base);
+    if (m_offset) {
+        result.push_back(m_offset.value());
+    }
+    return result;
 }
 
 void jl::ir::Write::replace(value::Variable from, value::Variable to)

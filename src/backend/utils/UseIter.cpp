@@ -14,7 +14,7 @@ bool jl::util::UseIter::has_next()
         return false;
     } else {
         while (m_ptr != nullptr) {
-            if (m_ptr->uses(m_def)) {
+            if (m_ptr->is_used(m_def)) {
                 m_ptr = m_ptr->next;
                 return true;
             }

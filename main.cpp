@@ -2,6 +2,7 @@
 #include "Function.hpp"
 #include "Lexer.hpp"
 #include "Parser.hpp"
+#include "RegisterAllocator.hpp"
 #include "backend/IRGen_v2.hpp"
 #include "codegen/x86/Generator.hpp"
 #include "codegen/x86/Passes.hpp"
@@ -21,14 +22,14 @@ void compile_function(jl::Function* function)
     jl::opt::sccp(function);
     jl::opt::remove_phi_nodes(function);
 
-    jl::x86::Generator x86gen(function);
-    auto x86func = x86gen.generate();
-    std::cout << *function;
+    //  jl::x86::Generator x86gen(function);
+    //  auto x86func = x86gen.generate();
+    //  std::cout << *function;
 
-    std::println("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~X86_64~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
-    std::println("{}", x86func.to_string());
-    auto intervals = jl::x86::pass::liveness_analysis(&x86func);
-    jl::x86::pass::linear_scan_reg_allocation(&x86func, intervals);
+    //  std::println("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~X86_64~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
+    //  std::println("{}", x86func.to_string());
+    //  auto intervals = jl::x86::pass::liveness_analysis(&x86func);
+    //  jl::x86::pass::linear_scan_reg_allocation(&x86func, intervals);
 }
 
 int main(int argc, char const* argv[])
@@ -73,15 +74,23 @@ int main(int argc, char const* argv[])
         // std::cout << *func;
         // std::println("----------------------------------------------------------------");
         jl::opt::remove_phi_nodes(func);
-        // std::cout << *func;
-        // std::println("----------------------------------------------------------------");
+        std::cout << *func;
+        std::println("----------------------------------------------------------------");
 
-        jl::x86::Generator x86gen(func);
-        auto x86func = x86gen.generate();
+        jl::RegisterAllocator allocator(func, 4, 4);
+        auto [allocations, slot_count] = allocator.allocate();
 
-        std::println("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~X86_64~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
-        auto intervals = jl::x86::pass::liveness_analysis(&x86func);
-        jl::x86::pass::linear_scan_reg_allocation(&x86func, intervals);
+        std::println("Total stack slot count: {}", slot_count);
+        for (const auto [var, alloc] : allocations) {
+            std::println("{} -> {}", var.to_str(), alloc.to_str());
+        }
+
+//      jl::x86::Generator x86gen(func);
+//      auto x86func = x86gen.generate();
+
+//      std::println("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~X86_64~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
+//      auto intervals = jl::x86::pass::liveness_analysis(&x86func);
+//      jl::x86::pass::linear_scan_reg_allocation(&x86func, intervals);
 #else
         // jl::Module module(file_name);
         // module.module().print(llvm::outs(), nullptr);

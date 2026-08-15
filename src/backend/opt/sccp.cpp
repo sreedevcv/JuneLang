@@ -307,7 +307,7 @@ struct SCCPState {
 
         for (auto& ir : function->irs()) {
             // if (ir->uses(def) && is_edge_executed(curr_block, ir->parent)) {
-            if (ir->uses(def)) {
+            if (ir->is_used(def)) {
                 // std::println("\t\t*Used by: {}, exec: {}", ir->to_str(), is_edge_executed(curr_block, ir->parent));
 
                 if (is_edge_executed(curr_block, ir->parent)) {
@@ -481,7 +481,7 @@ struct SCCPState {
 
             visited.insert(node);
 
-            const auto [left, right] = jl::algorithms::get_sucessors(node);
+            const auto [left, right] = jl::algorithms::get_successors(node);
 
             if (left != nullptr) {
                 exec_map[{ node, left }] = false;
@@ -528,7 +528,7 @@ struct SCCPState {
                 auto terminator = pred->get_terminator();
 
                 if (auto jump = dynamic_cast<jl::ir::CondJump*>(terminator)) {
-                    auto [succ1, succ2] = jl::algorithms::get_sucessors(pred);
+                    auto [succ1, succ2] = jl::algorithms::get_successors(pred);
                     auto remaining_target = jump->m_true_target == block ? jump->m_false_target : jump->m_true_target;
                     assert(remaining_target != nullptr && "atleast one live target to jump to");
                     function->remove_ir(jump);
@@ -566,7 +566,7 @@ struct SCCPState {
 
         constexpr auto is_used = [](jl::Function* function, jl::value::Variable def) {
             for (auto& ir : function->irs()) {
-                if (ir->uses(def)) {
+                if (ir->is_used(def)) {
                     return true;
                 }
             }

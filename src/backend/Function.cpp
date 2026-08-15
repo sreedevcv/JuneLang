@@ -69,7 +69,7 @@ const std::vector<jl::value::Variable>& jl::Function::args() const
 void jl::Function::replace_value(jl::value::Variable from, jl::value::Variable to)
 {
     for (auto& ir : m_irs) {
-        if (ir->uses(from)) {
+        if (ir->is_used(from)) {
             ir->replace(from, to);
         }
     }

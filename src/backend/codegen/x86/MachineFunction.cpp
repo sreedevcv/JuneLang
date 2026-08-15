@@ -7,13 +7,13 @@
 #include "codegen/x86/Register.hpp"
 #include "ir/AllocateVar.hpp"
 #include <algorithm>
-#include <variant>
 #include <cstdint>
 #include <memory>
 #include <sstream>
 #include <stack>
 #include <unordered_map>
 #include <unordered_set>
+#include <variant>
 #include <vector>
 
 jl::x86::MachineFunction::MachineFunction(const std::string& name, Function* function)
@@ -200,8 +200,8 @@ uint32_t jl::x86::MachineFunction::get_data_size_from_virtual_register(VirtualRe
         }
     }
 
-    unimplemented();
-    return 0;
+    // unimplemented();
+    return 8;
 }
 
 std::string jl::x86::MachineFunction::text() const

@@ -34,7 +34,7 @@ void jl::ir::Call::accept(IRVisitor& visitor)
     visitor.visit_call_ir(*this);
 }
 
-bool jl::ir::Call::uses(value::Variable var)
+bool jl::ir::Call::is_used(value::Variable var)
 {
     for (const auto& arg : m_args) {
         if (arg.id() == var.id()) {
@@ -47,6 +47,11 @@ bool jl::ir::Call::uses(value::Variable var)
     }
 
     return false;
+}
+
+std::vector<jl::value::Variable> jl::ir::Call::uses() const
+{
+    return m_args;
 }
 
 void jl::ir::Call::replace(value::Variable from, value::Variable to)

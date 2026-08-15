@@ -4,6 +4,7 @@
 #include "value/Variable.hpp"
 #include <cstdint>
 #include <string>
+#include <vector>
 
 namespace jl {
 class BasicBlock;
@@ -17,11 +18,13 @@ namespace ir {
 
         virtual void accept(IRVisitor& visitor) = 0;
 
-        virtual bool uses(value::Variable variable) = 0;
+        virtual bool is_used(value::Variable variable) = 0;
 
         virtual void replace(value::Variable from, value::Variable to) = 0;
 
         virtual std::optional<value::Variable> def() = 0;
+
+        virtual std::vector<value::Variable> uses() const = 0;
 
         uint32_t line() const;
 
