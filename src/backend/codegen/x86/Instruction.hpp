@@ -7,67 +7,75 @@
 #include <cstdint>
 #include <optional>
 #include <string>
-#include <variant>
 #include <vector>
 
 namespace jl {
 namespace x86 {
+
+    struct InstructionVisitor;
+    struct Mov;
+    struct Add;
+    struct Sub;
+    struct Less;
+    struct Equals;
+    struct Return;
+    struct Push;
+    struct Pop;
+    struct Jump;
+    struct JumpEqual;
+    struct Cmp;
+    struct Lea;
 
     struct Instruction {
         uint32_t m_id = 0;
 
         virtual ~Instruction() = default;
 
-        virtual std::string to_string() const = 0;
+        virtual std::string to_str() const = 0;
 
         virtual std::vector<VirtualRegister> defs() const = 0;
 
         virtual std::vector<VirtualRegister> uses() const = 0;
 
         virtual void replace(VirtualRegister reg, Operand operand) = 0;
+
+        virtual void accept(InstructionVisitor& visitor) = 0;
+    };
+
+    struct InstructionVisitor {
+        virtual ~InstructionVisitor() = default;
+
+        virtual void visit(Mov& inst) = 0;
+        virtual void visit(Add& inst) = 0;
+        virtual void visit(Sub& inst) = 0;
+        virtual void visit(Less& inst) = 0;
+        virtual void visit(Equals& inst) = 0;
+        virtual void visit(Return& inst) = 0;
+        virtual void visit(Push& inst) = 0;
+        virtual void visit(Pop& inst) = 0;
+        virtual void visit(Jump& inst) = 0;
+        virtual void visit(JumpEqual& inst) = 0;
+        virtual void visit(Cmp& inst) = 0;
+        virtual void visit(Lea& inst) = 0;
     };
 
     struct Mov : public Instruction {
         Operand source;
         Operand dest;
         bool is_float;
+        std::optional<SizeDirective> size;
 
         ~Mov() = default;
 
-        inline std::string to_string() const override
-        {
-            OperandPrinter printer;
-            return "mov "
-                + std::visit(printer, dest)
-                + ", " + std::visit(printer, source);
-        }
+        std::string to_str() const override;
 
-        std::vector<VirtualRegister> defs() const override
-        {
-            return std::visit(GetDefinedRegs {}, dest);
-        }
+        std::vector<VirtualRegister> defs() const override;
 
-        std::vector<VirtualRegister> uses() const override
-        {
-            auto src_uses = std::visit(GetUsedRegs {}, source);
-            if (std::holds_alternative<MemoryOperand>(dest)) {
-                const auto dest_uses = std::visit(GetUsedRegs {}, dest);
-                src_uses.insert(src_uses.end(), dest_uses.begin(), dest_uses.end());
-            }
+        std::vector<VirtualRegister> uses() const override;
 
-            return src_uses;
-        }
+        void replace(VirtualRegister reg, Operand operand) override;
 
-        inline void replace(VirtualRegister reg, Operand operand) override
-        {
-            if (auto vreg = std::get_if<VirtualRegister>(&source); vreg && vreg->id == reg.id) {
-                source = operand;
-            }
-            if (auto vreg = std::get_if<VirtualRegister>(&dest); vreg && vreg->id == reg.id) {
-                dest = operand;
-            }
-            // std::visit(OperandReplacer(reg, operand), source, dest);
-        }
+        void accept(InstructionVisitor& visitor) override;
     };
 
     struct Add : public Instruction {
@@ -77,39 +85,15 @@ namespace x86 {
 
         ~Add() = default;
 
-        inline std::string to_string() const override
-        {
-            OperandPrinter printer;
-            return "add "
-                + std::visit(printer, dest)
-                + ", " + std::visit(printer, source);
-        }
+        std::string to_str() const override;
 
-        std::vector<VirtualRegister> defs() const override
-        {
-            return std::visit(GetDefinedRegs {}, dest);
-        }
+        std::vector<VirtualRegister> defs() const override;
 
-        std::vector<VirtualRegister> uses() const override
-        {
-            auto src_uses = std::visit(GetUsedRegs {}, source);
-            if (std::holds_alternative<MemoryOperand>(dest)) {
-                const auto dest_uses = std::visit(GetUsedRegs {}, dest);
-                src_uses.insert(src_uses.end(), dest_uses.begin(), dest_uses.end());
-            }
+        std::vector<VirtualRegister> uses() const override;
 
-            return src_uses;
-        }
+        void replace(VirtualRegister reg, Operand operand) override;
 
-        inline void replace(VirtualRegister reg, Operand operand) override
-        {
-            if (auto vreg = std::get_if<VirtualRegister>(&source); vreg && vreg->id == reg.id) {
-                source = operand;
-            }
-            if (auto vreg = std::get_if<VirtualRegister>(&dest); vreg && vreg->id == reg.id) {
-                dest = operand;
-            }
-        }
+        void accept(InstructionVisitor& visitor) override;
     };
 
     struct Sub : public Instruction {
@@ -119,39 +103,15 @@ namespace x86 {
 
         ~Sub() = default;
 
-        inline std::string to_string() const override
-        {
-            OperandPrinter printer;
-            return "sub "
-                + std::visit(printer, dest)
-                + ", " + std::visit(printer, source);
-        }
+        std::string to_str() const override;
 
-        std::vector<VirtualRegister> defs() const override
-        {
-            return std::visit(GetDefinedRegs {}, dest);
-        }
+        std::vector<VirtualRegister> defs() const override;
 
-        std::vector<VirtualRegister> uses() const override
-        {
-            auto src_uses = std::visit(GetUsedRegs {}, source);
-            if (std::holds_alternative<MemoryOperand>(dest)) {
-                const auto dest_uses = std::visit(GetUsedRegs {}, dest);
-                src_uses.insert(src_uses.end(), dest_uses.begin(), dest_uses.end());
-            }
+        std::vector<VirtualRegister> uses() const override;
 
-            return src_uses;
-        }
+        void replace(VirtualRegister reg, Operand operand) override;
 
-        inline void replace(VirtualRegister reg, Operand operand) override
-        {
-            if (auto vreg = std::get_if<VirtualRegister>(&source); vreg && vreg->id == reg.id) {
-                source = operand;
-            }
-            if (auto vreg = std::get_if<VirtualRegister>(&dest); vreg && vreg->id == reg.id) {
-                dest = operand;
-            }
-        }
+        void accept(InstructionVisitor& visitor) override;
     };
 
     struct Less : public Instruction {
@@ -160,30 +120,15 @@ namespace x86 {
 
         ~Less() = default;
 
-        inline std::string to_string() const override
-        {
-            return "setl " + reg.to_string();
-        }
+        std::string to_str() const override;
 
-        std::vector<VirtualRegister> defs() const override
-        {
-            return { reg };
-        }
+        std::vector<VirtualRegister> defs() const override;
 
-        std::vector<VirtualRegister> uses() const override
-        {
-            return {};
-        }
+        std::vector<VirtualRegister> uses() const override;
 
-        inline void replace(VirtualRegister r, Operand operand) override
-        {
-            if (reg.id == r.id) {
-                // if (auto vreg = std::get_if<VirtualRegister>(&operand)) {
-                //     reg = *vreg;
-                // }
-                reg = std::get<VirtualRegister>(operand);
-            }
-        }
+        void replace(VirtualRegister r, Operand operand) override;
+
+        void accept(InstructionVisitor& visitor) override;
     };
 
     struct Equals : public Instruction {
@@ -192,48 +137,29 @@ namespace x86 {
 
         ~Equals() = default;
 
-        inline std::string to_string() const override
-        {
-            return "sete " + reg.to_string();
-        }
+        std::string to_str() const override;
 
-        std::vector<VirtualRegister> defs() const override
-        {
-            return { reg };
-        }
+        std::vector<VirtualRegister> defs() const override;
 
-        std::vector<VirtualRegister> uses() const override
-        {
-            return {};
-        }
+        std::vector<VirtualRegister> uses() const override;
 
-        inline void replace(VirtualRegister r, Operand operand) override
-        {
-            if (reg.id == r.id) {
-                reg = std::get<VirtualRegister>(operand);
-            }
-        }
+        void replace(VirtualRegister r, Operand operand) override;
+
+        void accept(InstructionVisitor& visitor) override;
     };
 
     struct Return : public Instruction {
         ~Return() = default;
 
-        inline std::string to_string() const override
-        {
-            return "ret";
-        }
+        std::string to_str() const override;
 
-        std::vector<VirtualRegister> defs() const override
-        {
-            return {};
-        }
+        std::vector<VirtualRegister> defs() const override;
 
-        std::vector<VirtualRegister> uses() const override
-        {
-            return {};
-        }
+        std::vector<VirtualRegister> uses() const override;
 
-        inline void replace(VirtualRegister, Operand) override { }
+        void replace(VirtualRegister, Operand) override;
+
+        void accept(InstructionVisitor& visitor) override;
     };
 
     struct Push : public Instruction {
@@ -241,29 +167,15 @@ namespace x86 {
 
         ~Push() = default;
 
-        inline std::string to_string() const override
-        {
-            return "push " + std::visit(OperandPrinter {}, value);
-        }
+        std::string to_str() const override;
 
-        std::vector<VirtualRegister> defs() const override
-        {
-            return {};
-        }
+        std::vector<VirtualRegister> defs() const override;
 
-        std::vector<VirtualRegister> uses() const override
-        {
-            return std::visit(GetUsedRegs {}, value);
-        }
+        std::vector<VirtualRegister> uses() const override;
 
-        inline void replace(VirtualRegister r, Operand operand) override
-        {
-            if (auto vreg = std::get_if<VirtualRegister>(&value); vreg) {
-                if (vreg->id == r.id) {
-                    value = operand;
-                }
-            }
-        }
+        void replace(VirtualRegister r, Operand operand) override;
+
+        void accept(InstructionVisitor& visitor) override;
     };
 
     struct Pop : public Instruction {
@@ -271,32 +183,15 @@ namespace x86 {
 
         ~Pop() = default;
 
-        inline std::string to_string() const override
-        {
-            return "pop " + std::visit(OperandPrinter {}, value);
-        }
+        std::string to_str() const override;
 
-        std::vector<VirtualRegister> defs() const override
-        {
-            return std::visit(GetDefinedRegs {}, value);
-        }
+        std::vector<VirtualRegister> defs() const override;
 
-        std::vector<VirtualRegister> uses() const override
-        {
-            if (std::holds_alternative<MemoryOperand>(value)) {
-                return std::visit(GetUsedRegs {}, value);
-            }
-            return {};
-        }
+        std::vector<VirtualRegister> uses() const override;
 
-        inline void replace(VirtualRegister r, Operand operand) override
-        {
-            if (auto vreg = std::get_if<VirtualRegister>(&value); vreg) {
-                if (vreg->id == r.id) {
-                    value = operand;
-                }
-            }
-        }
+        void replace(VirtualRegister r, Operand operand) override;
+
+        void accept(InstructionVisitor& visitor) override;
     };
 
     struct Jump : public Instruction {
@@ -304,43 +199,29 @@ namespace x86 {
 
         ~Jump() = default;
 
-        inline std::string to_string() const override
-        {
-            return "jmp " + target->m_name;
-        }
+        std::string to_str() const override;
 
-        std::vector<VirtualRegister> defs() const override
-        {
-            return {};
-        }
+        std::vector<VirtualRegister> defs() const override;
 
-        std::vector<VirtualRegister> uses() const override
-        {
-            return {};
-        }
+        std::vector<VirtualRegister> uses() const override;
 
-        inline void replace(VirtualRegister reg, Operand operand) override { }
+        void replace(VirtualRegister reg, Operand operand) override;
+
+        void accept(InstructionVisitor& visitor) override;
     };
 
     struct JumpEqual : public Jump {
         ~JumpEqual() = default;
 
-        inline std::string to_string() const override
-        {
-            return "je " + target->m_name;
-        }
+        std::string to_str() const override;
 
-        std::vector<VirtualRegister> defs() const override
-        {
-            return {};
-        }
+        std::vector<VirtualRegister> defs() const override;
 
-        std::vector<VirtualRegister> uses() const override
-        {
-            return {};
-        }
+        std::vector<VirtualRegister> uses() const override;
 
-        inline void replace(VirtualRegister reg, Operand operand) override { }
+        void replace(VirtualRegister reg, Operand operand) override;
+
+        void accept(InstructionVisitor& visitor) override;
     };
 
     struct Cmp : public Instruction {
@@ -350,40 +231,15 @@ namespace x86 {
 
         ~Cmp() = default;
 
-        inline std::string to_string() const override
-        {
-            OperandPrinter printer;
-            return "cmp "
-                + std::visit(printer, a)
-                + ", " + std::visit(printer, b);
-        }
+        std::string to_str() const override;
 
-        std::vector<VirtualRegister> defs() const override
-        {
-            return {};
-        }
+        std::vector<VirtualRegister> defs() const override;
 
-        std::vector<VirtualRegister> uses() const override
-        {
-            auto a_uses = std::visit(GetUsedRegs {}, a);
-            auto b_uses = std::visit(GetUsedRegs {}, b);
-            a_uses.insert(a_uses.end(), b_uses.begin(), b_uses.end());
-            return a_uses;
-        }
+        std::vector<VirtualRegister> uses() const override;
 
-        inline void replace(VirtualRegister r, Operand operand) override
-        {
-            if (auto vreg = std::get_if<VirtualRegister>(&a); vreg) {
-                if (vreg->id == r.id) {
-                    a = operand;
-                }
-            }
-            if (auto vreg = std::get_if<VirtualRegister>(&b); vreg) {
-                if (vreg->id == r.id) {
-                    b = operand;
-                }
-            }
-        }
+        void replace(VirtualRegister r, Operand operand) override;
+
+        void accept(InstructionVisitor& visitor) override;
     };
 
     struct Lea : public Instruction {
@@ -391,46 +247,19 @@ namespace x86 {
         VirtualRegister dest;
         bool is_float;
 
-        Lea(
-            MemoryOperand source,
-            VirtualRegister dest)
-            : source(source)
-            , dest(dest)
-        {
-        }
+        Lea(MemoryOperand source, VirtualRegister dest);
 
         ~Lea() = default;
 
-        inline std::string to_string() const override
-        {
-            OperandPrinter printer;
-            return "lea "
-                + dest.to_string()
-                + ", " + source.to_string();
-        }
+        std::string to_str() const override;
 
-        std::vector<VirtualRegister> defs() const override
-        {
-            return { dest };
-        }
+        std::vector<VirtualRegister> defs() const override;
 
-        std::vector<VirtualRegister> uses() const override
-        {
-            return std::visit(GetUsedRegs {}, Operand(source));
-        }
+        std::vector<VirtualRegister> uses() const override;
 
-        inline void replace(VirtualRegister r, Operand operand) override
-        {
-            if (dest.id == r.id) {
-                dest = std::get<VirtualRegister>(operand);
-            }
-            if (source.base.id == r.id) {
-                source.base = std::get<VirtualRegister>(operand);
-            }
-            if (source.index && source.index->id == r.id) {
-                source.index = std::get<VirtualRegister>(operand);
-            }
-        }
+        void replace(VirtualRegister r, Operand operand) override;
+
+        void accept(InstructionVisitor& visitor) override;
     };
 }
 }

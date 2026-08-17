@@ -19,6 +19,7 @@
 jl::x86::MachineFunction::MachineFunction(const std::string& name, Function* function)
     : m_name(name)
 {
+    // Calculate stack offsets
     int32_t offset = 0;
 
     for (auto& block : function->blocks()) {
@@ -37,14 +38,18 @@ jl::x86::MachineFunction::MachineFunction(const std::string& name, Function* fun
     }
 
     total_stack_space = offset;
+    
+    // Assign virtual registers for pyhsical registers
+    m_physical_register_map[PhysicalRegister::rax] = VirtualRegister(m_reg_count++);
+    m_physical_register_map[PhysicalRegister::rbp] = VirtualRegister(m_reg_count++);
 }
 
 jl::x86::MachineFunction::~MachineFunction() = default;
 
-jl::x86::VirtualRegister jl::x86::MachineFunction::new_register(std::optional<PhysicalRegister> hint)
-{
-    return VirtualRegister(m_reg_count++, hint);
-}
+//jl::x86::VirtualRegister jl::x86::MachineFunction::new_register(std::optional<PhysicalRegister> hint)
+//{
+    //return VirtualRegister(m_reg_count++, hint);
+//}
 
 jl::x86::Operand jl::x86::MachineFunction::get_operand(value::Variable var)
 {
@@ -83,14 +88,14 @@ std::vector<jl::x86::VirtualRegister>& jl::x86::MachineFunction::inputs()
     return m_inputs;
 }
 
-std::string jl::x86::MachineFunction::to_string() const
+std::string jl::x86::MachineFunction::to_str() const
 {
     std::stringstream ss;
     ss << "; Function\n";
     ss << m_name << ": \n";
 
     for (const auto& block : m_blocks) {
-        ss << block->to_string();
+        ss << block->to_str();
         ss << "\n";
     }
 
@@ -182,10 +187,10 @@ std::vector<jl::x86::MachineBlock*> jl::x86::MachineFunction::rpo() const
     return post_order;
 }
 
-void jl::x86::MachineFunction::map_physical_register(PhysicalRegister::Type reg)
-{
-    m_physical_register_map[reg] = new_register(PhysicalRegister(reg));
-}
+// oid jl::x86::MachineFunction::map_physical_register(PhysicalRegister::Type reg)
+// 
+//    m_physical_register_map[reg] = new_register(PhysicalRegister(reg));
+// 
 
 jl::x86::VirtualRegister jl::x86::MachineFunction::get_physical_register(PhysicalRegister::Type reg) const
 {

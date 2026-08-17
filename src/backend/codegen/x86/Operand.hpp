@@ -6,26 +6,6 @@
 
 namespace jl {
 namespace x86 {
-    enum class SizeDirective {
-        BYTE,
-        WORD,
-        DWORD,
-        QWORD,
-    };
-
-    inline std::string to_string(const SizeDirective& dir)
-    {
-        switch (dir) {
-        case SizeDirective::BYTE:
-            return "BYTE";
-        case SizeDirective::WORD:
-            return "WORD";
-        case SizeDirective::DWORD:
-            return "DWORD";
-        case SizeDirective::QWORD:
-            return "QWORD";
-        }
-    }
 
     struct MemoryOperand {
         // [base + scale * index + displacement]
@@ -35,12 +15,12 @@ namespace x86 {
         int32_t displacement = 0;
         std::optional<SizeDirective> size;
 
-        inline std::string to_string() const
+        inline std::string to_str() const
         {
-            std::string addr = base.to_string();
-            auto size_dir = (size ? jl::x86::to_string(*size) : "");
+            std::string addr = base.to_str();
+            auto size_dir = (size ? jl::x86::to_str(*size) : "");
             if (index) {
-                addr += std::to_string(scale) + " * " + index->to_string();
+                addr += std::to_string(scale) + " * " + index->to_str();
             }
             if (displacement != 0) {
                 addr += std::to_string(displacement);
@@ -59,7 +39,7 @@ namespace x86 {
 
         std::string operator()(const MemoryOperand& mem) const
         {
-            return mem.to_string();
+            return mem.to_str();
         }
 
         std::string operator()(const int64_t& imm) const
@@ -75,7 +55,7 @@ namespace x86 {
         }
         std::vector<VirtualRegister> operator()(const MemoryOperand&) const
         {
-            return {}; // Writing to memory does NOT define a register
+            return {}; 
         }
         std::vector<VirtualRegister> operator()(const int64_t&) const
         {
@@ -100,35 +80,6 @@ namespace x86 {
         {
             return {};
         }
-    };
-
-    struct OperandReplacer {
-        const VirtualRegister& target;
-        const Operand& operand;
-
-        OperandReplacer(const VirtualRegister& target, Operand& replacement)
-            : target(target)
-            , operand(operand)
-        {
-        }
-
-        // void operator()(MemoryOperand& mem)
-        //{
-        // if (mem.base == replacement) {
-        // mem.base = replacement;
-        //} else if (mem.index && *mem.index == replacement) {
-        // mem.index = replacement;
-        //}
-        //}
-        //
-        // void operator()(VirtualRegister& vreg)
-        //{
-        // if (vreg == replacement) {
-        // vreg = replacement;
-        //}
-        //}
-        //
-        void operator()(const int64_t&) const { }
     };
 }
 }

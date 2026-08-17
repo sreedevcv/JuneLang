@@ -28,7 +28,7 @@ namespace x86 {
         MachineFunction(MachineFunction&&) noexcept = default;
         MachineFunction& operator=(MachineFunction&&) noexcept = default;
 
-        VirtualRegister new_register(std::optional<PhysicalRegister> hint = std::nullopt);
+        // VirtualRegister new_register(std::optional<PhysicalRegister> hint = std::nullopt);
 
         Operand get_operand(value::Variable var);
 
@@ -40,7 +40,7 @@ namespace x86 {
 
         uint32_t get_data_size_from_virtual_register(VirtualRegister reg) const;
 
-        void map_physical_register(PhysicalRegister::Type reg);
+        // void map_physical_register(PhysicalRegister::Type reg);
 
         VirtualRegister get_physical_register(PhysicalRegister::Type reg) const;
 
@@ -50,7 +50,7 @@ namespace x86 {
 
         std::vector<VirtualRegister>& inputs();
 
-        std::string to_string() const;
+        std::string to_str() const;
 
         int32_t get_ssa_offset(value::Variable var) const;
 

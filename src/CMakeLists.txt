@@ -14,7 +14,6 @@ add_library(JuneCompiler
     backend/SemanticBlock.cpp
     backend/BasicBlock.cpp
 
-    # backend/IRGen.cpp
     backend/LiteralValue.cpp
     backend/Module.cpp
     backend/Function.cpp
@@ -42,17 +41,18 @@ add_library(JuneCompiler
     backend/utils/DominanceFrontier.cpp
     backend/utils/UseIter.cpp
 
-    # backend/codegen/x86CodeGen.cpp
     backend/opt/mem2reg.cpp
     backend/opt/sccp.cpp
     backend/opt/RemovePhiNodes.cpp
+
+    backend/codegen/x86/Instruction.cpp
     backend/codegen/x86/Generator.cpp
     backend/codegen/x86/MachineBlock.cpp
     backend/codegen/x86/MachineFunction.cpp
-    backend/codegen/x86/LivenessAnalysis.cpp
-    backend/codegen/x86/LinearScanRegAllocator.cpp
+    backend/codegen/x86/RegAlloc.cpp
+    # backend/codegen/x86/LivenessAnalysis.cpp
+    # backend/codegen/x86/LinearScanRegAllocator.cpp
 
-    # backend/opt/RegAlloc.cpp
     llvm_backend/JuneModule.cpp
     llvm_backend/LLVMIRGen.cpp
     llvm_backend/JuneFunction.cpp

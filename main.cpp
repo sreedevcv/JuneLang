@@ -4,10 +4,9 @@
 #include "Parser.hpp"
 #include "RegisterAllocator.hpp"
 #include "backend/IRGen_v2.hpp"
-#include "codegen/x86/Generator.hpp"
-#include "codegen/x86/Passes.hpp"
 #include "frontend/SemanticAnalysis.hpp"
 #include "opt/Optimizer.hpp"
+#include "backend/codegen/x86/Generator.hpp"
 
 #include <cassert>
 #include <iostream>
@@ -22,14 +21,14 @@ void compile_function(jl::Function* function)
     jl::opt::sccp(function);
     jl::opt::remove_phi_nodes(function);
 
-    //  jl::x86::Generator x86gen(function);
-    //  auto x86func = x86gen.generate();
-    //  std::cout << *function;
+    jl::x86::Generator x86gen(function);
+    auto x86func = x86gen.generate();
+    std::cout << *function;
 
-    //  std::println("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~X86_64~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
-    //  std::println("{}", x86func.to_string());
-    //  auto intervals = jl::x86::pass::liveness_analysis(&x86func);
-    //  jl::x86::pass::linear_scan_reg_allocation(&x86func, intervals);
+    std::println("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~X86_64~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
+    std::println("{}", x86func.to_str());
+    // auto intervals = jl::x86::pass::liveness_analysis(&x86func);
+    // jl::x86::pass::linear_scan_reg_allocation(&x86func, intervals);
 }
 
 int main(int argc, char const* argv[])
@@ -85,10 +84,11 @@ int main(int argc, char const* argv[])
             std::println("{} -> {}", var.to_str(), alloc.to_str());
         }
 
-//      jl::x86::Generator x86gen(func);
-//      auto x86func = x86gen.generate();
+        jl::x86::Generator x86gen(func);
+        auto x86func = x86gen.generate();
 
-//      std::println("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~X86_64~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
+      std::println("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~X86_64~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
+      std::println("{}", x86func.to_str());
 //      auto intervals = jl::x86::pass::liveness_analysis(&x86func);
 //      jl::x86::pass::linear_scan_reg_allocation(&x86func, intervals);
 #else

@@ -2,12 +2,13 @@
 
 #include "BasicBlock.hpp"
 #include "Function.hpp"
-#include "codegen/x86/Instruction.hpp"
-#include "codegen/x86/MachineBlock.hpp"
-#include "codegen/x86/MachineFunction.hpp"
 #include "ir/IR.hpp"
 #include "ir/IRVisitor.hpp"
 #include "value/Variable.hpp"
+#include "codegen/x86/Instruction.hpp"
+#include "codegen/x86/MachineBlock.hpp"
+#include "codegen/x86/MachineFunction.hpp"
+
 #include <optional>
 #include <unordered_map>
 

@@ -95,5 +95,6 @@ namespace type {
 
     bool is_number(const Type* t);
     bool is_boolean(const jl::type::Type* t);
+    bool is_float(const Type* t);
 }
 }

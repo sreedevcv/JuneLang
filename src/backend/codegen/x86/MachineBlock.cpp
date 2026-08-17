@@ -8,13 +8,13 @@ jl::x86::MachineBlock::MachineBlock(const std::string& name)
 {
 }
 
-std::string jl::x86::MachineBlock::to_string() const
+std::string jl::x86::MachineBlock::to_str() const
 {
     std::stringstream ss;
     ss << m_name << ": \n";
 
     for (const auto& instr : m_instructions) {
-        ss << '\t' << instr->m_id << '\t' << instr->to_string() << '\n';
+        ss << '\t' << instr->m_id << '\t' << instr->to_str() << '\n';
     }
 
     return ss.str();
@@ -39,7 +39,7 @@ std::string jl::x86::MachineBlock::text() const
     ss << m_name << ": \n";
 
     for (const auto& instr : m_instructions) {
-        ss << '\t' << instr->to_string() << '\n';
+        ss << '\t' << instr->to_str() << '\n';
     }
 
     return ss.str();

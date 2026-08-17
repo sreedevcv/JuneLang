@@ -222,3 +222,12 @@ bool jl::type::is_boolean(const jl::type::Type* t)
         return static_cast<const type::Builtin*>(t)->m_primitive == type::Builtin::BOOL;
     }
 }
+
+bool jl::type::is_float(const jl::type::Type* t)
+{
+    if (auto type = dynamic_cast<const jl::type::Builtin*>(t)) {
+        return type->m_primitive == jl::type::Builtin::FLOAT;
+    }
+
+    return false;
+}

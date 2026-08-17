@@ -13,7 +13,7 @@ namespace x86 {
     public:
         MachineBlock(const std::string& name);
 
-        std::string to_string() const;
+        std::string to_str() const;
 
         std::vector<MachineBlock*> successors() const;
 

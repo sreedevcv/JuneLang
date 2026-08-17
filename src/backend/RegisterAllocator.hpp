@@ -77,10 +77,6 @@ struct RangeCompare {
         }
         return a.start < b.start;
     }
-    //  bool operator()(const jl::Range& a, const jl::Range& b) const
-    //  {
-    //      return a.end < b.end;
-    //  }
 };
 
 struct RangeHasher {
@@ -98,12 +94,8 @@ class RegisterAllocator {
 public:
     RegisterAllocator(Function* funtion, uint32_t gpr_count, uint32_t float_reg_count);
 
-    //  struct AllocationResult {
-    //      std::unordered_map<Range, Allocation, RangeHasher> allocations;
-    //      uint32_t stack_slot_count;
-    //      std::unordered_map<jl::value::Variable, jl::Range, jl::value::VariableHasher> ranges;
-
     using AllocationResult = std::pair<std::unordered_map<value::Variable, Allocation, value::VariableHasher>, uint32_t>;
+
     AllocationResult allocate();
 
 private:

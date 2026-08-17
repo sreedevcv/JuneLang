@@ -33,7 +33,7 @@ namespace x86 {
 
         bool is_byte = false;
 
-        inline std::string to_string() const
+        inline std::string to_str() const
         {
             switch (reg) {
             case rax:
@@ -78,41 +78,60 @@ namespace x86 {
         }
     };
 
-    enum class RegisterHint {
-        RETURN,
+    enum class SizeDirective {
         BYTE,
+        WORD,
+        DWORD,
+        QWORD,
+        NONE,
     };
+
+    inline std::string to_str(const SizeDirective& dir)
+    {
+        switch (dir) {
+        case SizeDirective::BYTE:
+            return "BYTE";
+        case SizeDirective::WORD:
+            return "WORD";
+        case SizeDirective::DWORD:
+            return "DWORD";
+        case SizeDirective::QWORD:
+            return "QWORD";
+        case SizeDirective::NONE:
+            return "NONE";
+        }
+    }
 
     struct VirtualRegister {
         uint32_t id;
-        std::optional<PhysicalRegister> hint;
-        bool is_byte = false;
+        int32_t allocation;
+        SizeDirective size;
 
         static inline bool debug_print = true;
 
         inline VirtualRegister()
             : id(UINT32_MAX)
-            , hint(std::nullopt)
+            , allocation(-1)
+            , size(SizeDirective::NONE)
+        {
+        }
+        
+        inline VirtualRegister(uint32_t vid)
+            : id(vid)
+            , allocation(-1)
+            , size(SizeDirective::NONE)
         {
         }
 
-        inline VirtualRegister(uint32_t idx, std::optional<PhysicalRegister> hint = std::nullopt)
-            : id(idx)
-            , hint(hint)
+        inline std::string to_str() const
         {
-        }
+            std::string s = "t" + std::to_string(id);
 
-        inline std::string to_string() const
-        {
-            if (!debug_print) {
-                return hint->to_string();
-            } else {
-                std::string s = "t" + std::to_string(id);
-                if (hint) {
-                    s += "(" + hint->to_string() + ")";
-                }
-                return s;
+            if (size != SizeDirective::NONE) {
+                s += "(" + jl::x86::to_str(size) + ")";
             }
+            
+            return s;
         }
 
         inline bool operator==(const VirtualRegister& reg) const
@@ -135,12 +154,12 @@ namespace x86 {
     struct RegisterPrinter {
         std::string operator()(const PhysicalRegister& reg) const
         {
-            return reg.to_string();
+            return reg.to_str();
         }
 
         std::string operator()(const VirtualRegister& reg)
         {
-            return reg.to_string();
+            return reg.to_str();
         }
     };
 

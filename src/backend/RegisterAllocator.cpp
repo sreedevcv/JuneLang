@@ -1,4 +1,5 @@
 #include "RegisterAllocator.hpp"
+
 #include "BasicBlock.hpp"
 #include "types/Type.hpp"
 #include "utils/algorithms.hpp"
@@ -14,6 +15,7 @@ jl::RegisterAllocator::RegisterAllocator(Function* funtion, uint32_t gpr_count, 
     : m_function(funtion)
     , m_gpr_count(gpr_count)
     , m_float_reg_count(float_reg_count)
+    , m_total_slots(0)
 {
     auto rpo_map = jl::algorithms::RPO(m_function->entry_block());
     rpo = std::vector<jl::BasicBlock*>(rpo_map.size(), nullptr);
@@ -40,77 +42,13 @@ std::unordered_map<jl::ir::IR*, uint32_t> jl::RegisterAllocator::number_instruct
 
 jl::RegisterAllocator::LiveSet jl::RegisterAllocator::compute_liveness() const
 {
-    // std::unordered_map<BasicBlock*, VariableSet> gen;
-    // std::unordered_map<BasicBlock*, VariableSet> kill;
-    //
-    // // In normal post order traversal
-    // for (auto iter = rpo.crbegin(); iter != rpo.crend(); ++iter) {
-    // auto block = *iter;
-    //
-    // VariableSet killed_sofar;
-    // for (auto instr = block->tail; instr != nullptr; instr = instr->prev) {
-    // for (auto use : instr->uses()) {
-    // if (!killed_sofar.contains(use)) {
-    // gen[block].insert(use);
-    // }
-    // }
-    // if (auto def = instr->def()) {
-    // killed_sofar.insert(*def);
-    // kill[block].insert(*def);
-    // }
-    // }
-    // //      for (auto instr = block->tail; instr != nullptr; instr = instr->prev) {
-    // //          if (auto def = instr->def()) {
-    // //              kill[block].insert(*def);
-    // //          }
-    //
-    // //          for (auto use : instr->uses()) {
-    // //              gen[block].insert(use);
-    // //          }
-    // //      }
-    // }
-    //
-    // LiveSet live_in;
-    // bool changed = true;
-    //
-    // while (changed) {
-    // changed = false;
-    //
-    // for (auto block : rpo) {
-    // const auto old_size = live_in[block].size();
-    // auto [left, right] = algorithms::get_sucessors(block);
-    // VariableSet live_out;
-    // if (left != nullptr) {
-    // live_out = live_in[left];
-    // }
-    // if (right != nullptr) {
-    // live_out.insert(live_in[right].begin(), live_in[right].end());
-    // }
-    //
-    // VariableSet new_live_in = gen[block];
-    // for (auto var : live_out) {
-    // if (!kill[block].contains(var)) {
-    // new_live_in.insert(var);
-    // }
-    // }
-    //
-    // if (new_live_in.size() != old_size) {
-    // changed = true;
-    // live_in[block] = new_live_in;
-    // }
-    // }
-    // }
-    //
-    // return live_in;
     LiveSet live_in;
     bool changed = true;
     while (changed) {
         changed = false;
-        // For backward dataflow (liveness), iterating in reverse postorder
-        // of the CFG converges faster, but any order works.
         for (auto block : rpo) {
             auto old = live_in[block];
-            // OUT[B] = union of IN[S] for successors S
+
             VariableSet live;
             auto [left, right] = algorithms::get_successors(block);
             if (left != nullptr) {
@@ -119,8 +57,7 @@ jl::RegisterAllocator::LiveSet jl::RegisterAllocator::compute_liveness() const
             if (right != nullptr) {
                 live.insert(live_in[right].begin(), live_in[right].end());
             }
-            // Walk the block backwards.
-            // live_before(instr) = uses(instr) ∪ (live_after(instr) - def(instr))
+            
             for (auto instr = block->tail; instr != nullptr; instr = instr->prev) {
                 if (auto def = instr->def()) {
                     live.erase(*def);
@@ -200,15 +137,6 @@ void jl::RegisterAllocator::expire_old_intervals(
     }
 }
 
-bool is_float(const jl::value::Variable& var)
-{
-    if (auto type = dynamic_cast<const jl::type::Builtin*>(var.type())) {
-        return type->m_primitive == jl::type::Builtin::FLOAT;
-    }
-
-    return false;
-}
-
 void jl::RegisterAllocator::allot_or_spill(Range range,
     std::unordered_map<Range, Allocation, RangeHasher>& allocations,
     std::unordered_set<uint32_t>& free,
@@ -269,7 +197,7 @@ jl::RegisterAllocator::linear_allocate(Ranges ranges)
         });
 
     for (const auto [var, range] : sorted_ranges) {
-        if (is_float(var)) {
+        if (type::is_float(var.type())) {
             expire_old_intervals(range, float_active, free_floats, allocations);
             allot_or_spill(range, allocations, free_floats, float_active, Allocation::FLOAT, m_float_reg_count);
         } else {
