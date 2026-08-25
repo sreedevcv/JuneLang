@@ -4,9 +4,10 @@
 #include "Parser.hpp"
 #include "RegisterAllocator.hpp"
 #include "backend/IRGen_v2.hpp"
+#include "backend/codegen/x86/Generator.hpp"
+#include "codegen/x86/Passes.hpp"
 #include "frontend/SemanticAnalysis.hpp"
 #include "opt/Optimizer.hpp"
-#include "backend/codegen/x86/Generator.hpp"
 
 #include <cassert>
 #include <iostream>
@@ -86,11 +87,10 @@ int main(int argc, char const* argv[])
 
         jl::x86::Generator x86gen(func);
         auto x86func = x86gen.generate();
+        std::println("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~X86_64~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
+        std::println("{}", x86func.to_str());
 
-      std::println("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~X86_64~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
-      std::println("{}", x86func.to_str());
-//      auto intervals = jl::x86::pass::liveness_analysis(&x86func);
-//      jl::x86::pass::linear_scan_reg_allocation(&x86func, intervals);
+        jl::x86::pass::assign_register(&x86func, jl::RegisterAllocator::AllocationResult { allocations, slot_count });
 #else
         // jl::Module module(file_name);
         // module.module().print(llvm::outs(), nullptr);

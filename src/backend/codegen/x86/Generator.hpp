@@ -40,8 +40,6 @@ namespace x86 {
 
         uint32_t get_stack_offset(value::Variable var);
 
-        std::optional<SizeDirective> is_simple_move(uint32_t size);
-
         void visit_binary_ir(ir::Binary& binary) override;
 
         void visit_move_ir(ir::Move& move) override;

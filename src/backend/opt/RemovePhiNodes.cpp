@@ -24,7 +24,6 @@ jl::ir::IR* remove_phi_node(jl::Function* function, jl::ir::Phi* phi, jl::ir::IR
             addr,
             std::nullopt,
             var.type()->size(),
-            var.type()->size(),
             phi->line());
 
         function->add_ir_before(std::move(write), block->get_terminator());
@@ -33,7 +32,6 @@ jl::ir::IR* remove_phi_node(jl::Function* function, jl::ir::Phi* phi, jl::ir::IR
         phi->m_dest,
         addr,
         std::nullopt,
-        phi->m_dest.type()->size(),
         phi->m_dest.type()->size(),
         phi->m_line);
 

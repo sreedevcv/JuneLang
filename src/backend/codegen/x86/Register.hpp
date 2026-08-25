@@ -3,7 +3,6 @@
 #include "Utils.hpp"
 #include <cstdint>
 #include <functional>
-#include <optional>
 #include <print>
 #include <string>
 #include <variant>
@@ -115,7 +114,7 @@ namespace x86 {
             , size(SizeDirective::NONE)
         {
         }
-        
+
         inline VirtualRegister(uint32_t vid)
             : id(vid)
             , allocation(-1)
@@ -130,7 +129,7 @@ namespace x86 {
             if (size != SizeDirective::NONE) {
                 s += "(" + jl::x86::to_str(size) + ")";
             }
-            
+
             return s;
         }
 

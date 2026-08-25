@@ -2,6 +2,7 @@
 
 #include "codegen/x86/Register.hpp"
 
+#include <cstdint>
 #include <string>
 
 namespace jl {
@@ -31,6 +32,8 @@ namespace x86 {
 
     using Operand = std::variant<VirtualRegister, MemoryOperand, int64_t>;
 
+    using MachineAlloc = std::variant<PhysicalRegister, MemoryOperand, int64_t>;
+
     struct OperandPrinter {
         std::string operator()(const Register& reg) const
         {
@@ -55,7 +58,7 @@ namespace x86 {
         }
         std::vector<VirtualRegister> operator()(const MemoryOperand&) const
         {
-            return {}; 
+            return {};
         }
         std::vector<VirtualRegister> operator()(const int64_t&) const
         {
@@ -81,5 +84,25 @@ namespace x86 {
             return {};
         }
     };
+
+    // Checks if size is 1, 2, 4 or 8 and returns is as PTR otherwise we need to do memcpy to move
+    inline std::optional<SizeDirective> is_simple_move(uint32_t size)
+    {
+        switch (size) {
+        case 0:
+            unimplemented();
+        case 1:
+            return SizeDirective::BYTE;
+        case 2:
+            return SizeDirective::WORD;
+        case 4:
+            return SizeDirective::DWORD;
+        case 8:
+            return SizeDirective::QWORD;
+        default:
+            return std::nullopt;
+        }
+    }
+
 }
 }

@@ -16,6 +16,7 @@ jl::RegisterAllocator::RegisterAllocator(Function* funtion, uint32_t gpr_count, 
     , m_gpr_count(gpr_count)
     , m_float_reg_count(float_reg_count)
     , m_total_slots(0)
+    , m_total_offset(0)
 {
     auto rpo_map = jl::algorithms::RPO(m_function->entry_block());
     rpo = std::vector<jl::BasicBlock*>(rpo_map.size(), nullptr);
@@ -57,7 +58,7 @@ jl::RegisterAllocator::LiveSet jl::RegisterAllocator::compute_liveness() const
             if (right != nullptr) {
                 live.insert(live_in[right].begin(), live_in[right].end());
             }
-            
+
             for (auto instr = block->tail; instr != nullptr; instr = instr->prev) {
                 if (auto def = instr->def()) {
                     live.erase(*def);
@@ -137,7 +138,22 @@ void jl::RegisterAllocator::expire_old_intervals(
     }
 }
 
+uint32_t jl::RegisterAllocator::calculate_stack_offset(const value::Variable& var)
+{
+    const auto alignment = var.type()->alignment();
+
+    if (m_total_offset % alignment != 0) {
+        m_total_offset = ((m_total_offset + alignment - 1) / alignment) * alignment;
+    }
+
+    const auto offset = m_total_offset;
+    m_total_offset += var.type()->size();
+
+    return offset;
+}
+
 void jl::RegisterAllocator::allot_or_spill(Range range,
+    const value::Variable& var,
     std::unordered_map<Range, Allocation, RangeHasher>& allocations,
     std::unordered_set<uint32_t>& free,
     std::set<jl::Range, jl::RangeCompare>& active,
@@ -148,8 +164,9 @@ void jl::RegisterAllocator::allot_or_spill(Range range,
         auto spill = *active.rbegin();
         auto slot = Allocation {
             .type = Allocation::SLOT,
-            .value = m_total_slots++
+            .value = calculate_stack_offset(var),
         };
+        m_total_slots++;
 
         if (spill.end > range.end) {
             allocations[range] = allocations[spill];
@@ -199,10 +216,10 @@ jl::RegisterAllocator::linear_allocate(Ranges ranges)
     for (const auto [var, range] : sorted_ranges) {
         if (type::is_float(var.type())) {
             expire_old_intervals(range, float_active, free_floats, allocations);
-            allot_or_spill(range, allocations, free_floats, float_active, Allocation::FLOAT, m_float_reg_count);
+            allot_or_spill(range, var, allocations, free_floats, float_active, Allocation::FLOAT, m_float_reg_count);
         } else {
             expire_old_intervals(range, gpr_active, free_gprs, allocations);
-            allot_or_spill(range, allocations, free_gprs, gpr_active, Allocation::GPR, m_gpr_count);
+            allot_or_spill(range, var, allocations, free_gprs, gpr_active, Allocation::GPR, m_gpr_count);
         }
     }
 

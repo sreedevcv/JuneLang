@@ -25,7 +25,7 @@ struct Allocation {
     Type type;
     uint32_t value;
 
-    std::string to_str() const
+    inline std::string to_str() const
     {
         std::string s;
         switch (type) {
@@ -102,6 +102,7 @@ private:
     uint32_t m_gpr_count;
     uint32_t m_float_reg_count;
     uint32_t m_total_slots;
+    uint32_t m_total_offset;
     Function* m_function;
     std::vector<BasicBlock*> rpo;
 
@@ -115,6 +116,8 @@ private:
 
     Ranges compute_intervals(LiveSet live_in, std::unordered_map<jl::ir::IR*, uint32_t>& numbering) const;
 
+    uint32_t calculate_stack_offset(const value::Variable& var);
+
     void expire_old_intervals(Range new_range,
         std::set<Range, RangeCompare>& active,
         std::unordered_set<uint32_t>& free,
@@ -123,6 +126,7 @@ private:
     std::pair<std::unordered_map<Range, Allocation, RangeHasher>, uint32_t> linear_allocate(Ranges ranges);
 
     void allot_or_spill(Range range,
+        const value::Variable& var,
         std::unordered_map<Range, Allocation, RangeHasher>& allocations,
         std::unordered_set<uint32_t>& free,
         std::set<Range, RangeCompare>& active,

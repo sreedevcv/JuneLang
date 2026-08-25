@@ -60,8 +60,8 @@ namespace x86 {
     };
 
     struct Mov : public Instruction {
-        Operand source;
-        Operand dest;
+        VirtualRegister source;
+        VirtualRegister dest;
         bool is_float;
         std::optional<SizeDirective> size;
 
@@ -79,8 +79,8 @@ namespace x86 {
     };
 
     struct Add : public Instruction {
-        Operand source;
-        Operand dest;
+        VirtualRegister source;
+        VirtualRegister dest;
         bool is_float;
 
         ~Add() = default;
@@ -97,8 +97,8 @@ namespace x86 {
     };
 
     struct Sub : public Instruction {
-        Operand source;
-        Operand dest;
+        VirtualRegister source;
+        VirtualRegister dest;
         bool is_float;
 
         ~Sub() = default;
@@ -163,7 +163,7 @@ namespace x86 {
     };
 
     struct Push : public Instruction {
-        Operand value;
+        VirtualRegister value;
 
         ~Push() = default;
 
@@ -179,7 +179,7 @@ namespace x86 {
     };
 
     struct Pop : public Instruction {
-        Operand value;
+        VirtualRegister value;
 
         ~Pop() = default;
 
@@ -225,8 +225,8 @@ namespace x86 {
     };
 
     struct Cmp : public Instruction {
-        Operand a;
-        Operand b;
+        VirtualRegister a;
+        VirtualRegister b;
         bool is_float;
 
         ~Cmp() = default;
@@ -243,11 +243,11 @@ namespace x86 {
     };
 
     struct Lea : public Instruction {
-        MemoryOperand source;
+        VirtualRegister source;
         VirtualRegister dest;
         bool is_float;
 
-        Lea(MemoryOperand source, VirtualRegister dest);
+        Lea(VirtualRegister source, VirtualRegister dest);
 
         ~Lea() = default;
 

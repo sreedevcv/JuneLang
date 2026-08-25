@@ -2,7 +2,6 @@
 #include "Instruction.hpp"
 
 #include "Function.hpp"
-#include "Utils.hpp"
 #include "codegen/x86/MachineBlock.hpp"
 #include "codegen/x86/Register.hpp"
 #include "ir/AllocateVar.hpp"
@@ -38,18 +37,21 @@ jl::x86::MachineFunction::MachineFunction(const std::string& name, Function* fun
     }
 
     total_stack_space = offset;
-    
+
     // Assign virtual registers for pyhsical registers
     m_physical_register_map[PhysicalRegister::rax] = VirtualRegister(m_reg_count++);
     m_physical_register_map[PhysicalRegister::rbp] = VirtualRegister(m_reg_count++);
+
+    set_allocation(m_physical_register_map[PhysicalRegister::rax], PhysicalRegister(PhysicalRegister::rax));
+    set_allocation(m_physical_register_map[PhysicalRegister::rbp], PhysicalRegister(PhysicalRegister::rbp));
 }
 
 jl::x86::MachineFunction::~MachineFunction() = default;
 
-//jl::x86::VirtualRegister jl::x86::MachineFunction::new_register(std::optional<PhysicalRegister> hint)
-//{
-    //return VirtualRegister(m_reg_count++, hint);
-//}
+jl::x86::VirtualRegister jl::x86::MachineFunction::new_register()
+{
+    return VirtualRegister(m_reg_count++);
+}
 
 jl::x86::Operand jl::x86::MachineFunction::get_operand(value::Variable var)
 {
@@ -188,9 +190,9 @@ std::vector<jl::x86::MachineBlock*> jl::x86::MachineFunction::rpo() const
 }
 
 // oid jl::x86::MachineFunction::map_physical_register(PhysicalRegister::Type reg)
-// 
+//
 //    m_physical_register_map[reg] = new_register(PhysicalRegister(reg));
-// 
+//
 
 jl::x86::VirtualRegister jl::x86::MachineFunction::get_physical_register(PhysicalRegister::Type reg) const
 {
@@ -226,4 +228,17 @@ std::string jl::x86::MachineFunction::text() const
 
     ss << "\n";
     return ss.str();
+}
+
+void jl::x86::MachineFunction::set_allocation(jl::x86::VirtualRegister reg, jl::x86::MachineAlloc alloc)
+{
+    m_allocations[reg] = alloc;
+}
+
+std::optional<jl::x86::MachineAlloc> jl::x86::MachineFunction::get_allocation(jl::x86::VirtualRegister reg) const
+{
+    if (!m_allocations.contains(reg)) {
+        return std::nullopt;
+    }
+    return m_allocations.at(reg);
 }

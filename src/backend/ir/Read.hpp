@@ -12,7 +12,6 @@ namespace ir {
             value::Variable dest,
             value::Variable base,
             std::optional<value::Variable> offset,
-            uint32_t offset_multiplier,
             uint32_t size,
             uint32_t line);
 
@@ -33,7 +32,6 @@ namespace ir {
         value::Variable m_dest;
         value::Variable m_base;
         std::optional<value::Variable> m_offset;
-        uint32_t m_offset_multiplier;
         uint32_t m_size;
     };
 }

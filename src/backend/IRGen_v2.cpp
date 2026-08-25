@@ -131,7 +131,6 @@ std::any jl::IRGenv2::visit_assign_expr(Assign* expr)
         addr_var,
         std::nullopt,
         pointee_type->size(),
-        pointee_type->size(),
         expr->m_line);
 
     return rhs;
@@ -273,7 +272,6 @@ std::any jl::IRGenv2::visit_variable_expr(Variable* expr)
             var,
             std::nullopt,
             pointee_type->size(),
-            pointee_type->size(),
             expr->m_line);
         return loaded_value;
     }
@@ -343,7 +341,6 @@ std::any jl::IRGenv2::visit_jlist_expr(JList* expr)
             ptr_var,
             offset,
             elem_size,
-            elem_size,
             expr->m_right_brace.get_line());
     }
 
@@ -357,7 +354,7 @@ std::any jl::IRGenv2::visit_index_get_expr(IndexGet* expr)
     const auto size = expr->m_type->size();
     const auto dest = m_block->create_varaible(expr->m_type);
 
-    m_module.current_function()->add_ir<ir::Read>(dest, list_var, offset_var, size, size, expr->m_line);
+    m_module.current_function()->add_ir<ir::Read>(dest, list_var, offset_var, size, expr->m_line);
 
     return dest;
 }
@@ -369,7 +366,7 @@ std::any jl::IRGenv2::visit_index_set_expr(IndexSet* expr)
     const auto src_var = emit(expr->m_value_expr.get());
     const auto size = expr->m_type->size();
 
-    m_module.current_function()->add_ir<ir::Write>(src_var, list_var, offset_var, size, size, expr->m_line);
+    m_module.current_function()->add_ir<ir::Write>(src_var, list_var, offset_var, size, expr->m_line);
 
     return src_var;
 }
@@ -436,7 +433,6 @@ std::any jl::IRGenv2::visit_var_stmt(VarStmt* stmt)
         src,
         addr_var,
         std::nullopt,
-        src.type()->size(),
         src.type()->size(),
         stmt->m_line);
 
@@ -551,7 +547,6 @@ std::any jl::IRGenv2::visit_func_stmt(FuncStmt* stmt)
         m_module.current_function()->add_ir<ir::Write>(input_arg,
             addr_var,
             std::nullopt,
-            input_arg.type()->size(),
             input_arg.type()->size(),
             stmt->m_line);
     }

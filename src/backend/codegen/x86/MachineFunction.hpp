@@ -28,7 +28,7 @@ namespace x86 {
         MachineFunction(MachineFunction&&) noexcept = default;
         MachineFunction& operator=(MachineFunction&&) noexcept = default;
 
-        // VirtualRegister new_register(std::optional<PhysicalRegister> hint = std::nullopt);
+        VirtualRegister new_register();
 
         Operand get_operand(value::Variable var);
 
@@ -54,6 +54,10 @@ namespace x86 {
 
         int32_t get_ssa_offset(value::Variable var) const;
 
+        void set_allocation(VirtualRegister reg, MachineAlloc alloc);
+
+        std::optional<MachineAlloc> get_allocation(VirtualRegister reg) const;
+
         std::unordered_map<MachineBlock*, std::vector<MachineBlock*>> predecessors() const;
 
         std::unordered_map<MachineBlock*, std::vector<MachineBlock*>> successors() const;
@@ -73,6 +77,7 @@ namespace x86 {
         std::unordered_map<uint32_t, int32_t> m_stk_offset;
         std::unordered_map<std::string, MachineBlock*> m_block_map;
         std::unordered_map<PhysicalRegister::Type, VirtualRegister> m_physical_register_map;
+        std::unordered_map<VirtualRegister, MachineAlloc, VirtualRegisterHasher> m_allocations;
     };
 }
 }
