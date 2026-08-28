@@ -59,7 +59,7 @@ public:
 
     inline void set_start(int32_t new_start)
     {
-        assert(new_start <= end);
+        assert(end == -1 || new_start <= end);
         start = new_start;
     }
 

@@ -4,7 +4,7 @@
 #include "codegen/x86/MachineBlock.hpp"
 #include "codegen/x86/MachineFunction.hpp"
 #include "codegen/x86/Register.hpp"
-#include <algorithm>
+
 #include <cstdint>
 #include <print>
 #include <unordered_map>
@@ -94,49 +94,40 @@ struct LivenessAnalysis {
         }
     }
 
-    // LiveIntervalMap calculate_live_intervals()
-    // {
-    // auto successors = function->successors();
-    // number_instructions();
-    //
-    // LiveIntervalMap intervals;
-    //
-    // for (uint32_t i = 0; i < rpo.size(); i++) {
-    // auto block = rpo[i];
-    //
-    // for (auto in_reg : live_in[block]) {
-    // intervals[in_reg].start = std::min(intervals[in_reg].start, i);
-    // }
-    //
-    // for (auto out_reg : live_out[block]) {
-    // intervals[out_reg].end = std::max(intervals[out_reg].end, i);
-    // }
-    // }
-    //
-    // return intervals;
-    // }
-
     jl::x86::pass::LiveIntervalMap calculate_live_intervals()
     {
         number_instructions();
 
         jl::x86::pass::LiveIntervalMap intervals;
 
-        for (auto& input : function->inputs()) {
-            intervals[input].start = 0;
-            intervals[input].end = 0;
+        for (auto input_param : function->inputs()) {
+            intervals[input_param].start = 0;
+            intervals[input_param].end = 0;
         }
 
+        const auto succs = function->successors();
+
         for (const auto& block : rpo) {
-            // Process definitions (use first definition point)
-            for (const auto& instr : block->m_instructions) {
-                for (const auto reg : instr->defs()) {
-                  //intervals[reg].start = std::min(intervals[reg].start, instr->m_id);
-                  //intervals[reg].end = intervals[reg].start;
-                  intervals[reg].add_range(instr->m_id, instr->m_id);
+            reg_set live;
+            auto& succs = successors[block];
+
+            for (auto succ : succs) {
+                live.insert(live_in[succ].cbegin(), live_in[succ].cend());
+            }
+
+            for (auto var : live) {
+                intervals[var].add_range(block->m_instructions.front()->m_id, block->m_instructions.back()->m_id);
+            }
+
+            for (auto iter = block->m_instructions.rbegin(); iter != block->m_instructions.rend(); ++iter) {
+                auto& ir = *iter;
+
+                for (auto def : ir->defs()) {
+                    intervals[def].set_start(ir->m_id);
                 }
-                for (const auto use : instr->uses()) {
-                    intervals[use].end = std::max(intervals[use].end, instr->m_id);
+
+                for (auto use : ir->uses()) {
+                    intervals[use].add_range(block->m_instructions.front()->m_id, ir->m_id);
                 }
             }
         }

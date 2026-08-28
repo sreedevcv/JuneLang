@@ -39,7 +39,7 @@ jl::x86::MachineFunction::MachineFunction(const std::string& name, Function* fun
     total_stack_space = offset;
 
     // Assign virtual registers for pyhsical registers
-    m_physical_register_map[PhysicalRegister::rax] = new_register(); 
+    m_physical_register_map[PhysicalRegister::rax] = new_register();
     m_physical_register_map[PhysicalRegister::rbp] = new_register();
 
     set_allocation(m_physical_register_map[PhysicalRegister::rax], PhysicalRegister(PhysicalRegister::rax));
@@ -245,11 +245,11 @@ std::optional<jl::x86::MachineAlloc> jl::x86::MachineFunction::get_allocation(jl
 
 std::optional<jl::value::Variable> jl::x86::MachineFunction::get_variable(VirtualRegister reg) const
 {
-    for (auto& [var, oper]: m_register_map) {
-        if (auto vreg = std::get_if<VirtualRegister>(&oper)) {
+    for (auto& [var, oper] : m_register_map) {
+        if (auto vreg = std::get_if<VirtualRegister>(&oper); vreg->id == reg.id) {
             return var;
         }
     }
-    
+
     return std::nullopt;
 }

@@ -2,7 +2,6 @@
 #include "Function.hpp"
 #include "Lexer.hpp"
 #include "Parser.hpp"
-#include "RegisterAllocator.hpp"
 #include "backend/IRGen_v2.hpp"
 #include "backend/codegen/x86/Generator.hpp"
 #include "codegen/x86/Passes.hpp"
@@ -77,23 +76,13 @@ int main(int argc, char const* argv[])
         std::cout << *func;
         std::println("----------------------------------------------------------------");
 
-        jl::RegisterAllocator allocator(func, 4, 4);
-        auto [allocations, slot_count] = allocator.allocate();
-
-        std::println("Total stack slot count: {}", slot_count);
-        for (const auto [var, alloc] : allocations) {
-            std::println("{} -> {}", var.to_str(), alloc.to_str());
-        }
-
         jl::x86::Generator x86gen(func);
         auto x86func = x86gen.generate();
         std::println("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~X86_64~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
         std::println("{}", x86func.to_str());
 
         auto intervals = jl::x86::pass::liveness_analysis(&x86func);
-
         auto allocation_map = jl::x86::pass::linear_scan_reg_allocation(&x86func, intervals);
-
         jl::x86::pass::assign_register(&x86func, allocation_map);
 
 #else

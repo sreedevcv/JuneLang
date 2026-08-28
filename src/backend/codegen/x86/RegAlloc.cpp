@@ -9,21 +9,21 @@
 
 using VRegMap = std::unordered_map<jl::x86::VirtualRegister, jl::Allocation, jl::x86::VirtualRegisterHasher>;
 
-const jl::x86::PhysicalRegister::Type gpr_reg_map[] = {
-    jl::x86::PhysicalRegister::rbx,
-    jl::x86::PhysicalRegister::rcx,
-    jl::x86::PhysicalRegister::rdx,
-    jl::x86::PhysicalRegister::rsi,
-    jl::x86::PhysicalRegister::rdi,
-    jl::x86::PhysicalRegister::r8,
-    jl::x86::PhysicalRegister::r9,
-    jl::x86::PhysicalRegister::r10,
-    jl::x86::PhysicalRegister::r11,
-    jl::x86::PhysicalRegister::r12,
-    jl::x86::PhysicalRegister::r13,
-    jl::x86::PhysicalRegister::r14,
-    jl::x86::PhysicalRegister::r15,
-};
+// const jl::x86::PhysicalRegister::Type gpr_reg_map[] = {
+// jl::x86::PhysicalRegister::rbx,
+// jl::x86::PhysicalRegister::rcx,
+// jl::x86::PhysicalRegister::rdx,
+// jl::x86::PhysicalRegister::rsi,
+// jl::x86::PhysicalRegister::rdi,
+// jl::x86::PhysicalRegister::r8,
+// jl::x86::PhysicalRegister::r9,
+// jl::x86::PhysicalRegister::r10,
+// jl::x86::PhysicalRegister::r11,
+// jl::x86::PhysicalRegister::r12,
+// jl::x86::PhysicalRegister::r13,
+// jl::x86::PhysicalRegister::r14,
+// jl::x86::PhysicalRegister::r15,
+// };
 
 struct MachineAllocPrinter {
     jl::x86::MachineFunction* function;
@@ -164,7 +164,7 @@ jl::x86::MachineAlloc to_machine_alloc(jl::Allocation alloc, jl::x86::MachineFun
 {
     switch (alloc.type) {
     case jl::Allocation::GPR:
-        return jl::x86::PhysicalRegister(gpr_reg_map[alloc.value]);
+        return jl::x86::PhysicalRegister(static_cast<jl::x86::PhysicalRegister::Type>(alloc.value));
     case jl::Allocation::FLOAT:
         unimplemented();
     case jl::Allocation::SLOT: {
@@ -184,13 +184,13 @@ jl::x86::MachineAlloc to_machine_alloc(jl::Allocation alloc, jl::x86::MachineFun
 
 // void create_moves(jl::x86::MachineFunction* function, const jl::x86::pass::AllocationMap& allocations)
 // {
-    // std::vector<jl::x86::Mov*> moves;
-// 
-    // // Move the input arguments to the allocated regs/stacks
-    // for (auto param: function->inputs()) {
-        // auto move = new jl::x86::Mov();
-        // mov.source = 
-    // }
+// std::vector<jl::x86::Mov*> moves;
+//
+// // Move the input arguments to the allocated regs/stacks
+// for (auto param: function->inputs()) {
+// auto move = new jl::x86::Mov();
+// mov.source =
+// }
 // }
 
 void jl::x86::pass::assign_register(jl::x86::MachineFunction* function, AllocationMap allocations)
@@ -200,8 +200,12 @@ void jl::x86::pass::assign_register(jl::x86::MachineFunction* function, Allocati
     for (auto [vreg, alloc] : allocations) {
         auto var = *function->get_variable(vreg);
         auto machine_alloc = to_machine_alloc(alloc, function, var.type()->size());
-        std::println("{} = {} -> {}", var.to_str(), vreg.to_str(), std::visit(MachineAllocPrinter(function), machine_alloc));
+        // std::println("{} = {} -> {}", var.to_str(), vreg.to_str(), std::visit(MachineAllocPrinter(function), machine_alloc));
         function->set_allocation(vreg, machine_alloc);
+    }
+
+    for (auto [vreg, alloc] : function->m_allocations) {
+        std::println("{} -> {}", vreg.to_str(), std::visit(MachineAllocPrinter(function), alloc));
     }
 
     for (auto& block : function->blocks()) {
