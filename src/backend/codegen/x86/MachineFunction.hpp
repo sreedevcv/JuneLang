@@ -65,6 +65,8 @@ namespace x86 {
         std::vector<MachineBlock*> rpo() const;
 
         std::string text() const;
+        
+        std::optional<value::Variable> get_variable(VirtualRegister reg) const;
 
         uint32_t total_stack_space;
 

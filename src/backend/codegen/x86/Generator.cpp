@@ -29,22 +29,24 @@ jl::x86::Generator::Generator(jl::Function* function)
     int count = 0;
     const PhysicalRegister::Type arg_registers[] = {
         PhysicalRegister::rdi,
-        // PhysicalRegister::rsi,
-        // PhysicalRegister::rdx,
-        // PhysicalRegister::rcx,
-        // PhysicalRegister::r8,
-        // PhysicalRegister::r9
+        PhysicalRegister::rsi,
+        PhysicalRegister::rdx,
+        PhysicalRegister::rcx,
+        PhysicalRegister::r8,
+        PhysicalRegister::r9
     };
 
-    //  for (auto arg : function->args()) {
-    //      assert(arg.type()->m_kind == type::Type::BUILTIN
-    //          && static_cast<const type::Builtin*>(arg.type())->m_primitive != type::Builtin::FLOAT
-    //          && "floats support");
-    //      ;
-    //      auto reg = m_out.map_register(arg, m_out.new_register(PhysicalRegister(arg_registers[count])));
-    //      m_out.inputs().push_back(reg);
-    //      count += 1;
-    //  }
+    for (auto arg : function->args()) {
+        assert(arg.type()->m_kind == type::Type::BUILTIN
+            && static_cast<const type::Builtin*>(arg.type())->m_primitive != type::Builtin::FLOAT
+            && "floats support");
+        ;
+
+        auto reg = m_out.get_register(arg);
+        m_out.set_allocation(reg, PhysicalRegister(arg_registers[count]));
+        m_out.inputs().push_back(reg);
+        count += 1;
+    }
 }
 
 jl::x86::MachineFunction jl::x86::Generator::generate()
@@ -192,7 +194,7 @@ void jl::x86::Generator::visit_return_ir(ir::Return& ret)
         }
 
         auto dest_reg = m_out.new_register();
-        m_out.set_allocation(dest_reg, PhysicalRegister::rax);
+        m_out.set_allocation(dest_reg, PhysicalRegister(PhysicalRegister::rax));
         auto mov = new Mov();
         mov->dest = dest_reg;
         mov->source = m_out.get_register(*ret.m_ret_val);
@@ -222,8 +224,11 @@ void jl::x86::Generator::visit_jump_ir(ir::Jump& jump)
 void jl::x86::Generator::visit_cond_jump_ir(ir::CondJump& jump)
 {
     auto cmp = new Cmp();
+    auto one = m_out.new_register();
+    m_out.set_allocation(one, static_cast<int64_t>(1));
+
     cmp->a = m_out.get_register(jump.m_condition);
-    cmp->b = 1;
+    cmp->b = one;
 
     auto je = new JumpEqual();
     je->target = m_out.get_block(m_function->name() + "." + jump.m_true_target->get_name());
@@ -306,38 +311,17 @@ void jl::x86::Generator::visit_write_ir(ir::Write& write)
     mov->source = m_out.get_register(write.m_src);
     mov->is_float = false;
 
-//  if (auto directive = is_simple_move(write.m_size)) {
-//      mov->size = directive;
-//  } else {
-//      unimplemented("memcpy");
-//  }
-
-    // MemoryOperand stack_source = std::get<MemoryOperand>(m_out.get_operand(write.m_base));
-    // if (write.m_offset) {
-    //     stack_source.index = m_out.get_register(*write.m_offset);
-    //     stack_source.scale = write.m_offset_multiplier;
-    // } else {
-    //     stack_source.index = std::nullopt;
-    // }
-    // if (auto directive = is_simple_move(write.m_size)) {
-    //     stack_source.size = directive;
-    // } else {
-    //     unimplemented("memcpy");
-    // }
-
-    // auto mov = new Mov();
-    // mov->dest = stack_source;
-    // mov->source = get_operand(write.m_src);
-    // mov->is_float = false;
-
-    // m_curr_block->m_instructions.emplace_back(mov);
+    m_curr_block->m_instructions.emplace_back(mov);
 }
 
 void jl::x86::Generator::visit_init_literal_ir(ir::InitLiteral& literal)
 {
+    auto literal_reg = m_out.new_register();
+    m_out.set_allocation(literal_reg, std::get<LiteralValue::int_type>(literal.m_source.data));
+
     auto mov = new Mov();
     mov->dest = m_out.get_register(literal.m_dest);
-    mov->source = std::get<LiteralValue::int_type>(literal.m_source.data);
+    mov->source = literal_reg;
     mov->is_float = false;
     mov->size = std::nullopt;
 

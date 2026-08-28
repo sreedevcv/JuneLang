@@ -182,13 +182,25 @@ jl::x86::MachineAlloc to_machine_alloc(jl::Allocation alloc, jl::x86::MachineFun
     return {};
 }
 
-void jl::x86::pass::assign_register(jl::x86::MachineFunction* function, jl::RegisterAllocator::AllocationResult allocation_result)
+// void create_moves(jl::x86::MachineFunction* function, const jl::x86::pass::AllocationMap& allocations)
+// {
+    // std::vector<jl::x86::Mov*> moves;
+// 
+    // // Move the input arguments to the allocated regs/stacks
+    // for (auto param: function->inputs()) {
+        // auto move = new jl::x86::Mov();
+        // mov.source = 
+    // }
+// }
+
+void jl::x86::pass::assign_register(jl::x86::MachineFunction* function, AllocationMap allocations)
 {
     using namespace jl;
 
-    for (auto [var, alloc] : allocation_result.first) {
-        auto vreg = function->get_register(var);
+    for (auto [vreg, alloc] : allocations) {
+        auto var = *function->get_variable(vreg);
         auto machine_alloc = to_machine_alloc(alloc, function, var.type()->size());
+        std::println("{} = {} -> {}", var.to_str(), vreg.to_str(), std::visit(MachineAllocPrinter(function), machine_alloc));
         function->set_allocation(vreg, machine_alloc);
     }
 

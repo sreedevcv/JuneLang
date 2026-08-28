@@ -131,26 +131,15 @@ struct LivenessAnalysis {
             // Process definitions (use first definition point)
             for (const auto& instr : block->m_instructions) {
                 for (const auto reg : instr->defs()) {
-                    intervals[reg].start = std::min(intervals[reg].start, instr->m_id);
-                    intervals[reg].end = intervals[reg].start;
+                  //intervals[reg].start = std::min(intervals[reg].start, instr->m_id);
+                  //intervals[reg].end = intervals[reg].start;
+                  intervals[reg].add_range(instr->m_id, instr->m_id);
                 }
                 for (const auto use : instr->uses()) {
                     intervals[use].end = std::max(intervals[use].end, instr->m_id);
                 }
             }
         }
-
-        // for (auto& [reg, interval] : intervals) {
-        // if (interval.end < interval.start) {
-        // if (interval.end == 0) {
-        // // This is a variable that is just used for this particular instruction (regs like rax for return)
-        // // For now make this live for just a single instruction
-        // interval.end = interval.start;
-        // } else {
-        // unimplemented("Something went wrong with liveness_analysis");
-        // }
-        // }
-        // }
 
         return intervals;
     }
@@ -186,9 +175,10 @@ jl::x86::pass::LiveIntervalMap jl::x86::pass::liveness_analysis(jl::x86::Machine
     // std::println("{}: {}", i, la.rpo[i]->m_name);
     // }
 
-    std::println("{}", function->to_string());
+    std::println("{}", function->to_str());
     for (const auto& [reg, interval] : intervals) {
-        std::println("{}: [{}, {}]", reg.to_string(), interval.start, interval.end);
+        auto already_allocated = function->get_allocation(reg) ? "(already allocated)" : "";
+        std::println("{}: [{}, {}] {}", reg.to_str(), interval.start, interval.end, already_allocated);
     }
 
     return intervals;

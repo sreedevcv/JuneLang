@@ -90,7 +90,12 @@ int main(int argc, char const* argv[])
         std::println("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~X86_64~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
         std::println("{}", x86func.to_str());
 
-        jl::x86::pass::assign_register(&x86func, jl::RegisterAllocator::AllocationResult { allocations, slot_count });
+        auto intervals = jl::x86::pass::liveness_analysis(&x86func);
+
+        auto allocation_map = jl::x86::pass::linear_scan_reg_allocation(&x86func, intervals);
+
+        jl::x86::pass::assign_register(&x86func, allocation_map);
+
 #else
         // jl::Module module(file_name);
         // module.module().print(llvm::outs(), nullptr);

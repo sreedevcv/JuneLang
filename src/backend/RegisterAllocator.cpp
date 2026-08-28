@@ -232,25 +232,25 @@ jl::RegisterAllocator::AllocationResult jl::RegisterAllocator::allocate()
     auto liveness = compute_liveness();
     auto ranges = compute_intervals(liveness, numbering);
 
-    std::println("--------------------Ordering------------------");
-    for (auto block : rpo) {
-        std::println("{}: ", block->get_name());
-        for (auto ir = block->head; ir != nullptr; ir = ir->next) {
-            std::println("\t[{}]: {}", numbering[ir], ir->to_str());
-        }
-    }
-    std::println("--------------------Liveness------------------");
-    for (auto [block, live_in] : liveness) {
-        std::print("{}: ", block->get_name());
-        for (auto var : live_in) {
-            std::print("{}, ", var.to_str());
-        }
-        std::println();
-    }
-    std::println("--------------------Ranges------------------");
-    for (auto [var, range] : ranges) {
-        std::println("{}: {} -> {}", var.to_str(), range.start, range.end);
-    }
+//  std::println("--------------------Ordering------------------");
+//  for (auto block : rpo) {
+//      std::println("{}: ", block->get_name());
+//      for (auto ir = block->head; ir != nullptr; ir = ir->next) {
+//          std::println("\t[{}]: {}", numbering[ir], ir->to_str());
+//      }
+//  }
+//  std::println("--------------------Liveness------------------");
+//  for (auto [block, live_in] : liveness) {
+//      std::print("{}: ", block->get_name());
+//      for (auto var : live_in) {
+//          std::print("{}, ", var.to_str());
+//      }
+//      std::println();
+//  }
+//  std::println("--------------------Ranges------------------");
+//  for (auto [var, range] : ranges) {
+//      std::println("{}: {} -> {}", var.to_str(), range.start, range.end);
+//  }
 
     auto [allocation, slot_count] = linear_allocate(ranges);
 

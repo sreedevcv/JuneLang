@@ -27,7 +27,7 @@ namespace x86 {
     struct Lea;
 
     struct Instruction {
-        uint32_t m_id = 0;
+        int32_t m_id = 0;
 
         virtual ~Instruction() = default;
 
