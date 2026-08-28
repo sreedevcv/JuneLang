@@ -1,29 +1,17 @@
 #include "Passes.hpp"
+
 #include "RegisterAllocator.hpp"
 #include "Utils.hpp"
 #include "codegen/x86/Instruction.hpp"
 #include "codegen/x86/MachineFunction.hpp"
 #include "codegen/x86/Operand.hpp"
 #include "codegen/x86/Register.hpp"
+
+#include <cassert>
 #include <print>
+#include <variant>
 
 using VRegMap = std::unordered_map<jl::x86::VirtualRegister, jl::Allocation, jl::x86::VirtualRegisterHasher>;
-
-// const jl::x86::PhysicalRegister::Type gpr_reg_map[] = {
-// jl::x86::PhysicalRegister::rbx,
-// jl::x86::PhysicalRegister::rcx,
-// jl::x86::PhysicalRegister::rdx,
-// jl::x86::PhysicalRegister::rsi,
-// jl::x86::PhysicalRegister::rdi,
-// jl::x86::PhysicalRegister::r8,
-// jl::x86::PhysicalRegister::r9,
-// jl::x86::PhysicalRegister::r10,
-// jl::x86::PhysicalRegister::r11,
-// jl::x86::PhysicalRegister::r12,
-// jl::x86::PhysicalRegister::r13,
-// jl::x86::PhysicalRegister::r14,
-// jl::x86::PhysicalRegister::r15,
-// };
 
 struct MachineAllocPrinter {
     jl::x86::MachineFunction* function;
@@ -182,16 +170,69 @@ jl::x86::MachineAlloc to_machine_alloc(jl::Allocation alloc, jl::x86::MachineFun
     return {};
 }
 
-// void create_moves(jl::x86::MachineFunction* function, const jl::x86::pass::AllocationMap& allocations)
-// {
-// std::vector<jl::x86::Mov*> moves;
-//
-// // Move the input arguments to the allocated regs/stacks
-// for (auto param: function->inputs()) {
-// auto move = new jl::x86::Mov();
-// mov.source =
-// }
-// }
+// Move the function params from register to stack if they are allocated in stack
+void move_inputs_to_stk_if_needed(jl::x86::MachineFunction* function, const jl::x86::pass::AllocationMap& allocations)
+{
+    std::vector<std::unique_ptr<jl::x86::Instruction>> moves;
+
+    // Move the input arguments to the allocated regs/stacks
+    for (int i = 0; i < function->inputs().size(); i++) {
+        auto param = function->inputs()[i];
+        const auto& alloc = allocations.at(param);
+        if (alloc.type != jl::Allocation::SLOT)
+            continue;
+
+        assert(alloc.type != jl::Allocation::FLOAT);
+
+        auto source = function->new_register();
+        auto dest = function->new_register();
+        function->set_allocation(source, jl::x86::PhysicalRegister(jl::x86::input_registers[i]));
+        function->set_allocation(dest, *function->get_allocation(param));
+
+        auto move = new jl::x86::Mov();
+        move->source = source;
+        move->dest = dest;
+
+        moves.emplace_back(move);
+    }
+
+    auto& entry = function->blocks().front()->m_instructions;
+    // std::println("before {}", entry.size());
+    for (auto& mov : moves) {
+        entry.insert(entry.begin(), std::move(mov));
+    }
+    // std::println("after {}", entry.size());
+}
+
+void rewrite_mem_to_mem_moves(jl::x86::MachineFunction* function)
+{
+    auto scratch = function->get_physical_register(jl::x86::PhysicalRegister::rax);
+
+    for (auto& block : function->blocks()) {
+        for (auto iter = block->m_instructions.begin(); iter != block->m_instructions.end(); ++iter) {
+            auto& instr = *iter;
+
+            if (auto mov = dynamic_cast<jl::x86::Mov*>(instr.get())) {
+                const auto dest = *function->get_allocation(mov->dest);
+                const auto source = *function->get_allocation(mov->source);
+
+                if (dest.index() == source.index()) {
+                    if (auto mem_src = std::get_if<jl::x86::MemoryOperand>(&source)) {
+                        if (auto mem_dest = std::get_if<jl::x86::MemoryOperand>(&dest)) {
+                            // insert a mov from source to scratch register
+                            auto new_move = new jl::x86::Mov();
+                            new_move->dest = scratch;
+                            new_move->source = mov->source;
+                            block->m_instructions.insert(iter, std::unique_ptr<jl::x86::Instruction> { new_move });
+                            // Change the source in the existing instruction to the scratch register
+                            mov->source = scratch;
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
 
 void jl::x86::pass::assign_register(jl::x86::MachineFunction* function, AllocationMap allocations)
 {
@@ -207,6 +248,9 @@ void jl::x86::pass::assign_register(jl::x86::MachineFunction* function, Allocati
     for (auto [vreg, alloc] : function->m_allocations) {
         std::println("{} -> {}", vreg.to_str(), std::visit(MachineAllocPrinter(function), alloc));
     }
+
+    move_inputs_to_stk_if_needed(function, allocations);
+    rewrite_mem_to_mem_moves(function);
 
     for (auto& block : function->blocks()) {
         std::println("{}:", block->m_name);

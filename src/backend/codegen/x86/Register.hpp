@@ -162,5 +162,13 @@ namespace x86 {
         }
     };
 
+    const PhysicalRegister::Type input_registers[] = {
+        PhysicalRegister::rdi,
+        PhysicalRegister::rsi,
+        PhysicalRegister::rdx,
+        PhysicalRegister::rcx,
+        PhysicalRegister::r8,
+        PhysicalRegister::r9
+    };
 }
 }

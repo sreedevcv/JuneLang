@@ -27,14 +27,6 @@ jl::x86::Generator::Generator(jl::Function* function)
     assert(function->args().size() < 6 && "Need to move extra regs to stack");
 
     int count = 0;
-    const PhysicalRegister::Type arg_registers[] = {
-        PhysicalRegister::rdi,
-        PhysicalRegister::rsi,
-        PhysicalRegister::rdx,
-        PhysicalRegister::rcx,
-        PhysicalRegister::r8,
-        PhysicalRegister::r9
-    };
 
     for (auto arg : function->args()) {
         assert(arg.type()->m_kind == type::Type::BUILTIN
@@ -43,7 +35,7 @@ jl::x86::Generator::Generator(jl::Function* function)
         ;
 
         auto reg = m_out.get_register(arg);
-        m_out.set_allocation(reg, PhysicalRegister(arg_registers[count]));
+        m_out.set_allocation(reg, PhysicalRegister(input_registers[count]));
         m_out.inputs().push_back(reg);
         count += 1;
     }
@@ -269,11 +261,11 @@ void jl::x86::Generator::visit_allocate_var_ir(ir::AllocateVar& allocate)
         unimplemented("memcpy");
     }
 
-//  auto dest = m_out.new_register();
-//  m_out.set_allocation(dest, stack_source);
+    //  auto dest = m_out.new_register();
+    //  m_out.set_allocation(dest, stack_source);
 
-//  auto lea = new Lea(dest, m_out.get_register(allocate.m_addr));
-//  m_curr_block->m_instructions.emplace_back(lea);
+    //  auto lea = new Lea(dest, m_out.get_register(allocate.m_addr));
+    //  m_curr_block->m_instructions.emplace_back(lea);
 
     m_out.set_allocation(m_out.get_register(allocate.m_addr), stack_source);
 }
@@ -303,7 +295,7 @@ void jl::x86::Generator::visit_write_ir(ir::Write& write)
     auto dest = m_out.new_register();
     auto mem_operand = std::get<MemoryOperand>(*m_out.get_allocation(m_out.get_register(write.m_base)));
     auto new_mem_operand = mem_operand;
-    
+
     m_out.set_allocation(dest, new_mem_operand);
 
     auto mov = new Mov();
