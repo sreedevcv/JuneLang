@@ -25,20 +25,26 @@ jl::x86::Generator::Generator(jl::Function* function)
     : m_function(function)
     , m_out(function->name(), function)
 {
-    assert(function->args().size() < 6 && "Need to move extra regs to stack");
-
-    int count = 0;
+    int gpr_count = 0;
+    int float_count = 0;
 
     for (auto arg : function->args()) {
-        assert(arg.type()->m_kind == type::Type::BUILTIN
-            && static_cast<const type::Builtin*>(arg.type())->m_primitive != type::Builtin::FLOAT
-            && "floats support");
-        ;
+        assert(arg.type()->m_kind == type::Type::BUILTIN);
 
-        auto reg = m_out.get_register(arg);
-        m_out.set_allocation(reg, PhysicalRegister(input_registers[count]));
-        m_out.inputs().push_back(reg);
-        count += 1;
+        if (type::is_float(arg.type())) {
+            auto reg = m_out.get_register(arg);
+            m_out.set_allocation(reg, PhysicalRegister(input_float_registers[float_count]));
+            m_out.inputs().push_back(reg);
+            float_count += 1;
+        } else {
+            auto reg = m_out.get_register(arg);
+            m_out.set_allocation(reg, PhysicalRegister(input_gpr_registers[gpr_count]));
+            m_out.inputs().push_back(reg);
+            gpr_count += 1;
+        }
+
+        assert(float_count < 6);
+        assert(gpr_count < 6);
     }
 }
 
@@ -141,13 +147,11 @@ void jl::x86::Generator::visit_move_ir(ir::Move& move)
 void jl::x86::Generator::visit_return_ir(ir::Return& ret)
 {
     if (ret.m_ret_val) {
-        if (type::is_float(ret.m_ret_val->type())) {
-            unimplemented("float return");
-        }
-
-        auto dest_reg = m_out.new_register();
-        m_out.set_allocation(dest_reg, PhysicalRegister(PhysicalRegister::rax));
+        auto dest_reg = type::is_float(ret.m_ret_val->type())
+            ? m_out.get_physical_register(PhysicalRegister::xmm0)
+            : m_out.get_physical_register(PhysicalRegister::rax);
         auto mov = new Mov();
+
         mov->dest = dest_reg;
         mov->source = m_out.get_register(*ret.m_ret_val);
         mov->is_float = false;
@@ -268,8 +272,14 @@ void jl::x86::Generator::visit_write_ir(ir::Write& write)
 
 void jl::x86::Generator::visit_init_literal_ir(ir::InitLiteral& literal)
 {
-    auto literal_reg = m_out.new_register();
-    m_out.set_allocation(literal_reg, std::get<LiteralValue::int_type>(literal.m_source.data));
+    auto literal_reg = m_out.new_register(type::is_float(literal.m_dest.type()));
+
+    if (auto num = std::get_if<LiteralValue::int_type>(&literal.m_source.data)) {
+        m_out.set_allocation(literal_reg, *num);
+    } else if (auto num = std::get_if<LiteralValue::float_type>(&literal.m_source.data)) {
+        auto label = m_out.add_float_to_data_section(*num);
+        m_out.set_allocation(literal_reg, label);
+    }
 
     auto mov = new Mov();
     mov->dest = m_out.get_register(literal.m_dest);

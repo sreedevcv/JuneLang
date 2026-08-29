@@ -5,11 +5,11 @@
 #include <memory>
 #include <optional>
 #include <string>
-#include <string_view>
 #include <unordered_map>
 #include <vector>
 
 #include "Function.hpp"
+#include "LiteralValue.hpp"
 #include "MachineBlock.hpp"
 #include "codegen/x86/Operand.hpp"
 #include "codegen/x86/Register.hpp"
@@ -61,6 +61,10 @@ namespace x86 {
 
         const std::string& name() const;
 
+        MemoryLabel add_float_to_data_section(jl::LiteralValue::float_type);
+
+        const std::vector<StaticData>& data_section() const;
+
         uint32_t total_stack_space;
 
         // For debugging only!!!!
@@ -75,6 +79,7 @@ namespace x86 {
         std::unordered_map<std::string, MachineBlock*> m_block_map;
         std::unordered_map<value::Variable, VirtualRegister, value::VariableHasher> m_register_map;
         std::unordered_map<PhysicalRegister::Type, VirtualRegister> m_physical_register_map;
+        std::vector<StaticData> m_data_section;
     };
 }
 }

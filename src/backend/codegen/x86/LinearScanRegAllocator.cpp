@@ -20,6 +20,25 @@ const std::array<jl::x86::PhysicalRegister::Type, 13> gpr_allocatable_regs = {
     jl::x86::PhysicalRegister::r15,
 };
 
+const std::array<jl::x86::PhysicalRegister::Type, 16> float_allocatable_regs = {
+    jl::x86::PhysicalRegister::xmm0,
+    jl::x86::PhysicalRegister::xmm1,
+    jl::x86::PhysicalRegister::xmm2,
+    jl::x86::PhysicalRegister::xmm3,
+    jl::x86::PhysicalRegister::xmm4,
+    jl::x86::PhysicalRegister::xmm5,
+    jl::x86::PhysicalRegister::xmm6,
+    jl::x86::PhysicalRegister::xmm7,
+    jl::x86::PhysicalRegister::xmm8,
+    jl::x86::PhysicalRegister::xmm9,
+    jl::x86::PhysicalRegister::xmm10,
+    jl::x86::PhysicalRegister::xmm11,
+    jl::x86::PhysicalRegister::xmm12,
+    jl::x86::PhysicalRegister::xmm13,
+    jl::x86::PhysicalRegister::xmm14,
+    jl::x86::PhysicalRegister::xmm15,
+};
+
 void expire_old_intervals(
     jl::Range new_range,
     std::set<jl::Range, jl::RangeCompare>& active,
@@ -113,21 +132,24 @@ std::unordered_map<jl::Range, jl::Allocation, jl::RangeHasher> run_allocator(jl:
         free_gprs.insert(gpr_allocatable_regs[i]);
     }
 
-    //  for (int i = 0; i < float_count; i++) {
-    //      free_floats.insert(i);
-    //  }
-
-    assert(function->inputs().size() <= gpr_allocatable_regs.size());
+    for (int i = 0; i < float_count; i++) {
+        free_floats.insert(float_allocatable_regs[i]);
+    }
 
     for (auto param : function->inputs()) {
         const auto reg = std::get<jl::x86::PhysicalRegister>(*function->get_allocation(param));
         const auto range = intervals.at(param);
 
-        free_gprs.erase(reg.reg);
-        gpr_active.insert(range);
+        if (param.is_float) {
+            free_floats.erase(reg.reg);
+            float_active.insert(range);
+        } else {
+            free_gprs.erase(reg.reg);
+            gpr_active.insert(range);
+        }
 
         allocations[range] = jl::Allocation {
-            .type = jl::Allocation::GPR,
+            .type = param.is_float ? jl::Allocation::FLOAT : jl::Allocation::GPR,
             .value = reg.reg,
         };
     }
@@ -143,13 +165,13 @@ std::unordered_map<jl::Range, jl::Allocation, jl::RangeHasher> run_allocator(jl:
         if (function->get_allocation(vreg))
             continue; // Already allocated
 
-        // if (type::is_float(vreg.type())) {
-        // expire_old_intervals(range, float_active, free_floats, allocations);
-        // allot_or_spill(range, vreg, allocations, free_floats, float_active, Allocation::FLOAT, m_float_reg_count);
-        // } else {
-        expire_old_intervals(range, gpr_active, free_gprs, allocations);
-        allot_or_spill(range, vreg, function, allocations, free_gprs, gpr_active, jl::Allocation::GPR, gpr_count);
-        // }
+        if (vreg.is_float) {
+            expire_old_intervals(range, float_active, free_floats, allocations);
+            allot_or_spill(range, vreg, function, allocations, free_floats, float_active, jl::Allocation::FLOAT, float_count);
+        } else {
+            expire_old_intervals(range, gpr_active, free_gprs, allocations);
+            allot_or_spill(range, vreg, function, allocations, free_gprs, gpr_active, jl::Allocation::GPR, gpr_count);
+        }
     }
 
     return allocations;

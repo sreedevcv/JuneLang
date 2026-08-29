@@ -5,7 +5,6 @@
 
 std::string jl::x86::Mov::to_str() const
 {
-    OperandPrinter printer;
     return "mov "
         + dest.to_str()
         + ", " + source.to_str();
@@ -21,10 +20,6 @@ std::vector<jl::x86::VirtualRegister> jl::x86::Mov::uses() const
     return { source };
 }
 
-void jl::x86::Mov::replace(jl::x86::VirtualRegister reg, jl::x86::Operand operand)
-{
-}
-
 void jl::x86::Mov::accept(jl::x86::InstructionVisitor& visitor)
 {
     visitor.visit(*this);
@@ -34,7 +29,6 @@ void jl::x86::Mov::accept(jl::x86::InstructionVisitor& visitor)
 
 std::string jl::x86::Add::to_str() const
 {
-    OperandPrinter printer;
     return "add "
         + dest.to_str()
         + ", " + source.to_str();
@@ -50,10 +44,6 @@ std::vector<jl::x86::VirtualRegister> jl::x86::Add::uses() const
     return { source, dest };
 }
 
-void jl::x86::Add::replace(jl::x86::VirtualRegister reg, jl::x86::Operand operand)
-{
-}
-
 void jl::x86::Add::accept(jl::x86::InstructionVisitor& visitor)
 {
     visitor.visit(*this);
@@ -63,7 +53,6 @@ void jl::x86::Add::accept(jl::x86::InstructionVisitor& visitor)
 
 std::string jl::x86::Sub::to_str() const
 {
-    OperandPrinter printer;
     return "sub "
         + dest.to_str()
         + ", " + source.to_str();
@@ -77,10 +66,6 @@ std::vector<jl::x86::VirtualRegister> jl::x86::Sub::defs() const
 std::vector<jl::x86::VirtualRegister> jl::x86::Sub::uses() const
 {
     return { source, dest };
-}
-
-void jl::x86::Sub::replace(jl::x86::VirtualRegister reg, jl::x86::Operand operand)
-{
 }
 
 void jl::x86::Sub::accept(jl::x86::InstructionVisitor& visitor)
@@ -105,10 +90,6 @@ std::vector<jl::x86::VirtualRegister> jl::x86::Less::uses() const
     return {};
 }
 
-void jl::x86::Less::replace(jl::x86::VirtualRegister r, jl::x86::Operand operand)
-{
-}
-
 void jl::x86::Less::accept(jl::x86::InstructionVisitor& visitor)
 {
     visitor.visit(*this);
@@ -129,10 +110,6 @@ std::vector<jl::x86::VirtualRegister> jl::x86::Equals::defs() const
 std::vector<jl::x86::VirtualRegister> jl::x86::Equals::uses() const
 {
     return {};
-}
-
-void jl::x86::Equals::replace(jl::x86::VirtualRegister r, jl::x86::Operand operand)
-{
 }
 
 void jl::x86::Equals::accept(jl::x86::InstructionVisitor& visitor)
@@ -157,8 +134,6 @@ std::vector<jl::x86::VirtualRegister> jl::x86::Return::uses() const
     return {};
 }
 
-void jl::x86::Return::replace(jl::x86::VirtualRegister, Operand) { }
-
 void jl::x86::Return::accept(jl::x86::InstructionVisitor& visitor)
 {
     visitor.visit(*this);
@@ -179,10 +154,6 @@ std::vector<jl::x86::VirtualRegister> jl::x86::Push::defs() const
 std::vector<jl::x86::VirtualRegister> jl::x86::Push::uses() const
 {
     return { value };
-}
-
-void jl::x86::Push::replace(jl::x86::VirtualRegister r, jl::x86::Operand operand)
-{
 }
 
 void jl::x86::Push::accept(jl::x86::InstructionVisitor& visitor)
@@ -207,10 +178,6 @@ std::vector<jl::x86::VirtualRegister> jl::x86::Pop::uses() const
     return {};
 }
 
-void jl::x86::Pop::replace(jl::x86::VirtualRegister r, jl::x86::Operand operand)
-{
-}
-
 void jl::x86::Pop::accept(jl::x86::InstructionVisitor& visitor)
 {
     visitor.visit(*this);
@@ -232,8 +199,6 @@ std::vector<jl::x86::VirtualRegister> jl::x86::Jump::uses() const
 {
     return {};
 }
-
-void jl::x86::Jump::replace(jl::x86::VirtualRegister reg, jl::x86::Operand operand) { }
 
 void jl::x86::Jump::accept(jl::x86::InstructionVisitor& visitor)
 {
@@ -257,8 +222,6 @@ std::vector<jl::x86::VirtualRegister> jl::x86::JumpEqual::uses() const
     return {};
 }
 
-void jl::x86::JumpEqual::replace(jl::x86::VirtualRegister reg, jl::x86::Operand operand) { }
-
 void jl::x86::JumpEqual::accept(jl::x86::InstructionVisitor& visitor)
 {
     visitor.visit(*this);
@@ -268,7 +231,6 @@ void jl::x86::JumpEqual::accept(jl::x86::InstructionVisitor& visitor)
 
 std::string jl::x86::Cmp::to_str() const
 {
-    OperandPrinter printer;
     return "cmp "
         + a.to_str()
         + ", " + b.to_str();
@@ -282,10 +244,6 @@ std::vector<jl::x86::VirtualRegister> jl::x86::Cmp::defs() const
 std::vector<jl::x86::VirtualRegister> jl::x86::Cmp::uses() const
 {
     return { a, b };
-}
-
-void jl::x86::Cmp::replace(jl::x86::VirtualRegister r, jl::x86::Operand operand)
-{
 }
 
 void jl::x86::Cmp::accept(jl::x86::InstructionVisitor& visitor)
@@ -305,7 +263,6 @@ jl::x86::Lea::Lea(
 
 std::string jl::x86::Lea::to_str() const
 {
-    OperandPrinter printer;
     return "lea "
         + dest.to_str()
         + ", " + source.to_str();
@@ -319,10 +276,6 @@ std::vector<jl::x86::VirtualRegister> jl::x86::Lea::defs() const
 std::vector<jl::x86::VirtualRegister> jl::x86::Lea::uses() const
 {
     return { source };
-}
-
-void jl::x86::Lea::replace(jl::x86::VirtualRegister r, jl::x86::Operand operand)
-{
 }
 
 void jl::x86::Lea::accept(jl::x86::InstructionVisitor& visitor)

@@ -30,60 +30,11 @@ namespace x86 {
         }
     };
 
-    using Operand = std::variant<VirtualRegister, MemoryOperand, int64_t>;
-
-    using MachineAlloc = std::variant<PhysicalRegister, MemoryOperand, int64_t>;
-
-    struct OperandPrinter {
-        std::string operator()(const Register& reg) const
-        {
-            return std::visit(RegisterPrinter {}, reg);
-        }
-
-        std::string operator()(const MemoryOperand& mem) const
-        {
-            return mem.to_str();
-        }
-
-        std::string operator()(const int64_t& imm) const
-        {
-            return std::to_string(imm);
-        }
+    struct MemoryLabel {
+        std::string label;
     };
 
-    struct GetDefinedRegs {
-        std::vector<VirtualRegister> operator()(const VirtualRegister& vreg) const
-        {
-            return { vreg };
-        }
-        std::vector<VirtualRegister> operator()(const MemoryOperand&) const
-        {
-            return {};
-        }
-        std::vector<VirtualRegister> operator()(const int64_t&) const
-        {
-            return {};
-        }
-    };
-
-    struct GetUsedRegs {
-        std::vector<VirtualRegister> operator()(const MemoryOperand& mem) const
-        {
-            std::vector<VirtualRegister> regs = { mem.base };
-            if (mem.index) {
-                regs.push_back(*mem.index);
-            }
-            return regs;
-        }
-        std::vector<VirtualRegister> operator()(const VirtualRegister& vreg) const
-        {
-            return { vreg };
-        }
-        std::vector<VirtualRegister> operator()(const int64_t&) const
-        {
-            return {};
-        }
-    };
+    using MachineAlloc = std::variant<PhysicalRegister, MemoryOperand, MemoryLabel, int64_t>;
 
     // Checks if size is 1, 2, 4 or 8 and returns is as PTR otherwise we need to do memcpy to move
     inline std::optional<SizeDirective> is_simple_move(uint32_t size)
@@ -104,5 +55,30 @@ namespace x86 {
         }
     }
 
+    struct StaticData {
+        enum size {
+            dw,
+            dq
+        };
+
+        std::string label;
+        size size;
+        double value;
+
+        std::string to_str() const
+        {
+            std::string s = label;
+            switch (size) {
+            case dw:
+                s += " dw ";
+                break;
+            case dq:
+                s += " dq ";
+                break;
+            }
+
+            return s + std::to_string(value);
+        }
+    };
 }
 }

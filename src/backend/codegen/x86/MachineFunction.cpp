@@ -3,6 +3,7 @@
 
 #include "Function.hpp"
 #include "codegen/x86/MachineBlock.hpp"
+#include "codegen/x86/Operand.hpp"
 #include "codegen/x86/Register.hpp"
 #include "ir/AllocateVar.hpp"
 #include "types/Type.hpp"
@@ -42,10 +43,12 @@ jl::x86::MachineFunction::MachineFunction(const std::string& name, Function* fun
     m_physical_register_map[PhysicalRegister::rax] = new_register();
     m_physical_register_map[PhysicalRegister::rbp] = new_register();
     m_physical_register_map[PhysicalRegister::rsp] = new_register();
+    m_physical_register_map[PhysicalRegister::xmm0] = new_register(true);
 
     set_allocation(m_physical_register_map[PhysicalRegister::rax], PhysicalRegister(PhysicalRegister::rax));
     set_allocation(m_physical_register_map[PhysicalRegister::rbp], PhysicalRegister(PhysicalRegister::rbp));
     set_allocation(m_physical_register_map[PhysicalRegister::rsp], PhysicalRegister(PhysicalRegister::rsp));
+    set_allocation(m_physical_register_map[PhysicalRegister::xmm0], PhysicalRegister(PhysicalRegister::xmm0));
 }
 
 jl::x86::MachineFunction::~MachineFunction() = default;
@@ -223,4 +226,25 @@ std::optional<jl::value::Variable> jl::x86::MachineFunction::get_variable(Virtua
 const std::string& jl::x86::MachineFunction::name() const
 {
     return m_name;
+}
+
+jl::x86::MemoryLabel jl::x86::MachineFunction::add_float_to_data_section(jl::LiteralValue::float_type value)
+{
+    auto label = std::format("{}_float_{}", m_name, value);
+    auto mem_label = MemoryLabel { .label = label };
+
+    StaticData s = {
+        .label = std::move(label),
+        .size = StaticData::size::dq,
+        .value = value
+    };
+
+    m_data_section.push_back(std::move(s));
+
+    return mem_label;
+}
+
+const std::vector<jl::x86::StaticData>& jl::x86::MachineFunction::data_section() const
+{
+    return m_data_section;
 }

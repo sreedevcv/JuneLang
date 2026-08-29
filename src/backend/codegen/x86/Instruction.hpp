@@ -37,8 +37,6 @@ namespace x86 {
 
         virtual std::vector<VirtualRegister> uses() const = 0;
 
-        virtual void replace(VirtualRegister reg, Operand operand) = 0;
-
         virtual void accept(InstructionVisitor& visitor) = 0;
     };
 
@@ -73,8 +71,6 @@ namespace x86 {
 
         std::vector<VirtualRegister> uses() const override;
 
-        void replace(VirtualRegister reg, Operand operand) override;
-
         void accept(InstructionVisitor& visitor) override;
     };
 
@@ -90,8 +86,6 @@ namespace x86 {
         std::vector<VirtualRegister> defs() const override;
 
         std::vector<VirtualRegister> uses() const override;
-
-        void replace(VirtualRegister reg, Operand operand) override;
 
         void accept(InstructionVisitor& visitor) override;
     };
@@ -109,8 +103,6 @@ namespace x86 {
 
         std::vector<VirtualRegister> uses() const override;
 
-        void replace(VirtualRegister reg, Operand operand) override;
-
         void accept(InstructionVisitor& visitor) override;
     };
 
@@ -125,8 +117,6 @@ namespace x86 {
         std::vector<VirtualRegister> defs() const override;
 
         std::vector<VirtualRegister> uses() const override;
-
-        void replace(VirtualRegister r, Operand operand) override;
 
         void accept(InstructionVisitor& visitor) override;
     };
@@ -143,8 +133,6 @@ namespace x86 {
 
         std::vector<VirtualRegister> uses() const override;
 
-        void replace(VirtualRegister r, Operand operand) override;
-
         void accept(InstructionVisitor& visitor) override;
     };
 
@@ -156,8 +144,6 @@ namespace x86 {
         std::vector<VirtualRegister> defs() const override;
 
         std::vector<VirtualRegister> uses() const override;
-
-        void replace(VirtualRegister, Operand) override;
 
         void accept(InstructionVisitor& visitor) override;
     };
@@ -173,8 +159,6 @@ namespace x86 {
 
         std::vector<VirtualRegister> uses() const override;
 
-        void replace(VirtualRegister r, Operand operand) override;
-
         void accept(InstructionVisitor& visitor) override;
     };
 
@@ -188,8 +172,6 @@ namespace x86 {
         std::vector<VirtualRegister> defs() const override;
 
         std::vector<VirtualRegister> uses() const override;
-
-        void replace(VirtualRegister r, Operand operand) override;
 
         void accept(InstructionVisitor& visitor) override;
     };
@@ -205,8 +187,6 @@ namespace x86 {
 
         std::vector<VirtualRegister> uses() const override;
 
-        void replace(VirtualRegister reg, Operand operand) override;
-
         void accept(InstructionVisitor& visitor) override;
     };
 
@@ -218,8 +198,6 @@ namespace x86 {
         std::vector<VirtualRegister> defs() const override;
 
         std::vector<VirtualRegister> uses() const override;
-
-        void replace(VirtualRegister reg, Operand operand) override;
 
         void accept(InstructionVisitor& visitor) override;
     };
@@ -236,8 +214,6 @@ namespace x86 {
         std::vector<VirtualRegister> defs() const override;
 
         std::vector<VirtualRegister> uses() const override;
-
-        void replace(VirtualRegister r, Operand operand) override;
 
         void accept(InstructionVisitor& visitor) override;
     };
@@ -256,8 +232,6 @@ namespace x86 {
         std::vector<VirtualRegister> defs() const override;
 
         std::vector<VirtualRegister> uses() const override;
-
-        void replace(VirtualRegister r, Operand operand) override;
 
         void accept(InstructionVisitor& visitor) override;
     };

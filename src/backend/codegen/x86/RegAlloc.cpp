@@ -1,7 +1,6 @@
 #include "Passes.hpp"
 
 #include "RegisterAllocator.hpp"
-#include "Utils.hpp"
 #include "codegen/x86/Instruction.hpp"
 #include "codegen/x86/MachineFunction.hpp"
 #include "codegen/x86/Operand.hpp"
@@ -17,13 +16,12 @@ jl::x86::MachineAlloc to_machine_alloc(jl::Allocation alloc,
     uint32_t size)
 {
     switch (alloc.type) {
-    case jl::Allocation::GPR: {
+    case jl::Allocation::GPR:
+    case jl::Allocation::FLOAT: {
         return jl::x86::PhysicalRegister(
             static_cast<jl::x86::PhysicalRegister::Type>(alloc.value),
             vreg.size == jl::x86::SizeDirective::BYTE);
     }
-    case jl::Allocation::FLOAT:
-        unimplemented();
     case jl::Allocation::SLOT: {
         jl::x86::MemoryOperand stack_source;
         auto base_reg = function->get_physical_register(jl::x86::PhysicalRegister::rbp);
@@ -45,18 +43,24 @@ void move_inputs_to_stk_if_needed(jl::x86::MachineFunction* function, const jl::
     std::vector<std::unique_ptr<jl::x86::Instruction>> moves;
 
     // Move the input arguments to the allocated regs/stacks
+    int float_count = 0;
+    int gpr_count = 0;
+
     for (int i = 0; i < function->inputs().size(); i++) {
         auto param = function->inputs()[i];
         const auto& alloc = allocations.at(param);
+
         if (alloc.type != jl::Allocation::SLOT)
             continue;
 
-        assert(alloc.type != jl::Allocation::FLOAT);
-
         auto source = function->new_register();
         auto dest = function->new_register();
-        function->set_allocation(source, jl::x86::PhysicalRegister(jl::x86::input_registers[i]));
         function->set_allocation(dest, *function->get_allocation(param));
+        if (param.is_float) {
+            function->set_allocation(source, jl::x86::PhysicalRegister(jl::x86::input_float_registers[float_count++]));
+        } else {
+            function->set_allocation(source, jl::x86::PhysicalRegister(jl::x86::input_gpr_registers[gpr_count++]));
+        }
 
         auto move = new jl::x86::Mov();
         move->source = source;

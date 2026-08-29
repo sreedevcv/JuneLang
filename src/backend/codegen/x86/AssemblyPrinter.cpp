@@ -1,6 +1,8 @@
 #include "Passes.hpp"
 
 #include "Instruction.hpp"
+#include "codegen/x86/Operand.hpp"
+#include "codegen/x86/Register.hpp"
 #include <sstream>
 
 struct MachineAllocPrinter {
@@ -35,6 +37,11 @@ struct MachineAllocPrinter {
         return size_dir + "[" + addr + "]";
     }
 
+    std::string operator()(const jl::x86::MemoryLabel& mem) const
+    {
+        return "[" + mem.label + "]";
+    }
+
     std::string operator()(const int64_t& imm) const
     {
         return std::to_string(imm);
@@ -61,9 +68,23 @@ struct InstrPrinter : jl::x86::InstructionVisitor {
         return out.str();
     }
 
+    std::string generate_mov(const jl::x86::VirtualRegister& left, const jl::x86::VirtualRegister& right)
+    {
+        if (left.is_float || right.is_float) {
+            if (left.is_float && right.is_float) {
+                return "movsd";
+            } else {
+                return "movq";
+            }
+        }
+
+        return "mov";
+    }
+
     void visit(jl::x86::Mov& inst)
     {
-        out << "mov "
+        out << generate_mov(inst.dest, inst.source)
+            << " "
             << print_reg(inst.dest)
             << ", "
             << print_reg(inst.source);
@@ -71,7 +92,7 @@ struct InstrPrinter : jl::x86::InstructionVisitor {
 
     void visit(jl::x86::Add& inst)
     {
-        out << "add "
+        out << (inst.is_float ? "addsd " : "add ")
             << print_reg(inst.dest)
             << ", "
             << print_reg(inst.source);
@@ -145,6 +166,11 @@ std::string jl::x86::pass::to_nasm_assembly(MachineFunction* function)
     }
 
     std::stringstream out;
+
+    out << "section .data\n";
+    for (const auto& data : function->data_section()) {
+        out << "\t" << data.to_str() << "\n";
+    }
 
     for (auto& block : function->blocks()) {
         out << block->m_name << ":\n";

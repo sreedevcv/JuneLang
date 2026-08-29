@@ -27,6 +27,22 @@ namespace x86 {
             r13,
             r14,
             r15,
+            xmm0,
+            xmm1,
+            xmm2,
+            xmm3,
+            xmm4,
+            xmm5,
+            xmm6,
+            xmm7,
+            xmm8,
+            xmm9,
+            xmm10,
+            xmm11,
+            xmm12,
+            xmm13,
+            xmm14,
+            xmm15,
             REG_SENTINEL
         } reg;
 
@@ -67,8 +83,40 @@ namespace x86 {
                 return is_byte ? "r14b" : "r14";
             case r15:
                 return is_byte ? "r15b" : "r15";
+            case xmm0:
+                return "xmm0";
+            case xmm1:
+                return "xmm1";
+            case xmm2:
+                return "xmm2";
+            case xmm3:
+                return "xmm3";
+            case xmm4:
+                return "xmm4";
+            case xmm5:
+                return "xmm5";
+            case xmm6:
+                return "xmm6";
+            case xmm7:
+                return "xmm7";
+            case xmm8:
+                return "xmm8";
+            case xmm9:
+                return "xmm9";
+            case xmm10:
+                return "xmm10";
+            case xmm11:
+                return "xmm11";
+            case xmm12:
+                return "xmm12";
+            case xmm13:
+                return "xmm13";
+            case xmm14:
+                return "xmm14";
+            case xmm15:
+                return "xmm15";
             case REG_SENTINEL:
-                return is_byte ? "REGISTER_MAX" : "REGISTER_MAX";
+                return "REGISTER_MAX";
             }
 
             std::println("invalid register: {}", static_cast<int>(reg));
@@ -129,6 +177,9 @@ namespace x86 {
             if (size != SizeDirective::NONE) {
                 s += "(" + jl::x86::to_str(size) + ")";
             }
+            if (is_float) {
+                s += "(flt)";
+            }
 
             return s;
         }
@@ -162,13 +213,24 @@ namespace x86 {
         }
     };
 
-    const PhysicalRegister::Type input_registers[] = {
+    const PhysicalRegister::Type input_gpr_registers[] = {
         PhysicalRegister::rdi,
         PhysicalRegister::rsi,
         PhysicalRegister::rdx,
         PhysicalRegister::rcx,
         PhysicalRegister::r8,
         PhysicalRegister::r9
+    };
+
+    const PhysicalRegister::Type input_float_registers[] = {
+        PhysicalRegister::xmm0,
+        PhysicalRegister::xmm1,
+        PhysicalRegister::xmm2,
+        PhysicalRegister::xmm3,
+        PhysicalRegister::xmm4,
+        PhysicalRegister::xmm5,
+        PhysicalRegister::xmm6,
+        PhysicalRegister::xmm7,
     };
 }
 }
