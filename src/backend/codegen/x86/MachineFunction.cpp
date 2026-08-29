@@ -5,6 +5,7 @@
 #include "codegen/x86/MachineBlock.hpp"
 #include "codegen/x86/Register.hpp"
 #include "ir/AllocateVar.hpp"
+#include "types/Type.hpp"
 #include <algorithm>
 #include <cstdint>
 #include <memory>
@@ -12,7 +13,6 @@
 #include <stack>
 #include <unordered_map>
 #include <unordered_set>
-#include <variant>
 #include <vector>
 
 jl::x86::MachineFunction::MachineFunction(const std::string& name, Function* function)
@@ -48,25 +48,18 @@ jl::x86::MachineFunction::MachineFunction(const std::string& name, Function* fun
 
 jl::x86::MachineFunction::~MachineFunction() = default;
 
-jl::x86::VirtualRegister jl::x86::MachineFunction::new_register()
+jl::x86::VirtualRegister jl::x86::MachineFunction::new_register(bool is_float)
 {
-    return VirtualRegister(m_reg_count++);
+    return VirtualRegister(m_reg_count++, is_float);
 }
 
-jl::x86::Operand jl::x86::MachineFunction::get_operand(value::Variable var)
+jl::x86::VirtualRegister& jl::x86::MachineFunction::get_register(value::Variable var)
 {
-    if (m_register_map.contains(var)) {
-        return m_register_map[var];
+    if (!m_register_map.contains(var)) {
+        m_register_map[var] = new_register(type::is_float(var.type()));
     }
 
-    VirtualRegister r(m_reg_count++);
-    m_register_map[var] = r;
-    return r;
-}
-
-jl::x86::VirtualRegister jl::x86::MachineFunction::get_register(value::Variable var)
-{
-    return std::get<VirtualRegister>(get_operand(var));
+    return m_register_map[var];
 }
 
 jl::x86::MachineBlock* jl::x86::MachineFunction::get_block(const std::string& name)
@@ -103,18 +96,6 @@ std::string jl::x86::MachineFunction::to_str() const
 
     ss << "\n";
     return ss.str();
-}
-
-jl::x86::Operand jl::x86::MachineFunction::map_operand(value::Variable var, Operand operand)
-{
-    m_register_map[var] = operand;
-    return operand;
-}
-
-jl::x86::VirtualRegister jl::x86::MachineFunction::map_register(value::Variable var, VirtualRegister reg)
-{
-    map_operand(var, reg);
-    return reg;
 }
 
 int32_t jl::x86::MachineFunction::get_ssa_offset(value::Variable var) const
@@ -189,26 +170,9 @@ std::vector<jl::x86::MachineBlock*> jl::x86::MachineFunction::rpo() const
     return post_order;
 }
 
-// oid jl::x86::MachineFunction::map_physical_register(PhysicalRegister::Type reg)
-//
-//    m_physical_register_map[reg] = new_register(PhysicalRegister(reg));
-//
-
 jl::x86::VirtualRegister jl::x86::MachineFunction::get_physical_register(PhysicalRegister::Type reg) const
 {
     return m_physical_register_map.at(reg);
-}
-
-uint32_t jl::x86::MachineFunction::get_data_size_from_virtual_register(VirtualRegister vreg) const
-{
-    for (const auto& [ssa, operand] : m_register_map) {
-        if (auto reg = std::get_if<VirtualRegister>(&operand); reg && reg->id == vreg.id) {
-            return ssa.type()->size();
-        }
-    }
-
-    // unimplemented();
-    return 8;
 }
 
 std::string jl::x86::MachineFunction::text() const
@@ -245,8 +209,8 @@ std::optional<jl::x86::MachineAlloc> jl::x86::MachineFunction::get_allocation(jl
 
 std::optional<jl::value::Variable> jl::x86::MachineFunction::get_variable(VirtualRegister reg) const
 {
-    for (auto& [var, oper] : m_register_map) {
-        if (auto vreg = std::get_if<VirtualRegister>(&oper); vreg->id == reg.id) {
+    for (auto& [var, vreg] : m_register_map) {
+        if (vreg.id == reg.id) {
             return var;
         }
     }

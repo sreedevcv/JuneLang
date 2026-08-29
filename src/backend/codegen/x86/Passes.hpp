@@ -2,8 +2,6 @@
 
 #include "RegisterAllocator.hpp"
 #include "codegen/x86/MachineFunction.hpp"
-#include <cstdint>
-#include <variant>
 
 namespace jl {
 namespace x86 {

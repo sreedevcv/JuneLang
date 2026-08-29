@@ -15,6 +15,7 @@
 #include "ir/Return.hpp"
 #include "ir/Write.hpp"
 #include "types/Type.hpp"
+
 #include <cassert>
 #include <memory>
 #include <optional>
@@ -108,7 +109,7 @@ void jl::x86::Generator::visit_binary_ir(ir::Binary& binary)
 {
     auto a = m_out.get_register(binary.m_operand_a);
     auto b = m_out.get_register(binary.m_operand_b);
-    auto result = m_out.get_register(binary.m_dest);
+    auto& result = m_out.get_register(binary.m_dest);
 
     const auto generate_move_and_operation = [&](auto oper) {
         auto mov = new Mov();
@@ -122,9 +123,6 @@ void jl::x86::Generator::visit_binary_ir(ir::Binary& binary)
 
         m_curr_block->m_instructions.emplace_back(mov);
         m_curr_block->m_instructions.emplace_back(oper);
-
-        result.size = SizeDirective::QWORD;
-        m_out.map_register(binary.m_dest, result);
     };
 
     const auto generate_cmp_and_move = [&](auto oper) {
@@ -133,14 +131,13 @@ void jl::x86::Generator::visit_binary_ir(ir::Binary& binary)
         cmp->b = b;
         cmp->is_float = binary.m_is_float;
 
+        result.size = SizeDirective::BYTE;
+
         oper->reg = result;
         oper->is_float = false;
 
         m_curr_block->m_instructions.emplace_back(cmp);
         m_curr_block->m_instructions.emplace_back(oper);
-
-        result.size = SizeDirective::BYTE;
-        m_out.map_register(binary.m_dest, result);
     };
 
     switch (binary.m_operation) {
@@ -356,18 +353,18 @@ jl::ir::IR* jl::x86::Generator::get_def(value::Variable var)
     return nullptr;
 }
 
-jl::x86::Operand jl::x86::Generator::get_operand(value::Variable var)
-{
-    auto def = get_def(var);
-    Operand a;
-    if (is_contant(def)) {
-        a = std::get<LiteralValue::int_type>(static_cast<ir::InitLiteral*>(def)->m_source.data);
-    } else {
-        a = m_out.get_operand(var);
-    }
-
-    return a;
-}
+// jl::x86::Operand jl::x86::Generator::get_operand(value::Variable var)
+// {
+// auto def = get_def(var);
+// Operand a;
+// if (is_contant(def)) {
+// a = std::get<LiteralValue::int_type>(static_cast<ir::InitLiteral*>(def)->m_source.data);
+// } else {
+// a = m_out.get_operand(var);
+// }
+//
+// return a;
+// }
 
 uint32_t jl::x86::Generator::get_stack_offset(value::Variable var)
 {

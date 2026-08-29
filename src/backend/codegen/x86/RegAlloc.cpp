@@ -148,11 +148,17 @@ struct InstrPrinter : jl::x86::InstructionVisitor {
     }
 };
 
-jl::x86::MachineAlloc to_machine_alloc(jl::Allocation alloc, jl::x86::MachineFunction* function, uint32_t size)
+jl::x86::MachineAlloc to_machine_alloc(jl::Allocation alloc,
+    jl::x86::MachineFunction* function,
+    const jl::x86::VirtualRegister& vreg,
+    uint32_t size)
 {
     switch (alloc.type) {
-    case jl::Allocation::GPR:
-        return jl::x86::PhysicalRegister(static_cast<jl::x86::PhysicalRegister::Type>(alloc.value));
+    case jl::Allocation::GPR: {
+        return jl::x86::PhysicalRegister(
+            static_cast<jl::x86::PhysicalRegister::Type>(alloc.value),
+            vreg.size == jl::x86::SizeDirective::BYTE);
+    }
     case jl::Allocation::FLOAT:
         unimplemented();
     case jl::Allocation::SLOT: {
@@ -197,11 +203,9 @@ void move_inputs_to_stk_if_needed(jl::x86::MachineFunction* function, const jl::
     }
 
     auto& entry = function->blocks().front()->m_instructions;
-    // std::println("before {}", entry.size());
     for (auto& mov : moves) {
         entry.insert(entry.begin(), std::move(mov));
     }
-    // std::println("after {}", entry.size());
 }
 
 void rewrite_mem_to_mem_moves(jl::x86::MachineFunction* function)
@@ -240,8 +244,7 @@ void jl::x86::pass::assign_register(jl::x86::MachineFunction* function, Allocati
 
     for (auto [vreg, alloc] : allocations) {
         auto var = *function->get_variable(vreg);
-        auto machine_alloc = to_machine_alloc(alloc, function, var.type()->size());
-        // std::println("{} = {} -> {}", var.to_str(), vreg.to_str(), std::visit(MachineAllocPrinter(function), machine_alloc));
+        auto machine_alloc = to_machine_alloc(alloc, function, vreg, var.type()->size());
         function->set_allocation(vreg, machine_alloc);
     }
 

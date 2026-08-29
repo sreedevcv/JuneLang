@@ -28,19 +28,9 @@ namespace x86 {
         MachineFunction(MachineFunction&&) noexcept = default;
         MachineFunction& operator=(MachineFunction&&) noexcept = default;
 
-        VirtualRegister new_register();
+        VirtualRegister new_register(bool is_float = false);
 
-        Operand get_operand(value::Variable var);
-
-        Operand map_operand(value::Variable var, Operand operand);
-
-        VirtualRegister get_register(value::Variable var);
-
-        VirtualRegister map_register(value::Variable var, VirtualRegister reg);
-
-        uint32_t get_data_size_from_virtual_register(VirtualRegister reg) const;
-
-        // void map_physical_register(PhysicalRegister::Type reg);
+        VirtualRegister& get_register(value::Variable var);
 
         VirtualRegister get_physical_register(PhysicalRegister::Type reg) const;
 
@@ -80,7 +70,7 @@ namespace x86 {
         std::vector<VirtualRegister> m_inputs;
         std::unordered_map<uint32_t, int32_t> m_stk_offset;
         std::unordered_map<std::string, MachineBlock*> m_block_map;
-        std::unordered_map<value::Variable, Operand, value::VariableHasher> m_register_map;
+        std::unordered_map<value::Variable, VirtualRegister, value::VariableHasher> m_register_map;
         std::unordered_map<PhysicalRegister::Type, VirtualRegister> m_physical_register_map;
     };
 }

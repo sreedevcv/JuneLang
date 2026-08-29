@@ -103,21 +103,21 @@ namespace x86 {
 
     struct VirtualRegister {
         uint32_t id;
-        int32_t allocation;
+        bool is_float = false;
         SizeDirective size;
 
         static inline bool debug_print = true;
 
         inline VirtualRegister()
             : id(UINT32_MAX)
-            , allocation(-1)
+            , is_float(false)
             , size(SizeDirective::NONE)
         {
         }
 
-        inline VirtualRegister(uint32_t vid)
+        inline VirtualRegister(uint32_t vid, bool is_float = false)
             : id(vid)
-            , allocation(-1)
+            , is_float(is_float)
             , size(SizeDirective::NONE)
         {
         }
