@@ -52,6 +52,8 @@ add_library(JuneCompiler
     backend/codegen/x86/RegAlloc.cpp
     backend/codegen/x86/LivenessAnalysis.cpp
     backend/codegen/x86/LinearScanRegAllocator.cpp
+    backend/codegen/x86/AssemblyPrinter.cpp
+    backend/codegen/x86/Runner.cpp
 
     llvm_backend/JuneModule.cpp
     llvm_backend/LLVMIRGen.cpp

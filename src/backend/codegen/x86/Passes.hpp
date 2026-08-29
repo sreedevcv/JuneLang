@@ -15,6 +15,8 @@ namespace x86 {
         AllocationMap linear_scan_reg_allocation(jl::x86::MachineFunction* function, const jl::x86::pass::LiveIntervalMap& intervals);
 
         void assign_register(MachineFunction* function, AllocationMap allocations);
+
+        std::string to_nasm_assembly(MachineFunction* function);
     }
 }
 }

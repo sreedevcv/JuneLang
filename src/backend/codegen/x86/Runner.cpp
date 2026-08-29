@@ -1,18 +1,20 @@
 #include "Runner.hpp"
 
+#include <algorithm>
 #include <array>
+#include <cstdint>
 #include <cstdio>
 #include <fstream>
 #include <string>
 #include <string_view>
 #include <unistd.h>
 
-std::expected<uint32_t, std::string> run_via_pipes(std::string_view cmd)
+std::pair<uint32_t, std::string> run_via_pipes(std::string_view cmd)
 {
     const auto out = popen(cmd.data(), "r");
 
     if (!out) {
-        return std::unexpected("Failed to assemle source");
+        return { 1, "Failed to assemle source" };
     }
 
     std::array<char, 1024> buffer;
@@ -22,13 +24,10 @@ std::expected<uint32_t, std::string> run_via_pipes(std::string_view cmd)
         result += buffer.data();
     }
 
-    int status = pclose(out);
+    auto status = pclose(out);
+    int exit_code = WEXITSTATUS(status);
 
-    if (status != 0) {
-        return std::unexpected(result);
-    }
-
-    return status;
+    return { exit_code, result };
 }
 
 std::expected<uint32_t, std::string> jl::x86::run(std::string_view source)
@@ -39,18 +38,54 @@ std::expected<uint32_t, std::string> jl::x86::run(std::string_view source)
     out_file.close();
 
     // Run nasm
-    const auto nasm_cmd = "nams -f elf64 test.asm";
-    if (auto error = run_via_pipes(nasm_cmd)) {
-        return error;
+    const auto nasm_cmd = "nasm -f elf64 test.asm";
+    if (auto [status, output] = run_via_pipes(nasm_cmd); status != 0) {
+        return std::unexpected(output);
     }
 
     // Run linker
-    const auto ld_cmd = "ld -o test test.asm";
-    if (auto error = run_via_pipes(ld_cmd)) {
-        return error;
+    const auto ld_cmd = "ld -o test test.o";
+    if (auto [status, output] = run_via_pipes(ld_cmd); status != 0) {
+        return std::unexpected(output);
     }
 
     // Run exe
-    const auto exe_cmd = "./test";
-    return run_via_pipes(exe_cmd);
+    const auto exe_cmd = "./test 2>&1";
+    auto [status, output] = run_via_pipes(exe_cmd);
+
+    if (output != "") {
+        return std::unexpected(output);
+    } else {
+        return status;
+    }
+}
+
+std::string jl::x86::generate_executable_assembly_with_start_sym(std::string& assembly,
+    std::string_view function_to_call,
+    std::initializer_list<std::string_view> arg_passing)
+{
+    std::string lines;
+    std::for_each(arg_passing.begin(), arg_passing.end(), [&lines](auto&& line) {
+        lines += line;
+        lines += "\n";
+    });
+
+    return std::format(R"(
+global _start
+
+section .text
+
+{}
+
+_start:
+    {}
+    call {}
+    mov rdi, rax
+    mov rax, 0x3c
+    syscall
+    ret
+    )",
+        assembly,
+        lines,
+        function_to_call);
 }

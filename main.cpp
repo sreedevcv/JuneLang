@@ -5,6 +5,7 @@
 #include "backend/IRGen_v2.hpp"
 #include "backend/codegen/x86/Generator.hpp"
 #include "codegen/x86/Passes.hpp"
+#include "codegen/x86/Runner.hpp"
 #include "frontend/SemanticAnalysis.hpp"
 #include "opt/Optimizer.hpp"
 
@@ -85,6 +86,17 @@ int main(int argc, char const* argv[])
         auto allocation_map = jl::x86::pass::linear_scan_reg_allocation(&x86func, intervals);
         jl::x86::pass::assign_register(&x86func, allocation_map);
 
+        auto assembly = jl::x86::pass::to_nasm_assembly(&x86func);
+        std::println("final assembly: \n\n{}", assembly);
+
+        auto driver = jl::x86::generate_executable_assembly_with_start_sym(assembly, "fib", { "mov rdi, 100" });
+        auto status = jl::x86::run(driver);
+
+        if (status.has_value()) {
+            std::println("Program exited with: {}", status.value());
+        } else {
+            std::println("Error: {}", status.error());
+        }
 #else
         // jl::Module module(file_name);
         // module.module().print(llvm::outs(), nullptr);

@@ -1,0 +1,160 @@
+#include "Passes.hpp"
+
+#include "Instruction.hpp"
+#include <sstream>
+
+struct MachineAllocPrinter {
+    jl::x86::MachineFunction* function;
+
+    MachineAllocPrinter(jl::x86::MachineFunction* function)
+        : function(function)
+    {
+    }
+
+    std::string operator()(const jl::x86::PhysicalRegister& reg) const
+    {
+        return reg.to_str();
+    }
+
+    std::string operator()(const jl::x86::MemoryOperand& mem) const
+    {
+        auto base_reg = *function->get_allocation(mem.base);
+        std::string addr = std::visit(MachineAllocPrinter(function), base_reg);
+        auto size_dir = (mem.size ? jl::x86::to_str(*mem.size) : "");
+
+        if (mem.index) {
+            auto index_reg = *function->get_allocation(*mem.index);
+            auto index_str = std::visit(MachineAllocPrinter(function), index_reg);
+            addr += std::to_string(mem.scale) + " * " + index_str;
+        }
+
+        if (mem.displacement != 0) {
+            addr += std::to_string(mem.displacement);
+        }
+
+        return size_dir + "[" + addr + "]";
+    }
+
+    std::string operator()(const int64_t& imm) const
+    {
+        return std::to_string(imm);
+    }
+};
+
+struct InstrPrinter : jl::x86::InstructionVisitor {
+    jl::x86::MachineFunction* function;
+    std::stringstream out;
+
+    std::string print_reg(const jl::x86::VirtualRegister& reg)
+    {
+        auto alloc = *function->get_allocation(reg);
+        return std::visit(MachineAllocPrinter(function), alloc);
+    }
+
+    InstrPrinter(jl::x86::MachineFunction* function)
+        : function(function)
+    {
+    }
+
+    std::string get_str()
+    {
+        return out.str();
+    }
+
+    void visit(jl::x86::Mov& inst)
+    {
+        out << "mov "
+            << print_reg(inst.dest)
+            << ", "
+            << print_reg(inst.source);
+    }
+
+    void visit(jl::x86::Add& inst)
+    {
+        out << "add "
+            << print_reg(inst.dest)
+            << ", "
+            << print_reg(inst.source);
+    }
+
+    void visit(jl::x86::Sub& inst)
+    {
+        out << "sub "
+            << print_reg(inst.dest)
+            << ", "
+            << print_reg(inst.source);
+    }
+
+    void visit(jl::x86::Less& inst)
+    {
+        out << "setl " << print_reg(inst.reg);
+    }
+
+    void visit(jl::x86::Equals& inst)
+    {
+        out << "sete " << print_reg(inst.reg);
+    }
+
+    void visit(jl::x86::Return& inst)
+    {
+
+        out << "ret";
+    }
+
+    void visit(jl::x86::Push& inst)
+    {
+        out << "push " << print_reg(inst.value);
+    }
+
+    void visit(jl::x86::Pop& inst)
+    {
+        out << "pop " << print_reg(inst.value);
+    }
+
+    void visit(jl::x86::Jump& inst)
+    {
+        out << "jmp " << inst.target->m_name;
+    }
+
+    void visit(jl::x86::JumpEqual& inst)
+    {
+        out << "je " << inst.target->m_name;
+    }
+
+    void visit(jl::x86::Cmp& inst)
+    {
+        out << "cmp "
+            << print_reg(inst.a)
+            << ", "
+            << print_reg(inst.b);
+    }
+
+    void visit(jl::x86::Lea& inst)
+    {
+        out << "lea "
+            << print_reg(inst.dest)
+            << ", "
+            << print_reg(inst.source);
+    }
+};
+
+std::string jl::x86::pass::to_nasm_assembly(MachineFunction* function)
+{
+    for (auto [vreg, alloc] : function->m_allocations) {
+        std::println("{} -> {}", vreg.to_str(), std::visit(MachineAllocPrinter(function), alloc));
+    }
+
+    std::stringstream out;
+
+    for (auto& block : function->blocks()) {
+        out << block->m_name << ":\n";
+
+        for (auto& instr : block->m_instructions) {
+            InstrPrinter printer(function);
+            instr->accept(printer);
+            out << "\t" << printer.get_str() << "\n";
+        }
+    }
+
+    return out.str();
+}
