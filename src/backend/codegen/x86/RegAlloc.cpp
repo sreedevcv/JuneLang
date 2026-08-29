@@ -8,6 +8,7 @@
 #include "codegen/x86/Register.hpp"
 
 #include <cassert>
+#include <cstdint>
 #include <print>
 #include <variant>
 
@@ -238,6 +239,51 @@ void rewrite_mem_to_mem_moves(jl::x86::MachineFunction* function)
     }
 }
 
+void add_prologue_and_epilogue(jl::x86::MachineFunction* function)
+{
+    // Insert prologue
+    auto entry = function->get_block(function->name());
+
+    auto push_instr = new jl::x86::Push();
+    push_instr->value = function->get_physical_register(jl::x86::PhysicalRegister::rbp);
+
+    auto mov_instr = new jl::x86::Mov();
+    mov_instr->dest = function->get_physical_register(jl::x86::PhysicalRegister::rbp);
+    mov_instr->source = function->get_physical_register(jl::x86::PhysicalRegister::rsp);
+    mov_instr->is_float = false;
+
+    auto stack_size_reg = function->new_register();
+    function->set_allocation(stack_size_reg, static_cast<int64_t>(function->total_stack_space));
+
+    auto sub_instr = new jl::x86::Sub();
+    sub_instr->dest = function->get_physical_register(jl::x86::PhysicalRegister::rsp);
+    sub_instr->source = stack_size_reg;
+    sub_instr->is_float = false;
+
+    entry->m_instructions.push_back(std::unique_ptr<jl::x86::Instruction>(std::move(push_instr)));
+    entry->m_instructions.push_back(std::unique_ptr<jl::x86::Instruction>(std::move(mov_instr)));
+    entry->m_instructions.push_back(std::unique_ptr<jl::x86::Instruction>(std::move(sub_instr)));
+
+    auto front = std::move(function->blocks().back());
+    function->blocks().pop_back();
+    function->blocks().push_front(std::move(front));
+
+    // Insert epilogue block
+    auto eplg_mov_instr = new jl::x86::Mov();
+    eplg_mov_instr->dest = function->get_physical_register(jl::x86::PhysicalRegister::rsp);
+    eplg_mov_instr->source = function->get_physical_register(jl::x86::PhysicalRegister::rbp);
+    mov_instr->is_float = false;
+
+    auto pop_instr = new jl::x86::Pop();
+    pop_instr->value = function->get_physical_register(jl::x86::PhysicalRegister::rbp);
+
+    auto ret_instr = new jl::x86::Return;
+
+    function->blocks().back()->m_instructions.emplace_back(eplg_mov_instr);
+    function->blocks().back()->m_instructions.emplace_back(pop_instr);
+    function->blocks().back()->m_instructions.emplace_back(ret_instr);
+}
+
 void jl::x86::pass::assign_register(jl::x86::MachineFunction* function, AllocationMap allocations)
 {
     using namespace jl;
@@ -254,6 +300,7 @@ void jl::x86::pass::assign_register(jl::x86::MachineFunction* function, Allocati
 
     move_inputs_to_stk_if_needed(function, allocations);
     rewrite_mem_to_mem_moves(function);
+    add_prologue_and_epilogue(function);
 
     for (auto& block : function->blocks()) {
         std::println("{}:", block->m_name);

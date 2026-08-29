@@ -2,15 +2,11 @@
 
 #include "BasicBlock.hpp"
 #include "Function.hpp"
+#include "codegen/x86/MachineBlock.hpp"
+#include "codegen/x86/MachineFunction.hpp"
 #include "ir/IR.hpp"
 #include "ir/IRVisitor.hpp"
 #include "value/Variable.hpp"
-#include "codegen/x86/Instruction.hpp"
-#include "codegen/x86/MachineBlock.hpp"
-#include "codegen/x86/MachineFunction.hpp"
-
-#include <optional>
-#include <unordered_map>
 
 namespace jl {
 namespace x86 {
@@ -31,12 +27,6 @@ namespace x86 {
         MachineBlock* m_epilogue_block;
 
         void set_current_block(MachineBlock* block);
-
-        bool is_contant(ir::IR* ir) const;
-
-        ir::IR* get_def(value::Variable var);
-
-        Operand get_operand(value::Variable var);
 
         uint32_t get_stack_offset(value::Variable var);
 

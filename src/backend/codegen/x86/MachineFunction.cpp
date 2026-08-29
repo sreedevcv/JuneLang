@@ -41,9 +41,11 @@ jl::x86::MachineFunction::MachineFunction(const std::string& name, Function* fun
     // Assign virtual registers for pyhsical registers
     m_physical_register_map[PhysicalRegister::rax] = new_register();
     m_physical_register_map[PhysicalRegister::rbp] = new_register();
+    m_physical_register_map[PhysicalRegister::rsp] = new_register();
 
     set_allocation(m_physical_register_map[PhysicalRegister::rax], PhysicalRegister(PhysicalRegister::rax));
     set_allocation(m_physical_register_map[PhysicalRegister::rbp], PhysicalRegister(PhysicalRegister::rbp));
+    set_allocation(m_physical_register_map[PhysicalRegister::rsp], PhysicalRegister(PhysicalRegister::rsp));
 }
 
 jl::x86::MachineFunction::~MachineFunction() = default;
@@ -216,4 +218,9 @@ std::optional<jl::value::Variable> jl::x86::MachineFunction::get_variable(Virtua
     }
 
     return std::nullopt;
+}
+
+const std::string& jl::x86::MachineFunction::name() const
+{
+    return m_name;
 }

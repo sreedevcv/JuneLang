@@ -5,6 +5,7 @@
 #include <memory>
 #include <optional>
 #include <string>
+#include <string_view>
 #include <unordered_map>
 #include <vector>
 
@@ -57,6 +58,8 @@ namespace x86 {
         std::string text() const;
 
         std::optional<value::Variable> get_variable(VirtualRegister reg) const;
+
+        const std::string& name() const;
 
         uint32_t total_stack_space;
 

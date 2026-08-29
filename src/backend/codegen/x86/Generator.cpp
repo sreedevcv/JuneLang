@@ -44,28 +44,6 @@ jl::x86::Generator::Generator(jl::Function* function)
 
 jl::x86::MachineFunction jl::x86::Generator::generate()
 {
-    // Insert prologue
-    // auto entry = m_out.get_block(m_function->name() + "." + m_function->entry_block()->get_name());
-    // m_out.map_physical_register(PhysicalRegister::rbp);
-    // m_out.map_physical_register(PhysicalRegister::rsp);
-    //
-    // Push* push_instr = new Push();
-    // push_instr->value = m_out.get_physical_register(PhysicalRegister::rbp);
-    //
-    // Mov* mov_instr = new Mov();
-    // mov_instr->dest = m_out.get_physical_register(PhysicalRegister::rbp);
-    // mov_instr->source = m_out.get_physical_register(PhysicalRegister::rsp);
-    // mov_instr->is_float = false;
-    //
-    // Sub* sub_instr = new Sub();
-    // sub_instr->dest = m_out.get_physical_register(PhysicalRegister::rsp);
-    // sub_instr->source = m_out.total_stack_space;
-    // sub_instr->is_float = false;
-    //
-    // entry->m_instructions.insert(entry->m_instructions.begin(), std::unique_ptr<Instruction>(std::move(sub_instr)));
-    // entry->m_instructions.insert(entry->m_instructions.begin(), std::unique_ptr<Instruction>(std::move(mov_instr)));
-    // entry->m_instructions.insert(entry->m_instructions.begin(), std::unique_ptr<Instruction>(std::move(push_instr)));
-
     // Create an epilogue block that can be reference by the return generator
     auto epilogue = std::make_unique<MachineBlock>(m_function->name() + "_epilogue");
     m_epilogue_block = epilogue.get();
@@ -74,21 +52,6 @@ jl::x86::MachineFunction jl::x86::Generator::generate()
     for (auto& block : m_function->blocks()) {
         generate(block.get());
     }
-
-    // Insert epilogue block
-    // auto eplg_mov_instr = new Mov();
-    // eplg_mov_instr->dest = m_out.new_register(PhysicalRegister(PhysicalRegister::rsp));
-    // eplg_mov_instr->source = m_out.get_physical_register(PhysicalRegister::rbp);
-    // mov_instr->is_float = false;
-    //
-    // auto pop_instr = new Pop();
-    // pop_instr->value = m_out.get_physical_register(PhysicalRegister::rbp);
-    //
-    // auto ret_instr = new Return;
-    //
-    // epilogue->m_instructions.emplace_back(eplg_mov_instr);
-    // epilogue->m_instructions.emplace_back(pop_instr);
-    // epilogue->m_instructions.emplace_back(ret_instr);
 
     m_out.blocks().push_back(std::move(epilogue));
 
@@ -336,35 +299,6 @@ void jl::x86::Generator::set_current_block(MachineBlock* block)
 {
     m_curr_block = block;
 }
-
-bool jl::x86::Generator::is_contant(ir::IR* ir) const
-{
-    return dynamic_cast<ir::InitLiteral*>(ir) ? true : false;
-}
-
-jl::ir::IR* jl::x86::Generator::get_def(value::Variable var)
-{
-    for (auto& ir : m_function->irs()) {
-        if (ir->def() == var) {
-            return ir.get();
-        }
-    }
-
-    return nullptr;
-}
-
-// jl::x86::Operand jl::x86::Generator::get_operand(value::Variable var)
-// {
-// auto def = get_def(var);
-// Operand a;
-// if (is_contant(def)) {
-// a = std::get<LiteralValue::int_type>(static_cast<ir::InitLiteral*>(def)->m_source.data);
-// } else {
-// a = m_out.get_operand(var);
-// }
-//
-// return a;
-// }
 
 uint32_t jl::x86::Generator::get_stack_offset(value::Variable var)
 {

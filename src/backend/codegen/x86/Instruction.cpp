@@ -187,6 +187,7 @@ void jl::x86::Push::replace(jl::x86::VirtualRegister r, jl::x86::Operand operand
 
 void jl::x86::Push::accept(jl::x86::InstructionVisitor& visitor)
 {
+    visitor.visit(*this);
 }
 
 //============================POP=============================
