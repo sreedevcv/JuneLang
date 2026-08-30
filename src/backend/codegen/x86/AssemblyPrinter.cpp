@@ -170,9 +170,9 @@ struct InstrPrinter : jl::x86::InstructionVisitor {
     void visit(jl::x86::Cmp& inst)
     {
         out << (inst.is_float ? "ucomisd " : "cmp ")
-            << print_reg(inst.a)
+            << print_reg(inst.dest)
             << ", "
-            << print_reg(inst.b);
+            << print_reg(inst.source);
     }
 
     void visit(jl::x86::Lea& inst)

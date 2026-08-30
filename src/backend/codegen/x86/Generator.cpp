@@ -96,8 +96,8 @@ void jl::x86::Generator::visit_binary_ir(ir::Binary& binary)
 
     const auto generate_cmp_and_move = [&](auto oper) {
         auto cmp = new Cmp();
-        cmp->a = a;
-        cmp->b = b;
+        cmp->source = a;
+        cmp->dest = b;
         cmp->is_float = binary.m_is_float;
 
         result.size = SizeDirective::BYTE;
@@ -191,8 +191,8 @@ void jl::x86::Generator::visit_cond_jump_ir(ir::CondJump& jump)
     auto one = m_out.new_register();
     m_out.set_allocation(one, static_cast<int64_t>(1));
 
-    cmp->a = m_out.get_register(jump.m_condition);
-    cmp->b = one;
+    cmp->dest = m_out.get_register(jump.m_condition);
+    cmp->source = one;
 
     auto je = new JumpEqual();
     je->target = m_out.get_block(m_function->name() + "." + jump.m_true_target->get_name());

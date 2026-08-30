@@ -232,8 +232,9 @@ void jl::x86::JumpEqual::accept(jl::x86::InstructionVisitor& visitor)
 std::string jl::x86::Cmp::to_str() const
 {
     return "cmp "
-        + a.to_str()
-        + ", " + b.to_str();
+        + dest.to_str()
+        + ", "
+        + source.to_str();
 }
 
 std::vector<jl::x86::VirtualRegister> jl::x86::Cmp::defs() const
@@ -243,7 +244,7 @@ std::vector<jl::x86::VirtualRegister> jl::x86::Cmp::defs() const
 
 std::vector<jl::x86::VirtualRegister> jl::x86::Cmp::uses() const
 {
-    return { a, b };
+    return { source, dest };
 }
 
 void jl::x86::Cmp::accept(jl::x86::InstructionVisitor& visitor)
@@ -252,14 +253,6 @@ void jl::x86::Cmp::accept(jl::x86::InstructionVisitor& visitor)
 }
 
 //============================LEA=============================
-
-jl::x86::Lea::Lea(
-    jl::x86::VirtualRegister source,
-    VirtualRegister dest)
-    : source(source)
-    , dest(dest)
-{
-}
 
 std::string jl::x86::Lea::to_str() const
 {

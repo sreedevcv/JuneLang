@@ -14,7 +14,6 @@
 #include "value/Variable.hpp"
 #include <catch2/catch_test_macros.hpp>
 #include <optional>
-#include <print>
 #include <string>
 
 template <typename Checker>
@@ -199,4 +198,3 @@ fun test(n: int): int [
 )",
         checker);
 }
-

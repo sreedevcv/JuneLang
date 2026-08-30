@@ -1,6 +1,5 @@
 #pragma once
 
-#include "Expr.hpp"
 #include "codegen/x86/MachineBlock.hpp"
 #include "codegen/x86/Register.hpp"
 
@@ -69,12 +68,12 @@ namespace x86 {
     struct Binary {
         VirtualRegister source;
         VirtualRegister dest;
+        bool is_float;
+
+        virtual ~Binary() = default;
     };
 
-    struct Mov : public Instruction {
-        VirtualRegister source;
-        VirtualRegister dest;
-        bool is_float;
+    struct Mov : public Instruction, public Binary {
         std::optional<SizeDirective> size;
 
         ~Mov() = default;
@@ -88,11 +87,7 @@ namespace x86 {
         void accept(InstructionVisitor& visitor) override;
     };
 
-    struct Add : public Instruction {
-        VirtualRegister source;
-        VirtualRegister dest;
-        bool is_float;
-
+    struct Add : public Instruction, public Binary {
         ~Add() = default;
 
         std::string to_str() const override;
@@ -104,11 +99,7 @@ namespace x86 {
         void accept(InstructionVisitor& visitor) override;
     };
 
-    struct Sub : public Instruction {
-        VirtualRegister source;
-        VirtualRegister dest;
-        bool is_float;
-
+    struct Sub : public Instruction, public Binary {
         ~Sub() = default;
 
         std::string to_str() const override;
@@ -216,11 +207,7 @@ namespace x86 {
         void accept(InstructionVisitor& visitor) override;
     };
 
-    struct Cmp : public Instruction {
-        VirtualRegister a;
-        VirtualRegister b;
-        bool is_float;
-
+    struct Cmp : public Instruction, public Binary {
         ~Cmp() = default;
 
         std::string to_str() const override;
@@ -232,13 +219,7 @@ namespace x86 {
         void accept(InstructionVisitor& visitor) override;
     };
 
-    struct Lea : public Instruction {
-        VirtualRegister source;
-        VirtualRegister dest;
-        bool is_float;
-
-        Lea(VirtualRegister source, VirtualRegister dest);
-
+    struct Lea : public Instruction, public Binary {
         ~Lea() = default;
 
         std::string to_str() const override;

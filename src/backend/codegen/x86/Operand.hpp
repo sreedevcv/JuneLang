@@ -28,11 +28,25 @@ namespace x86 {
             }
             return size_dir + "[" + addr + "]";
         }
+
+        inline bool operator==(const MemoryOperand& other) const
+        {
+            return base == other.base
+                && index == other.index
+                && scale == other.scale
+                && displacement == other.displacement
+                && size == other.size;
+        }
     };
 
     struct MemoryLabel {
         std::string label;
         SizeDirective size;
+
+        inline bool operator==(const MemoryLabel& other) const
+        {
+            return label == other.label && size == other.size;
+        }
     };
 
     using MachineAlloc = std::variant<PhysicalRegister, MemoryOperand, MemoryLabel, int64_t>;

@@ -44,11 +44,13 @@ jl::x86::MachineFunction::MachineFunction(const std::string& name, Function* fun
     m_physical_register_map[PhysicalRegister::rbp] = new_register();
     m_physical_register_map[PhysicalRegister::rsp] = new_register();
     m_physical_register_map[PhysicalRegister::xmm0] = new_register(true);
+    m_physical_register_map[PhysicalRegister::xmm15] = new_register(true);
 
     set_allocation(m_physical_register_map[PhysicalRegister::rax], PhysicalRegister(PhysicalRegister::rax));
     set_allocation(m_physical_register_map[PhysicalRegister::rbp], PhysicalRegister(PhysicalRegister::rbp));
     set_allocation(m_physical_register_map[PhysicalRegister::rsp], PhysicalRegister(PhysicalRegister::rsp));
     set_allocation(m_physical_register_map[PhysicalRegister::xmm0], PhysicalRegister(PhysicalRegister::xmm0));
+    set_allocation(m_physical_register_map[PhysicalRegister::xmm15], PhysicalRegister(PhysicalRegister::xmm15));
 }
 
 jl::x86::MachineFunction::~MachineFunction() = default;

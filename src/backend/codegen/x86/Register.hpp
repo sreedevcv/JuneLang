@@ -123,6 +123,11 @@ namespace x86 {
             unimplemented();
             return "";
         }
+
+        inline bool operator==(const PhysicalRegister& other) const
+        {
+            return reg == other.reg && is_byte == other.is_byte;
+        }
     };
 
     enum class SizeDirective {

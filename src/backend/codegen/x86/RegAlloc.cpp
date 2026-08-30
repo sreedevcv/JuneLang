@@ -8,6 +8,8 @@
 
 #include <cassert>
 #include <cstdint>
+#include <iterator>
+#include <memory>
 #include <variant>
 
 jl::x86::MachineAlloc to_machine_alloc(jl::Allocation alloc,
@@ -81,30 +83,94 @@ bool is_memory_operand(const jl::x86::MachineAlloc& alloc)
         || std::get_if<jl::x86::MemoryLabel>(&alloc) != nullptr;
 }
 
-void rewrite_mem_to_mem_moves(jl::x86::MachineFunction* function)
+// Rewrite addsd/subsd instructions where either source is a memory operand or both source and
+// dest are memory operand
+void rewrite_sd_instr_with_mem_as_source(jl::x86::MachineFunction* function)
 {
-    auto scratch = function->get_physical_register(jl::x86::PhysicalRegister::rax);
+    const auto scratch = function->get_physical_register(jl::x86::PhysicalRegister::xmm15);
 
     for (auto& block : function->blocks()) {
         for (auto iter = block->m_instructions.begin(); iter != block->m_instructions.end(); ++iter) {
-            auto mov = dynamic_cast<jl::x86::Mov*>(iter->get());
+            auto binary = dynamic_cast<jl::x86::Binary*>(iter->get());
 
-            if (!mov)
+            if (!binary)
+                continue;
+            if (!binary->is_float)
                 continue;
 
-            const auto dest = *function->get_allocation(mov->dest);
-            const auto source = *function->get_allocation(mov->source);
+            if (dynamic_cast<jl::x86::Cmp*>(binary)) {
+                // ucomisd instructions cannot have a memory operand as the first operand
+                const auto dest = *function->get_allocation(binary->dest);
+                if (!is_memory_operand(dest))
+                    continue;
+
+                // Move the first memory operand to the scratch register and then do the cmp
+                auto new_move = std::make_unique<jl::x86::Mov>();
+                new_move->source = binary->dest;
+                new_move->dest = scratch;
+                new_move->is_float = true;
+                block->m_instructions.insert(iter, std::move(new_move));
+
+                binary->dest = scratch;
+                continue;
+            }
+
+            if (!dynamic_cast<jl::x86::Add*>(binary) && !dynamic_cast<jl::x86::Sub*>(binary))
+                continue;
+
+            const auto dest = *function->get_allocation(binary->dest);
+            const auto source = *function->get_allocation(binary->source);
+
+            if (is_memory_operand(dest)) {
+                // The previous instruction should be a move instruction.
+                // Change the destination of that move to scratch register
+                auto prev = static_cast<jl::x86::Mov*>(std::prev(iter)->get());
+                if (!prev)
+                    continue;
+
+                prev->dest = scratch;
+                // Change the current instructions dest to be the scracth register
+                const auto original_dest = binary->dest;
+                binary->dest = scratch;
+                // Add a new mov instruction to move the result from the scratch
+                // register to the original memory operand
+                auto new_move = std::make_unique<jl::x86::Mov>();
+                new_move->source = scratch;
+                new_move->dest = binary->dest;
+                new_move->is_float = true;
+                block->m_instructions.insert(std::next(iter), std::move(new_move));
+            }
+        }
+    }
+}
+
+// Rewrite move instructions where both source and destination is a memory operand
+void rewrite_mem_to_mem_moves(jl::x86::MachineFunction* function)
+{
+    auto gpr_scratch = function->get_physical_register(jl::x86::PhysicalRegister::rax);
+    auto float_scratch = function->get_physical_register(jl::x86::PhysicalRegister::xmm15);
+
+    for (auto& block : function->blocks()) {
+        for (auto iter = block->m_instructions.begin(); iter != block->m_instructions.end(); ++iter) {
+            auto binary = dynamic_cast<jl::x86::Binary*>(iter->get());
+
+            if (!binary)
+                continue;
+
+            const auto dest = *function->get_allocation(binary->dest);
+            const auto source = *function->get_allocation(binary->source);
 
             if (!is_memory_operand(dest) || !is_memory_operand(source))
                 continue;
 
             // insert a mov from source to scratch register
             auto new_move = new jl::x86::Mov();
-            new_move->dest = scratch;
-            new_move->source = mov->source;
+            new_move->dest = binary->is_float ? float_scratch : gpr_scratch;
+            new_move->source = binary->source;
+            new_move->is_float = binary->is_float;
             block->m_instructions.insert(iter, std::unique_ptr<jl::x86::Instruction> { new_move });
             // Change the source in the existing instruction to the scratch register
-            mov->source = scratch;
+            binary->source = binary->is_float ? float_scratch : gpr_scratch;
         }
     }
 }
@@ -154,6 +220,28 @@ void add_prologue_and_epilogue(jl::x86::MachineFunction* function)
     function->blocks().back()->m_instructions.emplace_back(ret_instr);
 }
 
+void remove_redundant_instrs(jl::x86::MachineFunction* function)
+{
+    for (auto& block : function->blocks()) {
+        for (auto iter = block->m_instructions.begin(); iter != block->m_instructions.end();) {
+            auto binary = dynamic_cast<jl::x86::Binary*>(iter->get());
+
+            if (binary) {
+                const auto dest = *function->get_allocation(binary->dest);
+                const auto source = *function->get_allocation(binary->source);
+
+                if (dest == source) {
+                    auto next = std::next(iter);
+                    block->m_instructions.erase(iter);
+                    iter = next;
+                    continue;
+                }
+            }
+            ++iter;
+        }
+    }
+}
+
 void jl::x86::pass::assign_register(jl::x86::MachineFunction* function, AllocationMap allocations)
 {
     using namespace jl;
@@ -165,6 +253,11 @@ void jl::x86::pass::assign_register(jl::x86::MachineFunction* function, Allocati
     }
 
     move_inputs_to_stk_if_needed(function, allocations);
+
+    // This ordering is important!
+    rewrite_sd_instr_with_mem_as_source(function);
     rewrite_mem_to_mem_moves(function);
+
+    remove_redundant_instrs(function);
     add_prologue_and_epilogue(function);
 }
