@@ -101,7 +101,7 @@ struct InstrPrinter : jl::x86::InstructionVisitor {
 
     void visit(jl::x86::Sub& inst)
     {
-        out << "sub "
+        out << (inst.is_float ? "subsd " : "sub ")
             << print_reg(inst.dest)
             << ", "
             << print_reg(inst.source);
@@ -109,7 +109,31 @@ struct InstrPrinter : jl::x86::InstructionVisitor {
 
     void visit(jl::x86::Less& inst)
     {
-        out << "setl " << print_reg(inst.reg);
+        out << (inst.is_float ? "setb " : "setl ")
+            << print_reg(inst.reg);
+    }
+
+    void visit(jl::x86::LessEqual& inst)
+    {
+        out << (inst.is_float ? "setbe " : "setle ")
+            << print_reg(inst.reg);
+    }
+
+    void visit(jl::x86::GreaterEqual& inst)
+    {
+        out << (inst.is_float ? "setae " : "setge ")
+            << print_reg(inst.reg);
+    }
+
+    void visit(jl::x86::Greater& inst)
+    {
+        out << (inst.is_float ? "seta " : "setg ")
+            << print_reg(inst.reg);
+    }
+
+    void visit(jl::x86::NotEquals& inst)
+    {
+        out << "setne " << print_reg(inst.reg);
     }
 
     void visit(jl::x86::Equals& inst)
@@ -145,7 +169,7 @@ struct InstrPrinter : jl::x86::InstructionVisitor {
 
     void visit(jl::x86::Cmp& inst)
     {
-        out << "cmp "
+        out << (inst.is_float ? "ucomisd " : "cmp ")
             << print_reg(inst.a)
             << ", "
             << print_reg(inst.b);
@@ -160,19 +184,22 @@ struct InstrPrinter : jl::x86::InstructionVisitor {
     }
 };
 
-std::string jl::x86::pass::to_nasm_assembly(MachineFunction* function)
+void jl::x86::pass::to_nasm_assembly(jl::x86::pass::AssemblyProgram& program, MachineFunction* function)
 {
     for (auto [vreg, alloc] : function->m_allocations) {
         std::println("{} -> {}", vreg.to_str(), std::visit(MachineAllocPrinter(function), alloc));
     }
 
     std::stringstream out;
+    out << "\n";
+    for (const auto& data : function->data_section()) {
+        out << "\t" << data.to_str() << "\n";
+    }
 
-    //  out << "section .data\n";
-    //  for (const auto& data : function->data_section()) {
-    //      out << "\t" << data.to_str() << "\n";
-    //  }
+    program.data_section.append(out.str());
+    out.clear();
 
+    out << "\n";
     for (auto& block : function->blocks()) {
         out << block->m_name << ":\n";
 
@@ -183,5 +210,5 @@ std::string jl::x86::pass::to_nasm_assembly(MachineFunction* function)
         }
     }
 
-    return out.str();
+    program.text_section.append(out.str());
 }

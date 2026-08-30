@@ -77,7 +77,7 @@ void jl::x86::Sub::accept(jl::x86::InstructionVisitor& visitor)
 
 std::string jl::x86::Less::to_str() const
 {
-    return "setl " + reg.to_str();
+    return (is_float ? "setb " : "setl ") + reg.to_str();
 }
 
 std::vector<jl::x86::VirtualRegister> jl::x86::Less::defs() const
@@ -279,6 +279,94 @@ std::vector<jl::x86::VirtualRegister> jl::x86::Lea::uses() const
 }
 
 void jl::x86::Lea::accept(jl::x86::InstructionVisitor& visitor)
+{
+    visitor.visit(*this);
+}
+
+//============================LESSEQUAL=============================
+
+std::string jl::x86::LessEqual::to_str() const
+{
+    return (is_float ? "setbe " : "setle ") + reg.to_str();
+}
+
+std::vector<jl::x86::VirtualRegister> jl::x86::LessEqual::defs() const
+{
+    return { reg };
+}
+
+std::vector<jl::x86::VirtualRegister> jl::x86::LessEqual::uses() const
+{
+    return {};
+}
+
+void jl::x86::LessEqual::accept(jl::x86::InstructionVisitor& visitor)
+{
+    visitor.visit(*this);
+}
+
+//============================GREATER=============================
+
+std::string jl::x86::Greater::to_str() const
+{
+    return (is_float ? "seta " : "setg ") + reg.to_str();
+}
+
+std::vector<jl::x86::VirtualRegister> jl::x86::Greater::defs() const
+{
+    return { reg };
+}
+
+std::vector<jl::x86::VirtualRegister> jl::x86::Greater::uses() const
+{
+    return {};
+}
+
+void jl::x86::Greater::accept(jl::x86::InstructionVisitor& visitor)
+{
+    visitor.visit(*this);
+}
+
+//============================GREATER-EQUAL=============================
+
+std::string jl::x86::GreaterEqual::to_str() const
+{
+    return (is_float ? "setae " : "setge ") + reg.to_str();
+}
+
+std::vector<jl::x86::VirtualRegister> jl::x86::GreaterEqual::defs() const
+{
+    return { reg };
+}
+
+std::vector<jl::x86::VirtualRegister> jl::x86::GreaterEqual::uses() const
+{
+    return {};
+}
+
+void jl::x86::GreaterEqual::accept(jl::x86::InstructionVisitor& visitor)
+{
+    visitor.visit(*this);
+}
+
+//============================NOT-EQUAL=============================
+
+std::string jl::x86::NotEquals::to_str() const
+{
+    return "setne " + reg.to_str();
+}
+
+std::vector<jl::x86::VirtualRegister> jl::x86::NotEquals::defs() const
+{
+    return { reg };
+}
+
+std::vector<jl::x86::VirtualRegister> jl::x86::NotEquals::uses() const
+{
+    return {};
+}
+
+void jl::x86::NotEquals::accept(jl::x86::InstructionVisitor& visitor)
 {
     visitor.visit(*this);
 }

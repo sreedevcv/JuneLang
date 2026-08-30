@@ -16,7 +16,18 @@ namespace x86 {
 
         void assign_register(MachineFunction* function, AllocationMap allocations);
 
-        std::string to_nasm_assembly(MachineFunction* function);
+        struct AssemblyProgram {
+            std::string text_section;
+            std::string data_section;
+
+            AssemblyProgram()
+                : text_section("section .text\n")
+                , data_section("section. data\n")
+            {
+            }
+        };
+
+        void to_nasm_assembly(AssemblyProgram& program, MachineFunction* function);
     }
 }
 }

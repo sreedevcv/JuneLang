@@ -103,7 +103,7 @@ void jl::x86::Generator::visit_binary_ir(ir::Binary& binary)
         result.size = SizeDirective::BYTE;
 
         oper->reg = result;
-        oper->is_float = false;
+        oper->is_float = binary.m_is_float;
 
         m_curr_block->m_instructions.emplace_back(cmp);
         m_curr_block->m_instructions.emplace_back(oper);
@@ -119,15 +119,23 @@ void jl::x86::Generator::visit_binary_ir(ir::Binary& binary)
     case ir::Binary::STAR:
     case ir::Binary::SLASH:
     case ir::Binary::GREATER:
+        generate_cmp_and_move(new Greater());
+        return;
     case ir::Binary::LESS:
         generate_cmp_and_move(new Less());
         return;
     case ir::Binary::GREATER_EQUAL:
+        generate_cmp_and_move(new GreaterEqual());
+        return;
     case ir::Binary::LESS_EQUAL:
+        generate_cmp_and_move(new LessEqual());
+        return;
     case ir::Binary::EQUAL_EQUAL:
         generate_cmp_and_move(new Equals());
         return;
     case ir::Binary::BANG_EQUAL:
+        generate_cmp_and_move(new NotEquals());
+        return;
     case ir::Binary::PERCENT:
     case ir::Binary::BIT_AND:
     case ir::Binary::BIT_OR:

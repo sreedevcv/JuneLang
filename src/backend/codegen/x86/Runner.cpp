@@ -60,7 +60,7 @@ std::expected<uint32_t, std::string> jl::x86::run(std::string_view source)
     }
 }
 
-std::string jl::x86::generate_executable_assembly_with_start_sym(std::string& assembly,
+std::string jl::x86::generate_executable_assembly_with_start_sym(std::string_view assembly,
     std::string_view function_to_call,
     std::initializer_list<std::string_view> arg_passing)
 {
@@ -72,8 +72,6 @@ std::string jl::x86::generate_executable_assembly_with_start_sym(std::string& as
 
     return std::format(R"(
 global _start
-
-section .text
 
 {}
 
