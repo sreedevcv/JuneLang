@@ -36,7 +36,6 @@ const std::array<jl::x86::PhysicalRegister::Type, 16> float_allocatable_regs = {
     jl::x86::PhysicalRegister::xmm12,
     jl::x86::PhysicalRegister::xmm13,
     jl::x86::PhysicalRegister::xmm14,
-    jl::x86::PhysicalRegister::xmm15,
 };
 
 void expire_old_intervals(
@@ -119,7 +118,7 @@ bool is_an_input_param(jl::x86::MachineFunction* function, const jl::x86::Virtua
 std::unordered_map<jl::Range, jl::Allocation, jl::RangeHasher> run_allocator(jl::x86::MachineFunction* function, const jl::x86::pass::LiveIntervalMap& intervals)
 {
     uint32_t gpr_count = 3;
-    uint32_t float_count = 5;
+    uint32_t float_count = 1;
 
     std::unordered_set<jl::x86::PhysicalRegister::Type> free_gprs;
     std::unordered_set<jl::x86::PhysicalRegister::Type> free_floats;

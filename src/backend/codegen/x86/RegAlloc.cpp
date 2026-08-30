@@ -75,32 +75,36 @@ void move_inputs_to_stk_if_needed(jl::x86::MachineFunction* function, const jl::
     }
 }
 
+bool is_memory_operand(const jl::x86::MachineAlloc& alloc)
+{
+    return std::get_if<jl::x86::MemoryOperand>(&alloc) != nullptr
+        || std::get_if<jl::x86::MemoryLabel>(&alloc) != nullptr;
+}
+
 void rewrite_mem_to_mem_moves(jl::x86::MachineFunction* function)
 {
     auto scratch = function->get_physical_register(jl::x86::PhysicalRegister::rax);
 
     for (auto& block : function->blocks()) {
         for (auto iter = block->m_instructions.begin(); iter != block->m_instructions.end(); ++iter) {
-            auto& instr = *iter;
+            auto mov = dynamic_cast<jl::x86::Mov*>(iter->get());
 
-            if (auto mov = dynamic_cast<jl::x86::Mov*>(instr.get())) {
-                const auto dest = *function->get_allocation(mov->dest);
-                const auto source = *function->get_allocation(mov->source);
+            if (!mov)
+                continue;
 
-                if (dest.index() == source.index()) {
-                    if (auto mem_src = std::get_if<jl::x86::MemoryOperand>(&source)) {
-                        if (auto mem_dest = std::get_if<jl::x86::MemoryOperand>(&dest)) {
-                            // insert a mov from source to scratch register
-                            auto new_move = new jl::x86::Mov();
-                            new_move->dest = scratch;
-                            new_move->source = mov->source;
-                            block->m_instructions.insert(iter, std::unique_ptr<jl::x86::Instruction> { new_move });
-                            // Change the source in the existing instruction to the scratch register
-                            mov->source = scratch;
-                        }
-                    }
-                }
-            }
+            const auto dest = *function->get_allocation(mov->dest);
+            const auto source = *function->get_allocation(mov->source);
+
+            if (!is_memory_operand(dest) || !is_memory_operand(source))
+                continue;
+
+            // insert a mov from source to scratch register
+            auto new_move = new jl::x86::Mov();
+            new_move->dest = scratch;
+            new_move->source = mov->source;
+            block->m_instructions.insert(iter, std::unique_ptr<jl::x86::Instruction> { new_move });
+            // Change the source in the existing instruction to the scratch register
+            mov->source = scratch;
         }
     }
 }

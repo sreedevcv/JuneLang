@@ -39,7 +39,10 @@ struct MachineAllocPrinter {
 
     std::string operator()(const jl::x86::MemoryLabel& mem) const
     {
-        return "[" + mem.label + "]";
+        std::string s = mem.size != jl::x86::SizeDirective::NONE
+            ? jl::x86::to_str(mem.size)
+            : "";
+        return s + "[" + mem.label + "]";
     }
 
     std::string operator()(const int64_t& imm) const
@@ -73,8 +76,6 @@ struct InstrPrinter : jl::x86::InstructionVisitor {
         if (left.is_float || right.is_float) {
             if (left.is_float && right.is_float) {
                 return "movsd";
-            } else {
-                return "movq";
             }
         }
 
@@ -167,10 +168,10 @@ std::string jl::x86::pass::to_nasm_assembly(MachineFunction* function)
 
     std::stringstream out;
 
-    out << "section .data\n";
-    for (const auto& data : function->data_section()) {
-        out << "\t" << data.to_str() << "\n";
-    }
+    //  out << "section .data\n";
+    //  for (const auto& data : function->data_section()) {
+    //      out << "\t" << data.to_str() << "\n";
+    //  }
 
     for (auto& block : function->blocks()) {
         out << block->m_name << ":\n";

@@ -32,6 +32,7 @@ namespace x86 {
 
     struct MemoryLabel {
         std::string label;
+        SizeDirective size;
     };
 
     using MachineAlloc = std::variant<PhysicalRegister, MemoryOperand, MemoryLabel, int64_t>;

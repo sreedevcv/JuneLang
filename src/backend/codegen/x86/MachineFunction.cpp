@@ -231,7 +231,7 @@ const std::string& jl::x86::MachineFunction::name() const
 jl::x86::MemoryLabel jl::x86::MachineFunction::add_float_to_data_section(jl::LiteralValue::float_type value)
 {
     auto label = std::format("{}_float_{}", m_name, value);
-    auto mem_label = MemoryLabel { .label = label };
+    auto mem_label = MemoryLabel { .label = label, .size = SizeDirective::QWORD };
 
     StaticData s = {
         .label = std::move(label),
