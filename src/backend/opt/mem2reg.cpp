@@ -164,14 +164,12 @@ void remove_read_and_writes(
     for (auto instr = block->head; instr != nullptr; instr = instr->next) {
         if (auto read = dynamic_cast<jl::ir::Read*>(instr)) {
             auto [blk, ssa] = *get_current_value(variable_values, read->m_base);
-            // function->replace_value(read->m_dest, ssa);
-
             replace_value(function, variable_values, read->m_dest, ssa);
             to_be_removed.push_back(read);
 
             // std::println("\tRead - replacing {} with {}", read->m_dest.to_str(), ssa.to_str());
         } else if (auto write = dynamic_cast<jl::ir::Write*>(instr)) {
-            variable_values.back().insert({ write->m_base, { block, write->m_src } });
+            variable_values.back().insert_or_assign(write->m_base, std::pair { block, write->m_src });
             to_be_removed.push_back(write);
 
             // std::println("\tWrite - removing {}", write->to_str());

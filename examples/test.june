@@ -102,3 +102,10 @@ fun test3(x: int): int [
     var a = x + 4;
     return a;
 ]
+
+fun float_test(f1: float): float [
+    var a = f1 + 2.5;
+    a += 3.4;
+    a += 1.0;
+    return a;
+]

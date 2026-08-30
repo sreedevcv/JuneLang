@@ -63,7 +63,7 @@ int main(int argc, char const* argv[])
         //   compile_function(function.get());
         //}
 
-        auto func = module.get_function("fib");
+        auto func = module.get_function("float_test");
 
         // std::cout << *func;
         // std::println("----------------------------------------------------------------");
@@ -88,6 +88,8 @@ int main(int argc, char const* argv[])
 
         auto assembly = jl::x86::pass::to_nasm_assembly(&x86func);
         std::println("final assembly: \n\n{}", assembly);
+
+        return 0;
 
         auto driver = jl::x86::generate_executable_assembly_with_start_sym(assembly, "fib", { "mov rdi, 100" });
         auto status = jl::x86::run(driver);
