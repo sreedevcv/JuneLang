@@ -9,21 +9,25 @@
 #include "opt/Optimizer.hpp"
 #include "types/TypeContext.hpp"
 #include <catch2/catch_test_macros.hpp>
+#include <print>
+#include <string_view>
 #include <utility>
 
 int run_and_get_exit_code(std::string_view source)
 {
+    std::println("aaaaaaa{}aaaaaaa", source);
     auto status = jl::x86::run(source);
+    // std::println("xxxxxx{}xxxxxxxxxx", status.error());
     REQUIRE(status.has_value());
     return status.value();
 }
 
 struct CompilationResult {
-    std::string assembly;
+    jl::x86::pass::AssemblyProgram assembly;
     std::string function_name;
 };
 
-CompilationResult compile_to_assembly(std::string_view source)
+CompilationResult compile_to_assembly(std::string_view source, std::string_view function_name)
 {
     std::string file_name = "test.june";
 
@@ -47,7 +51,7 @@ CompilationResult compile_to_assembly(std::string_view source)
     jl::IRGenv2 cg(type_context);
     auto module = cg.generate(stmts);
 
-    auto test = module.get_function("test");
+    auto test = module.get_function(function_name);
 
     jl::opt::mem2reg(test);
     jl::opt::sccp(test);
@@ -58,10 +62,12 @@ CompilationResult compile_to_assembly(std::string_view source)
     jl::x86::pass::assign_register(&x86func, allocation_map);
     jl::x86::pass::AssemblyProgram program;
     jl::x86::pass::to_nasm_assembly(program, &x86func);
-    program.data_section += "\n" + program.text_section;
+    if (std::count(program.data_section.cbegin(), program.data_section.cend(), '\n') <= 2) {
+        program.data_section = "";
+    }
 
     return {
-        .assembly = std::move(program.data_section),
+        .assembly = std::move(program),
         .function_name = x86func.name()
     };
 }
@@ -87,26 +93,29 @@ fun fib(n: int): int [
     return b;
 ]
     )";
-    auto result = compile_to_assembly(source);
+    auto result = compile_to_assembly(source, "fib");
     auto exe_assembly = std::format(R"(
 global _start
 
-section .text 
+section .text
 
 {}
 
-_start
-    mov rdi, 10
-    call {},
+_start:
+    mov rdi, 9
+    call {}
     mov rdi, rax 
     mov rax, 0x3c
     syscall
     ret
     )",
-        result.assembly,
+        result.assembly.text_section,
         result.function_name);
 
+    // std::println("----{}----", exe_assembly);
+
     auto status = run_and_get_exit_code(exe_assembly);
+    REQUIRE(status == 34);
 }
 
 TEST_CASE("Simple float test", "SimpleX86_64")
@@ -121,25 +130,31 @@ fun float_test(f1: float): float [
     ]
     return a;
 ]
-    )";
-    auto result = compile_to_assembly(source);
+)";
+    auto result = compile_to_assembly(source, "float_test");
     auto exe_assembly = std::format(R"(
 global _start
 
-section .text 
+section .data
+{}
+test_input dq 2.5
 
+section .text
 {}
 
-_start
-    mov rdi, 10
-    call {},
-    mov rdi, rax 
-    mov rax, 0x3c
-    syscall
-    ret
-    )",
-        result.assembly,
+
+_start:
+movsd xmm0, [test_input] 
+call {}
+movq rdi, xmm0
+mov rax, 0x3c
+syscall
+ret
+)",
+        result.assembly.data_section,
+        result.assembly.text_section,
         result.function_name);
 
     auto status = run_and_get_exit_code(exe_assembly);
+    REQUIRE(status == 205);
 }

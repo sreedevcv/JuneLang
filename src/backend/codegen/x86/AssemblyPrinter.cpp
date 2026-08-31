@@ -197,7 +197,7 @@ void jl::x86::pass::to_nasm_assembly(jl::x86::pass::AssemblyProgram& program, Ma
     }
 
     program.data_section.append(out.str());
-    out.clear();
+    out.str("");
 
     out << "\n";
     for (auto& block : function->blocks()) {

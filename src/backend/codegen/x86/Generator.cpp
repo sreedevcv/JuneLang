@@ -96,8 +96,8 @@ void jl::x86::Generator::visit_binary_ir(ir::Binary& binary)
 
     const auto generate_cmp_and_move = [&](auto oper) {
         auto cmp = new Cmp();
-        cmp->source = a;
-        cmp->dest = b;
+        cmp->dest = a;
+        cmp->source = b;
         cmp->is_float = binary.m_is_float;
 
         result.size = SizeDirective::BYTE;

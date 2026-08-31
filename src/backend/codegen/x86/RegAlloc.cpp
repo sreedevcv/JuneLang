@@ -93,9 +93,7 @@ void rewrite_sd_instr_with_mem_as_source(jl::x86::MachineFunction* function)
         for (auto iter = block->m_instructions.begin(); iter != block->m_instructions.end(); ++iter) {
             auto binary = dynamic_cast<jl::x86::Binary*>(iter->get());
 
-            if (!binary)
-                continue;
-            if (!binary->is_float)
+            if (!(binary && binary->is_float))
                 continue;
 
             if (dynamic_cast<jl::x86::Cmp*>(binary)) {
@@ -119,7 +117,6 @@ void rewrite_sd_instr_with_mem_as_source(jl::x86::MachineFunction* function)
                 continue;
 
             const auto dest = *function->get_allocation(binary->dest);
-            const auto source = *function->get_allocation(binary->source);
 
             if (is_memory_operand(dest)) {
                 // The previous instruction should be a move instruction.
@@ -136,7 +133,7 @@ void rewrite_sd_instr_with_mem_as_source(jl::x86::MachineFunction* function)
                 // register to the original memory operand
                 auto new_move = std::make_unique<jl::x86::Mov>();
                 new_move->source = scratch;
-                new_move->dest = binary->dest;
+                new_move->dest = original_dest;
                 new_move->is_float = true;
                 block->m_instructions.insert(std::next(iter), std::move(new_move));
             }
