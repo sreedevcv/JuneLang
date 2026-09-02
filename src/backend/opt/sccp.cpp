@@ -27,7 +27,6 @@
 #include <cstddef>
 #include <cstdint>
 #include <optional>
-#include <print>
 #include <queue>
 #include <stack>
 #include <unordered_map>
@@ -259,7 +258,6 @@ struct SCCPState {
     {
         // To get the algorithm started. This will also always mark the entry as executed, preventing
         // it from being deleted
-        //
         flow_work_list.push({ function->entry_block(), function->entry_block() });
     }
 
@@ -269,7 +267,6 @@ struct SCCPState {
         if (lattice_values[phi->m_dest].type == BOTTOM) {
             // Nothing much to do since we have already seen that this variable could hold
             // any/multiple values during runtime.
-            //
             return;
         }
 
@@ -282,7 +279,6 @@ struct SCCPState {
 
             // Only select the value if the edge has been already executed.
             // Otherwise meet with TOP for unexecuted edges
-            //
             if (is_edge_executed(blk, phi->parent)) {
                 // std::println("\t\t* from exec blk: {}", lattice_values[val].to_str());
                 acc = acc.meet(lattice_values[val]);
@@ -431,8 +427,8 @@ struct SCCPState {
         }
     }
 
-    // Initializes all the definitions with `TOP` and literal values
-    // with `CONSTANT`
+    // Initializes all literal values with `CONSTANT`, inputs
+    // and function return vales with `BOTTOM` and th rest with `TOP`
     ValueMap init_lattice_values(jl::Function* function)
     {
         ValueMap lattice_values;
@@ -450,6 +446,11 @@ struct SCCPState {
                     lattice_values[*var] = {
                         .type = CONSTANT,
                         .value = init->m_source
+                    };
+                } else if (dynamic_cast<jl::ir::Call*>(ir.get()) != nullptr) {
+                    lattice_values[*var] = {
+                        .type = BOTTOM,
+                        .value = std::nullopt,
                     };
                 } else {
                     lattice_values[*var] = {

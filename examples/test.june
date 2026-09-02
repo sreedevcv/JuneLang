@@ -36,6 +36,10 @@
 // var s = sum(l, 5);
 // print l;
 
+fun add(a: int, b: int): int [
+    return a + b;
+]
+
 
 fun fib(n: int): int [
     var a = 0;
@@ -47,7 +51,7 @@ fun fib(n: int): int [
 
     while (i < n) [
         c = b;
-        b = a + b;
+        b = add(a, b);
         a = c;
         i = i + 1;
     ]
