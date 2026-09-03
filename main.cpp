@@ -77,8 +77,6 @@ int main(int argc, char const* argv[])
         std::cout << *func;
         std::println("----------------------------------------------------------------");
 
-        return 0;
-
         jl::x86::Generator x86gen(func);
         auto x86func = x86gen.generate();
         std::println("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~X86_64~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
@@ -92,6 +90,7 @@ int main(int argc, char const* argv[])
         jl::x86::pass::to_nasm_assembly(program, &x86func);
         std::println("final assembly: \n\n{}\n{}", program.data_section, program.text_section);
 
+        return 0;
         const auto assembly = program.data_section + "\n" + program.text_section;
         auto driver = jl::x86::generate_executable_assembly_with_start_sym(assembly, "fib", { "mov rdi, 100" });
         auto status = jl::x86::run(driver);

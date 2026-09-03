@@ -1,4 +1,5 @@
 #include "Instruction.hpp"
+
 #include "codegen/x86/Register.hpp"
 
 //============================MOV=============================
@@ -360,6 +361,37 @@ std::vector<jl::x86::VirtualRegister> jl::x86::NotEquals::uses() const
 }
 
 void jl::x86::NotEquals::accept(jl::x86::InstructionVisitor& visitor)
+{
+    visitor.visit(*this);
+}
+
+//============================CALL=============================
+
+std::string jl::x86::Call::to_str() const
+{
+    std::string s = "call " + function_name;
+
+    // if (args.size() > 0) {
+    // s  += std::accumulate(std::next(args.cbegin()),
+    // args.cend(),
+    // args[0].to_str(),
+    // [](auto&& acc, auto&& vreg) { return acc + ", " + vreg.to_str(); });
+    // }
+
+    return s;
+}
+
+std::vector<jl::x86::VirtualRegister> jl::x86::Call::defs() const
+{
+    return { ret_value };
+}
+
+std::vector<jl::x86::VirtualRegister> jl::x86::Call::uses() const
+{
+    return args;
+}
+
+void jl::x86::Call::accept(jl::x86::InstructionVisitor& visitor)
 {
     visitor.visit(*this);
 }

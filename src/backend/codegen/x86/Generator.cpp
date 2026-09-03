@@ -7,6 +7,7 @@
 #include "codegen/x86/MachineBlock.hpp"
 #include "codegen/x86/Register.hpp"
 #include "ir/Binary.hpp"
+#include "ir/Call.hpp"
 #include "ir/ConditionalJump.hpp"
 #include "ir/IR.hpp"
 #include "ir/InitLiteral.hpp"
@@ -174,7 +175,27 @@ void jl::x86::Generator::visit_return_ir(ir::Return& ret)
 
 void jl::x86::Generator::visit_call_ir(ir::Call& call)
 {
-    unimplemented();
+    std::vector<VirtualRegister> args;
+    for (const auto var : call.m_args) {
+        args.push_back(m_out.get_register(var));
+    }
+
+    const auto ret = m_out.new_register();
+    const auto ret_reg = type::is_float(call.m_dest.type()) ? PhysicalRegister::xmm0 : PhysicalRegister::rax;
+    m_out.set_allocation(ret, PhysicalRegister(ret_reg));
+
+    auto call_instr = new Call();
+    call_instr->args = std::move(args);
+    call_instr->ret_value = ret;
+    call_instr->function_name = call.m_name;
+
+    auto mov = new Mov();
+    mov->source = ret;
+    mov->dest = m_out.get_register(call.m_dest);
+    mov->is_float = type::is_float(call.m_dest.type());
+
+    m_curr_block->m_instructions.emplace_back(call_instr);
+    m_curr_block->m_instructions.emplace_back(mov);
 }
 
 void jl::x86::Generator::visit_jump_ir(ir::Jump& jump)

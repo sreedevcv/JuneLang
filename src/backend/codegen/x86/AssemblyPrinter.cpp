@@ -3,6 +3,7 @@
 #include "Instruction.hpp"
 #include "codegen/x86/Operand.hpp"
 #include "codegen/x86/Register.hpp"
+
 #include <sstream>
 
 struct MachineAllocPrinter {
@@ -181,6 +182,17 @@ struct InstrPrinter : jl::x86::InstructionVisitor {
             << print_reg(inst.dest)
             << ", "
             << print_reg(inst.source);
+    }
+
+    void visit(jl::x86::Call& inst)
+    {
+        out << "call " + inst.function_name;
+        // if (inst.args.size() > 0) {
+        // out << std::accumulate(std::next(inst.args.cbegin()),
+        // inst.args.cend(),
+        // print_reg(inst.args[0]),
+        // [this](auto&& acc, auto&& s) { return acc + ", " + this->print_reg(s); });
+        // }
     }
 };
 

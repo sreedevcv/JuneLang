@@ -59,8 +59,13 @@ public:
 
     inline void set_start(int32_t new_start)
     {
-        assert(end == -1 || new_start <= end);
+        // assert(end == -1 || new_start <= end);
         start = new_start;
+    }
+    
+    inline bool contains(int32_t point) const
+    {
+        return point >= start && point <= end;
     }
 
     inline bool operator==(const Range& other) const

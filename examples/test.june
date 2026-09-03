@@ -40,7 +40,6 @@ fun add(a: int, b: int): int [
     return a + b;
 ]
 
-
 fun fib(n: int): int [
     var a = 0;
     var b = 1;
@@ -51,7 +50,7 @@ fun fib(n: int): int [
 
     while (i < n) [
         c = b;
-        b = add(a, b);
+        b = add(a,  b);
         a = c;
         i = i + 1;
     ]

@@ -29,6 +29,7 @@ namespace x86 {
     struct Cmp;
     struct Lea;
     struct Binary;
+    struct Call;
 
     struct Instruction {
         int32_t m_id = 0;
@@ -63,6 +64,7 @@ namespace x86 {
         virtual void visit(JumpEqual& inst) = 0;
         virtual void visit(Cmp& inst) = 0;
         virtual void visit(Lea& inst) = 0;
+        virtual void visit(Call& inst) = 0;
     };
 
     struct Binary {
@@ -281,6 +283,22 @@ namespace x86 {
         bool is_float;
 
         ~NotEquals() = default;
+
+        std::string to_str() const override;
+
+        std::vector<VirtualRegister> defs() const override;
+
+        std::vector<VirtualRegister> uses() const override;
+
+        void accept(InstructionVisitor& visitor) override;
+    };
+
+    struct Call : public Instruction {
+        std::string function_name;
+        std::vector<VirtualRegister> args;
+        VirtualRegister ret_value;
+
+        ~Call() = default;
 
         std::string to_str() const override;
 

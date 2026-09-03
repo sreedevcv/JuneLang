@@ -128,6 +128,11 @@ namespace x86 {
         {
             return reg == other.reg && is_byte == other.is_byte;
         }
+
+        inline bool is_float() const
+        {
+            return reg >= xmm0 && reg <= xmm15;
+        }
     };
 
     enum class SizeDirective {
@@ -236,6 +241,16 @@ namespace x86 {
         PhysicalRegister::xmm5,
         PhysicalRegister::xmm6,
         PhysicalRegister::xmm7,
+    };
+
+    const PhysicalRegister::Type callee_saved_registers[] = {
+        PhysicalRegister::rsp,
+        PhysicalRegister::rbp,
+        PhysicalRegister::rbx,
+        PhysicalRegister::r12,
+        PhysicalRegister::r13,
+        PhysicalRegister::r14,
+        PhysicalRegister::r15,
     };
 }
 }
