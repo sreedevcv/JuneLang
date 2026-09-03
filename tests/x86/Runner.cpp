@@ -30,27 +30,29 @@ std::pair<uint32_t, std::string> run_via_pipes(std::string_view cmd)
     return { exit_code, result };
 }
 
-std::expected<uint32_t, std::string> jl::x86::run(std::string_view source)
+std::expected<uint32_t, std::string> jl::x86::run(std::string_view source, std::string_view name, std::string_view path)
 {
+    const auto file = std::format("{}/{}", path, name);
+
     // Save the source to a file
-    std::ofstream out_file("test.asm");
+    std::ofstream out_file(file + ".asm");
     out_file << source;
     out_file.close();
 
     // Run nasm
-    const auto nasm_cmd = "nasm -f elf64 test.asm";
+    const auto nasm_cmd = std::format("nasm -f elf64 -o {}.o {}.asm", file, file);
     if (auto [status, output] = run_via_pipes(nasm_cmd); status != 0) {
         return std::unexpected(output);
     }
 
     // Run linker
-    const auto ld_cmd = "ld -o test test.o";
+    const auto ld_cmd = std::format("ld -o {} {}.o", file, file);
     if (auto [status, output] = run_via_pipes(ld_cmd); status != 0) {
         return std::unexpected(output);
     }
 
     // Run exe
-    const auto exe_cmd = "./test 2>&1";
+    const auto exe_cmd = "/" + file;
     auto [status, output] = run_via_pipes(exe_cmd);
 
     if (output != "") {

@@ -236,17 +236,17 @@ jl::x86::MemoryLabel jl::x86::MachineFunction::add_float_to_data_section(jl::Lit
     auto mem_label = MemoryLabel { .label = label, .size = SizeDirective::QWORD };
 
     StaticData s = {
-        .label = std::move(label),
+        .label = label,
         .size = StaticData::size::dq,
         .value = value
     };
 
-    m_data_section.push_back(std::move(s));
+    m_data_section[label] = std::move(s);
 
     return mem_label;
 }
 
-const std::vector<jl::x86::StaticData>& jl::x86::MachineFunction::data_section() const
+const std::unordered_map<std::string, jl::x86::StaticData>& jl::x86::MachineFunction::data_section() const
 {
     return m_data_section;
 }

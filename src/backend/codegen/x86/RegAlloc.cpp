@@ -55,8 +55,8 @@ void move_inputs_to_stk_if_needed(jl::x86::MachineFunction* function, const jl::
         if (alloc.type != jl::Allocation::SLOT)
             continue;
 
-        auto source = function->new_register();
-        auto dest = function->new_register();
+        auto source = function->new_register(param.is_float);
+        auto dest = function->new_register(param.is_float);
         function->set_allocation(dest, *function->get_allocation(param));
         if (param.is_float) {
             function->set_allocation(source, jl::x86::PhysicalRegister(jl::x86::input_float_registers[float_count++]));
@@ -67,6 +67,7 @@ void move_inputs_to_stk_if_needed(jl::x86::MachineFunction* function, const jl::
         auto move = new jl::x86::Mov();
         move->source = source;
         move->dest = dest;
+        move->is_float = param.is_float;
 
         moves.emplace_back(move);
     }

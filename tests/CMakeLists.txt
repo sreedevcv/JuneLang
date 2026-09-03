@@ -29,6 +29,7 @@ add_executable(opt_tests
     opt/TestSCCP.cpp
     
     x86/TestSimpleX86Functions.cpp
+    x86/Runner.cpp
 )
 
 target_link_libraries(opt_tests PRIVATE

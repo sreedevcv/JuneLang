@@ -5,7 +5,6 @@
 #include "backend/IRGen_v2.hpp"
 #include "backend/codegen/x86/Generator.hpp"
 #include "codegen/x86/Passes.hpp"
-#include "codegen/x86/Runner.hpp"
 #include "frontend/SemanticAnalysis.hpp"
 #include "opt/Optimizer.hpp"
 
@@ -92,14 +91,6 @@ int main(int argc, char const* argv[])
 
         return 0;
         const auto assembly = program.data_section + "\n" + program.text_section;
-        auto driver = jl::x86::generate_executable_assembly_with_start_sym(assembly, "fib", { "mov rdi, 100" });
-        auto status = jl::x86::run(driver);
-
-        if (status.has_value()) {
-            std::println("Program exited with: {}", status.value());
-        } else {
-            std::println("Error: {}", status.error());
-        }
 #else
         // jl::Module module(file_name);
         // module.module().print(llvm::outs(), nullptr);

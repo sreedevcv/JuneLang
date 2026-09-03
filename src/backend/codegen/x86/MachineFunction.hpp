@@ -63,7 +63,7 @@ namespace x86 {
 
         MemoryLabel add_float_to_data_section(jl::LiteralValue::float_type);
 
-        const std::vector<StaticData>& data_section() const;
+        const std::unordered_map<std::string, StaticData>& data_section() const;
 
         uint32_t total_stack_space;
 
@@ -79,7 +79,7 @@ namespace x86 {
         std::unordered_map<std::string, MachineBlock*> m_block_map;
         std::unordered_map<value::Variable, VirtualRegister, value::VariableHasher> m_register_map;
         std::unordered_map<PhysicalRegister::Type, VirtualRegister> m_physical_register_map;
-        std::vector<StaticData> m_data_section;
+        std::unordered_map<std::string, StaticData> m_data_section;
     };
 }
 }

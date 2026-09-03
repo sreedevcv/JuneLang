@@ -72,12 +72,21 @@ struct InstrPrinter : jl::x86::InstructionVisitor {
         return out.str();
     }
 
+    bool is_xmm_reg(const jl::x86::VirtualRegister& vreg) const
+    {
+        auto alloc = *function->get_allocation(vreg);
+        if (auto preg = std::get_if<jl::x86::PhysicalRegister>(&alloc)) {
+            return preg->is_float();
+        }
+        return false;
+    }
+
     std::string generate_mov(const jl::x86::VirtualRegister& left, const jl::x86::VirtualRegister& right)
     {
-        if (left.is_float || right.is_float) {
-            if (left.is_float && right.is_float) {
-                return "movsd";
-            }
+        if (is_xmm_reg(left) || is_xmm_reg(right)) {
+            // if (left.is_float && right.is_float) {
+            return "movsd";
+            // }
         }
 
         return "mov";
@@ -204,7 +213,7 @@ void jl::x86::pass::to_nasm_assembly(jl::x86::pass::AssemblyProgram& program, Ma
 
     std::stringstream out;
     out << "\n";
-    for (const auto& data : function->data_section()) {
+    for (const auto& [label, data] : function->data_section()) {
         out << "\t" << data.to_str() << "\n";
     }
 
