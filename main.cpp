@@ -4,6 +4,8 @@
 #include "Parser.hpp"
 #include "backend/IRGen_v2.hpp"
 #include "backend/codegen/x86/Generator.hpp"
+#include "codegen/x86/Instruction.hpp"
+#include "codegen/x86/MachineFunction.hpp"
 #include "codegen/x86/Passes.hpp"
 #include "frontend/SemanticAnalysis.hpp"
 #include "opt/Optimizer.hpp"
@@ -15,20 +17,31 @@
 
 #define CUSTOM_BACKEND
 
-void compile_function(jl::Function* function)
+jl::x86::MachineFunction compile_function(jl::Module& module, std::string_view name)
 {
-    jl::opt::mem2reg(function);
-    jl::opt::sccp(function);
-    jl::opt::remove_phi_nodes(function);
+    auto func = module.get_function(name);
 
-    jl::x86::Generator x86gen(function);
+    // std::cout << *func;
+    // std::println("----------------------------------------------------------------");
+    jl::opt::mem2reg(func);
+    // std::cout << *func;
+    // std::println("----------------------------------------------------------------");
+    jl::opt::sccp(func);
+    // std::cout << *func;
+    // std::println("----------------------------------------------------------------");
+    jl::opt::remove_phi_nodes(func);
+    std::cout << *func;
+    std::println("----------------------------------------------------------------");
+
+    jl::x86::Generator x86gen(func);
     auto x86func = x86gen.generate();
-    std::cout << *function;
-
     std::println("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~X86_64~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
     std::println("{}", x86func.to_str());
-    // auto intervals = jl::x86::pass::liveness_analysis(&x86func);
-    // jl::x86::pass::linear_scan_reg_allocation(&x86func, intervals);
+
+    auto intervals = jl::x86::pass::liveness_analysis(&x86func);
+    auto allocation_map = jl::x86::pass::linear_scan_reg_allocation(&x86func, intervals);
+    jl::x86::pass::assign_register(&x86func, allocation_map);
+    return std::move(x86func);
 }
 
 int main(int argc, char const* argv[])
@@ -58,39 +71,14 @@ int main(int argc, char const* argv[])
         jl::IRGenv2 cg(type_context);
         auto module = cg.generate(stmts);
 
-        // for (auto& function : module.functions()) {
-        //   compile_function(function.get());
-        //}
-
-        auto func = module.get_function("fib");
-
-        // std::cout << *func;
-        // std::println("----------------------------------------------------------------");
-        jl::opt::mem2reg(func);
-        // std::cout << *func;
-        // std::println("----------------------------------------------------------------");
-        jl::opt::sccp(func);
-        // std::cout << *func;
-        // std::println("----------------------------------------------------------------");
-        jl::opt::remove_phi_nodes(func);
-        std::cout << *func;
-        std::println("----------------------------------------------------------------");
-
-        jl::x86::Generator x86gen(func);
-        auto x86func = x86gen.generate();
-        std::println("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~X86_64~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
-        std::println("{}", x86func.to_str());
-
-        auto intervals = jl::x86::pass::liveness_analysis(&x86func);
-        auto allocation_map = jl::x86::pass::linear_scan_reg_allocation(&x86func, intervals);
-        jl::x86::pass::assign_register(&x86func, allocation_map);
-
+        auto f1 = compile_function(module, "factorial");
+        auto f2 = compile_function(module, "multiply");
         jl::x86::pass::AssemblyProgram program;
-        jl::x86::pass::to_nasm_assembly(program, &x86func);
+        jl::x86::pass::to_nasm_assembly(program, &f1);
+        jl::x86::pass::to_nasm_assembly(program, &f2);
         std::println("final assembly: \n\n{}\n{}", program.data_section, program.text_section);
 
         return 0;
-        const auto assembly = program.data_section + "\n" + program.text_section;
 #else
         // jl::Module module(file_name);
         // module.module().print(llvm::outs(), nullptr);

@@ -28,7 +28,8 @@ add_executable(opt_tests
     opt/TestMem2reg.cpp
     opt/TestSCCP.cpp
     
-    x86/TestSimpleX86Functions.cpp
+    x86/TestSimpleX86.cpp
+    x86/TestX86Function.cpp
     x86/Runner.cpp
 )
 
