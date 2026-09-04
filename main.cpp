@@ -71,11 +71,13 @@ int main(int argc, char const* argv[])
         jl::IRGenv2 cg(type_context);
         auto module = cg.generate(stmts);
 
-        auto f1 = compile_function(module, "factorial");
-        auto f2 = compile_function(module, "multiply");
         jl::x86::pass::AssemblyProgram program;
+
+        auto f1 = compile_function(module, "fib");
         jl::x86::pass::to_nasm_assembly(program, &f1);
-        jl::x86::pass::to_nasm_assembly(program, &f2);
+
+        // auto f2 = compile_function(module, "multiply");
+        // jl::x86::pass::to_nasm_assembly(program, &f2);
         std::println("final assembly: \n\n{}\n{}", program.data_section, program.text_section);
 
         return 0;

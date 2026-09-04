@@ -301,7 +301,7 @@ void jl::x86::Generator::visit_write_ir(ir::Write& write)
 
 void jl::x86::Generator::visit_init_literal_ir(ir::InitLiteral& literal)
 {
-    auto literal_reg = m_out.new_register(type::is_float(literal.m_dest.type()));
+    auto literal_reg = m_out.get_register(literal.m_dest);
 
     if (auto num = std::get_if<LiteralValue::int_type>(&literal.m_source.data)) {
         m_out.set_allocation(literal_reg, *num);
@@ -309,14 +309,6 @@ void jl::x86::Generator::visit_init_literal_ir(ir::InitLiteral& literal)
         auto label = m_out.add_float_to_data_section(*num);
         m_out.set_allocation(literal_reg, label);
     }
-
-    auto mov = new Mov();
-    mov->dest = m_out.get_register(literal.m_dest);
-    mov->source = literal_reg;
-    mov->is_float = false;
-    mov->size = std::nullopt;
-
-    m_curr_block->m_instructions.emplace_back(mov);
 }
 
 void jl::x86::Generator::visit_debug_print_ir(ir::DebugPrint& print)

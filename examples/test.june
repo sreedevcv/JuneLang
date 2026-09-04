@@ -115,3 +115,22 @@ fun float_test(f1: float): float [
     ]
     return a;
 ]
+
+fun recursive_sum(n: int): int [
+    if (n == 1) return n;
+    return n + recursive_sum(n - 1);
+]
+
+fun multiply(a: int, b: int): int [
+    var result = 0;
+    while (b > 0) [
+        result += a;
+        b -= 1;
+    ]
+    return result;
+]
+
+fun factorial(n: int): int [
+    if (n == 1) return n;
+    return multiply(n, factorial(n - 1));
+]
