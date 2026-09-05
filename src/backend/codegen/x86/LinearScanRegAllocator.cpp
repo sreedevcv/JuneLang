@@ -10,6 +10,9 @@
 #include <unordered_set>
 
 class LinearScanAllocator {
+public:
+    std::unordered_set<jl::x86::PhysicalRegister::Type> m_allocated_regs;
+
 private:
     const std::array<jl::x86::PhysicalRegister::Type, 13> gpr_allocatable_regs = {
         jl::x86::PhysicalRegister::rdi,
@@ -48,7 +51,6 @@ private:
     jl::x86::MachineFunction* m_function;
     std::unordered_map<jl::Range, jl::Allocation, jl::RangeHasher> allocations;
     const jl::x86::pass::LiveIntervalMap& m_intervals;
-    std::unordered_set<jl::x86::PhysicalRegister::Type> m_allocated_regs;
 
     std::unordered_set<jl::x86::PhysicalRegister::Type> free_gprs;
     std::unordered_set<jl::x86::PhysicalRegister::Type> free_floats;
@@ -223,6 +225,38 @@ bool is_an_input_param(jl::x86::MachineFunction* function, const jl::x86::Virtua
     return std::find(function->inputs().cbegin(), function->inputs().cend(), vreg) != function->inputs().cend();
 }
 
+void save_dx_reg_for_div_operations(jl::x86::MachineFunction* function, const std::unordered_set<jl::x86::PhysicalRegister::Type>& allocated_regs)
+{
+    // TODO::Rather than looking at the all registers allocated throughout the function,
+    // save the registers live during the divison operation like we do with call operation
+    if (!allocated_regs.contains(jl::x86::PhysicalRegister::rdx)) {
+        return;
+    }
+
+    for (auto& block : function->blocks()) {
+        for (auto iter = block->m_instructions.begin(); iter != block->m_instructions.end(); ++iter) {
+            auto call = dynamic_cast<jl::x86::Div*>(iter->get());
+
+            // we only care about idiv
+            if (call == nullptr || call->is_float) {
+                continue;
+            }
+
+            auto rdx = function->new_register();
+            function->set_allocation(rdx, jl::x86::PhysicalRegister(jl::x86::PhysicalRegister::rdx));
+            auto push = std::make_unique<jl::x86::Push>();
+            push->value = rdx;
+
+            auto cqo = std::prev(iter);
+            block->m_instructions.insert(cqo, std::move(push));
+
+            auto pop = std::make_unique<jl::x86::Pop>();
+            pop->value = rdx;
+            block->m_instructions.insert(std::next(iter), std::move(pop));
+        }
+    }
+}
+
 jl::x86::pass::AllocationMap jl::x86::pass::linear_scan_reg_allocation(jl::x86::MachineFunction* function, const jl::x86::pass::LiveIntervalMap& intervals)
 {
     auto allocator = LinearScanAllocator(function, intervals, 10, 1);
@@ -291,6 +325,8 @@ jl::x86::pass::AllocationMap jl::x86::pass::linear_scan_reg_allocation(jl::x86::
             }
         }
     }
+
+    save_dx_reg_for_div_operations(function, allocator.m_allocated_regs);
 
     return allocation_map;
 }

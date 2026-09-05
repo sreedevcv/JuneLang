@@ -84,11 +84,8 @@ struct InstrPrinter : jl::x86::InstructionVisitor {
     std::string generate_mov(const jl::x86::VirtualRegister& left, const jl::x86::VirtualRegister& right)
     {
         if (is_xmm_reg(left) || is_xmm_reg(right)) {
-            // if (left.is_float && right.is_float) {
             return "movsd";
-            // }
         }
-
         return "mov";
     }
 
@@ -153,7 +150,6 @@ struct InstrPrinter : jl::x86::InstructionVisitor {
 
     void visit(jl::x86::Return& inst)
     {
-
         out << "ret";
     }
 
@@ -196,12 +192,56 @@ struct InstrPrinter : jl::x86::InstructionVisitor {
     void visit(jl::x86::Call& inst)
     {
         out << "call " + inst.function_name;
-        // if (inst.args.size() > 0) {
-        // out << std::accumulate(std::next(inst.args.cbegin()),
-        // inst.args.cend(),
-        // print_reg(inst.args[0]),
-        // [this](auto&& acc, auto&& s) { return acc + ", " + this->print_reg(s); });
-        // }
+    }
+
+    void visit(jl::x86::Or& inst)
+    {
+        out << "or "
+            << print_reg(inst.dest)
+            << ", "
+            << print_reg(inst.source);
+    }
+
+    void visit(jl::x86::And& inst)
+    {
+        out << "and "
+            << print_reg(inst.dest)
+            << ", "
+            << print_reg(inst.source);
+    }
+
+    void visit(jl::x86::Xor& inst)
+    {
+        out << "xor "
+            << print_reg(inst.dest)
+            << ", "
+            << print_reg(inst.source);
+    }
+
+    void visit(jl::x86::Mul& inst)
+    {
+        out << (inst.is_float ? "mulsd " : "imul ")
+            << print_reg(inst.dest)
+            << ", "
+            << print_reg(inst.source);
+    }
+
+    void visit(jl::x86::Div& inst)
+    {
+        if (inst.is_float) {
+            out << "divsd "
+                << print_reg(inst.dest)
+                << ", "
+                << print_reg(inst.source);
+        } else {
+            out << "idiv "
+                << print_reg(inst.source);
+        }
+    }
+
+    void visit(jl::x86::Cqo& inst)
+    {
+        out << "cqo";
     }
 };
 

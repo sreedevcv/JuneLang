@@ -8,6 +8,7 @@
 #include "codegen/x86/Passes.hpp"
 #include "opt/Optimizer.hpp"
 #include "types/TypeContext.hpp"
+
 #include <bit>
 #include <catch2/catch_test_macros.hpp>
 #include <iostream>
@@ -232,4 +233,75 @@ ret
 
     auto status = run_and_get_exit_code("fsum", exe_assembly);
     REQUIRE(status == (std::bit_cast<int64_t>(5.0) & 0xFF));
+}
+
+TEST_CASE("factorial with signed multiplication", "SimpleX86_64")
+{
+    const char* source = R"(
+fun imul_fact(n: int): int [
+    var sum = 1;
+    for (var i = 2; i <= n; i += 1) [
+        sum *= i;
+    ]
+    return sum;
+]
+)";
+    auto result = compile_to_assembly(source, "imul_fact");
+    auto exe_assembly = std::format(R"(
+global _start
+
+section .text
+{}
+
+
+_start:
+mov rdi, 5
+call imul_fact
+mov rdi, rax
+mov rax, 0x3c
+syscall
+ret
+)",
+        result.assembly.text_section);
+
+    auto status = run_and_get_exit_code("imul_fact", exe_assembly);
+    REQUIRE(status == 120);
+}
+
+TEST_CASE("factorial with fp multiplication", "SimpleX86_64")
+{
+    const char* source = R"(
+fun mulsd_fact(n: float): float [
+    var sum = 1.0;
+    for (var i = 2.0; i <= n; i += 1.0) [
+        sum *= i;
+    ]
+    return sum;
+]
+)";
+    auto result = compile_to_assembly(source, "mulsd_fact");
+    auto exe_assembly = std::format(R"(
+global _start
+
+section .data
+{}
+test_input dq 5.0
+
+section .text
+{}
+
+
+_start:
+movsd xmm0, [test_input] 
+call mulsd_fact
+movq rdi, xmm0
+mov rax, 0x3c
+syscall
+ret
+)",
+        result.assembly.data_section,
+        result.assembly.text_section);
+
+    auto status = run_and_get_exit_code("mulsd_fact", exe_assembly);
+    REQUIRE(status == (std::bit_cast<int64_t>(120.0) & 0xFF));
 }

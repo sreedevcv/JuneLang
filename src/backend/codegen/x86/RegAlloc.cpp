@@ -114,8 +114,12 @@ void rewrite_sd_instr_with_mem_as_source(jl::x86::MachineFunction* function)
                 continue;
             }
 
-            if (!dynamic_cast<jl::x86::Add*>(binary) && !dynamic_cast<jl::x86::Sub*>(binary))
+            if (!dynamic_cast<jl::x86::Add*>(binary)
+                && !dynamic_cast<jl::x86::Sub*>(binary)
+                && !dynamic_cast<jl::x86::Mul*>(binary)
+                && !dynamic_cast<jl::x86::Div*>(binary)) {
                 continue;
+            }
 
             const auto dest = *function->get_allocation(binary->dest);
 

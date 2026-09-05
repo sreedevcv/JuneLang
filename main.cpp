@@ -11,6 +11,7 @@
 #include "opt/Optimizer.hpp"
 
 #include <cassert>
+#include <fstream>
 #include <iostream>
 #include <print>
 #include <string>
@@ -76,9 +77,27 @@ int main(int argc, char const* argv[])
         auto f1 = compile_function(module, "fib");
         jl::x86::pass::to_nasm_assembly(program, &f1);
 
-        // auto f2 = compile_function(module, "multiply");
-        // jl::x86::pass::to_nasm_assembly(program, &f2);
-        std::println("final assembly: \n\n{}\n{}", program.data_section, program.text_section);
+        auto f2 = compile_function(module, "add");
+        jl::x86::pass::to_nasm_assembly(program, &f2);
+
+        if (std::count(program.data_section.cbegin(), program.data_section.cend(), '\n') <= 2) {
+            program.data_section = "";
+        }
+
+        const auto assembly = std::format(R"(section .data 
+{}
+
+section .text 
+
+{}
+)",
+            program.data_section, program.text_section);
+
+        std::print("{}", assembly);
+
+        std::ofstream out("out.asm");
+        out << assembly;
+        out.close();
 
         return 0;
 #else

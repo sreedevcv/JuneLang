@@ -369,16 +369,7 @@ void jl::x86::NotEquals::accept(jl::x86::InstructionVisitor& visitor)
 
 std::string jl::x86::Call::to_str() const
 {
-    std::string s = "call " + function_name;
-
-    // if (args.size() > 0) {
-    // s  += std::accumulate(std::next(args.cbegin()),
-    // args.cend(),
-    // args[0].to_str(),
-    // [](auto&& acc, auto&& vreg) { return acc + ", " + vreg.to_str(); });
-    // }
-
-    return s;
+    return "call " + function_name;
 }
 
 std::vector<jl::x86::VirtualRegister> jl::x86::Call::defs() const
@@ -392,6 +383,159 @@ std::vector<jl::x86::VirtualRegister> jl::x86::Call::uses() const
 }
 
 void jl::x86::Call::accept(jl::x86::InstructionVisitor& visitor)
+{
+    visitor.visit(*this);
+}
+
+//============================OR=============================
+jl::x86::Or::Or()
+{
+    is_float = false;
+}
+
+std::string jl::x86::Or::to_str() const
+{
+    return "or "
+        + dest.to_str()
+        + ", " + source.to_str();
+}
+
+std::vector<jl::x86::VirtualRegister> jl::x86::Or::defs() const
+{
+    return { dest };
+}
+
+std::vector<jl::x86::VirtualRegister> jl::x86::Or::uses() const
+{
+    return { source, dest };
+}
+
+void jl::x86::Or::accept(jl::x86::InstructionVisitor& visitor)
+{
+    visitor.visit(*this);
+}
+
+//============================AND=============================
+
+jl::x86::And::And()
+{
+    is_float = false;
+}
+
+std::string jl::x86::And::to_str() const
+{
+    return "and "
+        + dest.to_str()
+        + ", " + source.to_str();
+}
+
+std::vector<jl::x86::VirtualRegister> jl::x86::And::defs() const
+{
+    return { dest };
+}
+
+std::vector<jl::x86::VirtualRegister> jl::x86::And::uses() const
+{
+    return { source, dest };
+}
+
+void jl::x86::And::accept(jl::x86::InstructionVisitor& visitor)
+{
+    visitor.visit(*this);
+}
+
+//============================XOR=============================
+
+jl::x86::Xor::Xor()
+{
+    is_float = false;
+}
+
+std::string jl::x86::Xor::to_str() const
+{
+    return "xor "
+        + dest.to_str()
+        + ", " + source.to_str();
+}
+
+std::vector<jl::x86::VirtualRegister> jl::x86::Xor::defs() const
+{
+    return { dest };
+}
+
+std::vector<jl::x86::VirtualRegister> jl::x86::Xor::uses() const
+{
+    return { source, dest };
+}
+
+void jl::x86::Xor::accept(jl::x86::InstructionVisitor& visitor)
+{
+    visitor.visit(*this);
+}
+
+//============================MUL=============================
+std::string jl::x86::Mul::to_str() const
+{
+    return "mul "
+        + dest.to_str()
+        + ", " + source.to_str();
+}
+
+std::vector<jl::x86::VirtualRegister> jl::x86::Mul::defs() const
+{
+    return { dest };
+}
+
+std::vector<jl::x86::VirtualRegister> jl::x86::Mul::uses() const
+{
+    return { source, dest };
+}
+
+void jl::x86::Mul::accept(jl::x86::InstructionVisitor& visitor)
+{
+    visitor.visit(*this);
+}
+
+//============================DIV=============================
+std::string jl::x86::Div::to_str() const
+{
+    return "div "
+        + dest.to_str()
+        + ", " + source.to_str();
+}
+
+std::vector<jl::x86::VirtualRegister> jl::x86::Div::defs() const
+{
+    return { dest };
+}
+
+std::vector<jl::x86::VirtualRegister> jl::x86::Div::uses() const
+{
+    return { source, dest };
+}
+
+void jl::x86::Div::accept(jl::x86::InstructionVisitor& visitor)
+{
+    visitor.visit(*this);
+}
+
+//============================CQO=============================
+std::string jl::x86::Cqo::to_str() const
+{
+    return "cqo";
+}
+
+std::vector<jl::x86::VirtualRegister> jl::x86::Cqo::defs() const
+{
+    return {};
+}
+
+std::vector<jl::x86::VirtualRegister> jl::x86::Cqo::uses() const
+{
+    return {};
+}
+
+void jl::x86::Cqo::accept(jl::x86::InstructionVisitor& visitor)
 {
     visitor.visit(*this);
 }

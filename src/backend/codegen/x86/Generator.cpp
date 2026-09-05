@@ -77,8 +77,8 @@ void jl::x86::Generator::generate(BasicBlock* block)
 
 void jl::x86::Generator::visit_binary_ir(ir::Binary& binary)
 {
-    auto a = m_out.get_register(binary.m_operand_a);
-    auto b = m_out.get_register(binary.m_operand_b);
+    auto& a = m_out.get_register(binary.m_operand_a);
+    auto& b = m_out.get_register(binary.m_operand_b);
     auto& result = m_out.get_register(binary.m_dest);
 
     const auto generate_move_and_operation = [&](auto oper) {
@@ -110,6 +110,38 @@ void jl::x86::Generator::visit_binary_ir(ir::Binary& binary)
         m_curr_block->m_instructions.emplace_back(oper);
     };
 
+    const auto generate_division = [&]() {
+        if (binary.m_is_float) {
+            generate_move_and_operation(new Div());
+        } else {
+            auto rax = m_out.new_register();
+            // auto rdx = m_out.new_register();
+            m_out.set_allocation(rax, PhysicalRegister(PhysicalRegister::rax));
+            // m_out.set_allocation(rdx, PhysicalRegister(PhysicalRegister::rdx));
+
+            auto mov = new Mov();
+            mov->dest = rax;
+            mov->source = a;
+            mov->is_float = false;
+
+            auto cqo = new Cqo();
+
+            auto div = new Div();
+            div->source = b;
+            div->dest = rax; // Just to indicate to the liveness analyser that div uses and defines the rax
+            div->is_float = false;
+
+            auto mov2 = new Mov();
+            mov2->source = rax;
+            mov2->dest = result;
+            mov->is_float = false;
+            m_curr_block->m_instructions.emplace_back(mov);
+            m_curr_block->m_instructions.emplace_back(cqo);
+            m_curr_block->m_instructions.emplace_back(div);
+            m_curr_block->m_instructions.emplace_back(mov2);
+        }
+    };
+
     switch (binary.m_operation) {
     case ir::Binary::PLUS:
         generate_move_and_operation(new Add());
@@ -118,7 +150,11 @@ void jl::x86::Generator::visit_binary_ir(ir::Binary& binary)
         generate_move_and_operation(new Sub());
         return;
     case ir::Binary::STAR:
+        generate_move_and_operation(new Mul());
+        return;
     case ir::Binary::SLASH:
+        generate_division();
+        return;
     case ir::Binary::GREATER:
         generate_cmp_and_move(new Greater());
         return;
@@ -137,12 +173,18 @@ void jl::x86::Generator::visit_binary_ir(ir::Binary& binary)
     case ir::Binary::BANG_EQUAL:
         generate_cmp_and_move(new NotEquals());
         return;
-    case ir::Binary::PERCENT:
     case ir::Binary::BIT_AND:
-    case ir::Binary::BIT_OR:
-    case ir::Binary::BIT_XOR:
     case ir::Binary::LOG_AND:
+        generate_move_and_operation(new And());
+        return;
+    case ir::Binary::BIT_OR:
     case ir::Binary::LOG_OR:
+        generate_move_and_operation(new Or());
+        return;
+    case ir::Binary::BIT_XOR:
+        generate_move_and_operation(new Xor());
+        return;
+    case ir::Binary::PERCENT:
         break;
     }
     unimplemented();
@@ -253,12 +295,6 @@ void jl::x86::Generator::visit_allocate_var_ir(ir::AllocateVar& allocate)
     } else {
         unimplemented("memcpy");
     }
-
-    //  auto dest = m_out.new_register();
-    //  m_out.set_allocation(dest, stack_source);
-
-    //  auto lea = new Lea(dest, m_out.get_register(allocate.m_addr));
-    //  m_curr_block->m_instructions.emplace_back(lea);
 
     m_out.set_allocation(m_out.get_register(allocate.m_addr), stack_source);
 }

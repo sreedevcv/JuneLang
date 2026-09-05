@@ -30,6 +30,12 @@ namespace x86 {
     struct Lea;
     struct Binary;
     struct Call;
+    struct Or;
+    struct And;
+    struct Xor;
+    struct Mul;
+    struct Div;
+    struct Cqo;
 
     struct Instruction {
         int32_t m_id = 0;
@@ -65,6 +71,12 @@ namespace x86 {
         virtual void visit(Cmp& inst) = 0;
         virtual void visit(Lea& inst) = 0;
         virtual void visit(Call& inst) = 0;
+        virtual void visit(Or& inst) = 0;
+        virtual void visit(And& inst) = 0;
+        virtual void visit(Xor& inst) = 0;
+        virtual void visit(Mul& inst) = 0;
+        virtual void visit(Div& inst) = 0;
+        virtual void visit(Cqo& inst) = 0;
     };
 
     struct Binary {
@@ -299,6 +311,84 @@ namespace x86 {
         VirtualRegister ret_value;
 
         ~Call() = default;
+
+        std::string to_str() const override;
+
+        std::vector<VirtualRegister> defs() const override;
+
+        std::vector<VirtualRegister> uses() const override;
+
+        void accept(InstructionVisitor& visitor) override;
+    };
+
+    struct Or : public Instruction, public Binary {
+        Or();
+
+        ~Or() = default;
+
+        std::string to_str() const override;
+
+        std::vector<VirtualRegister> defs() const override;
+
+        std::vector<VirtualRegister> uses() const override;
+
+        void accept(InstructionVisitor& visitor) override;
+    };
+
+    struct And : public Instruction, public Binary {
+        And();
+
+        ~And() = default;
+
+        std::string to_str() const override;
+
+        std::vector<VirtualRegister> defs() const override;
+
+        std::vector<VirtualRegister> uses() const override;
+
+        void accept(InstructionVisitor& visitor) override;
+    };
+
+    struct Xor : public Instruction, public Binary {
+        Xor();
+
+        ~Xor() = default;
+
+        std::string to_str() const override;
+
+        std::vector<VirtualRegister> defs() const override;
+
+        std::vector<VirtualRegister> uses() const override;
+
+        void accept(InstructionVisitor& visitor) override;
+    };
+
+    struct Mul : public Instruction, public Binary {
+        ~Mul() = default;
+
+        std::string to_str() const override;
+
+        std::vector<VirtualRegister> defs() const override;
+
+        std::vector<VirtualRegister> uses() const override;
+
+        void accept(InstructionVisitor& visitor) override;
+    };
+
+    struct Div : public Instruction, public Binary {
+        ~Div() = default;
+
+        std::string to_str() const override;
+
+        std::vector<VirtualRegister> defs() const override;
+
+        std::vector<VirtualRegister> uses() const override;
+
+        void accept(InstructionVisitor& visitor) override;
+    };
+
+    struct Cqo : public Instruction {
+        ~Cqo() = default;
 
         std::string to_str() const override;
 

@@ -63,7 +63,9 @@ jl::x86::VirtualRegister jl::x86::MachineFunction::new_register(bool is_float)
 jl::x86::VirtualRegister& jl::x86::MachineFunction::get_register(value::Variable var)
 {
     if (!m_register_map.contains(var)) {
-        m_register_map[var] = new_register(type::is_float(var.type()));
+        auto reg = new_register(type::is_float(var.type()));
+        reg.size = *is_simple_move(var.type()->size());
+        m_register_map[var] = std::move(reg);
     }
 
     return m_register_map[var];
