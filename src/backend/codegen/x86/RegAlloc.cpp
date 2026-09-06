@@ -1,6 +1,5 @@
 #include "Passes.hpp"
 
-#include "RegisterAllocator.hpp"
 #include "codegen/x86/Instruction.hpp"
 #include "codegen/x86/MachineFunction.hpp"
 #include "codegen/x86/Operand.hpp"
@@ -8,23 +7,25 @@
 
 #include <cassert>
 #include <cstdint>
+#include <iostream>
 #include <iterator>
 #include <memory>
+#include <print>
 #include <variant>
 
-jl::x86::MachineAlloc to_machine_alloc(jl::Allocation alloc,
+jl::x86::MachineAlloc to_machine_alloc(jl::x86::pass::Allocation alloc,
     jl::x86::MachineFunction* function,
     const jl::x86::VirtualRegister& vreg,
     uint32_t size)
 {
     switch (alloc.type) {
-    case jl::Allocation::GPR:
-    case jl::Allocation::FLOAT: {
+    case jl::x86::pass::Allocation::GPR:
+    case jl::x86::pass::Allocation::FLOAT: {
         return jl::x86::PhysicalRegister(
             static_cast<jl::x86::PhysicalRegister::Type>(alloc.value),
             vreg.size == jl::x86::SizeDirective::BYTE);
     }
-    case jl::Allocation::SLOT: {
+    case jl::x86::pass::Allocation::SLOT: {
         jl::x86::MemoryOperand stack_source;
         auto base_reg = function->get_physical_register(jl::x86::PhysicalRegister::rbp);
         stack_source.base = base_reg;
@@ -52,7 +53,7 @@ void move_inputs_to_stk_if_needed(jl::x86::MachineFunction* function, const jl::
         auto param = function->inputs()[i];
         const auto& alloc = allocations.at(param);
 
-        if (alloc.type != jl::Allocation::SLOT)
+        if (alloc.type != jl::x86::pass::Allocation::SLOT)
             continue;
 
         auto source = function->new_register(param.is_float);
@@ -251,6 +252,8 @@ void jl::x86::pass::assign_register(jl::x86::MachineFunction* function, Allocati
     for (auto [vreg, alloc] : allocations) {
         auto var = *function->get_variable(vreg);
         auto machine_alloc = to_machine_alloc(alloc, function, vreg, var.type()->size());
+        std::println("vreg: {}, var: {}, alloc: {}, maachalloc: {}", vreg.to_str(), var.to_str(), alloc.to_str(),
+            std::visit(MachineAllocPrinter(function), machine_alloc));
         function->set_allocation(vreg, machine_alloc);
     }
 
@@ -261,5 +264,8 @@ void jl::x86::pass::assign_register(jl::x86::MachineFunction* function, Allocati
     rewrite_mem_to_mem_moves(function);
 
     remove_redundant_instrs(function);
+    std::cout << "---------------------------------------------------\n";
+    std::cout << function->to_str();
+
     add_prologue_and_epilogue(function);
 }

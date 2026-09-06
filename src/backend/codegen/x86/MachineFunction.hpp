@@ -66,14 +66,13 @@ namespace x86 {
         const std::unordered_map<std::string, StaticData>& data_section() const;
 
         uint32_t total_stack_space;
-
+        uint32_t m_reg_count = 0;
         // For debugging only!!!!
         std::unordered_map<VirtualRegister, MachineAlloc, VirtualRegisterHasher> m_allocations;
 
     private:
         std::string m_name;
         std::list<std::unique_ptr<MachineBlock>> m_blocks;
-        uint32_t m_reg_count = 0;
         std::vector<VirtualRegister> m_inputs;
         std::unordered_map<uint32_t, int32_t> m_stk_offset;
         std::unordered_map<std::string, MachineBlock*> m_block_map;

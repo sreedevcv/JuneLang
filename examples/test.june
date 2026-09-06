@@ -134,3 +134,10 @@ fun factorial(n: int): int [
     if (n == 1) return n;
     return multiply(n, factorial(n - 1));
 ]
+
+fun compare_test(a: int, b: int): int [
+    if (a == b) return 1;
+    if (a != b and a < b) return 2;
+    if (a > b) return 3;
+    return 4;
+]

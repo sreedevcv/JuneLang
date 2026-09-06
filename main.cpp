@@ -74,11 +74,11 @@ int main(int argc, char const* argv[])
 
         jl::x86::pass::AssemblyProgram program;
 
-        auto f1 = compile_function(module, "fib");
+        auto f1 = compile_function(module, "compare_test");
         jl::x86::pass::to_nasm_assembly(program, &f1);
 
-        auto f2 = compile_function(module, "add");
-        jl::x86::pass::to_nasm_assembly(program, &f2);
+        // auto f2 = compile_function(module, "add");
+        // jl::x86::pass::to_nasm_assembly(program, &f2);
 
         if (std::count(program.data_section.cbegin(), program.data_section.cend(), '\n') <= 2) {
             program.data_section = "";

@@ -32,20 +32,15 @@ jl::x86::Generator::Generator(jl::Function* function)
     for (auto arg : function->args()) {
         assert(arg.type()->m_kind == type::Type::BUILTIN);
 
-        if (type::is_float(arg.type())) {
-            auto reg = m_out.get_register(arg);
-            m_out.set_allocation(reg, PhysicalRegister(input_float_registers[float_count]));
-            m_out.inputs().push_back(reg);
-            float_count += 1;
-        } else {
-            auto reg = m_out.get_register(arg);
-            m_out.set_allocation(reg, PhysicalRegister(input_gpr_registers[gpr_count]));
-            m_out.inputs().push_back(reg);
-            gpr_count += 1;
-        }
+        const auto reg = m_out.get_register(arg);
+        const auto preg = type::is_float(arg.type())
+            ? input_float_registers[float_count++]
+            : input_gpr_registers[gpr_count++];
+        m_out.set_allocation(reg, PhysicalRegister(preg));
+        m_out.inputs().push_back(reg);
 
-        assert(float_count < 6);
-        assert(gpr_count < 6);
+        assert(float_count <= 6);
+        assert(gpr_count <= 6);
     }
 }
 
@@ -77,8 +72,8 @@ void jl::x86::Generator::generate(BasicBlock* block)
 
 void jl::x86::Generator::visit_binary_ir(ir::Binary& binary)
 {
-    auto& a = m_out.get_register(binary.m_operand_a);
-    auto& b = m_out.get_register(binary.m_operand_b);
+    auto a = m_out.get_register(binary.m_operand_a);
+    auto b = m_out.get_register(binary.m_operand_b);
     auto& result = m_out.get_register(binary.m_dest);
 
     const auto generate_move_and_operation = [&](auto oper) {

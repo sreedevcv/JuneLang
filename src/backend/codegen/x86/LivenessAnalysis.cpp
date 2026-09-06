@@ -132,6 +132,12 @@ struct LivenessAnalysis {
             }
         }
 
+        // Store the corresponding virtual registers to each range since
+        // we will be using it to hash the range during reg alloc
+        for (auto& [reg, range] : intervals) {
+            range.vreg = reg;
+        }
+
         return intervals;
     }
 };
@@ -142,31 +148,8 @@ jl::x86::pass::LiveIntervalMap jl::x86::pass::liveness_analysis(jl::x86::Machine
     la.liveness_analysis();
     auto intervals = la.calculate_live_intervals();
 
-    std::println("~~~~~~~~~~~~~~~~~~Liveness Analysis~~~~~~~~~~~~~~~~~~~~~~");
-    //
-    // for (const auto& block : function->blocks()) {
-    // std::println("Block {}", block->m_name);
-    // std::print("Live in: ");
-    //
-    // for (auto vr : la.live_in[block.get()]) {
-    // std::print("{}, ", vr.to_string());
-    // }
-    //
-    // std::print("\nLive out: ");
-    // for (auto vr : la.live_out[block.get()]) {
-    // std::print("{}, ", vr.to_string());
-    // }
-    //
-    // std::println("\n{}", block->to_string());
-    // }
-    //
-    // std::println("\nRPO Indices: ");
-    //
-    // for (int i = 0; i < la.rpo.size(); i++) {
-    // std::println("{}: {}", i, la.rpo[i]->m_name);
-    // }
-
     std::println("{}", function->to_str());
+
     for (const auto& [reg, interval] : intervals) {
         auto already_allocated = function->get_allocation(reg) ? "(already allocated)" : "";
         std::println("{}: [{}, {}] {}", reg.to_str(), interval.start, interval.end, already_allocated);

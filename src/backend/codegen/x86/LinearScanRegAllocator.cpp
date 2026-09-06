@@ -1,12 +1,12 @@
 #include "Passes.hpp"
 
 #include "Instruction.hpp"
-#include "RegisterAllocator.hpp"
 #include "codegen/x86/Register.hpp"
 #include <algorithm>
 #include <array>
 #include <iterator>
 #include <memory>
+#include <set>
 #include <unordered_set>
 
 class LinearScanAllocator {
@@ -49,20 +49,20 @@ private:
     };
 
     jl::x86::MachineFunction* m_function;
-    std::unordered_map<jl::Range, jl::Allocation, jl::RangeHasher> allocations;
+    std::unordered_map<jl::x86::pass::Range, jl::x86::pass::Allocation, jl::x86::pass::RangeHasher> allocations;
     const jl::x86::pass::LiveIntervalMap& m_intervals;
 
     std::unordered_set<jl::x86::PhysicalRegister::Type> free_gprs;
     std::unordered_set<jl::x86::PhysicalRegister::Type> free_floats;
-    std::set<jl::Range, jl::RangeCompare> gpr_active;
-    std::set<jl::Range, jl::RangeCompare> float_active;
+    std::set<jl::x86::pass::Range, jl::x86::pass::RangeCompare> gpr_active;
+    std::set<jl::x86::pass::Range, jl::x86::pass::RangeCompare> float_active;
 
     uint32_t m_gpr_count = 3;
     uint32_t m_float_count = 1;
 
     void expire_old_intervals(
-        jl::Range new_range,
-        std::set<jl::Range, jl::RangeCompare>& active,
+        jl::x86::pass::Range new_range,
+        std::set<jl::x86::pass::Range, jl::x86::pass::RangeCompare>& active,
         std::unordered_set<jl::x86::PhysicalRegister::Type>& free)
     {
         for (auto it = active.begin(); it != active.end();) {
@@ -72,7 +72,7 @@ private:
 
             auto alloc = allocations.at(*it);
             // TODO::should this be an assert instead?
-            if (alloc.type != jl::Allocation::SLOT) {
+            if (alloc.type != jl::x86::pass::Allocation::SLOT) {
                 free.insert(static_cast<jl::x86::PhysicalRegister::Type>(alloc.value));
             }
 
@@ -95,17 +95,17 @@ private:
         return offset;
     }
 
-    void allot_or_spill(jl::Range range,
+    void allot_or_spill(jl::x86::pass::Range range,
         const jl::x86::VirtualRegister& reg,
         std::unordered_set<jl::x86::PhysicalRegister::Type>& free,
-        std::set<jl::Range, jl::RangeCompare>& active,
-        jl::Allocation::Type type,
+        std::set<jl::x86::pass::Range, jl::x86::pass::RangeCompare>& active,
+        jl::x86::pass::Allocation::Type type,
         uint32_t reg_count)
     {
         if (active.size() == reg_count) {
             auto spill = *active.rbegin();
-            auto slot = jl::Allocation {
-                .type = jl::Allocation::SLOT,
+            auto slot = jl::x86::pass::Allocation {
+                .type = jl::x86::pass::Allocation::SLOT,
                 .value = calculate_stack_offset(reg),
             };
 
@@ -119,7 +119,7 @@ private:
             }
         } else {
             auto reg = *free.begin();
-            allocations[range] = jl::Allocation {
+            allocations[range] = jl::x86::pass::Allocation {
                 .type = type,
                 .value = reg,
             };
@@ -174,8 +174,8 @@ public:
                 gpr_active.insert(range);
             }
 
-            allocations[range] = jl::Allocation {
-                .type = param.is_float ? jl::Allocation::FLOAT : jl::Allocation::GPR,
+            allocations[range] = jl::x86::pass::Allocation {
+                .type = param.is_float ? jl::x86::pass::Allocation::FLOAT : jl::x86::pass::Allocation::GPR,
                 .value = reg.reg,
             };
         }
@@ -189,10 +189,10 @@ public:
         }
     }
 
-    std::unordered_map<jl::Range, jl::Allocation, jl::RangeHasher> run()
+    std::unordered_map<jl::x86::pass::Range, jl::x86::pass::Allocation, jl::x86::pass::RangeHasher> run()
     {
         // Sort the ranges
-        std::vector<std::pair<jl::x86::VirtualRegister, jl::Range>> sorted_ranges(m_intervals.cbegin(), m_intervals.cend());
+        std::vector<std::pair<jl::x86::VirtualRegister, jl::x86::pass::Range>> sorted_ranges(m_intervals.cbegin(), m_intervals.cend());
         std::sort(sorted_ranges.begin(), sorted_ranges.end(),
             [](auto&& a, auto&& b) {
                 return a.second.start < b.second.start;
@@ -210,9 +210,9 @@ public:
                 continue; // Already allocated
 
             if (vreg.is_float) {
-                allot_or_spill(range, vreg, free_floats, float_active, jl::Allocation::FLOAT, m_float_count);
+                allot_or_spill(range, vreg, free_floats, float_active, jl::x86::pass::Allocation::FLOAT, m_float_count);
             } else {
-                allot_or_spill(range, vreg, free_gprs, gpr_active, jl::Allocation::GPR, m_gpr_count);
+                allot_or_spill(range, vreg, free_gprs, gpr_active, jl::x86::pass::Allocation::GPR, m_gpr_count);
             }
         }
 
@@ -261,7 +261,7 @@ jl::x86::pass::AllocationMap jl::x86::pass::linear_scan_reg_allocation(jl::x86::
 {
     auto allocator = LinearScanAllocator(function, intervals, 10, 1);
     const auto allocations = allocator.run();
-    AllocationMap allocation_map;
+    jl::x86::pass::AllocationMap allocation_map;
 
     for (auto& [range, allocation] : allocations) {
         std::println("[{}, {}] -> {}", range.start, range.end, allocation.to_str());
