@@ -38,7 +38,7 @@ static void compile(jl::Module& module, jl::x86::pass::AssemblyProgram& program,
 
     auto x86func = jl::x86::Generator(test).generate();
     auto intervals = jl::x86::pass::liveness_analysis(&x86func);
-    auto allocation_map = jl::x86::pass::linear_scan_reg_allocation(&x86func, intervals);
+    auto allocation_map = jl::x86::pass::linear_scan_reg_allocation(&x86func, intervals, 12, 12);
     std::cout << x86func.to_str();
     jl::x86::pass::assign_register(&x86func, allocation_map);
     jl::x86::pass::to_nasm_assembly(program, &x86func);

@@ -40,7 +40,7 @@ jl::x86::MachineFunction compile_function(jl::Module& module, std::string_view n
     std::println("{}", x86func.to_str());
 
     auto intervals = jl::x86::pass::liveness_analysis(&x86func);
-    auto allocation_map = jl::x86::pass::linear_scan_reg_allocation(&x86func, intervals);
+    auto allocation_map = jl::x86::pass::linear_scan_reg_allocation(&x86func, intervals, 6, 6);
     jl::x86::pass::assign_register(&x86func, allocation_map);
     return std::move(x86func);
 }

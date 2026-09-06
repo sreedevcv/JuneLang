@@ -5,6 +5,52 @@
 
 #include <sstream>
 
+struct MachineAllocPrinter {
+    jl::x86::MachineFunction* function;
+
+    MachineAllocPrinter(jl::x86::MachineFunction* function)
+        : function(function)
+    {
+    }
+
+    std::string operator()(const jl::x86::PhysicalRegister& reg) const
+    {
+        return reg.to_str();
+    }
+
+    std::string operator()(const jl::x86::MemoryOperand& mem) const
+    {
+        auto base_reg = *function->get_allocation(mem.base);
+        std::string addr = std::visit(MachineAllocPrinter(function), base_reg);
+        auto size_dir = (mem.size ? to_str(*mem.size) : "");
+
+        if (mem.index) {
+            auto index_reg = *function->get_allocation(*mem.index);
+            auto index_str = std::visit(MachineAllocPrinter(function), index_reg);
+            addr += std::to_string(mem.scale) + " * " + index_str;
+        }
+
+        if (mem.displacement != 0) {
+            addr += std::to_string(mem.displacement);
+        }
+
+        return size_dir + "[" + addr + "]";
+    }
+
+    std::string operator()(const jl::x86::MemoryLabel& mem) const
+    {
+        std::string s = mem.size != jl::x86::SizeDirective::NONE
+            ? to_str(mem.size)
+            : "";
+        return s + "[" + mem.label + "]";
+    }
+
+    std::string operator()(const int64_t& imm) const
+    {
+        return std::to_string(imm);
+    }
+};
+
 struct InstrPrinter : jl::x86::InstructionVisitor {
     jl::x86::MachineFunction* function;
     std::stringstream out;
@@ -12,7 +58,7 @@ struct InstrPrinter : jl::x86::InstructionVisitor {
     std::string print_reg(const jl::x86::VirtualRegister& reg)
     {
         auto alloc = *function->get_allocation(reg);
-        return std::visit(jl::x86::MachineAllocPrinter(function), alloc);
+        return std::visit(MachineAllocPrinter(function), alloc);
     }
 
     InstrPrinter(jl::x86::MachineFunction* function)

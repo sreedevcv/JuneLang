@@ -11,6 +11,7 @@
 #include "Function.hpp"
 #include "LiteralValue.hpp"
 #include "MachineBlock.hpp"
+#include "codegen/x86/MachineAlloc.hpp"
 #include "codegen/x86/Operand.hpp"
 #include "codegen/x86/Register.hpp"
 #include "value/Variable.hpp"

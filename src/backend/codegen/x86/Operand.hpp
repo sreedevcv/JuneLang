@@ -49,8 +49,6 @@ namespace x86 {
         }
     };
 
-    using MachineAlloc = std::variant<PhysicalRegister, MemoryOperand, MemoryLabel, int64_t>;
-
     // Checks if size is 1, 2, 4 or 8 and returns is as PTR otherwise we need to do memcpy to move
     inline std::optional<SizeDirective> is_simple_move(uint32_t size)
     {
