@@ -10,6 +10,7 @@
 
 namespace jl {
 namespace x86 {
+
     class LinearScanAllocator {
     public:
         std::unordered_map<VirtualRegister, std::vector<PhysicalRegister::Type>, VirtualRegisterHasher> m_active_at_call_sites;

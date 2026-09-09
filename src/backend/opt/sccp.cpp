@@ -765,6 +765,35 @@ struct SCCPState {
             function->remove_ir(ir);
         }
     }
+    
+    // Check if any of the phi operators depend on this block
+    bool check_if_successors_depend_on(jl::BasicBlock* block) const
+    {
+        auto [left, right] = jl::algorithms::get_successors(block);
+
+        if (left != nullptr) {
+            for (auto phis: left->phis) {
+                for (auto& [var, blk]: phis->m_opers) {
+                    if (blk == block) {
+                        return true;
+                    }
+                }
+            }
+        }
+
+
+        if (right != nullptr) {
+            for (auto phis: right->phis) {
+                for (auto& [var, blk]: phis->m_opers) {
+                    if (blk == block) {
+                        return true;
+                    }
+                }
+            }
+        }
+
+        return false;
+    }
 
     void collapse_empty_blocks()
     {
@@ -810,7 +839,11 @@ struct SCCPState {
             if (next_jump == nullptr) {
                 continue;
             }
-
+            
+            if (check_if_successors_depend_on(block)) {
+                continue;
+            }
+         
             // THis block only contains an unconditional jump, so we can safely
             // remove it
             to_be_removed.insert(block);

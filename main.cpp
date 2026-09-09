@@ -22,17 +22,18 @@ jl::x86::MachineFunction compile_function(jl::Module& module, std::string_view n
 {
     auto func = module.get_function(name);
 
-    // std::cout << *func;
-    // std::println("----------------------------------------------------------------");
+    std::cout << *func;
+    std::println("------------------------mem2reg-----------------------------------");
     jl::opt::mem2reg(func);
-    // std::cout << *func;
-    // std::println("----------------------------------------------------------------");
+    std::cout << *func;
+    std::println("--------------------------sccp----------------------------------");
     jl::opt::sccp(func);
-    // std::cout << *func;
-    // std::println("----------------------------------------------------------------");
+    std::cout << *func;
+    std::println("-----------------------phi-removal-----------------------------------");
     jl::opt::remove_phi_nodes(func);
     std::cout << *func;
-    std::println("----------------------------------------------------------------");
+    std::println("----------------------------final-------------------------------");
+    std::fflush(stdout);
 
     jl::x86::Generator x86gen(func);
     auto x86func = x86gen.generate();
@@ -40,8 +41,8 @@ jl::x86::MachineFunction compile_function(jl::Module& module, std::string_view n
     std::println("{}", x86func.to_str());
 
     auto intervals = jl::x86::pass::liveness_analysis(&x86func);
-    auto allocation_map = jl::x86::pass::linear_scan_reg_allocation(&x86func, intervals, 6, 6);
-    jl::x86::pass::assign_register(&x86func, allocation_map);
+    auto allocation_result = jl::x86::pass::linear_scan_reg_allocation(&x86func, intervals, 6, 6);
+    jl::x86::pass::assign_register(&x86func, allocation_result);
     return std::move(x86func);
 }
 
@@ -74,11 +75,14 @@ int main(int argc, char const* argv[])
 
         jl::x86::pass::AssemblyProgram program;
 
-        auto f1 = compile_function(module, "compare_test");
-        jl::x86::pass::to_nasm_assembly(program, &f1);
+        // auto f1 = compile_function(module, "sccp_test");
+        // jl::x86::pass::to_nasm_assembly(program, &f1);
 
-        // auto f2 = compile_function(module, "add");
-        // jl::x86::pass::to_nasm_assembly(program, &f2);
+        // auto f1 = compile_function(module, "slow_mod");
+        // jl::x86::pass::to_nasm_assembly(program, &f1);
+
+        auto f2 = compile_function(module, "gcd");
+        jl::x86::pass::to_nasm_assembly(program, &f2);
 
         if (std::count(program.data_section.cbegin(), program.data_section.cend(), '\n') <= 2) {
             program.data_section = "";

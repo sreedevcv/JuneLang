@@ -12,9 +12,9 @@ namespace x86 {
 
         LiveIntervalMap liveness_analysis(MachineFunction* function);
 
-        AllocationMap linear_scan_reg_allocation(jl::x86::MachineFunction* function, const LiveIntervalMap& intervals, uint8_t gpr_count, uint8_t float_count);
+        AllocationResult linear_scan_reg_allocation(jl::x86::MachineFunction* function, const LiveIntervalMap& intervals, uint8_t gpr_count, uint8_t float_count);
 
-        void assign_register(MachineFunction* function, AllocationMap allocations);
+        void assign_register(MachineFunction* function, const AllocationResult& allocations);
 
         struct AssemblyProgram {
             std::string text_section;
@@ -24,5 +24,18 @@ namespace x86 {
         void to_nasm_assembly(AssemblyProgram& program, MachineFunction* function);
     }
 
+    struct MachineAllocPrinter {
+        jl::x86::MachineFunction* function;
+
+        MachineAllocPrinter(jl::x86::MachineFunction* function);
+
+        std::string operator()(const jl::x86::PhysicalRegister& reg) const;
+
+        std::string operator()(const jl::x86::MemoryOperand& mem) const;
+
+        std::string operator()(const jl::x86::MemoryLabel& mem) const;
+
+        std::string operator()(const int64_t& imm) const;
+    };
 }
 }

@@ -6,11 +6,14 @@
 #include "codegen/x86/Operand.hpp"
 #include "codegen/x86/Register.hpp"
 
+#include <algorithm>
+#include <bit>
 #include <cassert>
 #include <cstdint>
 #include <iostream>
 #include <iterator>
 #include <memory>
+#include <optional>
 #include <variant>
 
 jl::x86::MachineAlloc to_machine_alloc(jl::x86::Allocation alloc,
@@ -245,11 +248,244 @@ void remove_redundant_instrs(jl::x86::MachineFunction* function)
     }
 }
 
-void jl::x86::pass::assign_register(jl::x86::MachineFunction* function, AllocationMap allocations)
+std::vector<std::unique_ptr<jl::x86::Mov>> parallel_moves(jl::x86::MachineFunction* function,
+    std::vector<jl::x86::VirtualRegister> srcs,
+    std::vector<jl::x86::VirtualRegister> dests,
+    jl::x86::VirtualRegister scratch,
+    bool is_float)
+{
+    enum class Status {
+        TO_MOVE,
+        BEING_MOVED,
+        MOVED
+    };
+
+    const uint32_t n = srcs.size();
+    std::vector<Status> status(n, Status::TO_MOVE);
+    std::vector<std::unique_ptr<jl::x86::Mov>> moves;
+
+    const auto make_move = [&](const jl::x86::VirtualRegister& src_reg, const jl::x86::VirtualRegister& dest_reg) {
+        auto mov = std::make_unique<jl::x86::Mov>();
+        mov->source = src_reg;
+        mov->dest = dest_reg;
+        mov->is_float = is_float;
+
+        moves.push_back(std::move(mov));
+    };
+
+    const auto eq = [&](const jl::x86::VirtualRegister& src_reg, const jl::x86::VirtualRegister& dest_reg) {
+        const auto a = *function->get_allocation(src_reg);
+        const auto b = *function->get_allocation(dest_reg);
+        return a == b;
+    };
+
+    const auto move_one = [&](this auto& self, uint32_t i) {
+        // No need to generate a move if both the srcs and destsination are already the same
+        if (eq(srcs[i], dests[i])) {
+            return;
+        }
+
+        status[i] = Status::BEING_MOVED;
+
+        for (uint32_t j = 0; j < n; j++) {
+            // If some other move's srcs is the destsination that we are currently considering,
+            if (eq(dests[i], srcs[j])) {
+                switch (status[j]) {
+                case Status::TO_MOVE:
+                    // then make that move first
+                    self(j);
+                    break;
+                case Status::BEING_MOVED:
+                    // This is a cycle, resolve it using a scratch register
+                    make_move(srcs[j], scratch);
+                    // Keep track the new value of src
+                    srcs[j] = scratch;
+                    break;
+                case Status::MOVED:
+                    // alread moved - nothing to do
+                    break;
+                }
+            }
+        }
+
+        make_move(srcs[i], dests[i]);
+        status[i] = Status::MOVED;
+    };
+
+    for (uint32_t i = 0; i < n; i++) {
+        if (status[i] == Status::TO_MOVE) {
+            move_one(i);
+        }
+    }
+
+    return moves;
+}
+
+void collect_input_regs(std::vector<jl::x86::VirtualRegister>& srcs,
+    std::vector<jl::x86::VirtualRegister>& dests,
+    const std::vector<jl::x86::VirtualRegister>& args,
+    jl::x86::MachineFunction* function,
+    bool is_float)
+{
+    uint32_t count = 0;
+    for (const auto& reg : args) {
+        if (!is_float && !reg.is_float) {
+            auto phy_reg = jl::x86::PhysicalRegister(jl::x86::input_gpr_registers[count++]);
+            auto dest = function->new_register();
+            function->set_allocation(dest, phy_reg);
+
+            dests.push_back(dest);
+            srcs.push_back(reg);
+        }
+        if (is_float && reg.is_float) {
+            auto phy_reg = jl::x86::PhysicalRegister(jl::x86::input_float_registers[count++]);
+            auto dest = function->new_register();
+            function->set_allocation(dest, phy_reg);
+
+            dests.push_back(dest);
+            srcs.push_back(reg);
+        }
+    }
+}
+
+void move_function_args_to_input_regs(jl::x86::MachineFunction* function, const jl::x86::AllocationResult& allocation_result)
+{
+    for (auto& block : function->blocks()) {
+        for (auto iter = block->m_instructions.begin(); iter != block->m_instructions.end(); ++iter) {
+            auto call = dynamic_cast<jl::x86::Call*>(iter->get());
+
+            if (call == nullptr) {
+                continue;
+            }
+
+            const auto& active = allocation_result.active_at_call_sites.at(call->ret_value);
+
+            std::vector<jl::x86::VirtualRegister> active_regs;
+            std::ranges::transform(active, std::back_inserter(active_regs), [&function](const auto preg) {
+                const auto reg = jl::x86::PhysicalRegister(preg);
+                auto vreg = function->new_register(reg.is_float());
+                function->set_allocation(vreg, reg);
+                return vreg;
+            });
+
+            uint32_t float_offset_count = 0;
+            auto float_arg_count = std::ranges::count_if(call->args, [](auto&& reg) { return reg.is_float; });
+            uint32_t bytes = float_arg_count * 8;
+            uint32_t reserved = (bytes + 15) & ~15; // round up to multiple of 16
+            std::optional<jl::x86::VirtualRegister> count_reg = std::nullopt;
+
+            // xmm registers cant be pushed to the stack during push, so we will manually move them onto the stack
+            if (float_arg_count > 0) {
+                auto creg = function->new_register();
+                function->set_allocation(creg, reserved);
+
+                auto sub = std::make_unique<jl::x86::Sub>();
+                sub->dest = function->get_physical_register(jl::x86::PhysicalRegister::rsp);
+                sub->source = creg;
+                sub->is_float = false;
+                block->m_instructions.insert(iter, std::move(sub));
+
+                count_reg = creg;
+            }
+
+            // Push/Move the active registers
+            for (const auto reg : active_regs) {
+                if (reg.is_float) {
+                    auto stack = jl::x86::MemoryOperand();
+                    stack.base = function->get_physical_register(jl::x86::PhysicalRegister::rbp);
+                    stack.displacement = float_offset_count;
+                    stack.index = std::nullopt;
+                    float_offset_count += 8;
+
+                    auto dest = function->new_register();
+                    function->set_allocation(dest, stack);
+                    auto mov = std::make_unique<jl::x86::Mov>();
+                    mov->dest = dest;
+                    mov->source = reg;
+                    mov->is_float = true;
+
+                    block->m_instructions.insert(iter, std::move(mov));
+                } else {
+                    auto push = std::make_unique<jl::x86::Push>();
+                    push->value = reg;
+                    block->m_instructions.insert(iter, std::move(push));
+                }
+            }
+
+            // Pop the active registers
+            for (const auto reg : active_regs) {
+                // We will be popping only after the intr that moves the return value from the return register
+                auto insert_iter = std::next(std::next(iter));
+
+                if (reg.is_float) {
+                    float_offset_count -= 8;
+
+                    auto stack = jl::x86::MemoryOperand();
+                    stack.base = function->get_physical_register(jl::x86::PhysicalRegister::rbp);
+                    stack.displacement = float_offset_count;
+                    stack.index = std::nullopt;
+
+                    auto src = function->new_register();
+                    function->set_allocation(src, stack);
+                    auto mov = std::make_unique<jl::x86::Mov>();
+                    mov->dest = reg;
+                    mov->source = src;
+                    mov->is_float = true;
+
+                    block->m_instructions.insert(insert_iter, std::move(mov));
+                } else {
+                    auto pop = std::make_unique<jl::x86::Pop>();
+                    pop->value = reg;
+                    block->m_instructions.insert(insert_iter, std::move(pop));
+                }
+            }
+
+            if (float_arg_count > 0) {
+                auto add = std::make_unique<jl::x86::Mov>();
+                add->dest = function->get_physical_register(jl::x86::PhysicalRegister::rsp);
+                add->source = *count_reg;
+                add->is_float = false;
+
+                auto add_iter = std::next(iter, active_regs.size() + 1);
+                block->m_instructions.insert(add_iter, std::move(add));
+            }
+
+            std::println("Call: {}", call->function_name);
+            std::vector<jl::x86::VirtualRegister> srcs;
+            std::vector<jl::x86::VirtualRegister> dests;
+            collect_input_regs(srcs, dests, call->args, function, false);
+
+            for (int i = 0; i < srcs.size(); i++) {
+                auto s = std::visit(jl::x86::MachineAllocPrinter(function), *function->get_allocation(srcs[i]));
+                auto d = std::visit(jl::x86::MachineAllocPrinter(function), *function->get_allocation(dests[i]));
+                println("mov {} <- {}", d, s);
+            }
+            std::println("Generated moves: ");
+
+            auto rax = function->get_physical_register(jl::x86::PhysicalRegister::rax);
+            auto moves1 = parallel_moves(function, srcs, dests, rax, false);
+            for (auto& move : moves1) {
+                // std::println("gen = {}", mov.)
+                block->m_instructions.insert(iter, std::move(move));
+            }
+
+            srcs.clear();
+            dests.clear();
+
+            collect_input_regs(srcs, dests, call->args, function, true);
+            auto xmm15 = function->get_physical_register(jl::x86::PhysicalRegister::xmm15);
+            auto moves2 = parallel_moves(function, srcs, dests, xmm15, true);
+            for (auto& move : moves2)
+                block->m_instructions.insert(iter, std::move(move));
+        }
+    }
+}
+
+void jl::x86::pass::assign_register(jl::x86::MachineFunction* function, const AllocationResult& allocation_result)
 {
     using namespace jl;
 
-    for (auto [vreg, alloc] : allocations) {
+    for (auto [vreg, alloc] : allocation_result.allocations) {
         auto var = *function->get_variable(vreg);
         auto machine_alloc = to_machine_alloc(alloc, function, vreg, var.type()->size());
         //      std::println("vreg: {}, var: {}, alloc: {}, maachalloc: {}", vreg.to_str(), var.to_str(), alloc.to_str(),
@@ -257,7 +493,8 @@ void jl::x86::pass::assign_register(jl::x86::MachineFunction* function, Allocati
         function->set_allocation(vreg, machine_alloc);
     }
 
-    move_inputs_to_stk_if_needed(function, allocations);
+    move_function_args_to_input_regs(function, allocation_result);
+    move_inputs_to_stk_if_needed(function, allocation_result.allocations);
 
     // This ordering is important!
     rewrite_sd_instr_with_mem_as_source(function);

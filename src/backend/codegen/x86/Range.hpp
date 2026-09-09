@@ -67,6 +67,11 @@ namespace x86 {
     using LiveIntervalMap = std::unordered_map<jl::x86::VirtualRegister, Range, jl::x86::VirtualRegisterHasher>;
     using AllocationMap = std::unordered_map<jl::x86::VirtualRegister, Allocation, jl::x86::VirtualRegisterHasher>;
 
+    struct AllocationResult {
+        std::unordered_map<VirtualRegister, std::vector<PhysicalRegister::Type>, VirtualRegisterHasher> active_at_call_sites;
+        AllocationMap allocations;
+    };
+
     struct RangeCompare {
         bool operator()(const Range& a, const Range& b) const
         {
@@ -74,7 +79,7 @@ namespace x86 {
                 return a.end < b.end;
             } else if (a.start != b.start) {
                 return a.start < b.start;
-            } 
+            }
             return a.vreg.id < b.vreg.id;
         }
     };

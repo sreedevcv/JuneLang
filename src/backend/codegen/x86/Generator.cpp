@@ -110,9 +110,7 @@ void jl::x86::Generator::visit_binary_ir(ir::Binary& binary)
             generate_move_and_operation(new Div());
         } else {
             auto rax = m_out.new_register();
-            // auto rdx = m_out.new_register();
             m_out.set_allocation(rax, PhysicalRegister(PhysicalRegister::rax));
-            // m_out.set_allocation(rdx, PhysicalRegister(PhysicalRegister::rdx));
 
             auto mov = new Mov();
             mov->dest = rax;
@@ -121,8 +119,33 @@ void jl::x86::Generator::visit_binary_ir(ir::Binary& binary)
 
             auto cqo = new Cqo();
 
+            auto divisor = b;
+            if (auto machine_alloc = m_out.get_allocation(b)) {
+                auto alloc = *machine_alloc;
+                if (std::get_if<int64_t>(&alloc) != nullptr) {
+                    // we cant have the divisor be an immediate value, so we generate a mov
+                    // to store it in a register
+                    // TODO::Remove the MachineFunction::get_variable method so that we can have new_register without
+                    // a set_allocation
+
+                    divisor = m_out.new_register();
+                    m_out.set_allocation(divisor, PhysicalRegister(PhysicalRegister::rcx, false));
+
+                    auto push = new Push();
+                    push->value = divisor;
+
+                    auto mov = new Mov();
+                    mov->source = b;
+                    mov->dest = divisor;
+                    mov->is_float = false;
+
+                    m_curr_block->m_instructions.emplace_back(push);
+                    m_curr_block->m_instructions.emplace_back(mov);
+                }
+            }
+
             auto div = new Div();
-            div->source = b;
+            div->source = divisor;
             div->dest = rax; // Just to indicate to the liveness analyser that div uses and defines the rax
             div->is_float = false;
 
@@ -133,6 +156,16 @@ void jl::x86::Generator::visit_binary_ir(ir::Binary& binary)
             m_curr_block->m_instructions.emplace_back(mov);
             m_curr_block->m_instructions.emplace_back(cqo);
             m_curr_block->m_instructions.emplace_back(div);
+
+            if (auto machine_alloc = m_out.get_allocation(b)) {
+                auto alloc = *machine_alloc;
+                if (std::get_if<int64_t>(&alloc) != nullptr) {
+                    auto pop = new Pop();
+                    pop->value = divisor;
+                    m_curr_block->m_instructions.emplace_back(pop);
+                }
+            }
+
             m_curr_block->m_instructions.emplace_back(mov2);
         }
     };

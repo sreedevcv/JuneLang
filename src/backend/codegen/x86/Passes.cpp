@@ -3,6 +3,52 @@
 #include "codegen/x86/Instruction.hpp"
 #include "codegen/x86/LinearScanRegAllocator.hpp"
 #include "codegen/x86/LivenessAnalysis.hpp"
+#include "codegen/x86/MachineFunction.hpp"
+
+#include <print>
+#include <variant>
+
+jl::x86::MachineAllocPrinter::MachineAllocPrinter(jl::x86::MachineFunction* function)
+    : function(function)
+{
+}
+
+std::string jl::x86::MachineAllocPrinter::operator()(const jl::x86::PhysicalRegister& reg) const
+{
+    return reg.to_str();
+}
+
+std::string jl::x86::MachineAllocPrinter::operator()(const jl::x86::MemoryOperand& mem) const
+{
+    auto base_reg = *function->get_allocation(mem.base);
+    std::string addr = std::visit(MachineAllocPrinter(function), base_reg);
+    auto size_dir = (mem.size ? to_str(*mem.size) : "");
+
+    if (mem.index) {
+        auto index_reg = *function->get_allocation(*mem.index);
+        auto index_str = std::visit(MachineAllocPrinter(function), index_reg);
+        addr += std::to_string(mem.scale) + " * " + index_str;
+    }
+
+    if (mem.displacement != 0) {
+        addr += std::to_string(mem.displacement);
+    }
+
+    return size_dir + "[" + addr + "]";
+}
+
+std::string jl::x86::MachineAllocPrinter::operator()(const jl::x86::MemoryLabel& mem) const
+{
+    std::string s = mem.size != jl::x86::SizeDirective::NONE
+        ? to_str(mem.size)
+        : "";
+    return s + "[" + mem.label + "]";
+}
+
+std::string jl::x86::MachineAllocPrinter::operator()(const int64_t& imm) const
+{
+    return std::to_string(imm);
+}
 
 jl::x86::LiveIntervalMap jl::x86::pass::liveness_analysis(jl::x86::MachineFunction* function)
 {
@@ -56,7 +102,7 @@ void save_dx_reg_for_div_operations(jl::x86::MachineFunction* function, const st
     }
 }
 
-jl::x86::AllocationMap jl::x86::pass::linear_scan_reg_allocation(jl::x86::MachineFunction* function,
+jl::x86::AllocationResult jl::x86::pass::linear_scan_reg_allocation(jl::x86::MachineFunction* function,
     const jl::x86::LiveIntervalMap& intervals,
     uint8_t gpr_count,
     uint8_t float_count)
@@ -75,60 +121,11 @@ jl::x86::AllocationMap jl::x86::pass::linear_scan_reg_allocation(jl::x86::Machin
         allocation_map[reg] = allocations.at(range);
     }
 
-    for (auto& block : function->blocks()) {
-        for (auto iter = block->m_instructions.begin(); iter != block->m_instructions.end(); ++iter) {
-            auto call = dynamic_cast<Call*>(iter->get());
-
-            if (call == nullptr) {
-                continue;
-            }
-
-            const auto& active = allocator.m_active_at_call_sites[call->ret_value];
-
-            std::vector<VirtualRegister> active_regs;
-            std::ranges::transform(active, std::back_inserter(active_regs), [&function](const auto preg) {
-                const auto reg = PhysicalRegister(preg);
-                auto vreg = function->new_register(reg.is_float());
-                function->set_allocation(vreg, reg);
-                return vreg;
-            });
-
-            // Push the active registers
-            for (const auto reg : active_regs) {
-                auto push = std::make_unique<Push>();
-                push->value = reg;
-                block->m_instructions.insert(iter, std::move(push));
-            }
-
-            // Pop the active registers
-            for (const auto reg : active_regs) {
-                auto pop = std::make_unique<Pop>();
-                pop->value = reg;
-                // We will be popping only after the intr that moves the return value from the return register
-                auto insert_iter = std::next(std::next(iter));
-                block->m_instructions.insert(insert_iter, std::move(pop));
-            }
-
-            // Move the input arguments
-            int gpr_regs = 0;
-            int float_regs = 0;
-            for (const auto& reg : call->args) {
-                auto input_reg = reg.is_float
-                    ? input_float_registers[float_regs++]
-                    : input_gpr_registers[gpr_regs++];
-                auto input_vreg = function->new_register();
-                function->set_allocation(input_vreg, PhysicalRegister(input_reg));
-
-                auto move = std::make_unique<Mov>();
-                move->is_float = reg.is_float;
-                move->source = reg;
-                move->dest = input_vreg;
-                block->m_instructions.insert(iter, std::move(move));
-            }
-        }
-    }
-
+    // Move function inputs to registers before a call
     save_dx_reg_for_div_operations(function, allocator.m_allocated_regs);
 
-    return allocation_map;
+    return {
+        .active_at_call_sites = std::move(allocator.m_active_at_call_sites),
+        .allocations = allocation_map
+    };
 }

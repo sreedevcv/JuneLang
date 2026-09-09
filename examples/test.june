@@ -141,3 +141,27 @@ fun compare_test(a: int, b: int): int [
     if (a > b) return 3;
     return 4;
 ]
+
+fun slow_mod(a: int, b: int): int [
+    while (a >= b) [
+        a = a - b;
+    ]
+    return a;
+]
+
+fun gcd(a: int, b: int): int [
+    if (b == 0) return a;
+    return gcd(b, slow_mod(a, b));
+]
+
+fun sccp_test(): int [
+    var sum = 10;
+
+    if (sum < 3) [
+        sum = 3;
+    ] else [
+        sum = 12 * 8;
+    ]
+
+    return sum;
+]   

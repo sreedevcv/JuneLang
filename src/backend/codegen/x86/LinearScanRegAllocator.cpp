@@ -1,13 +1,16 @@
 #include "LinearScanRegAllocator.hpp"
 
 #include "Instruction.hpp"
+#include "codegen/x86/Passes.hpp"
 #include "codegen/x86/Register.hpp"
 #include <algorithm>
 #include <array>
 #include <iterator>
 #include <memory>
+#include <print>
 #include <set>
 #include <unordered_set>
+#include <variant>
 
 void jl::x86::LinearScanAllocator::expire_old_intervals(
     jl::x86::Range new_range,
@@ -160,6 +163,10 @@ std::unordered_map<jl::x86::Range, jl::x86::Allocation, jl::x86::RangeHasher> jl
         } else {
             allot_or_spill(range, vreg, free_gprs, gpr_active, jl::x86::Allocation::GPR, m_gpr_count);
         }
+    }
+
+    for (auto [reg, alloc] : m_function->m_allocations) {
+        std::println("{} to {}", reg.to_str(), std::visit(MachineAllocPrinter(m_function), alloc));
     }
 
     return allocations;
