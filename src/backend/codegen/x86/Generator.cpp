@@ -109,7 +109,7 @@ void jl::x86::Generator::visit_binary_ir(ir::Binary& binary)
         if (binary.m_is_float) {
             generate_move_and_operation(new Div());
         } else {
-            auto rax = m_out.new_register();
+            auto rax = m_out.new_register(SizeDirective::QWORD);
             m_out.set_allocation(rax, PhysicalRegister(PhysicalRegister::rax));
 
             auto mov = new Mov();
@@ -125,21 +125,13 @@ void jl::x86::Generator::visit_binary_ir(ir::Binary& binary)
                 if (std::get_if<int64_t>(&alloc) != nullptr) {
                     // we cant have the divisor be an immediate value, so we generate a mov
                     // to store it in a register
-                    // TODO::Remove the MachineFunction::get_variable method so that we can have new_register without
-                    // a set_allocation
-
-                    divisor = m_out.new_register();
-                    m_out.set_allocation(divisor, PhysicalRegister(PhysicalRegister::rcx, false));
-
-                    auto push = new Push();
-                    push->value = divisor;
+                    divisor = m_out.new_register(SizeDirective::QWORD);
 
                     auto mov = new Mov();
                     mov->source = b;
                     mov->dest = divisor;
                     mov->is_float = false;
 
-                    m_curr_block->m_instructions.emplace_back(push);
                     m_curr_block->m_instructions.emplace_back(mov);
                 }
             }
@@ -156,16 +148,6 @@ void jl::x86::Generator::visit_binary_ir(ir::Binary& binary)
             m_curr_block->m_instructions.emplace_back(mov);
             m_curr_block->m_instructions.emplace_back(cqo);
             m_curr_block->m_instructions.emplace_back(div);
-
-            if (auto machine_alloc = m_out.get_allocation(b)) {
-                auto alloc = *machine_alloc;
-                if (std::get_if<int64_t>(&alloc) != nullptr) {
-                    auto pop = new Pop();
-                    pop->value = divisor;
-                    m_curr_block->m_instructions.emplace_back(pop);
-                }
-            }
-
             m_curr_block->m_instructions.emplace_back(mov2);
         }
     };
@@ -250,8 +232,9 @@ void jl::x86::Generator::visit_call_ir(ir::Call& call)
         args.push_back(m_out.get_register(var));
     }
 
-    const auto ret = m_out.new_register();
-    const auto ret_reg = type::is_float(call.m_dest.type()) ? PhysicalRegister::xmm0 : PhysicalRegister::rax;
+    const auto is_float = type::is_float(call.m_dest.type()); 
+    const auto ret = m_out.new_register(*is_simple_move(call.m_dest.type()->size()), is_float);
+    const auto ret_reg = is_float ? PhysicalRegister::xmm0 : PhysicalRegister::rax;
     m_out.set_allocation(ret, PhysicalRegister(ret_reg));
 
     auto call_instr = new Call();
@@ -279,7 +262,7 @@ void jl::x86::Generator::visit_jump_ir(ir::Jump& jump)
 void jl::x86::Generator::visit_cond_jump_ir(ir::CondJump& jump)
 {
     auto cmp = new Cmp();
-    auto one = m_out.new_register();
+    auto one = m_out.new_register(SizeDirective::BYTE);
     m_out.set_allocation(one, static_cast<int64_t>(1));
 
     cmp->dest = m_out.get_register(jump.m_condition);
@@ -334,7 +317,7 @@ void jl::x86::Generator::visit_read_ir(ir::Read& read)
     auto mem_operand = std::get<MemoryOperand>(*m_out.get_allocation(m_out.get_register(read.m_base)));
     auto new_mem_operand = mem_operand;
 
-    auto source = m_out.new_register();
+    auto source = m_out.new_register(*is_simple_move(read.m_size));
     m_out.set_allocation(source, new_mem_operand);
 
     auto mov = new Mov();
@@ -349,7 +332,7 @@ void jl::x86::Generator::visit_write_ir(ir::Write& write)
 {
     assert(!write.m_offset.has_value());
 
-    auto dest = m_out.new_register();
+    auto dest = m_out.new_register(*is_simple_move(write.m_size));
     auto mem_operand = std::get<MemoryOperand>(*m_out.get_allocation(m_out.get_register(write.m_base)));
     auto new_mem_operand = mem_operand;
 

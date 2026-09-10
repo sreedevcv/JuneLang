@@ -7,7 +7,6 @@
 #include "codegen/x86/Register.hpp"
 
 #include <algorithm>
-#include <bit>
 #include <cassert>
 #include <cstdint>
 #include <iostream>
@@ -18,8 +17,7 @@
 
 jl::x86::MachineAlloc to_machine_alloc(jl::x86::Allocation alloc,
     jl::x86::MachineFunction* function,
-    const jl::x86::VirtualRegister& vreg,
-    uint32_t size)
+    const jl::x86::VirtualRegister& vreg)
 {
     switch (alloc.type) {
     case jl::x86::Allocation::GPR:
@@ -32,11 +30,9 @@ jl::x86::MachineAlloc to_machine_alloc(jl::x86::Allocation alloc,
         jl::x86::MemoryOperand stack_source;
         auto base_reg = function->get_physical_register(jl::x86::PhysicalRegister::rbp);
         stack_source.base = base_reg;
-        stack_source.displacement = -(alloc.value + size);
+        stack_source.displacement = -(alloc.value + *size_directive_to_int(vreg.size));
         stack_source.index = std::nullopt;
-        if (auto directive = jl::x86::is_simple_move(size)) {
-            stack_source.size = directive;
-        }
+        stack_source.size = vreg.size;
         return stack_source;
     } break;
     }
@@ -59,8 +55,8 @@ void move_inputs_to_stk_if_needed(jl::x86::MachineFunction* function, const jl::
         if (alloc.type != jl::x86::Allocation::SLOT)
             continue;
 
-        auto source = function->new_register(param.is_float);
-        auto dest = function->new_register(param.is_float);
+        auto source = function->new_register(param.size, param.is_float);
+        auto dest = function->new_register(param.size, param.is_float);
         function->set_allocation(dest, *function->get_allocation(param));
         if (param.is_float) {
             function->set_allocation(source, jl::x86::PhysicalRegister(jl::x86::input_float_registers[float_count++]));
@@ -194,7 +190,7 @@ void add_prologue_and_epilogue(jl::x86::MachineFunction* function)
     mov_instr->source = function->get_physical_register(jl::x86::PhysicalRegister::rsp);
     mov_instr->is_float = false;
 
-    auto stack_size_reg = function->new_register();
+    auto stack_size_reg = function->new_register(jl::x86::SizeDirective::NONE);
     function->set_allocation(stack_size_reg, static_cast<int64_t>(function->total_stack_space));
 
     auto sub_instr = new jl::x86::Sub();
@@ -331,7 +327,7 @@ void collect_input_regs(std::vector<jl::x86::VirtualRegister>& srcs,
     for (const auto& reg : args) {
         if (!is_float && !reg.is_float) {
             auto phy_reg = jl::x86::PhysicalRegister(jl::x86::input_gpr_registers[count++]);
-            auto dest = function->new_register();
+            auto dest = function->new_register(reg.size);
             function->set_allocation(dest, phy_reg);
 
             dests.push_back(dest);
@@ -339,7 +335,7 @@ void collect_input_regs(std::vector<jl::x86::VirtualRegister>& srcs,
         }
         if (is_float && reg.is_float) {
             auto phy_reg = jl::x86::PhysicalRegister(jl::x86::input_float_registers[count++]);
-            auto dest = function->new_register();
+            auto dest = function->new_register(reg.size);
             function->set_allocation(dest, phy_reg);
 
             dests.push_back(dest);
@@ -363,7 +359,8 @@ void move_function_args_to_input_regs(jl::x86::MachineFunction* function, const 
             std::vector<jl::x86::VirtualRegister> active_regs;
             std::ranges::transform(active, std::back_inserter(active_regs), [&function](const auto preg) {
                 const auto reg = jl::x86::PhysicalRegister(preg);
-                auto vreg = function->new_register(reg.is_float());
+                auto vreg = function->new_register(jl::x86::SizeDirective::QWORD, 
+                    reg.is_float());
                 function->set_allocation(vreg, reg);
                 return vreg;
             });
@@ -376,7 +373,7 @@ void move_function_args_to_input_regs(jl::x86::MachineFunction* function, const 
 
             // xmm registers cant be pushed to the stack during push, so we will manually move them onto the stack
             if (float_arg_count > 0) {
-                auto creg = function->new_register();
+                auto creg = function->new_register(jl::x86::SizeDirective::QWORD);
                 function->set_allocation(creg, reserved);
 
                 auto sub = std::make_unique<jl::x86::Sub>();
@@ -397,7 +394,7 @@ void move_function_args_to_input_regs(jl::x86::MachineFunction* function, const 
                     stack.index = std::nullopt;
                     float_offset_count += 8;
 
-                    auto dest = function->new_register();
+                    auto dest = function->new_register(reg.size);
                     function->set_allocation(dest, stack);
                     auto mov = std::make_unique<jl::x86::Mov>();
                     mov->dest = dest;
@@ -425,7 +422,7 @@ void move_function_args_to_input_regs(jl::x86::MachineFunction* function, const 
                     stack.displacement = float_offset_count;
                     stack.index = std::nullopt;
 
-                    auto src = function->new_register();
+                    auto src = function->new_register(reg.size);
                     function->set_allocation(src, stack);
                     auto mov = std::make_unique<jl::x86::Mov>();
                     mov->dest = reg;
@@ -486,8 +483,7 @@ void jl::x86::pass::assign_register(jl::x86::MachineFunction* function, const Al
     using namespace jl;
 
     for (auto [vreg, alloc] : allocation_result.allocations) {
-        auto var = *function->get_variable(vreg);
-        auto machine_alloc = to_machine_alloc(alloc, function, vreg, var.type()->size());
+        auto machine_alloc = to_machine_alloc(alloc, function, vreg);
         //      std::println("vreg: {}, var: {}, alloc: {}, maachalloc: {}", vreg.to_str(), var.to_str(), alloc.to_str(),
         //          std::visit(jl::x86::MachineAllocPrinter(function), machine_alloc));
         function->set_allocation(vreg, machine_alloc);

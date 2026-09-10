@@ -34,15 +34,13 @@ void jl::x86::LinearScanAllocator::expire_old_intervals(
 
 uint32_t jl::x86::LinearScanAllocator::calculate_stack_offset(const jl::x86::VirtualRegister& reg)
 {
-    const auto var = *m_function->get_variable(reg);
-    const auto alignment = var.type()->alignment();
-
+    const auto alignment = 8;
     if (m_function->total_stack_space % alignment != 0) {
         m_function->total_stack_space = ((m_function->total_stack_space + alignment - 1) / alignment) * alignment;
     }
 
     const auto offset = m_function->total_stack_space;
-    m_function->total_stack_space += var.type()->size();
+    m_function->total_stack_space += *size_directive_to_int(reg.size);
 
     return offset;
 }

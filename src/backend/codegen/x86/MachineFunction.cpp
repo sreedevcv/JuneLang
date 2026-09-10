@@ -40,11 +40,11 @@ jl::x86::MachineFunction::MachineFunction(const std::string& name, Function* fun
     total_stack_space = offset;
 
     // Assign virtual registers for pyhsical registers
-    m_physical_register_map[PhysicalRegister::rax] = new_register();
-    m_physical_register_map[PhysicalRegister::rbp] = new_register();
-    m_physical_register_map[PhysicalRegister::rsp] = new_register();
-    m_physical_register_map[PhysicalRegister::xmm0] = new_register(true);
-    m_physical_register_map[PhysicalRegister::xmm15] = new_register(true);
+    m_physical_register_map[PhysicalRegister::rax] = new_register(SizeDirective::QWORD);
+    m_physical_register_map[PhysicalRegister::rbp] = new_register(SizeDirective::QWORD);
+    m_physical_register_map[PhysicalRegister::rsp] = new_register(SizeDirective::QWORD);
+    m_physical_register_map[PhysicalRegister::xmm0] = new_register(SizeDirective::QWORD, true);
+    m_physical_register_map[PhysicalRegister::xmm15] = new_register(SizeDirective::QWORD, true);
 
     set_allocation(m_physical_register_map[PhysicalRegister::rax], PhysicalRegister(PhysicalRegister::rax));
     set_allocation(m_physical_register_map[PhysicalRegister::rbp], PhysicalRegister(PhysicalRegister::rbp));
@@ -55,16 +55,16 @@ jl::x86::MachineFunction::MachineFunction(const std::string& name, Function* fun
 
 jl::x86::MachineFunction::~MachineFunction() = default;
 
-jl::x86::VirtualRegister jl::x86::MachineFunction::new_register(bool is_float)
+jl::x86::VirtualRegister jl::x86::MachineFunction::new_register(SizeDirective size, bool is_float)
 {
-    return VirtualRegister(m_reg_count++, is_float);
+    return VirtualRegister(m_reg_count++, size, is_float);
 }
 
 jl::x86::VirtualRegister& jl::x86::MachineFunction::get_register(value::Variable var)
 {
     if (!m_register_map.contains(var)) {
-        auto reg = new_register(type::is_float(var.type()));
-        reg.size = *is_simple_move(var.type()->size());
+        const auto size = *is_simple_move(var.type()->size());
+        auto reg = new_register(size, type::is_float(var.type()));
         m_register_map[var] = std::move(reg);
     }
 
@@ -214,17 +214,6 @@ std::optional<jl::x86::MachineAlloc> jl::x86::MachineFunction::get_allocation(jl
         return std::nullopt;
     }
     return m_allocations.at(reg);
-}
-
-std::optional<jl::value::Variable> jl::x86::MachineFunction::get_variable(VirtualRegister reg) const
-{
-    for (auto& [var, vreg] : m_register_map) {
-        if (vreg.id == reg.id) {
-            return var;
-        }
-    }
-
-    return std::nullopt;
 }
 
 const std::string& jl::x86::MachineFunction::name() const

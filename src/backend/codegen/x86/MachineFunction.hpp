@@ -30,7 +30,7 @@ namespace x86 {
         MachineFunction(MachineFunction&&) noexcept = default;
         MachineFunction& operator=(MachineFunction&&) noexcept = default;
 
-        VirtualRegister new_register(bool is_float = false);
+        VirtualRegister new_register(SizeDirective size, bool is_float = false);
 
         VirtualRegister& get_register(value::Variable var);
 
@@ -57,8 +57,6 @@ namespace x86 {
         std::vector<MachineBlock*> rpo() const;
 
         std::string text() const;
-
-        std::optional<value::Variable> get_variable(VirtualRegister reg) const;
 
         const std::string& name() const;
 

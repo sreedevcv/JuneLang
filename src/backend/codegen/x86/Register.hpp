@@ -173,10 +173,10 @@ namespace x86 {
         {
         }
 
-        inline VirtualRegister(uint32_t vid, bool is_float = false)
+        inline VirtualRegister(uint32_t vid, SizeDirective size, bool is_float = false)
             : id(vid)
             , is_float(is_float)
-            , size(SizeDirective::NONE)
+            , size(size)
         {
         }
 

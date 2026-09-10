@@ -87,7 +87,7 @@ void save_dx_reg_for_div_operations(jl::x86::MachineFunction* function, const st
                 continue;
             }
 
-            auto rdx = function->new_register();
+            auto rdx = function->new_register(jl::x86::SizeDirective::QWORD);
             function->set_allocation(rdx, jl::x86::PhysicalRegister(jl::x86::PhysicalRegister::rdx));
             auto push = std::make_unique<jl::x86::Push>();
             push->value = rdx;
