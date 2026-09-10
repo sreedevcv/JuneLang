@@ -55,7 +55,8 @@ CompilationResult compile_to_assembly(std::string_view source, std::string_view 
     auto test = module.get_function(function_name);
 
     jl::opt::mem2reg(test);
-    jl::opt::sccp(test);
+    const auto [lattice_values, exec_map] = jl::opt::sccp(test);
+    jl::opt::dce(test, lattice_values, exec_map);
     jl::opt::remove_phi_nodes(test);
     std::cout << *test;
 
@@ -723,4 +724,3 @@ ret
     auto status = run_and_get_exit_code("mixed", exe_assembly);
     REQUIRE(status == 7);
 }
-

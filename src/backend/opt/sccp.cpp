@@ -22,89 +22,57 @@
 #include "ir/Write.hpp"
 #include "utils/algorithms.hpp"
 #include "value/Variable.hpp"
-#include <algorithm>
 #include <cassert>
-#include <cstddef>
-#include <cstdint>
 #include <optional>
 #include <queue>
 #include <stack>
 #include <unordered_map>
 #include <unordered_set>
 #include <utility>
-#include <vector>
 
-enum LatticeType {
-    TOP,
-    CONSTANT,
-    BOTTOM,
-};
-
-struct LatticeValue {
-    LatticeType type;
-    std::optional<jl::LiteralValue> value;
-
-    [[nodiscard]]
-    LatticeValue meet(const LatticeValue& other) const
-    {
-        // a ^ BOTTOM = BOTTOM; a >= BOTTOM
-        if (type == BOTTOM || other.type == BOTTOM) {
+jl::opt::LatticeValue jl::opt::LatticeValue::meet(const LatticeValue& other) const
+{
+    // a ^ BOTTOM = BOTTOM; a >= BOTTOM
+    if (type == BOTTOM || other.type == BOTTOM) {
+        return { BOTTOM, std::nullopt };
+    } // a ^ TOP = TOP; TOP >= a
+    else if (type == TOP) {
+        return other;
+    } else if (other.type == TOP) {
+        return *this;
+    } else {
+        // ci ^ cj = ci if ci == cj
+        if (value && other.value && *value == *other.value) {
+            return { CONSTANT, value };
+        } // ci ^ cj = BOT if ci != cj
+        else {
             return { BOTTOM, std::nullopt };
-        } // a ^ TOP = TOP; TOP >= a
-        else if (type == TOP) {
-            return other;
-        } else if (other.type == TOP) {
-            return *this;
-        } else {
-            // ci ^ cj = ci if ci == cj
-            if (value && other.value && *value == *other.value) {
-                return { CONSTANT, value };
-            } // ci ^ cj = BOT if ci != cj
-            else {
-                return { BOTTOM, std::nullopt };
-            }
-            // return { CONSTANT, std::nullopt };
         }
+        // return { CONSTANT, std::nullopt };
     }
+}
 
-    std::string to_str() const
-    {
-        std::string out = "";
-        switch (type) {
-        case TOP:
-            return "TOP";
-        case CONSTANT:
-            return "CNT[" + value->to_str() + "]";
-        case BOTTOM:
-            return "BOT";
-        default:
-            return "-";
-        }
+std::string jl::opt::LatticeValue::to_str() const
+{
+    std::string out = "";
+    switch (type) {
+    case TOP:
+        return "TOP";
+    case CONSTANT:
+        return "CNT[" + value->to_str() + "]";
+    case BOTTOM:
+        return "BOT";
+    default:
+        return "-";
     }
-};
-
-using CFGEdge = std::pair<jl::BasicBlock*, jl::BasicBlock*>;
-
-struct CFGEdgeHasher {
-    std::size_t operator()(const CFGEdge& edge) const
-    {
-        auto hash1 = std::hash<const jl::BasicBlock*> {}(edge.first);
-        auto hash2 = std::hash<const jl::BasicBlock*> {}(edge.second);
-        std::size_t seed = hash1;
-        seed ^= hash2 + 0x9e3779b9 + (seed << 6) + (seed >> 2);
-        return seed;
-    }
-};
-
-using ValueMap = std::unordered_map<jl::value::Variable, LatticeValue, jl::value::VariableHasher>;
-using ExecMap = std::unordered_map<CFGEdge, bool, CFGEdgeHasher>;
+}
 
 class IRVisitorForMeet : jl::ir::IRVisitor {
 public:
-    LatticeValue value;
-    ValueMap& value_map;
+    jl::opt::LatticeValue value;
+    jl::opt::ValueMap& value_map;
 
-    IRVisitorForMeet(ValueMap& map, LatticeValue value)
+    IRVisitorForMeet(jl::opt::ValueMap& map, jl::opt::LatticeValue value)
         : value_map(map)
         , value(value)
     {
@@ -118,24 +86,24 @@ public:
 private:
     void visit_binary_ir(jl::ir::Binary& binary)
     {
-        if (value_map[binary.m_operand_a].type == BOTTOM || value_map[binary.m_operand_b].type == BOTTOM) {
-            value = { .type = BOTTOM };
-        } else if (value_map[binary.m_operand_a].type == CONSTANT || value_map[binary.m_operand_b].type == CONSTANT) {
-            value.type = CONSTANT;
+        if (value_map[binary.m_operand_a].type == jl::opt::BOTTOM || value_map[binary.m_operand_b].type == jl::opt::BOTTOM) {
+            value = { .type = jl::opt::BOTTOM };
+        } else if (value_map[binary.m_operand_a].type == jl::opt::CONSTANT || value_map[binary.m_operand_b].type == jl::opt::CONSTANT) {
+            value.type = jl::opt::CONSTANT;
             perform_binary_airthmetic(binary);
         }
     }
 
     void visit_unary_ir(jl::ir::Unary& unary)
     {
-        if (value_map[unary.m_operand].type == CONSTANT) {
+        if (value_map[unary.m_operand].type == jl::opt::CONSTANT) {
             perform_unary_airthmetic(unary);
         }
     }
 
     void visit_init_literal_ir(jl::ir::InitLiteral& literal)
     {
-        value = { CONSTANT, literal.m_source };
+        value = { jl::opt::CONSTANT, literal.m_source };
     }
 
     void visit_type_cast_ir(jl::ir::TypeCast& type_cast)
@@ -245,10 +213,10 @@ private:
 };
 
 struct SCCPState {
-    ExecMap exec_map;
+    jl::opt::ExecMap exec_map;
     jl::Function* function;
-    ValueMap lattice_values;
-    std::queue<CFGEdge> flow_work_list;
+    jl::opt::ValueMap lattice_values;
+    std::queue<jl::opt::CFGEdge> flow_work_list;
     std::queue<jl::ir::IR*> ssa_work_list;
 
     SCCPState(jl::Function* function)
@@ -264,13 +232,13 @@ struct SCCPState {
     // Meet over the operands of phi
     void visit_phi(jl::ir::Phi* phi)
     {
-        if (lattice_values[phi->m_dest].type == BOTTOM) {
+        if (lattice_values[phi->m_dest].type == jl::opt::BOTTOM) {
             // Nothing much to do since we have already seen that this variable could hold
             // any/multiple values during runtime.
             return;
         }
 
-        LatticeValue acc = { TOP, std::nullopt };
+        jl::opt::LatticeValue acc = { jl::opt::TOP, std::nullopt };
 
         // std::println("\t-visit_phi: {}, current val: ({})", phi->to_str(), lattice_values[phi->m_dest].to_str());
 
@@ -283,7 +251,7 @@ struct SCCPState {
                 // std::println("\t\t* from exec blk: {}", lattice_values[val].to_str());
                 acc = acc.meet(lattice_values[val]);
             } else {
-                acc = acc.meet({ TOP, std::nullopt });
+                acc = acc.meet({ jl::opt::TOP, std::nullopt });
             }
         }
 
@@ -332,7 +300,7 @@ struct SCCPState {
             auto lat_val = lattice_values[jump->m_condition];
 
             switch (lat_val.type) {
-            case CONSTANT: {
+            case jl::opt::CONSTANT: {
                 bool const_val = std::get<jl::LiteralValue::bool_type>(lat_val.value->data);
                 // std::println("\t\t*CondJump - CONSTANT: selecting {} branch", const_val);
 
@@ -342,12 +310,12 @@ struct SCCPState {
                     flow_work_list.push({ ir->parent, jump->m_false_target });
                 }
             } break;
-            case BOTTOM:
+            case jl::opt::BOTTOM:
                 // std::println("\t\t*CondJump - BOTTOM: selecting both branches");
                 flow_work_list.push({ ir->parent, jump->m_true_target });
                 flow_work_list.push({ ir->parent, jump->m_false_target });
                 break;
-            case TOP:
+            case jl::opt::TOP:
                 unimplemented("no idea what to do");
                 break;
             }
@@ -356,7 +324,7 @@ struct SCCPState {
             flow_work_list.push({ ir->parent, jump->m_target });
         } else if (auto def = ir->def()) {
 
-            if (lattice_values[*def].type == BOTTOM) {
+            if (lattice_values[*def].type == jl::opt::BOTTOM) {
                 // Nothing much to do since we have already seen that this variable could hold
                 // any/multiple values during runtime.
                 return;
@@ -429,13 +397,13 @@ struct SCCPState {
 
     // Initializes all literal values with `CONSTANT`, inputs
     // and function return vales with `BOTTOM` and th rest with `TOP`
-    ValueMap init_lattice_values(jl::Function* function)
+    jl::opt::ValueMap init_lattice_values(jl::Function* function)
     {
-        ValueMap lattice_values;
+        jl::opt::ValueMap lattice_values;
 
         for (auto arg : function->args()) {
             lattice_values[arg] = {
-                .type = BOTTOM,
+                .type = jl::opt::BOTTOM,
                 .value = std::nullopt
             };
         }
@@ -444,17 +412,17 @@ struct SCCPState {
             if (auto var = ir->def()) {
                 if (auto init = dynamic_cast<jl::ir::InitLiteral*>(ir.get())) {
                     lattice_values[*var] = {
-                        .type = CONSTANT,
+                        .type = jl::opt::CONSTANT,
                         .value = init->m_source
                     };
                 } else if (dynamic_cast<jl::ir::Call*>(ir.get()) != nullptr) {
                     lattice_values[*var] = {
-                        .type = BOTTOM,
+                        .type = jl::opt::BOTTOM,
                         .value = std::nullopt,
                     };
                 } else {
                     lattice_values[*var] = {
-                        .type = TOP,
+                        .type = jl::opt::TOP,
                         .value = std::nullopt
                     };
                 }
@@ -465,9 +433,9 @@ struct SCCPState {
     }
 
     /// Traverses the CFG and assigns `false` to each edge
-    ExecMap init_cfg_edges(jl::Function* function)
+    jl::opt::ExecMap init_cfg_edges(jl::Function* function)
     {
-        ExecMap exec_map;
+        jl::opt::ExecMap exec_map;
         std::stack<jl::BasicBlock*> stk;
         std::unordered_set<jl::BasicBlock*> visited;
         stk.push(function->entry_block());
@@ -496,387 +464,9 @@ struct SCCPState {
 
         return exec_map;
     }
-
-    // Remove unexecuted blocks and all reference to them from the CFG
-    void remove_unexecuted_blocks()
-    {
-        std::vector<jl::BasicBlock*> blocks_to_be_deleted;
-        std::unordered_map<jl::BasicBlock*, uint32_t> in_edges;
-
-        for (auto& block : function->blocks()) {
-            in_edges[block.get()] = 0;
-        }
-
-        for (auto [edge, flag] : exec_map) {
-            if (flag) {
-                in_edges[edge.second] += 1;
-            }
-        }
-
-        auto predecessors = jl::algorithms::get_predecessors(function);
-
-        for (auto [block, val] : in_edges) {
-            if (val > 0) {
-                continue;
-            }
-
-            // Mark the block to be deleted later
-            blocks_to_be_deleted.push_back(block);
-
-            // If an predecessors of the block have a conditional jump to this block,
-            // then change it a unconditional jump and remove the reference this to block
-            for (auto pred : predecessors[block]) {
-                auto terminator = pred->get_terminator();
-
-                if (auto jump = dynamic_cast<jl::ir::CondJump*>(terminator)) {
-                    auto [succ1, succ2] = jl::algorithms::get_successors(pred);
-                    auto remaining_target = jump->m_true_target == block ? jump->m_false_target : jump->m_true_target;
-                    assert(remaining_target != nullptr && "atleast one live target to jump to");
-                    function->remove_ir(jump);
-                    function->set_current_block(pred);
-                    function->add_ir(jl::ir::Jump(remaining_target, jump->m_line));
-                }
-            }
-
-            // If this block is being used by a phi node, then remove the block from its
-            // list of operands
-            for (auto& blk : function->blocks()) {
-                for (auto phi : blk->phis) {
-                    auto iter = std::find_if(phi->m_opers.begin(),
-                        phi->m_opers.end(),
-                        [&block](auto&& pair) { return pair.second == block; });
-
-                    if (iter != phi->m_opers.end()) {
-                        phi->m_opers.erase(iter);
-                    }
-                }
-            }
-        }
-
-        for (auto block : blocks_to_be_deleted) {
-            // std::println("Deleting {}", block->get_name());
-            function->remove_block(block);
-        }
-    }
-
-    // Removes all defs that have a CONSTAT lattice value since
-    // we now know what its value is
-    std::unordered_map<jl::value::Variable, jl::ir::IR*> remove_constant_defs()
-    {
-        std::unordered_map<jl::value::Variable, jl::ir::IR*> to_be_removed;
-
-        constexpr auto is_used = [](jl::Function* function, jl::value::Variable def) {
-            for (auto& ir : function->irs()) {
-                if (ir->is_used(def)) {
-                    return true;
-                }
-            }
-
-            return false;
-        };
-
-        for (auto& ir : function->irs()) {
-            if (auto def = ir->def()) {
-
-                if (lattice_values[*def].type != CONSTANT) {
-                    if (is_used(function, *def)) {
-                        continue;
-                    }
-                }
-
-                to_be_removed[*def] = ir.get();
-            }
-        }
-
-        return to_be_removed;
-    }
-
-    // Add a constant literal for all uses which has a constant value
-    void add_used_constants_as_literals(std::unordered_map<jl::value::Variable, jl::ir::IR*>& to_be_removed)
-    {
-        class IRVisitorForUses : public jl::ir::IRVisitor {
-            const ValueMap& lattice_values;
-            jl::Function* function;
-            std::unordered_set<uint32_t> added;
-            std::unordered_map<jl::value::Variable, jl::ir::IR*>& to_be_removed;
-
-        public:
-            IRVisitorForUses(const ValueMap& lattice_values,
-                jl::Function* function,
-                std::unordered_map<jl::value::Variable, jl::ir::IR*>& to_be_removed)
-                : lattice_values(lattice_values)
-                , function(function)
-                , to_be_removed(to_be_removed)
-            {
-            }
-
-            std::vector<jl::ir::InitLiteral> new_literals;
-
-        private:
-            // If this variable has a constant value then add it as constant literal
-            // in our CFG
-            void add_literal_ir_if_constant(const jl::value::Variable& var)
-            {
-                // Add this only if its a constant and has not already been added
-                if (lattice_values.at(var).type == CONSTANT && !added.contains(var.id())) {
-                    // If the variable is already marked for removal then remove it from the list
-                    // Check if its a constant literal, if its not then replace it with one
-                    if (to_be_removed.contains(var)) {
-                        auto ir = to_be_removed[var];
-                        if (!dynamic_cast<jl::ir::InitLiteral*>(ir)) {
-                            // This is not constant literal so we replace this ir with a constant literal
-                            auto literal = jl::LiteralValue(*lattice_values.at(var).value);
-                            auto init_literal = new jl::ir::InitLiteral(std::move(literal), var, 0);
-                            function->irs().emplace_back(init_literal);
-                            function->replace_ir(ir, init_literal);
-                        }
-                        // Already present, but marked for deletion, so remove it from the to_be_removed list
-                        to_be_removed.erase(var);
-                    } else {
-                        // Add as a new literal
-                        auto literal = jl::LiteralValue(*lattice_values.at(var).value);
-                        new_literals.emplace_back(std::move(literal), var, 0);
-                    }
-                    added.insert(var.id());
-                }
-            }
-
-            void visit_binary_ir(jl::ir::Binary& binary)
-            {
-                add_literal_ir_if_constant(binary.m_operand_a);
-                add_literal_ir_if_constant(binary.m_operand_b);
-            }
-
-            void visit_return_ir(jl::ir::Return& ret)
-            {
-                if (ret.m_ret_val) {
-                    add_literal_ir_if_constant(*ret.m_ret_val);
-                }
-            }
-
-            void visit_call_ir(jl::ir::Call& call)
-            {
-                for (auto var : call.m_args) {
-                    add_literal_ir_if_constant(var);
-                }
-            }
-
-            void visit_cond_jump_ir(jl::ir::CondJump& jump)
-            {
-                add_literal_ir_if_constant(jump.m_condition);
-            }
-
-            void visit_unary_ir(jl::ir::Unary& unary)
-            {
-                add_literal_ir_if_constant(unary.m_dest);
-            }
-
-            void visit_allocate_list_ir(jl::ir::AllocateList& allocate)
-            {
-                add_literal_ir_if_constant(allocate.m_list);
-                add_literal_ir_if_constant(allocate.m_fat_ptr);
-            }
-
-            void visit_allocate_var_ir(jl::ir::AllocateVar& allocate)
-            {
-                add_literal_ir_if_constant(allocate.m_addr);
-            }
-
-            void visit_read_ir(jl::ir::Read& read)
-            {
-                add_literal_ir_if_constant(read.m_base);
-                if (read.m_offset) {
-                    add_literal_ir_if_constant(*read.m_offset);
-                }
-            }
-
-            void visit_write_ir(jl::ir::Write& write)
-            {
-                add_literal_ir_if_constant(write.m_base);
-                if (write.m_offset) {
-                    add_literal_ir_if_constant(*write.m_offset);
-                }
-            }
-
-            void visit_debug_print_ir(jl::ir::DebugPrint& print)
-            {
-                add_literal_ir_if_constant(print.m_val);
-            }
-
-            void visit_type_cast_ir(jl::ir::TypeCast& type_cast)
-            {
-                add_literal_ir_if_constant(type_cast.m_source);
-            }
-
-            void visit_phi(jl::ir::Phi& phi)
-            {
-                for (auto [var, block] : phi.m_opers) {
-                    add_literal_ir_if_constant(var);
-                }
-            }
-
-            void visit_move_ir(jl::ir::Move& move) { }
-            void visit_jump_ir(jl::ir::Jump& jump) { }
-            void visit_label_ir(jl::ir::Label& label) { }
-            void visit_init_literal_ir(jl::ir::InitLiteral& literal) { }
-        };
-
-        IRVisitorForUses visitor(lattice_values, function, to_be_removed);
-
-        for (auto& ir : function->irs()) {
-
-            if (auto def = ir->def()) {
-                // Only consider those instructions which have not been marked for removal
-                if (to_be_removed.contains(*def)) {
-                    continue;
-                }
-            }
-
-            ir->accept(visitor);
-        }
-
-        auto entry = function->entry_block();
-        auto terminator = entry->get_terminator();
-        function->set_current_block(entry);
-
-        for (auto literal : visitor.new_literals) {
-            auto var = literal.m_dest;
-
-            // If the variable is already marked for removal then remove it from the list
-            // Check if its a constant literal, if its not then replace it with one
-            if (to_be_removed.contains(var)) {
-                auto ir = to_be_removed[var];
-                if (!dynamic_cast<jl::ir::InitLiteral*>(ir)) {
-                    // This is not constant literal so we replace this ir with a constant literal
-                    auto literal = jl::LiteralValue(*lattice_values.at(var).value);
-                    auto init_literal = new jl::ir::InitLiteral(std::move(literal), var, 0);
-                    function->irs().emplace_back(init_literal);
-                    function->replace_ir(ir, init_literal);
-                }
-                to_be_removed.erase(var);
-            } else {
-                // Add as a new literal
-                function->add_ir_to_front(std::move(literal));
-            }
-        }
-
-        for (auto [_, ir] : to_be_removed) {
-            // std::println("Removing ir: {}", ir->to_str());
-            function->remove_ir(ir);
-        }
-    }
-    
-    // Check if any of the phi operators depend on this block
-    bool check_if_successors_depend_on(jl::BasicBlock* block) const
-    {
-        auto [left, right] = jl::algorithms::get_successors(block);
-
-        if (left != nullptr) {
-            for (auto phis: left->phis) {
-                for (auto& [var, blk]: phis->m_opers) {
-                    if (blk == block) {
-                        return true;
-                    }
-                }
-            }
-        }
-
-
-        if (right != nullptr) {
-            for (auto phis: right->phis) {
-                for (auto& [var, blk]: phis->m_opers) {
-                    if (blk == block) {
-                        return true;
-                    }
-                }
-            }
-        }
-
-        return false;
-    }
-
-    void collapse_empty_blocks()
-    {
-        auto predecessors = jl::algorithms::get_predecessors(function);
-        std::unordered_set<jl::BasicBlock*> to_be_removed;
-        std::unordered_set<jl::BasicBlock*> visited;
-        std::stack<jl::BasicBlock*> stk;
-        stk.push(function->entry_block());
-
-        while (!stk.empty()) {
-            auto block = stk.top();
-            stk.pop();
-
-            if (visited.contains(block)) {
-                continue;
-            }
-
-            visited.insert(block);
-
-            size_t instr_count = block->phis.size();
-            for (auto ir = block->head; ir != nullptr; ir = ir->next) {
-                instr_count += 1;
-            }
-
-            auto terminator = block->get_terminator();
-
-            // add the blocks to consider next
-            if (auto jmp = dynamic_cast<jl::ir::Jump*>(terminator)) {
-                stk.push(jmp->m_target);
-            } else if (auto cjmp = dynamic_cast<jl::ir::CondJump*>(terminator)) {
-                stk.push(cjmp->m_true_target);
-                stk.push(cjmp->m_false_target);
-            }
-
-            // If the block has more than 1 instruction then it should not be removed
-            if (instr_count > 1) {
-                continue;
-            }
-
-            // if the only remaining instruction is conditional jump or return, then
-            // it should not be removed
-            auto next_jump = dynamic_cast<jl::ir::Jump*>(terminator);
-            if (next_jump == nullptr) {
-                continue;
-            }
-            
-            if (check_if_successors_depend_on(block)) {
-                continue;
-            }
-         
-            // THis block only contains an unconditional jump, so we can safely
-            // remove it
-            to_be_removed.insert(block);
-
-            // Replace all references to this block from its predecessors
-            for (auto pred : predecessors[block]) {
-                if (to_be_removed.contains(pred)) {
-                    continue;
-                }
-
-                auto terminator = pred->get_terminator();
-
-                if (auto cjmp = dynamic_cast<jl::ir::CondJump*>(terminator)) {
-                    if (cjmp->m_true_target == block) {
-                        cjmp->m_true_target = next_jump->m_target;
-                    }
-                    if (cjmp->m_false_target == block) {
-                        cjmp->m_false_target = next_jump->m_target;
-                    }
-                } else if (auto jmp = dynamic_cast<jl::ir::Jump*>(terminator)) {
-                    jmp->m_target = next_jump->m_target;
-                }
-            }
-        }
-
-        for (auto block : to_be_removed) {
-            // std::println("Removing block: {}", block->get_name());
-            function->remove_block(block);
-        }
-    }
 };
 
-void jl::opt::sccp(jl::Function* function)
+std::pair<jl::opt::ValueMap, jl::opt::ExecMap> jl::opt::sccp(jl::Function* function)
 {
     SCCPState state(function);
     auto predecessors = jl::algorithms::get_predecessors(function);
@@ -926,8 +516,5 @@ void jl::opt::sccp(jl::Function* function)
         // std::println("{} -> {}: {}", edge.first->get_name(), edge.second->get_name(), flag);
     }
 
-    state.remove_unexecuted_blocks();
-    auto to_be_removed = state.remove_constant_defs();
-    state.add_used_constants_as_literals(to_be_removed);
-    state.collapse_empty_blocks();
+    return { std::move(state.lattice_values), std::move(state.exec_map) };
 }

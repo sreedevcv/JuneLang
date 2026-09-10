@@ -27,7 +27,10 @@ jl::x86::MachineFunction compile_function(jl::Module& module, std::string_view n
     jl::opt::mem2reg(func);
     std::cout << *func;
     std::println("--------------------------sccp----------------------------------");
-    jl::opt::sccp(func);
+    const auto [lattice_values, exec_map] = jl::opt::sccp(func);
+    std::cout << *func;
+    std::println("--------------------------dce----------------------------------");
+    jl::opt::dce(func, lattice_values, exec_map);
     std::cout << *func;
     std::println("-----------------------phi-removal-----------------------------------");
     jl::opt::remove_phi_nodes(func);

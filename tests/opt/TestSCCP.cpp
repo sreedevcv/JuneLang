@@ -44,7 +44,8 @@ void transform_to_ir(const char* src, jl::LiteralValue val)
     auto test = module.get_function("test");
 
     jl::opt::mem2reg(test);
-    jl::opt::sccp(test);
+    const auto [lattice_values, exec_map] = jl::opt::sccp(test);
+    jl::opt::dce(test, lattice_values, exec_map);
 
     std::unordered_map<uint32_t, jl::LiteralValue> values;
 
@@ -175,7 +176,6 @@ fun test(): int [
         jl::LiteralValue(2));
 }
 
-
 TEST_CASE("sccp - Early return dead code", "sccp")
 {
     transform_to_ir(R"(
@@ -228,4 +228,3 @@ fun test(): bool [
     )",
         jl::LiteralValue(true));
 }
-

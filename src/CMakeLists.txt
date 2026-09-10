@@ -43,6 +43,7 @@ add_library(JuneCompiler
 
     backend/opt/mem2reg.cpp
     backend/opt/sccp.cpp
+    backend/opt/dce.cpp
     backend/opt/RemovePhiNodes.cpp
 
     backend/codegen/x86/Instruction.cpp
