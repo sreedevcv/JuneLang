@@ -81,11 +81,10 @@ int main(int argc, char const* argv[])
         // auto f1 = compile_function(module, "sccp_test");
         // jl::x86::pass::to_nasm_assembly(program, &f1);
 
-        // auto f1 = compile_function(module, "slow_mod");
-        // jl::x86::pass::to_nasm_assembly(program, &f1);
-
-        auto f2 = compile_function(module, "gcd");
-        jl::x86::pass::to_nasm_assembly(program, &f2);
+        for (auto& func : module.functions()) {
+            auto f = compile_function(module, func->name());
+            jl::x86::pass::to_nasm_assembly(program, &f);
+        }
 
         if (std::count(program.data_section.cbegin(), program.data_section.cend(), '\n') <= 2) {
             program.data_section = "";

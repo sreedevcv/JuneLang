@@ -24,7 +24,7 @@ namespace x86 {
                 addr += std::to_string(scale) + " * " + index->to_str();
             }
             if (displacement != 0) {
-                addr += std::to_string(displacement);
+                addr += (displacement > 0 ? "+" : "") + std::to_string(displacement);
             }
             return size_dir + "[" + addr + "]";
         }
@@ -67,15 +67,20 @@ namespace x86 {
             return std::nullopt;
         }
     }
-    
+
     inline std::optional<uint8_t> size_directive_to_int(SizeDirective dir)
     {
         switch (dir) {
-            case SizeDirective::QWORD: return 8;
-            case SizeDirective::DWORD: return 4;
-            case SizeDirective::WORD: return 2;
-            case SizeDirective::BYTE: return 1;
-            case SizeDirective::NONE: return std::nullopt;
+        case SizeDirective::QWORD:
+            return 8;
+        case SizeDirective::DWORD:
+            return 4;
+        case SizeDirective::WORD:
+            return 2;
+        case SizeDirective::BYTE:
+            return 1;
+        case SizeDirective::NONE:
+            return std::nullopt;
         }
     }
 

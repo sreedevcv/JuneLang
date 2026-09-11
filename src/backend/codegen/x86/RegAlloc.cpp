@@ -149,8 +149,8 @@ void rewrite_sd_instr_with_mem_as_source(jl::x86::MachineFunction* function)
 // Rewrite move instructions where both source and destination is a memory operand
 void rewrite_mem_to_mem_moves(jl::x86::MachineFunction* function)
 {
-    auto gpr_scratch = function->get_physical_register(jl::x86::PhysicalRegister::rax);
-    auto float_scratch = function->get_physical_register(jl::x86::PhysicalRegister::xmm15);
+    auto gpr_scratch = jl::x86::PhysicalRegister::rax;
+    auto float_scratch = jl::x86::PhysicalRegister::xmm15;
 
     for (auto& block : function->blocks()) {
         for (auto iter = block->m_instructions.begin(); iter != block->m_instructions.end(); ++iter) {
@@ -165,14 +165,19 @@ void rewrite_mem_to_mem_moves(jl::x86::MachineFunction* function)
             if (!is_memory_operand(dest) || !is_memory_operand(source))
                 continue;
 
+            assert(binary->source.size == binary->dest.size);
+
+            auto scratch = function->new_register(binary->source.size);
+            function->set_allocation(scratch, jl::x86::PhysicalRegister(binary->is_float ? float_scratch : gpr_scratch, binary->source.size == jl::x86::SizeDirective::BYTE));
+
             // insert a mov from source to scratch register
             auto new_move = new jl::x86::Mov();
-            new_move->dest = binary->is_float ? float_scratch : gpr_scratch;
+            new_move->dest = scratch;
             new_move->source = binary->source;
             new_move->is_float = binary->is_float;
             block->m_instructions.insert(iter, std::unique_ptr<jl::x86::Instruction> { new_move });
             // Change the source in the existing instruction to the scratch register
-            binary->source = binary->is_float ? float_scratch : gpr_scratch;
+            binary->source = scratch;
         }
     }
 }
@@ -359,7 +364,7 @@ void move_function_args_to_input_regs(jl::x86::MachineFunction* function, const 
             std::vector<jl::x86::VirtualRegister> active_regs;
             std::ranges::transform(active, std::back_inserter(active_regs), [&function](const auto preg) {
                 const auto reg = jl::x86::PhysicalRegister(preg);
-                auto vreg = function->new_register(jl::x86::SizeDirective::QWORD, 
+                auto vreg = function->new_register(jl::x86::SizeDirective::QWORD,
                     reg.is_float());
                 function->set_allocation(vreg, reg);
                 return vreg;
@@ -409,18 +414,19 @@ void move_function_args_to_input_regs(jl::x86::MachineFunction* function, const 
                 }
             }
 
+            float_offset_count = 0;
+
             // Pop the active registers
             for (const auto reg : active_regs) {
                 // We will be popping only after the intr that moves the return value from the return register
                 auto insert_iter = std::next(std::next(iter));
 
                 if (reg.is_float) {
-                    float_offset_count -= 8;
-
                     auto stack = jl::x86::MemoryOperand();
                     stack.base = function->get_physical_register(jl::x86::PhysicalRegister::rbp);
                     stack.displacement = float_offset_count;
                     stack.index = std::nullopt;
+                    float_offset_count += 8;
 
                     auto src = function->new_register(reg.size);
                     function->set_allocation(src, stack);

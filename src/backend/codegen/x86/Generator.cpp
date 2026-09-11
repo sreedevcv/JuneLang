@@ -4,7 +4,10 @@
 #include "LiteralValue.hpp"
 #include "Utils.hpp"
 #include "codegen/x86/Instruction.hpp"
+#include "codegen/x86/MachineAlloc.hpp"
 #include "codegen/x86/MachineBlock.hpp"
+#include "codegen/x86/MachineFunction.hpp"
+#include "codegen/x86/Operand.hpp"
 #include "codegen/x86/Register.hpp"
 #include "ir/Binary.hpp"
 #include "ir/Call.hpp"
@@ -18,9 +21,11 @@
 #include "types/Type.hpp"
 
 #include <cassert>
+#include <cstdint>
 #include <memory>
 #include <optional>
 #include <utility>
+#include <variant>
 
 jl::x86::Generator::Generator(jl::Function* function)
     : m_function(function)
@@ -208,11 +213,13 @@ void jl::x86::Generator::visit_move_ir(ir::Move& move)
 void jl::x86::Generator::visit_return_ir(ir::Return& ret)
 {
     if (ret.m_ret_val) {
-        auto dest_reg = type::is_float(ret.m_ret_val->type())
-            ? m_out.get_physical_register(PhysicalRegister::xmm0)
-            : m_out.get_physical_register(PhysicalRegister::rax);
-        auto mov = new Mov();
+        auto reg = type::is_float(ret.m_ret_val->type())
+            ? PhysicalRegister::xmm0
+            : PhysicalRegister::rax;
+        auto dest_reg = m_out.new_register(*is_simple_move(ret.m_ret_val->type()->size()));
+        m_out.set_allocation(dest_reg, jl::x86::PhysicalRegister(reg, ret.m_ret_val->type()->size() == 1));
 
+        auto mov = new Mov();
         mov->dest = dest_reg;
         mov->source = m_out.get_register(*ret.m_ret_val);
         mov->is_float = false;
@@ -232,7 +239,7 @@ void jl::x86::Generator::visit_call_ir(ir::Call& call)
         args.push_back(m_out.get_register(var));
     }
 
-    const auto is_float = type::is_float(call.m_dest.type()); 
+    const auto is_float = type::is_float(call.m_dest.type());
     const auto ret = m_out.new_register(*is_simple_move(call.m_dest.type()->size()), is_float);
     const auto ret_reg = is_float ? PhysicalRegister::xmm0 : PhysicalRegister::rax;
     m_out.set_allocation(ret, PhysicalRegister(ret_reg));
@@ -350,12 +357,37 @@ void jl::x86::Generator::visit_init_literal_ir(ir::InitLiteral& literal)
 {
     auto literal_reg = m_out.get_register(literal.m_dest);
 
-    if (auto num = std::get_if<LiteralValue::int_type>(&literal.m_source.data)) {
-        m_out.set_allocation(literal_reg, *num);
-    } else if (auto num = std::get_if<LiteralValue::float_type>(&literal.m_source.data)) {
-        auto label = m_out.add_float_to_data_section(*num);
-        m_out.set_allocation(literal_reg, label);
-    }
+    struct LiteralValueVisitor {
+        MachineFunction& function;
+
+        LiteralValueVisitor(MachineFunction& function)
+            : function(function)
+        {
+        }
+
+        MachineAlloc operator()(int64_t val) const
+        {
+            return val;
+        }
+
+        MachineAlloc operator()(double val) const
+        {
+            return function.add_float_to_data_section(val);
+        }
+
+        MachineAlloc operator()(bool val) const
+        {
+            return static_cast<int64_t>(val ? 1 : 0);
+        }
+
+        MachineAlloc operator()(char val) const
+        {
+            return static_cast<int64_t>(val);
+        }
+    };
+
+    const auto alloc = std::visit(LiteralValueVisitor(m_out), literal.m_source.data);
+    m_out.set_allocation(literal_reg, alloc);
 }
 
 void jl::x86::Generator::visit_debug_print_ir(ir::DebugPrint& print)

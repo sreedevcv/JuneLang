@@ -74,12 +74,15 @@ public:
         } else {
             new_ir->prev = point->prev;
             new_ir->next = point;
-            point->prev->next = new_ir;
+            if (point->prev != nullptr) {
+                point->prev->next = new_ir;
+            }
             point->prev = new_ir;
         }
 
         return static_cast<T*>(m_irs.back().get());
     }
+
     template <typename T>
     T* add_ir_after(T&& ir, ir::IR* point)
     {
@@ -101,6 +104,7 @@ public:
 
         return static_cast<T*>(m_irs.back().get());
     }
+
     // Specialization for AllocateVar instrs so that they are placed in the entry block
     void add_ir(ir::AllocateVar alloca)
     {

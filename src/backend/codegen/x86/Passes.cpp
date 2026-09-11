@@ -31,7 +31,7 @@ std::string jl::x86::MachineAllocPrinter::operator()(const jl::x86::MemoryOperan
     }
 
     if (mem.displacement != 0) {
-        addr += std::to_string(mem.displacement);
+        addr += (mem.displacement > 0 ? "+" : "") + std::to_string(mem.displacement);
     }
 
     return size_dir + "[" + addr + "]";
