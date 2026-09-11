@@ -5,9 +5,6 @@
 #include "codegen/x86/LivenessAnalysis.hpp"
 #include "codegen/x86/MachineFunction.hpp"
 
-#include <print>
-#include <variant>
-
 jl::x86::MachineAllocPrinter::MachineAllocPrinter(jl::x86::MachineFunction* function)
     : function(function)
 {
@@ -55,12 +52,12 @@ jl::x86::LiveIntervalMap jl::x86::pass::liveness_analysis(jl::x86::MachineFuncti
     LivenessAnalysis la(function);
     auto intervals = la.calculate_live_intervals();
 
-    std::println("{}", function->to_str());
-
-    for (const auto& [reg, interval] : intervals) {
-        auto already_allocated = function->get_allocation(reg) ? "(already allocated)" : "";
-        std::println("{}: [{}, {}] {}", reg.to_str(), interval.start, interval.end, already_allocated);
-    }
+    // std::println("{}", function->to_str());
+    //
+    // for (const auto& [reg, interval] : intervals) {
+    // auto already_allocated = function->get_allocation(reg) ? "(already allocated)" : "";
+    // std::println("{}: [{}, {}] {}", reg.to_str(), interval.start, interval.end, already_allocated);
+    // }
 
     return intervals;
 }
@@ -111,9 +108,9 @@ jl::x86::AllocationResult jl::x86::pass::linear_scan_reg_allocation(jl::x86::Mac
     const auto allocations = allocator.run();
     jl::x86::AllocationMap allocation_map;
 
-    for (auto& [range, allocation] : allocations) {
-        std::println("[{}, {}] -> {}", range.start, range.end, allocation.to_str());
-    }
+    // for (auto& [range, allocation] : allocations) {
+    // std::println("[{}, {}] -> {}", range.start, range.end, allocation.to_str());
+    // }
 
     for (auto [reg, range] : intervals) {
         if (function->get_allocation(reg) && !is_an_input_param(function, reg))

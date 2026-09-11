@@ -539,3 +539,25 @@ void jl::x86::Cqo::accept(jl::x86::InstructionVisitor& visitor)
 {
     visitor.visit(*this);
 }
+
+//============================JUMP-NOT-EQUAL=============================
+
+std::string jl::x86::JumpNotEqual::to_str() const
+{
+    return "jne " + target->m_name;
+}
+
+std::vector<jl::x86::VirtualRegister> jl::x86::JumpNotEqual::defs() const
+{
+    return {};
+}
+
+std::vector<jl::x86::VirtualRegister> jl::x86::JumpNotEqual::uses() const
+{
+    return {};
+}
+
+void jl::x86::JumpNotEqual::accept(jl::x86::InstructionVisitor& visitor)
+{
+    visitor.visit(*this);
+}

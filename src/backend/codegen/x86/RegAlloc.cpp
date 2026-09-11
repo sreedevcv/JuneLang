@@ -453,22 +453,13 @@ void move_function_args_to_input_regs(jl::x86::MachineFunction* function, const 
                 block->m_instructions.insert(add_iter, std::move(add));
             }
 
-            std::println("Call: {}", call->function_name);
             std::vector<jl::x86::VirtualRegister> srcs;
             std::vector<jl::x86::VirtualRegister> dests;
             collect_input_regs(srcs, dests, call->args, function, false);
 
-            for (int i = 0; i < srcs.size(); i++) {
-                auto s = std::visit(jl::x86::MachineAllocPrinter(function), *function->get_allocation(srcs[i]));
-                auto d = std::visit(jl::x86::MachineAllocPrinter(function), *function->get_allocation(dests[i]));
-                println("mov {} <- {}", d, s);
-            }
-            std::println("Generated moves: ");
-
             auto rax = function->get_physical_register(jl::x86::PhysicalRegister::rax);
             auto moves1 = parallel_moves(function, srcs, dests, rax, false);
             for (auto& move : moves1) {
-                // std::println("gen = {}", mov.)
                 block->m_instructions.insert(iter, std::move(move));
             }
 
@@ -478,8 +469,9 @@ void move_function_args_to_input_regs(jl::x86::MachineFunction* function, const 
             collect_input_regs(srcs, dests, call->args, function, true);
             auto xmm15 = function->get_physical_register(jl::x86::PhysicalRegister::xmm15);
             auto moves2 = parallel_moves(function, srcs, dests, xmm15, true);
-            for (auto& move : moves2)
+            for (auto& move : moves2) {
                 block->m_instructions.insert(iter, std::move(move));
+            }
         }
     }
 }

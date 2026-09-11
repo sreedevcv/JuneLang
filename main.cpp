@@ -22,21 +22,20 @@ jl::x86::MachineFunction compile_function(jl::Module& module, std::string_view n
 {
     auto func = module.get_function(name);
 
-    std::cout << *func;
-    std::println("------------------------mem2reg-----------------------------------");
+    // std::cout << *func;
+    // std::println("------------------------mem2reg-----------------------------------");
     jl::opt::mem2reg(func);
-    std::cout << *func;
-    std::println("--------------------------sccp----------------------------------");
+    // std::cout << *func;
+    // std::println("--------------------------sccp----------------------------------");
     const auto [lattice_values, exec_map] = jl::opt::sccp(func);
-    std::cout << *func;
-    std::println("--------------------------dce----------------------------------");
+    // std::cout << *func;
+    // std::println("--------------------------dce----------------------------------");
     jl::opt::dce(func, lattice_values, exec_map);
-    std::cout << *func;
-    std::println("-----------------------phi-removal-----------------------------------");
+    // std::cout << *func;
+    // std::println("-----------------------phi-removal-----------------------------------");
     jl::opt::remove_phi_nodes(func);
-    std::cout << *func;
     std::println("----------------------------final-------------------------------");
-    std::fflush(stdout);
+    std::cout << *func;
 
     jl::x86::Generator x86gen(func);
     auto x86func = x86gen.generate();

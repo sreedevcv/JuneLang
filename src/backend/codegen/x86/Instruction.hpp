@@ -26,6 +26,7 @@ namespace x86 {
     struct Pop;
     struct Jump;
     struct JumpEqual;
+    struct JumpNotEqual;
     struct Cmp;
     struct Lea;
     struct Binary;
@@ -68,6 +69,7 @@ namespace x86 {
         virtual void visit(Pop& inst) = 0;
         virtual void visit(Jump& inst) = 0;
         virtual void visit(JumpEqual& inst) = 0;
+        virtual void visit(JumpNotEqual& inst) = 0;
         virtual void visit(Cmp& inst) = 0;
         virtual void visit(Lea& inst) = 0;
         virtual void visit(Call& inst) = 0;
@@ -389,6 +391,18 @@ namespace x86 {
 
     struct Cqo : public Instruction {
         ~Cqo() = default;
+
+        std::string to_str() const override;
+
+        std::vector<VirtualRegister> defs() const override;
+
+        std::vector<VirtualRegister> uses() const override;
+
+        void accept(InstructionVisitor& visitor) override;
+    };
+
+    struct JumpNotEqual : public Jump {
+        ~JumpNotEqual() = default;
 
         std::string to_str() const override;
 

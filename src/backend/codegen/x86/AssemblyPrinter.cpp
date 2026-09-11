@@ -3,6 +3,7 @@
 #include "Instruction.hpp"
 #include "codegen/x86/Register.hpp"
 
+#include <cassert>
 #include <sstream>
 
 struct InstrPrinter : jl::x86::InstructionVisitor {
@@ -27,7 +28,10 @@ struct InstrPrinter : jl::x86::InstructionVisitor {
 
     bool is_xmm_reg(const jl::x86::VirtualRegister& vreg) const
     {
+        assert(function->get_allocation(vreg) != std::nullopt);
+
         auto alloc = *function->get_allocation(vreg);
+
         if (auto preg = std::get_if<jl::x86::PhysicalRegister>(&alloc)) {
             return preg->is_float();
         }
@@ -126,6 +130,11 @@ struct InstrPrinter : jl::x86::InstructionVisitor {
         out << "je " << inst.target->m_name;
     }
 
+    void visit(jl::x86::JumpNotEqual& inst)
+    {
+        out << "jne " << inst.target->m_name;
+    }
+
     void visit(jl::x86::Cmp& inst)
     {
         out << (inst.is_float ? "ucomisd " : "cmp ")
@@ -200,9 +209,9 @@ struct InstrPrinter : jl::x86::InstructionVisitor {
 
 void jl::x86::pass::to_nasm_assembly(jl::x86::pass::AssemblyProgram& program, MachineFunction* function)
 {
-    for (auto [vreg, alloc] : function->m_allocations) {
-        std::println("{} -> {}", vreg.to_str(), std::visit(MachineAllocPrinter(function), alloc));
-    }
+    //    for (auto [vreg, alloc] : function->m_allocations) {
+    //        std::println("{} -> {}", vreg.to_str(), std::visit(MachineAllocPrinter(function), alloc));
+    //    }
 
     std::stringstream out;
     out << "\n";
