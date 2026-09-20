@@ -17,7 +17,7 @@ add_library(JuneCompiler
     backend/LiteralValue.cpp
     backend/Module.cpp
     backend/Function.cpp
-    backend/IRGen_v2.cpp
+    backend/IRGen.cpp
     # backend/RegisterAllocator.cpp
     backend/ir/IR.cpp
     backend/ir/Move.cpp

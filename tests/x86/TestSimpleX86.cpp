@@ -1,5 +1,5 @@
 #include "ErrorHandler.hpp"
-#include "IRGen_v2.hpp"
+#include "IRGen.hpp"
 #include "Lexer.hpp"
 #include "Parser.hpp"
 #include "Runner.hpp"

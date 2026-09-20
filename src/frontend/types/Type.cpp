@@ -7,7 +7,7 @@
 #include <llvm/Support/Casting.h>
 #include <string>
 
-llvm::Value* jl::type::Type::llvm_default_value(llvm::LLVMContext& context) const
+llvm::Value* jl::type::Type::llvm_default_value(llvm::LLVMContext&) const
 {
     return nullptr;
 }
@@ -137,7 +137,7 @@ uint32_t jl::type::Pointer::alignment() const
     return 8;
 }
 
-llvm::Type* jl::type::Pointer::llvm_type(llvm::LLVMContext& context) const
+llvm::Type* jl::type::Pointer::llvm_type(llvm::LLVMContext&) const
 {
     unimplemented();
     return nullptr;
@@ -176,7 +176,7 @@ uint32_t jl::type::Func::alignment() const
     return 8;
 }
 
-llvm::Type* jl::type::Func::llvm_type(llvm::LLVMContext& context) const
+llvm::Type* jl::type::Func::llvm_type(llvm::LLVMContext&) const
 {
     unimplemented();
     return nullptr;

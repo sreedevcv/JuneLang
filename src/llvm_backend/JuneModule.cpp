@@ -43,7 +43,7 @@ jl::JuneModule::JuneModule(const std::string& file_name)
     }
 
     auto target_machine = target->createTargetMachine(
-        target_triple.getTriple(),
+        target_triple,
         "generic",
         "",
         llvm::TargetOptions {},
