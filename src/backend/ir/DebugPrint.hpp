@@ -31,8 +31,8 @@ namespace ir {
         std::optional<jl::value::Variable> def() override;
 
         value::Variable m_val;
-        type::Builtin::Primitive m_primitive;
         bool m_is_list;
+        type::Builtin::Primitive m_primitive;
         uint32_t m_list_elem_size;
     };
 }

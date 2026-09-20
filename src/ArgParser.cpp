@@ -50,7 +50,7 @@ std::optional<jl::ArgParser::Params> jl::ArgParser::parse()
                 }
             } else {
                 // std::println("short {}", &arg[1]);
-                for (int i = 1; i < strlen(arg); i++) {
+                for (uint32_t i = 1; i < strlen(arg); i++) {
                     if (m_short_flags.contains(arg[i])) {
                         options.insert(m_short_flags.at(arg[i]));
                     } else {

@@ -315,7 +315,6 @@ std::any jl::IRGenv2::visit_jlist_expr(JList* expr)
     const auto list_type = dynamic_cast<const type::List*>(expr->m_type);
     const auto elem_count = expr->m_items.size() + expr->m_extra_item_count.value_or(0);
     const auto elem_size = list_type->m_elem_type->size();
-    const auto total_size = elem_count * elem_size;
     const auto ptr_var = m_block->create_varaible(list_type);
     const auto list_var = m_block->create_varaible(list_type);
     auto allocate_ir = ir::AllocateList(ptr_var, list_var, elem_size, elem_count, expr->m_line);
@@ -371,28 +370,28 @@ std::any jl::IRGenv2::visit_index_set_expr(IndexSet* expr)
     return src_var;
 }
 
-std::any jl::IRGenv2::visit_type_cast_expr(TypeCast* expr)
+std::any jl::IRGenv2::visit_type_cast_expr(TypeCast*)
 {
     unimplemented("IRGenv2");
     return {};
 }
 
-std::any jl::IRGenv2::visit_get_expr(Get* expr)
+std::any jl::IRGenv2::visit_get_expr(Get*)
 {
     unimplemented("IRGenv2");
     return {};
 }
-std::any jl::IRGenv2::visit_set_expr(Set* expr)
+std::any jl::IRGenv2::visit_set_expr(Set*)
 {
     unimplemented("IRGenv2");
     return {};
 }
-std::any jl::IRGenv2::visit_this_expr(This* expr)
+std::any jl::IRGenv2::visit_this_expr(This*)
 {
     unimplemented("IRGenv2");
     return {};
 }
-std::any jl::IRGenv2::visit_super_expr(Super* expr)
+std::any jl::IRGenv2::visit_super_expr(Super*)
 {
     unimplemented("IRGenv2");
     return {};
@@ -521,8 +520,6 @@ std::any jl::IRGenv2::visit_func_stmt(FuncStmt* stmt)
     const auto var = m_block->create_named_variable(stmt->m_name.get_lexeme(), stmt->m_type);
     m_func_vars.insert({ var, stmt->m_name.get_lexeme() });
 
-    // Upcast unique ptr to Func from Type
-    auto type = static_cast<const type::Func*>(stmt->m_type);
     // Set up new context
     auto current_function = m_module.current_function();
     auto function = m_module.create_function(stmt->m_name.get_lexeme(), stmt->m_type);
@@ -572,22 +569,22 @@ std::any jl::IRGenv2::visit_return_stmt(ReturnStmt* stmt)
     m_module.current_function()->add_ir<ir::Return>(ret_val, stmt->m_line);
     return {};
 }
-std::any jl::IRGenv2::visit_class_stmt(ClassStmt* stmt)
+std::any jl::IRGenv2::visit_class_stmt(ClassStmt*)
 {
     unimplemented("IRGenv2");
     return {};
 }
-std::any jl::IRGenv2::visit_for_each_stmt(ForEachStmt* stmt)
+std::any jl::IRGenv2::visit_for_each_stmt(ForEachStmt*)
 {
     unimplemented("IRGenv2");
     return {};
 }
-std::any jl::IRGenv2::visit_break_stmt(BreakStmt* stmt)
+std::any jl::IRGenv2::visit_break_stmt(BreakStmt*)
 {
     unimplemented("IRGenv2");
     return {};
 }
-std::any jl::IRGenv2::visit_extern_stmt(ExternStmt* stmt)
+std::any jl::IRGenv2::visit_extern_stmt(ExternStmt*)
 {
     unimplemented("IRGenv2");
     return {};

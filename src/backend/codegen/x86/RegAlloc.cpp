@@ -48,7 +48,7 @@ void move_inputs_to_stk_if_needed(jl::x86::MachineFunction* function, const jl::
     int float_count = 0;
     int gpr_count = 0;
 
-    for (int i = 0; i < function->inputs().size(); i++) {
+    for (uint32_t i = 0; i < function->inputs().size(); i++) {
         auto param = function->inputs()[i];
         const auto& alloc = allocations.at(param);
 

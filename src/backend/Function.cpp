@@ -22,6 +22,7 @@ jl::BasicBlock* jl::Function::new_block(std::string_view name)
             .name = { name.begin(), name.end() },
             .idx = m_blocks.size(),
             .parent = this,
+            .phis = {},
         }));
 
     return m_blocks.back().get();
@@ -121,7 +122,7 @@ std::ostream& jl::operator<<(std::ostream& out, Function& function)
         out << function.m_input_args.front().to_str();
     }
 
-    for (int i = 1; i < function.m_input_args.size(); i++) {
+    for (uint32_t i = 1; i < function.m_input_args.size(); i++) {
         out << ", " << function.m_input_args[i].to_str();
     }
 

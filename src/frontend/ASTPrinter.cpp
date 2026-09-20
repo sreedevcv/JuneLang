@@ -151,10 +151,8 @@ std::any jl::ASTPrinter::visit_literal_expr(Literal* expr)
     case Type::JNULL:
         stream << "null" << '\n';
         return {};
-    default:
-        unimplemented();
-        break;
     }
+    return {};
 }
 
 std::any jl::ASTPrinter::visit_logical_expr(Logical* expr)
@@ -263,11 +261,31 @@ std::any jl::ASTPrinter::visit_index_set_expr(IndexSet* expr)
     return {};
 }
 
-std::any jl::ASTPrinter::visit_get_expr(Get* expr) { return {}; }
-std::any jl::ASTPrinter::visit_set_expr(Set* expr) { return {}; }
-std::any jl::ASTPrinter::visit_this_expr(This* expr) { return {}; }
-std::any jl::ASTPrinter::visit_super_expr(Super* expr) { return {}; }
-std::any jl::ASTPrinter::visit_type_cast_expr(TypeCast* expr) { return {}; }
+std::any jl::ASTPrinter::visit_get_expr(Get*)
+{
+    unimplemented();
+    return {};
+}
+std::any jl::ASTPrinter::visit_set_expr(Set*)
+{
+    unimplemented();
+    return {};
+}
+std::any jl::ASTPrinter::visit_this_expr(This*)
+{
+    unimplemented();
+    return {};
+}
+std::any jl::ASTPrinter::visit_super_expr(Super*)
+{
+    unimplemented();
+    return {};
+}
+std::any jl::ASTPrinter::visit_type_cast_expr(TypeCast*)
+{
+    unimplemented();
+    return {};
+}
 
 // -----------------------------------STMT---------------------------------
 
@@ -295,7 +313,7 @@ std::any jl::ASTPrinter::visit_var_stmt(VarStmt* stmt)
     return {};
 }
 
-std::any jl::ASTPrinter::visit_empty_stmt(EmptyStmt* stmt)
+std::any jl::ASTPrinter::visit_empty_stmt(EmptyStmt*)
 {
     spacer();
     stream << "EmptyStmt: {\n";
@@ -408,7 +426,7 @@ std::any jl::ASTPrinter::visit_print_stmt(PrintStmt* stmt)
     return {};
 }
 
-std::any jl::ASTPrinter::visit_class_stmt(ClassStmt* stmt) { return {}; }
-std::any jl::ASTPrinter::visit_for_each_stmt(ForEachStmt* stmt) { return {}; }
-std::any jl::ASTPrinter::visit_break_stmt(BreakStmt* stmt) { return {}; }
-std::any jl::ASTPrinter::visit_extern_stmt(ExternStmt* stmt) { return {}; }
+std::any jl::ASTPrinter::visit_class_stmt(ClassStmt*) { return {}; }
+std::any jl::ASTPrinter::visit_for_each_stmt(ForEachStmt*) { return {}; }
+std::any jl::ASTPrinter::visit_break_stmt(BreakStmt*) { return {}; }
+std::any jl::ASTPrinter::visit_extern_stmt(ExternStmt*) { return {}; }

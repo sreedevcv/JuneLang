@@ -40,7 +40,6 @@ void remove_unexecuted_blocks(jl::Function* function, const jl::opt::ExecMap& ex
             auto terminator = pred->get_terminator();
 
             if (auto jump = dynamic_cast<jl::ir::CondJump*>(terminator)) {
-                auto [succ1, succ2] = jl::algorithms::get_successors(pred);
                 auto remaining_target = jump->m_true_target == block ? jump->m_false_target : jump->m_true_target;
                 assert(remaining_target != nullptr && "atleast one live target to jump to");
                 function->remove_ir(jump);
@@ -156,7 +155,6 @@ void add_used_constants_as_literals(std::unordered_map<jl::value::Variable, jl::
     }
 
     auto entry = function->entry_block();
-    auto terminator = entry->get_terminator();
     function->set_current_block(entry);
 
     for (auto literal : new_literals) {

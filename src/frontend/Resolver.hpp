@@ -45,7 +45,7 @@ private:
 
     void resolve(Stmt* statement);
     void resolve(Expr* expression);
-    void resolve_local(Expr* expr, Token& name);
+    void resolve_local(Token& name);
     void resolve_function(FuncStmt* stmt, FunctionType function_type);
     void begin_scope();
     void end_scope();

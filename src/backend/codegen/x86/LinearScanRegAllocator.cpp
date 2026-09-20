@@ -97,11 +97,11 @@ jl::x86::LinearScanAllocator::LinearScanAllocator(jl::x86::MachineFunction* func
     , m_gpr_count(gpr_count)
     , m_float_count(float_count)
 {
-    for (int i = 0; i < gpr_count; i++) {
+    for (uint32_t i = 0; i < gpr_count; i++) {
         free_gprs.insert(gpr_allocatable_regs[i]);
     }
 
-    for (int i = 0; i < float_count; i++) {
+    for (uint32_t i = 0; i < float_count; i++) {
         free_floats.insert(float_allocatable_regs[i]);
     }
 

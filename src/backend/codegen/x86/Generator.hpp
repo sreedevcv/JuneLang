@@ -44,8 +44,6 @@ namespace x86 {
 
         void visit_unary_ir(ir::Unary& unary) override;
 
-        void visit_label_ir(ir::Label& label) override;
-
         void visit_allocate_list_ir(ir::AllocateList& allocate) override;
 
         void visit_allocate_var_ir(ir::AllocateVar& allocate) override;

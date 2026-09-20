@@ -105,7 +105,7 @@ struct InstrPrinter : jl::x86::InstructionVisitor {
         out << "sete " << print_reg(inst.reg);
     }
 
-    void visit(jl::x86::Return& inst)
+    void visit(jl::x86::Return&)
     {
         out << "ret";
     }
@@ -201,7 +201,7 @@ struct InstrPrinter : jl::x86::InstructionVisitor {
         }
     }
 
-    void visit(jl::x86::Cqo& inst)
+    void visit(jl::x86::Cqo&)
     {
         out << "cqo";
     }

@@ -19,7 +19,7 @@ void jl::ir::AllocateVar::accept(IRVisitor& visitor)
     visitor.visit_allocate_var_ir(*this);
 }
 
-bool jl::ir::AllocateVar::is_used(value::Variable var)
+bool jl::ir::AllocateVar::is_used(value::Variable)
 {
     return false;
 }

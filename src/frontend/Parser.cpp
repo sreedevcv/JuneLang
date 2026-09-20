@@ -513,7 +513,6 @@ std::unique_ptr<jl::Stmt> jl::Parser::var_declaration(bool for_each)
 {
     Token& name = consume(Token::IDENTIFIER, "Expected a variable name");
     std::optional<std::unique_ptr<Expr>> initializer = std::nullopt;
-    Token* type_name = nullptr;
 
     // Variable with type declaration
     auto type_info = match({ Token::COLON })
@@ -644,7 +643,7 @@ std::unique_ptr<jl::Stmt> jl::Parser::for_statement()
     }
 }
 
-std::unique_ptr<jl::Stmt> jl::Parser::function(const char* kind)
+std::unique_ptr<jl::Stmt> jl::Parser::function(const char*)
 {
     auto func = function_declaration();
 
@@ -783,7 +782,7 @@ std::optional<jl::TypeInfo> jl::Parser::parse_type_info()
 
     if (next.get_tokentype() == Token::IDENTIFIER) {
         auto& type_name = consume(Token::IDENTIFIER, "Expected a data-type");
-        return TypeInfo { .name = type_name.get_lexeme(), .is_array = false };
+        return TypeInfo { .name = type_name.get_lexeme(), .is_array = false, .size = std::nullopt };
     } else if (next.get_tokentype() == Token::LEFT_SQUARE) {
         consume(Token::LEFT_SQUARE, "Expected [");
 
@@ -805,6 +804,7 @@ std::optional<jl::TypeInfo> jl::Parser::parse_type_info()
         return TypeInfo {
             .name = type_name.get_lexeme(),
             .is_array = true,
+            .size = std::nullopt
         };
     }
 

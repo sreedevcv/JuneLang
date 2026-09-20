@@ -26,9 +26,9 @@ namespace ir {
 
         std::optional<jl::value::Variable> def() override;
 
+        value::Variable m_condition;
         BasicBlock* m_true_target;
         BasicBlock* m_false_target;
-        value::Variable m_condition;
     };
 }
 }

@@ -30,8 +30,8 @@ void jl::BasicBlock::remove_ir(ir::IR* ir)
         tail = tail->prev;
     }
 
-    if (auto phi = dynamic_cast<ir::Phi*>(ir)) {
-        for (int i = 0; i < phis.size(); i++) {
+    if (dynamic_cast<ir::Phi*>(ir) != nullptr) {
+        for (uint32_t i = 0; i < phis.size(); i++) {
             if (phis[i] == ir) {
                 phis.erase(phis.begin() + i);
             }

@@ -55,7 +55,6 @@ void jl::x86::LivenessAnalysis::liveness_analysis()
 
         for (auto block_iter = rpo.rbegin(); block_iter != rpo.rend(); ++block_iter) {
             auto block = *block_iter;
-            auto old_size = live_out[block].size();
             reg_set new_out;
 
             for (auto succ : successors[block]) {

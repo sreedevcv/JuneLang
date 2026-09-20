@@ -11,7 +11,6 @@ namespace ir {
     class Jump;
     class CondJump;
     class Unary;
-    class Label;
     class AllocateList;
     class AllocateVar;
     class Read;
@@ -33,8 +32,6 @@ namespace ir {
         virtual void visit_cond_jump_ir(ir::CondJump& jump) = 0;
 
         virtual void visit_unary_ir(ir::Unary& unary) = 0;
-
-        virtual void visit_label_ir(ir::Label& label) = 0;
 
         virtual void visit_allocate_list_ir(ir::AllocateList& allocate) = 0;
 

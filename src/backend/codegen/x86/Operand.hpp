@@ -3,6 +3,7 @@
 #include "codegen/x86/Register.hpp"
 
 #include <cstdint>
+#include <optional>
 #include <string>
 
 namespace jl {
@@ -54,7 +55,7 @@ namespace x86 {
     {
         switch (size) {
         case 0:
-            unimplemented();
+            return std::nullopt;
         case 1:
             return SizeDirective::BYTE;
         case 2:
@@ -80,6 +81,7 @@ namespace x86 {
         case SizeDirective::BYTE:
             return 1;
         case SizeDirective::NONE:
+        default:
             return std::nullopt;
         }
     }

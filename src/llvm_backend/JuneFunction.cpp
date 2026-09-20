@@ -29,7 +29,7 @@ void jl::JuneFunction::add_local_var_def(const std::string& name, llvm::Value* v
 
 std::pair<llvm::Value*, llvm::Type*> jl::JuneFunction::read_local_var_def(const std::string& name)
 {
-    for (const auto scope : llvm::reverse(m_scopes)) {
+    for (const auto& scope : llvm::reverse(m_scopes)) {
         if (scope.defs.contains(name)) {
             return scope.defs.at(name);
         }

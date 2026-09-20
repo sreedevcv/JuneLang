@@ -205,7 +205,7 @@ void jl::x86::Generator::visit_binary_ir(ir::Binary& binary)
     unimplemented();
 }
 
-void jl::x86::Generator::visit_move_ir(ir::Move& move)
+void jl::x86::Generator::visit_move_ir(ir::Move&)
 {
     unimplemented();
 }
@@ -286,17 +286,12 @@ void jl::x86::Generator::visit_cond_jump_ir(ir::CondJump& jump)
     m_curr_block->m_instructions.emplace_back(jmp);
 }
 
-void jl::x86::Generator::visit_unary_ir(ir::Unary& unary)
+void jl::x86::Generator::visit_unary_ir(ir::Unary&)
 {
     unimplemented();
 }
 
-void jl::x86::Generator::visit_label_ir(ir::Label& label)
-{
-    unimplemented();
-}
-
-void jl::x86::Generator::visit_allocate_list_ir(ir::AllocateList& allocate)
+void jl::x86::Generator::visit_allocate_list_ir(ir::AllocateList&)
 {
     unimplemented();
 }
@@ -390,17 +385,17 @@ void jl::x86::Generator::visit_init_literal_ir(ir::InitLiteral& literal)
     m_out.set_allocation(literal_reg, alloc);
 }
 
-void jl::x86::Generator::visit_debug_print_ir(ir::DebugPrint& print)
+void jl::x86::Generator::visit_debug_print_ir(ir::DebugPrint&)
 {
     unimplemented();
 }
 
-void jl::x86::Generator::visit_type_cast_ir(ir::TypeCast& type_cast)
+void jl::x86::Generator::visit_type_cast_ir(ir::TypeCast&)
 {
     unimplemented();
 }
 
-void jl::x86::Generator::visit_phi(ir::Phi& phi)
+void jl::x86::Generator::visit_phi(ir::Phi&)
 {
     unimplemented();
 }

@@ -225,7 +225,6 @@ std::any jl::LLVMIRGen::visit_call_expr(Call* expr)
 
 std::any jl::LLVMIRGen::visit_jlist_expr(JList* expr)
 {
-    auto total_size = expr->m_items.size() + expr->m_extra_item_count.value_or(0);
     auto list_type = static_cast<const type::List*>(expr->m_type);
     auto array_type = llvm::ArrayType::get(list_type->m_elem_type->llvm_type(m_module.ctx()), list_type->m_count);
     auto array_alloca = m_module.builder().CreateAlloca(array_type);
@@ -266,27 +265,27 @@ std::any jl::LLVMIRGen::visit_index_set_expr(IndexSet* expr)
     return static_cast<llvm::Value*>(target);
 }
 
-std::any jl::LLVMIRGen::visit_get_expr(Get* expr)
+std::any jl::LLVMIRGen::visit_get_expr(Get*)
 {
     unimplemented("visit_get_expr");
     return {};
 }
-std::any jl::LLVMIRGen::visit_set_expr(Set* expr)
+std::any jl::LLVMIRGen::visit_set_expr(Set*)
 {
     unimplemented("visit_set_expr");
     return {};
 }
-std::any jl::LLVMIRGen::visit_this_expr(This* expr)
+std::any jl::LLVMIRGen::visit_this_expr(This*)
 {
     unimplemented("visit_this_expr");
     return {};
 }
-std::any jl::LLVMIRGen::visit_super_expr(Super* expr)
+std::any jl::LLVMIRGen::visit_super_expr(Super*)
 {
     unimplemented("visit_super_expr");
     return {};
 }
-std::any jl::LLVMIRGen::visit_type_cast_expr(TypeCast* expr)
+std::any jl::LLVMIRGen::visit_type_cast_expr(TypeCast*)
 {
     unimplemented("visit_type_cast_expr");
     return {};
@@ -471,33 +470,33 @@ std::any jl::LLVMIRGen::visit_expr_stmt(ExprStmt* stmt)
     return {};
 }
 
-std::any jl::LLVMIRGen::visit_empty_stmt(EmptyStmt* stmt)
+std::any jl::LLVMIRGen::visit_empty_stmt(EmptyStmt*)
 {
     return {};
 }
 
-std::any jl::LLVMIRGen::visit_print_stmt(PrintStmt* stmt)
+std::any jl::LLVMIRGen::visit_print_stmt(PrintStmt*)
 {
     unimplemented("visit_print_stmt");
     return {};
 }
 
-std::any jl::LLVMIRGen::visit_class_stmt(ClassStmt* stmt)
+std::any jl::LLVMIRGen::visit_class_stmt(ClassStmt*)
 {
     unimplemented("visit_class_stmt");
     return {};
 }
-std::any jl::LLVMIRGen::visit_for_each_stmt(ForEachStmt* stmt)
+std::any jl::LLVMIRGen::visit_for_each_stmt(ForEachStmt*)
 {
     unimplemented("visit_for_each_stmt");
     return {};
 }
-std::any jl::LLVMIRGen::visit_break_stmt(BreakStmt* stmt)
+std::any jl::LLVMIRGen::visit_break_stmt(BreakStmt*)
 {
     unimplemented("visit_break_stmt");
     return {};
 }
-std::any jl::LLVMIRGen::visit_extern_stmt(ExternStmt* stmt)
+std::any jl::LLVMIRGen::visit_extern_stmt(ExternStmt*)
 {
     unimplemented("visit_extern_stmt");
     return {};

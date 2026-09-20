@@ -24,7 +24,7 @@ void jl::Resolver::resolve(Expr* expression)
     expression->accept(*this);
 }
 
-void jl::Resolver::resolve_local(Expr* expr, Token& name)
+void jl::Resolver::resolve_local(Token& name)
 {
     for (int i = m_scopes.size() - 1; i >= 0; i--) {
         if (m_scopes[i].contains(name.get_lexeme())) {
@@ -91,7 +91,7 @@ void jl::Resolver::define(Token& name)
 std::any jl::Resolver::visit_assign_expr(Assign* expr)
 {
     resolve(expr->m_expr.get());
-    resolve_local(expr, expr->m_token);
+    resolve_local(expr->m_token);
     return nullptr;
 }
 
@@ -114,7 +114,7 @@ std::any jl::Resolver::visit_unary_expr(Unary* expr)
     return nullptr;
 }
 
-std::any jl::Resolver::visit_literal_expr(Literal* expr)
+std::any jl::Resolver::visit_literal_expr(Literal*)
 {
     return nullptr;
 }
@@ -125,7 +125,7 @@ std::any jl::Resolver::visit_variable_expr(Variable* expr)
         ErrorHandler::error(m_file_name, "resolving", "variable expression", expr->m_name.get_line(), "Can't read local variable in its own initializer", 0);
     }
 
-    resolve_local(expr, expr->m_name);
+    resolve_local(expr->m_name);
     return nullptr;
 }
 
@@ -164,7 +164,7 @@ std::any jl::Resolver::visit_this_expr(This* expr)
     if (m_current_class_type == ClassType::NONE) {
         ErrorHandler::error(m_file_name, "resolving", "self keyword", expr->m_keyword.get_line(), "Cannot use 'self' outside a class", 0);
     }
-    resolve_local(expr, expr->m_keyword);
+    resolve_local(expr->m_keyword);
     return nullptr;
 }
 
@@ -175,7 +175,7 @@ std::any jl::Resolver::visit_super_expr(Super* expr)
     } else if (m_current_class_type != ClassType::SUBCLASS) {
         ErrorHandler::error(m_file_name, "resolving", "super", expr->m_keyword.get_line(), "Super keyword should be used within a sub-class", 0);
     }
-    resolve_local(expr, expr->m_keyword);
+    resolve_local(expr->m_keyword);
     return nullptr;
 }
 
@@ -202,7 +202,7 @@ std::any jl::Resolver::visit_index_set_expr(IndexSet* expr)
     return nullptr;
 }
 
-std::any jl::Resolver::visit_type_cast_expr(TypeCast* stmt) { return nullptr; }
+std::any jl::Resolver::visit_type_cast_expr(TypeCast*) { return nullptr; }
 
 // --------------------------------------------------------------------------------
 // -------------------------------Statements---------------------------------------
@@ -238,7 +238,7 @@ std::any jl::Resolver::visit_block_stmt(BlockStmt* stmt)
     return nullptr;
 }
 
-std::any jl::Resolver::visit_empty_stmt(EmptyStmt* stmt)
+std::any jl::Resolver::visit_empty_stmt(EmptyStmt*)
 {
     return nullptr;
 }
@@ -352,7 +352,7 @@ std::any jl::Resolver::visit_break_stmt(BreakStmt* stmt)
     return nullptr;
 }
 
-std::any jl::Resolver::visit_extern_stmt(ExternStmt* stmt)
+std::any jl::Resolver::visit_extern_stmt(ExternStmt*)
 {
     return nullptr;
 }

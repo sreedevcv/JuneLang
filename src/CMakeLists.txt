@@ -86,6 +86,8 @@ target_link_libraries(
     ${LLVM_LIBS}
 )
 
+target_compile_options(JuneCompiler PRIVATE -Wall -Wextra)
+
 target_compile_definitions(JuneCompiler PRIVATE
     ${LLVM_DEFINITIONS}
 )

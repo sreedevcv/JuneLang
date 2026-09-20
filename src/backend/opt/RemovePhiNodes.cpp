@@ -16,7 +16,7 @@ jl::ir::IR* remove_phi_node(jl::Function* function, jl::ir::Phi* phi, jl::ir::IR
 {
     function->set_current_block(function->entry_block());
     auto addr = jl::value::Variable(function->m_var_count++, phi->m_dest.type());
-    auto alloca = function->add_ir_to_front(jl::ir::AllocateVar(addr, phi->m_dest.type(), phi->m_line));
+    auto _ = function->add_ir_to_front(jl::ir::AllocateVar(addr, phi->m_dest.type(), phi->m_line));
 
     for (auto [var, block] : phi->m_opers) {
         auto write = jl::ir::Write(

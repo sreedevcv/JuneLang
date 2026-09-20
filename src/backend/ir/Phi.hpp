@@ -40,8 +40,8 @@ namespace ir {
 
         std::optional<jl::value::Variable> def() override;
 
-        value::Variable m_replacing_addr;
         value::Variable m_dest;
+        value::Variable m_replacing_addr;
 
         struct HashType {
             inline void hash_combine(std::size_t& seed, std::size_t value) const

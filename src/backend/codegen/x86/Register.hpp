@@ -157,6 +157,7 @@ namespace x86 {
         case SizeDirective::NONE:
             return "NONE";
         }
+        return "UNKNOWN";
     }
 
     struct VirtualRegister {

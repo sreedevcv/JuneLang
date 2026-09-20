@@ -66,10 +66,11 @@ uint32_t jl::type::Builtin::alignment() const
     case VOID:
         return 1;
     case PRIMITIVE_MAX:
-        unimplemented();
-        return 0;
         break;
     }
+
+    unimplemented();
+    return 0;
 }
 llvm::Type* jl::type::Builtin::llvm_type(llvm::LLVMContext& context) const
 {
@@ -85,9 +86,11 @@ llvm::Type* jl::type::Builtin::llvm_type(llvm::LLVMContext& context) const
     case VOID:
         return llvm::dyn_cast<llvm::Type>(llvm::Type::getVoidTy(context));
     case PRIMITIVE_MAX:
-        unimplemented();
-        return nullptr;
+        break;
     }
+
+    unimplemented();
+    return nullptr;
 }
 
 llvm::Value* jl::type::Builtin::llvm_default_value(llvm::LLVMContext& context) const
@@ -106,9 +109,11 @@ llvm::Value* jl::type::Builtin::llvm_default_value(llvm::LLVMContext& context) c
     case VOID:
         return nullptr;
     case PRIMITIVE_MAX:
-        unimplemented();
-        return nullptr;
+        break;
     }
+
+    unimplemented();
+    return nullptr;
 }
 
 jl::type::Pointer::Pointer(const Type* pointee)

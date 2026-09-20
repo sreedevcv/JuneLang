@@ -9,6 +9,7 @@
 #include "types/Type.hpp"
 #include "types/TypeContext.hpp"
 
+#include <cstdint>
 #include <format>
 #include <memory>
 #include <optional>
@@ -66,7 +67,7 @@ bool jl::SemanticAnalyzer::is_defined(const std::string& name)
 
 std::optional<const jl::type::Type*>& jl::SemanticAnalyzer::get_variable_type(const std::string& name)
 {
-    for (uint32_t i = m_symbol_table.size() - 1; i >= 0; i--) {
+    for (int32_t i = static_cast<int32_t>(m_symbol_table.size()) - 1; i >= 0; i--) {
         auto& map = m_symbol_table[i];
 
         if (map.contains(name)) {
@@ -331,7 +332,7 @@ std::any jl::SemanticAnalyzer::visit_call_expr(Call* expr)
         return false;
     }
 
-    for (int i = 0; i < func->m_param_types.size(); i++) {
+    for (uint32_t i = 0; i < func->m_param_types.size(); i++) {
         auto& arg = expr->m_arguments[i];
 
         if (!type_check(arg.get())) {
@@ -377,7 +378,7 @@ std::any jl::SemanticAnalyzer::visit_jlist_expr(JList* expr)
         expr->m_items.front()->m_type,
         expr->m_items.size() + expr->m_extra_item_count.value_or(0)));
 
-    for (int i = 1; i < expr->m_items.size(); i++) {
+    for (uint32_t i = 1; i < expr->m_items.size(); i++) {
         auto item = expr->m_items[i].get();
         if (!type_check(item)) {
             return false;
@@ -452,11 +453,11 @@ std::any jl::SemanticAnalyzer::visit_index_set_expr(IndexSet* expr)
     }
 }
 
-std::any jl::SemanticAnalyzer::visit_get_expr(Get* expr) { return false; }
-std::any jl::SemanticAnalyzer::visit_set_expr(Set* expr) { return false; }
-std::any jl::SemanticAnalyzer::visit_this_expr(This* expr) { return false; }
-std::any jl::SemanticAnalyzer::visit_super_expr(Super* expr) { return false; }
-std::any jl::SemanticAnalyzer::visit_type_cast_expr(TypeCast* expr) { return false; }
+std::any jl::SemanticAnalyzer::visit_get_expr(Get*) { return false; }
+std::any jl::SemanticAnalyzer::visit_set_expr(Set*) { return false; }
+std::any jl::SemanticAnalyzer::visit_this_expr(This*) { return false; }
+std::any jl::SemanticAnalyzer::visit_super_expr(Super*) { return false; }
+std::any jl::SemanticAnalyzer::visit_type_cast_expr(TypeCast*) { return false; }
 
 // -----------------------------------STMT---------------------------------
 
@@ -589,7 +590,7 @@ std::any jl::SemanticAnalyzer::visit_func_stmt(FuncStmt* stmt)
     // New block
     m_symbol_table.push_back({});
 
-    for (int i = 0; i < stmt->m_data_types.size(); i++) {
+    for (uint32_t i = 0; i < stmt->m_data_types.size(); i++) {
         auto type = m_type_context.from_type_info(stmt->m_data_types[i]);
 
         if (!type) {
@@ -648,7 +649,6 @@ std::any jl::SemanticAnalyzer::visit_func_stmt(FuncStmt* stmt)
 
 std::any jl::SemanticAnalyzer::visit_return_stmt(ReturnStmt* stmt)
 {
-    auto result = true;
     if (m_func_types.size() == 0) {
         ErrorHandler::error(m_file_name, stmt->m_line, "Return can be used only inside functions");
         return false;
@@ -706,10 +706,10 @@ std::any jl::SemanticAnalyzer::visit_print_stmt(PrintStmt* stmt)
     return res;
 }
 
-std::any jl::SemanticAnalyzer::visit_class_stmt(ClassStmt* stmt) { return false; }
-std::any jl::SemanticAnalyzer::visit_for_each_stmt(ForEachStmt* stmt) { return false; }
-std::any jl::SemanticAnalyzer::visit_break_stmt(BreakStmt* stmt) { return false; }
-std::any jl::SemanticAnalyzer::visit_extern_stmt(ExternStmt* stmt) { return false; }
+std::any jl::SemanticAnalyzer::visit_class_stmt(ClassStmt*) { return false; }
+std::any jl::SemanticAnalyzer::visit_for_each_stmt(ForEachStmt*) { return false; }
+std::any jl::SemanticAnalyzer::visit_break_stmt(BreakStmt*) { return false; }
+std::any jl::SemanticAnalyzer::visit_extern_stmt(ExternStmt*) { return false; }
 
 //--------------------------------------------------------------------------------------------------
 

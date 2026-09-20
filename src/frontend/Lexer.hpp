@@ -1,11 +1,13 @@
 #pragma once
 
+#include <cstdint>
 #include <string>
 #include <unordered_map>
 #include <vector>
 
-#include "Value.hpp"
 #include "Token.hpp"
+#include "Value.hpp"
+
 
 namespace jl {
 class Lexer {
@@ -21,9 +23,9 @@ private:
     std::vector<Token> m_tokens;
     std::string m_source;
 
-    int m_line = 1;
-    int m_current = 0;
-    int m_start = 0;
+    uint32_t m_line = 1;
+    uint32_t m_current = 0;
+    uint32_t m_start = 0;
 
     bool match(char expected);
     bool is_at_end();

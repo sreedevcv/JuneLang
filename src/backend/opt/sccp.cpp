@@ -69,8 +69,8 @@ std::string jl::opt::LatticeValue::to_str() const
 
 class IRVisitorForMeet : jl::ir::IRVisitor {
 public:
-    jl::opt::LatticeValue value;
     jl::opt::ValueMap& value_map;
+    jl::opt::LatticeValue value;
 
     IRVisitorForMeet(jl::opt::ValueMap& map, jl::opt::LatticeValue value)
         : value_map(map)
@@ -87,7 +87,7 @@ private:
     void visit_binary_ir(jl::ir::Binary& binary)
     {
         if (value_map[binary.m_operand_a].type == jl::opt::BOTTOM || value_map[binary.m_operand_b].type == jl::opt::BOTTOM) {
-            value = { .type = jl::opt::BOTTOM };
+            value = { .type = jl::opt::BOTTOM, .value = std::nullopt };
         } else if (value_map[binary.m_operand_a].type == jl::opt::CONSTANT || value_map[binary.m_operand_b].type == jl::opt::CONSTANT) {
             value.type = jl::opt::CONSTANT;
             perform_binary_airthmetic(binary);
@@ -106,12 +106,12 @@ private:
         value = { jl::opt::CONSTANT, literal.m_source };
     }
 
-    void visit_type_cast_ir(jl::ir::TypeCast& type_cast)
+    void visit_type_cast_ir(jl::ir::TypeCast&)
     {
         unimplemented("todo");
     }
 
-    void visit_phi(jl::ir::Phi& phi) { unimplemented("No phis in block iteration"); }
+    void visit_phi(jl::ir::Phi&) { unimplemented("No phis in block iteration"); }
 
     template <typename Op>
     auto do_op(jl::LiteralValue::type& one, jl::LiteralValue::type& two, bool is_float, Op op)
@@ -199,30 +199,29 @@ private:
         }
     }
 
-    void visit_allocate_list_ir(jl::ir::AllocateList& allocate) { }
-    void visit_allocate_var_ir(jl::ir::AllocateVar& allocate) { }
-    void visit_read_ir(jl::ir::Read& read) { }
-    void visit_write_ir(jl::ir::Write& write) { }
-    void visit_label_ir(jl::ir::Label& label) { }
-    void visit_move_ir(jl::ir::Move& move) { }
-    void visit_jump_ir(jl::ir::Jump& jump) { }
-    void visit_cond_jump_ir(jl::ir::CondJump& jump) { }
-    void visit_debug_print_ir(jl::ir::DebugPrint& print) { }
-    void visit_return_ir(jl::ir::Return& ret) { }
-    void visit_call_ir(jl::ir::Call& call) { }
+    void visit_allocate_list_ir(jl::ir::AllocateList&) { }
+    void visit_allocate_var_ir(jl::ir::AllocateVar&) { }
+    void visit_read_ir(jl::ir::Read&) { }
+    void visit_write_ir(jl::ir::Write&) { }
+    void visit_move_ir(jl::ir::Move&) { }
+    void visit_jump_ir(jl::ir::Jump&) { }
+    void visit_cond_jump_ir(jl::ir::CondJump&) { }
+    void visit_debug_print_ir(jl::ir::DebugPrint&) { }
+    void visit_return_ir(jl::ir::Return&) { }
+    void visit_call_ir(jl::ir::Call&) { }
 };
 
 struct SCCPState {
-    jl::opt::ExecMap exec_map;
     jl::Function* function;
+    jl::opt::ExecMap exec_map;
     jl::opt::ValueMap lattice_values;
     std::queue<jl::opt::CFGEdge> flow_work_list;
     std::queue<jl::ir::IR*> ssa_work_list;
 
     SCCPState(jl::Function* function)
         : function(function)
-        , lattice_values(init_lattice_values(function))
         , exec_map(init_cfg_edges(function))
+        , lattice_values(init_lattice_values(function))
     {
         // To get the algorithm started. This will also always mark the entry as executed, preventing
         // it from being deleted
@@ -507,14 +506,14 @@ std::pair<jl::opt::ValueMap, jl::opt::ExecMap> jl::opt::sccp(jl::Function* funct
     }
 
     // std::println("Final Lattice Values:");
-    for (const auto [var, val] : state.lattice_values) {
-        // std::println("{} -> {}", var.to_str(), val.to_str());
-    }
+    // for (const auto [var, val] : state.lattice_values) {
+    // std::println("{} -> {}", var.to_str(), val.to_str());
+    // }
 
     // std::println("\nFinal ExecMap Values:");
-    for (const auto [edge, flag] : state.exec_map) {
-        // std::println("{} -> {}: {}", edge.first->get_name(), edge.second->get_name(), flag);
-    }
+    // for (const auto [edge, flag] : state.exec_map) {
+    // std::println("{} -> {}: {}", edge.first->get_name(), edge.second->get_name(), flag);
+    // }
 
     return { std::move(state.lattice_values), std::move(state.exec_map) };
 }

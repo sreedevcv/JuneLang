@@ -20,7 +20,7 @@ void jl::ir::InitLiteral::accept(IRVisitor& visitor)
     visitor.visit_init_literal_ir(*this);
 }
 
-bool jl::ir::InitLiteral::is_used(value::Variable var)
+bool jl::ir::InitLiteral::is_used(value::Variable)
 {
     return false;
 }

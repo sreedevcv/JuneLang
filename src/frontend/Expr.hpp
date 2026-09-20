@@ -113,8 +113,8 @@ public:
     inline Binary(std::unique_ptr<Expr> left, Token& oper, std::unique_ptr<Expr> right, uint32_t line)
         : Expr(line)
         , m_left(std::move(left))
-        , m_right(std::move(right))
         , m_oper(std::move(oper))
+        , m_right(std::move(right))
     {
     }
 
