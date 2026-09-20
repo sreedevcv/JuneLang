@@ -7,12 +7,8 @@ FetchContent_Declare(
 )
 
 if (UNIX)
-    # set(GLFW_USE_WAYLAND OFF CACHE BOOL "" FORCE)
-    # set(GLFW_BUILD_X11 ON CACHE BOOL "" FORCE)
-
-    
-    set(GLFW_USE_WAYLAND ON CACHE BOOL "" FORCE)
-    set(GLFW_BUILD_X11 OFF CACHE BOOL "" FORCE)
+    set(GLFW_USE_WAYLAND OFF CACHE BOOL "" FORCE)
+    set(GLFW_BUILD_X11 ON CACHE BOOL "" FORCE)
 
 elseif(WIN32)
     set(GLFW_USE_WAYLAND OFF CACHE BOOL "" FORCE)
@@ -36,8 +32,6 @@ set(BUILD_SHARED_LIBS OFF)
 
 FetchContent_MakeAvailable(glm)
 
-
-
 FetchContent_Declare(
     freetype
     GIT_REPOSITORY https://github.com/freetype/freetype.git
@@ -48,7 +42,8 @@ FetchContent_MakeAvailable(freetype)
 
 include_directories("src/")
 
-add_library(JuneEditor
+add_executable(editor
+    main.cpp
     Editor.cpp
     glad.c
     TextRender.cpp
@@ -68,5 +63,9 @@ add_library(JuneEditor
     FileExplorer.cpp
 )
 
-target_link_libraries(JuneEditor PRIVATE JuneInterpreter glfw glm::glm freetype)
-target_include_directories(JuneEditor PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+
+target_link_libraries(editor PRIVATE glfw glm::glm freetype)
+
+target_include_directories(editor PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+
+target_compile_options(editor PRIVATE -Wall -Wextra)

@@ -1,18 +1,16 @@
 #include "TextRender.hpp"
 
-#include <iostream>
-
 #include <glad/glad.h>
 
 #include "Context.hpp"
 #include "utils.hpp"
 
 jed::TextRender::TextRender(int width, int height, int x, int y, Font* font)
-    : m_width(width)
+    : m_font(font)
+    , m_width(width)
     , m_height(height)
     , m_x(x)
     , m_y(y)
-    , m_font(font)
 {
 }
 
@@ -101,7 +99,6 @@ void jed::TextRender::render_text(Shader& shader, TextData& text, glm::vec2& scr
 
     float x = m_x;
     float y = Context::get().height - m_y;
-    int line_num = 1;
     y -= Context::get().font_size * scale;
 
     for (int line = 0; line < text.get_line_count(); line++) {

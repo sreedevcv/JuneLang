@@ -1,7 +1,5 @@
 #include "DirectoryViewer.hpp"
 
-#include <iostream>
-
 jed::DirectoryViewer::DirectoryViewer()
     : m_starting_dir(std::filesystem::current_path())
     , m_curr_dir(std::filesystem::current_path())
@@ -41,7 +39,7 @@ void jed::DirectoryViewer::update_dirents()
 {
     m_dirents.clear();
     auto iterator = std::filesystem::directory_iterator(m_curr_dir.path());
-    for (const auto dir : iterator) {
+    for (const auto& dir : iterator) {
         entry_t entry = { dir.path().string(), get_type(dir) };
         m_dirents.push_back(entry);
     }

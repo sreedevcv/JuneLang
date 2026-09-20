@@ -21,7 +21,7 @@ void jed::Component::set_data_source(TextData* data)
     m_data = data;
 }
 
-void jed::Component::draw(float delta)
+void jed::Component::draw(float)
 {
     m_rect.draw(m_shader, Context::get().projection);
     m_renderer.render_text(m_shader, *m_data, m_scroll_offset, m_scale, m_text_color);
@@ -32,7 +32,7 @@ std::string jed::Component::get_data()
     return m_data->get_data();
 }
 
-void jed::Component::handle_text(char text)
+void jed::Component::handle_text(char)
 {
 }
 
@@ -64,15 +64,15 @@ void jed::Component::handle_tab()
 {
 }
 
-void jed::Component::handle_scroll_vert(float offset)
+void jed::Component::handle_scroll_vert(float)
 {
 }
 
-void jed::Component::handle_scroll_horz(float offset)
+void jed::Component::handle_scroll_horz(float)
 {
 }
 
-void jed::Component::handle_mouse_click(MouseButton button)
+void jed::Component::handle_mouse_click(MouseButton)
 {
 }
 

@@ -4,7 +4,7 @@
 
 #include "utils.hpp"
 
-jed::Font::Font(const char* name, int font_size)
+jed::Font::Font(std::string_view name, int font_size)
     : m_font_size(font_size)
 {
     /* Initalize and load the font using freetype */
@@ -13,7 +13,7 @@ jed::Font::Font(const char* name, int font_size)
         std::exit(-1);
     }
 
-    if (FT_New_Face(m_ft, name, 0, &m_face)) {
+    if (FT_New_Face(m_ft, name.data(), 0, &m_face)) {
         std::cout << "Freetype Error: Could not load font" << std::endl;
         std::exit(-1);
     }

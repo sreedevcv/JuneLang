@@ -1,10 +1,12 @@
 #include "Shader.hpp"
 
+#include "utils.hpp"
+
 Shader::Shader(const char* vertShaderSource, const char* fragShaderSource, const char* geom_shader_source)
     : mVert_shader_path(vertShaderSource)
     , mFrag_shader_path(fragShaderSource)
-    , mHasCompiled(false)
     , mGeom_shader_path(geom_shader_source)
+    , mHasCompiled(false)
 {
 }
 
@@ -76,9 +78,11 @@ void Shader::compile_shader_code(const char* vertex, const char* fragment, const
                 // std::cout << "[ERROR]::" << (is_vert_shader ? "VERT" : "FRAG") << "::" << mVert_shader_path << "::";
                 std::cout << "[ERROR]::";
                 if (is_vert_shader) {
-                    std::cout << "VERT::\n" << vertex << std::endl; 
+                    std::cout << "VERT::\n"
+                              << vertex << std::endl;
                 } else {
-                    std::cout << "FRAG::\n" << fragment << std::endl; 
+                    std::cout << "FRAG::\n"
+                              << fragment << std::endl;
                 }
             }
             std::cout << log << std::endl;
@@ -141,7 +145,6 @@ void Shader::set_uniform_vec(const char* name, const glm::vec3&& value)
     int loc = glGetUniformLocation(ID, name);
     glUniform3fv(loc, 1, glm::value_ptr(value));
 }
-
 
 void Shader::set_uniform_vec(const char* name, const glm::vec4&& value)
 {
@@ -244,7 +247,7 @@ Shader ShaderManager::mvp_shader()
     return shader;
 }
 
-Shader ShaderManager::create_shader(const char* vert_code, const char* frag_code, const char *geom_code)
+Shader ShaderManager::create_shader(const char* vert_code, const char* frag_code, const char* geom_code)
 {
     Shader shader("", "");
     shader.mHasCompiled = true;

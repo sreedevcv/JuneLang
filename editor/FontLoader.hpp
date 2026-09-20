@@ -1,7 +1,5 @@
 #pragma once
 
-#include <vector>
-
 #include "Font.hpp"
 
 namespace jed {
@@ -17,7 +15,7 @@ private:
     FontLoader() = default;
     ~FontLoader() = default;
 
-    static std::map<const char*, Font*> m_font_map;
+    static std::map<std::string_view, Font*> m_font_map;
 
     static FontLoader font_loader;
 };

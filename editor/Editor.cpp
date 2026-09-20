@@ -8,12 +8,7 @@
 #include "FontLoader.hpp"
 #include "Rectangle.hpp"
 #include "Timer.hpp"
-
-#include "ErrorHandler.hpp"
-#include "Interpreter.hpp"
-#include "Lexer.hpp"
-#include "Parser.hpp"
-#include "Resolver.hpp"
+#include "utils.hpp"
 
 void jed::charachter_callback(GLFWwindow* window, unsigned int codepoint)
 {
@@ -40,12 +35,12 @@ jed::Editor::Editor()
 
     glfwMakeContextCurrent(m_window);
 
-    static const auto mouse_move_callback = [](GLFWwindow* glfw_window, double x_pos_in, double y_pos_in) {
+    static const auto mouse_move_callback = [](GLFWwindow*, double x_pos_in, double y_pos_in) {
         Context::get().mouse_x = x_pos_in;
         Context::get().mouse_y = y_pos_in;
     };
 
-    static const auto mouse_button_callback = [](GLFWwindow* glfw_window, int button, int action, int mods) {
+    static const auto mouse_button_callback = [](GLFWwindow* glfw_window, int button, int action, int) {
         Editor* editor = static_cast<Editor*>(glfwGetWindowUserPointer(glfw_window));
         if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS) {
             editor->comp.handle_mouse_click(Component::LEFT);
@@ -58,13 +53,13 @@ jed::Editor::Editor()
         editor->comp.handle_scroll_horz(x_offset);
     };
 
-    const auto framebuffer_size_callback = [](GLFWwindow* glfw_window, int width, int height) {
+    const auto framebuffer_size_callback = [](GLFWwindow*, int width, int height) {
         glViewport(0, 0, width, height);
         Context::get().width = width;
         Context::get().height = height;
     };
 
-    const auto key_callback = [](GLFWwindow* window, int key, int scancode, int action, int mods) {
+    const auto key_callback = [](GLFWwindow* window, int key, int, int action, int mods) {
         Editor* editor = static_cast<Editor*>(glfwGetWindowUserPointer(window));
 
         if (action == GLFW_PRESS) {
@@ -173,7 +168,6 @@ jed::Editor::~Editor()
 {
     /* NOTE:: If the shader is destroyed after destroying glfw window it results in a segfault */
     glfwDestroyWindow(m_window);
-    glfwTerminate();
     std::cout << "Window destroyed\n";
 }
 
@@ -184,7 +178,6 @@ void jed::Editor::start()
     check_for_opengl_error();
 
     float prev_time = glfwGetTime();
-    glm::vec3 color = glm::vec3(0.0f, 1.0f, 0.0f);
     comp.load_component();
     in_focus = &comp;
 
@@ -210,48 +203,49 @@ void jed::Editor::start()
     check_for_opengl_error();
 }
 
-void jed::Editor::handle_inputs(float delta)
+void jed::Editor::handle_inputs(float)
 {
     if (glfwGetKey(m_window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
         glfwSetWindowShouldClose(m_window, true);
     }
 }
 
-std::string jed::Editor::run_code(std::string& code)
+std::string jed::Editor::run_code(std::string&)
 {
-    jl::ErrorHandler::reset();
-    jl::ErrorHandler::m_stream.setOutputToStr();
-    std::string result = "";
-    jl::Lexer lexer(code.c_str());
-    std::string file_name = "LIVE";
-    lexer.scan();
-
-    if (jl::ErrorHandler::has_error()) {
-        result = jl::ErrorHandler::m_stream.get_string_stream().str();
-        return result;
-    }
-    
-    auto tokens = lexer.get_tokens();
-    jl::Parser parser(tokens, file_name);
-    auto stmts = parser.parseStatements();
-
-    if (jl::ErrorHandler::has_error()) {
-        result = jl::ErrorHandler::m_stream.get_string_stream().str();
-        return result;
-    }
-
-    jl::Interpreter interpreter(file_name);
-
-    jl::Resolver resolver(interpreter, file_name);
-    resolver.resolve(stmts);
-
-    if (jl::ErrorHandler::has_error()) {
-        result = jl::ErrorHandler::m_stream.get_string_stream().str();
-        return result;
-    }
-
-    interpreter.interpret(stmts);
-
-    result = jl::ErrorHandler::get_string_stream().str();
-    return result;
+    //    jl::ErrorHandler::reset();
+    //    jl::ErrorHandler::m_stream.setOutputToStr();
+    //    std::string result = "";
+    //    jl::Lexer lexer(code.c_str());
+    //    std::string file_name = "LIVE";
+    //    lexer.scan();
+    //
+    //    if (jl::ErrorHandler::has_error()) {
+    //        result = jl::ErrorHandler::m_stream.get_string_stream().str();
+    //        return result;
+    //    }
+    //
+    //    auto tokens = lexer.get_tokens();
+    //    jl::Parser parser(tokens, file_name);
+    //    auto stmts = parser.parseStatements();
+    //
+    //    if (jl::ErrorHandler::has_error()) {
+    //        result = jl::ErrorHandler::m_stream.get_string_stream().str();
+    //        return result;
+    //    }
+    //
+    //    jl::Interpreter interpreter(file_name);
+    //
+    //    jl::Resolver resolver(interpreter, file_name);
+    //    resolver.resolve(stmts);
+    //
+    //    if (jl::ErrorHandler::has_error()) {
+    //        result = jl::ErrorHandler::m_stream.get_string_stream().str();
+    //        return result;
+    //    }
+    //
+    //    interpreter.interpret(stmts);
+    //
+    //    result = jl::ErrorHandler::get_string_stream().str();
+    //    return result;
+    return "";
 };

@@ -1,6 +1,5 @@
 #include "TextData.hpp"
 
-#include <iostream>
 #include <sstream>
 
 #include "Context.hpp"
@@ -68,7 +67,6 @@ void jed::TextData::handle_enter(Cursor cursor)
 void jed::TextData::handle_backspace(Cursor& cursor)
 {
     if (cursor.loc > 0) {
-        char c = m_data[cursor.line].data[cursor.loc - 1];
         for (int i = cursor.loc - 1; i < m_data[cursor.line].size - 1; i++) {
             m_data[cursor.line].data[i] = m_data[cursor.line].data[i + 1];
         }
@@ -93,7 +91,7 @@ void jed::TextData::handle_backspace(Cursor& cursor)
             m_data[i] = m_data[i + 1];
         }
         m_data[get_line_count() - 1] = deleted_line; /* Move deleted line to end to save space */
-        cursor.line -= 1;   /* Move cursor to above line */
+        cursor.line -= 1; /* Move cursor to above line */
         cursor.loc = m_data[cursor.line].size - old_size; /* Move cursor to correct loc in above line */
         m_line_count -= 1;
     }
@@ -146,14 +144,13 @@ void jed::TextData::append_string(std::string data)
         std::getline(stream, line);
 
         int capacity_factor = (line.size() / Context::get().data_grow_size) + 1;
-            m_data.push_back(TextData::str {
-                .data = (char*) malloc(sizeof(char) * capacity_factor * Context::get().data_grow_size),
-                .size = static_cast<int>(line.size()),
-                .capacity = capacity_factor * Context::get().data_grow_size
-            });
-            m_line_count += 1;
+        m_data.push_back(TextData::str {
+            .data = (char*)malloc(sizeof(char) * capacity_factor * Context::get().data_grow_size),
+            .size = static_cast<int>(line.size()),
+            .capacity = capacity_factor * Context::get().data_grow_size });
+        m_line_count += 1;
 
-            std::memmove(m_data.back().data, line.c_str(), line.size());
+        std::memmove(m_data.back().data, line.c_str(), line.size());
     }
 }
 

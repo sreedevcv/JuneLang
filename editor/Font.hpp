@@ -1,7 +1,7 @@
 #pragma once
 
-#include <iostream>
 #include <map>
+#include <string_view>
 
 #include <ft2build.h>
 #include <glm/glm.hpp>
@@ -11,7 +11,7 @@ namespace jed {
 
 class Font {
 public:
-    Font(const char* name, int font_size);
+    Font(std::string_view name, int font_size);
 
     struct Character {
         unsigned int texture_id;

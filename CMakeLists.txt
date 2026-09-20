@@ -13,11 +13,8 @@ add_definitions(-DRES_PATH="${CMAKE_SOURCE_DIR}/res")
 include(FetchContent)
 include_directories("include")
 
-option(BUILD_JUNE_EDITOR "Build Editor")
-option(BUILD_TESTS "Build tests")
-
-set(BUILD_JUNE_EDITOR OFF)
-set(BUILD_TESTS ON)
+option(BUILD_JUNE_EDITOR "Build Editor" OFF)
+option(BUILD_TESTS "Build tests" ON)
 
 if(BUILD_TESTS)
     enable_testing()
@@ -29,17 +26,12 @@ add_subdirectory(src)
 
 if(BUILD_JUNE_EDITOR)
     add_subdirectory(editor)
-    add_executable(june
-        main.cpp
-    )
-
-    target_link_libraries(june PRIVATE JuneEditor JuneCompiler glfw glm::glm)
-else()
-    add_executable(june
-        main.cpp
-    )
-    target_link_libraries(june PRIVATE JuneCompiler)
 endif()
+
+add_executable(june
+    main.cpp
+)
+target_link_libraries(june PRIVATE JuneCompiler)
 
 if(BUILD_TESTS)
     add_subdirectory(tests)

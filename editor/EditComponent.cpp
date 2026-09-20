@@ -83,7 +83,7 @@ void jed::EditComponent::handle_tab()
     m_cursor_blink = true;
 }
 
-void jed::EditComponent::handle_mouse_click(MouseButton button)
+void jed::EditComponent::handle_mouse_click(MouseButton)
 {
     int x_dist = Context::get().mouse_x - m_scroll_offset.x - m_x;
     int loc_index = x_dist / m_font->m_cursor_advance;

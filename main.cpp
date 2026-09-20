@@ -2,12 +2,13 @@
 #include "Function.hpp"
 #include "Lexer.hpp"
 #include "Parser.hpp"
-#include "backend/IRGen_v2.hpp"
+#include "backend/IRGen.hpp"
 #include "backend/codegen/x86/Generator.hpp"
 #include "codegen/x86/Instruction.hpp"
 #include "codegen/x86/MachineFunction.hpp"
 #include "codegen/x86/Passes.hpp"
 #include "frontend/SemanticAnalysis.hpp"
+#include "llvm_backend/LLVMIRGen.hpp"
 #include "opt/Optimizer.hpp"
 
 #include <cassert>
@@ -106,10 +107,7 @@ section .text
 
         return 0;
 #else
-        // jl::Module module(file_name);
-        // module.module().print(llvm::outs(), nullptr);
         jl::LLVMIRGen ir_gen(file_name, type_context);
-        // ir_gen.emit(stmts).module().print(llvm::outs(), nullptr);
 
         std::error_code ec;
         llvm::raw_fd_ostream file("test.ll", ec);
