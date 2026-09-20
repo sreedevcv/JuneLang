@@ -536,7 +536,7 @@ std::any jl::SemanticAnalyzer::visit_var_stmt(VarStmt* stmt)
     return true;
 }
 
-std::any jl::SemanticAnalyzer::visit_empty_stmt(EmptyStmt* stmt)
+std::any jl::SemanticAnalyzer::visit_empty_stmt(EmptyStmt*)
 {
     return true;
 }

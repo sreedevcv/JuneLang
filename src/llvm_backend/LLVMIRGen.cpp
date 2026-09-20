@@ -260,7 +260,7 @@ std::any jl::LLVMIRGen::visit_index_set_expr(IndexSet* expr)
     auto list_type = static_cast<const type::List*>(expr->m_jlist->m_type);
     auto elem_type = list_type->m_elem_type->llvm_type(m_module.ctx());
     auto addr = m_module.builder().CreateGEP(elem_type, list, elem_idx);
-    auto set = m_module.builder().CreateStore(target, addr);
+    auto _ = m_module.builder().CreateStore(target, addr);
 
     return static_cast<llvm::Value*>(target);
 }

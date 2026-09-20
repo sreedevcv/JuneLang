@@ -61,7 +61,7 @@ std::unordered_map<jl::BasicBlock*, jl::BasicBlock*> jl::algorithms::dominance_t
     while (changed) {
         changed = false;
 
-        for (int i = 1; i < rpo.size(); i++) {
+        for (uint32_t i = 1; i < rpo.size(); i++) {
             auto block = rpo[i];
             auto new_idom = find_first_processed_predecessor(block, dom_tree, predecessors);
 

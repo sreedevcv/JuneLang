@@ -452,7 +452,7 @@ std::any jl::IRGenv2::visit_block_stmt(BlockStmt* stmt)
     return {};
 }
 
-std::any jl::IRGenv2::visit_empty_stmt(EmptyStmt* stmt) { return {}; }
+std::any jl::IRGenv2::visit_empty_stmt(EmptyStmt*) { return {}; }
 
 std::any jl::IRGenv2::visit_if_stmt(IfStmt* stmt)
 {

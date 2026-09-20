@@ -61,11 +61,6 @@ add_library(JuneCompiler
     llvm_backend/JuneFunction.cpp
 )
 
-# target_compile_options(JuneInterpreter
-# PRIVATE
-# "$<$<COMPILE_LANG_AND_ID:CXX,GNU>:-fconcepts-diagnostics-depth=3>"
-# "$<$<COMPILE_LANG_AND_ID:CXX,GNU>:-fdiagnostics-all-candidates>"
-# )
 find_package(LLVM REQUIRED CONFIG)
 message(STATUS "Found LLVM ${LLVM_PACKAGE_VERSION}")
 
@@ -82,7 +77,6 @@ llvm_map_components_to_libnames(LLVM_LIBS
 target_link_libraries(
     JuneCompiler
     stdc++exp
-    ffi
     ${LLVM_LIBS}
 )
 
@@ -95,10 +89,11 @@ target_compile_definitions(JuneCompiler PRIVATE
 target_include_directories(JuneCompiler
     PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}
-    memory
-    compiler
-    interpreter
     frontend
     backend
+)
+
+target_include_directories(JuneCompiler
+    SYSTEM PUBLIC
     ${LLVM_INCLUDE_DIRS}
 )

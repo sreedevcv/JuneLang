@@ -151,6 +151,9 @@ std::any jl::ASTPrinter::visit_literal_expr(Literal* expr)
     case Type::JNULL:
         stream << "null" << '\n';
         return {};
+    default:
+        unimplemented();
+        break;
     }
     return {};
 }
