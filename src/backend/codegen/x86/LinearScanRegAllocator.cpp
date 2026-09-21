@@ -58,6 +58,7 @@ void jl::x86::LinearScanAllocator::allot_or_spill(jl::x86::Range range,
 
         if (spill.end > range.end) {
             allocations[range] = allocations[spill];
+            m_allocated_regs.insert(static_cast<PhysicalRegister::Type>(allocations[spill].value));
             allocations[spill] = slot;
             active.erase(spill);
             active.insert(range);
@@ -65,12 +66,12 @@ void jl::x86::LinearScanAllocator::allot_or_spill(jl::x86::Range range,
             allocations[range] = slot;
         }
     } else {
-        auto reg = *free.begin();
+        auto preg = *free.begin();
         allocations[range] = jl::x86::Allocation {
             .type = type,
-            .value = reg,
+            .value = preg,
         };
-        m_allocated_regs.insert(reg);
+        m_allocated_regs.insert(preg);
         free.erase(free.begin());
         active.insert(range);
     }

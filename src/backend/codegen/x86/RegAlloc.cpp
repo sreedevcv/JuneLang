@@ -187,43 +187,47 @@ void add_prologue_and_epilogue(jl::x86::MachineFunction* function)
     // Insert prologue
     auto entry = function->get_block(function->name());
 
-    auto push_instr = new jl::x86::Push();
-    push_instr->value = function->get_physical_register(jl::x86::PhysicalRegister::rbp);
+    if (function->total_stack_space != 0) {
+        auto push_instr = new jl::x86::Push();
+        push_instr->value = function->get_physical_register(jl::x86::PhysicalRegister::rbp);
 
-    auto mov_instr = new jl::x86::Mov();
-    mov_instr->dest = function->get_physical_register(jl::x86::PhysicalRegister::rbp);
-    mov_instr->source = function->get_physical_register(jl::x86::PhysicalRegister::rsp);
-    mov_instr->is_float = false;
+        auto mov_instr = new jl::x86::Mov();
+        mov_instr->dest = function->get_physical_register(jl::x86::PhysicalRegister::rbp);
+        mov_instr->source = function->get_physical_register(jl::x86::PhysicalRegister::rsp);
+        mov_instr->is_float = false;
 
-    auto stack_size_reg = function->new_register(jl::x86::SizeDirective::NONE);
-    function->set_allocation(stack_size_reg, static_cast<int64_t>(function->total_stack_space));
+        auto stack_size_reg = function->new_register(jl::x86::SizeDirective::NONE);
+        function->set_allocation(stack_size_reg, static_cast<int64_t>(function->total_stack_space));
 
-    auto sub_instr = new jl::x86::Sub();
-    sub_instr->dest = function->get_physical_register(jl::x86::PhysicalRegister::rsp);
-    sub_instr->source = stack_size_reg;
-    sub_instr->is_float = false;
+        auto sub_instr = new jl::x86::Sub();
+        sub_instr->dest = function->get_physical_register(jl::x86::PhysicalRegister::rsp);
+        sub_instr->source = stack_size_reg;
+        sub_instr->is_float = false;
 
-    entry->m_instructions.push_back(std::unique_ptr<jl::x86::Instruction>(std::move(push_instr)));
-    entry->m_instructions.push_back(std::unique_ptr<jl::x86::Instruction>(std::move(mov_instr)));
-    entry->m_instructions.push_back(std::unique_ptr<jl::x86::Instruction>(std::move(sub_instr)));
+        entry->m_instructions.push_back(std::unique_ptr<jl::x86::Instruction>(std::move(push_instr)));
+        entry->m_instructions.push_back(std::unique_ptr<jl::x86::Instruction>(std::move(mov_instr)));
+        entry->m_instructions.push_back(std::unique_ptr<jl::x86::Instruction>(std::move(sub_instr)));
+    }
 
     auto front = std::move(function->blocks().back());
     function->blocks().pop_back();
     function->blocks().push_front(std::move(front));
 
     // Insert epilogue block
-    auto eplg_mov_instr = new jl::x86::Mov();
-    eplg_mov_instr->dest = function->get_physical_register(jl::x86::PhysicalRegister::rsp);
-    eplg_mov_instr->source = function->get_physical_register(jl::x86::PhysicalRegister::rbp);
-    mov_instr->is_float = false;
-
-    auto pop_instr = new jl::x86::Pop();
-    pop_instr->value = function->get_physical_register(jl::x86::PhysicalRegister::rbp);
-
     auto ret_instr = new jl::x86::Return;
 
-    function->blocks().back()->m_instructions.emplace_back(eplg_mov_instr);
-    function->blocks().back()->m_instructions.emplace_back(pop_instr);
+    if (function->total_stack_space != 0) {
+        auto eplg_mov_instr = new jl::x86::Mov();
+        eplg_mov_instr->dest = function->get_physical_register(jl::x86::PhysicalRegister::rsp);
+        eplg_mov_instr->source = function->get_physical_register(jl::x86::PhysicalRegister::rbp);
+
+        auto pop_instr = new jl::x86::Pop();
+        pop_instr->value = function->get_physical_register(jl::x86::PhysicalRegister::rbp);
+
+        function->blocks().back()->m_instructions.emplace_back(eplg_mov_instr);
+        function->blocks().back()->m_instructions.emplace_back(pop_instr);
+    }
+
     function->blocks().back()->m_instructions.emplace_back(ret_instr);
 }
 
@@ -378,23 +382,23 @@ void move_function_args_to_input_regs(jl::x86::MachineFunction* function, const 
 
             // xmm registers cant be pushed to the stack during push, so we will manually move them onto the stack
             if (float_arg_count > 0) {
-                auto creg = function->new_register(jl::x86::SizeDirective::QWORD);
-                function->set_allocation(creg, reserved);
+                auto vreg = function->new_register(jl::x86::SizeDirective::QWORD);
+                function->set_allocation(vreg, reserved);
 
                 auto sub = std::make_unique<jl::x86::Sub>();
                 sub->dest = function->get_physical_register(jl::x86::PhysicalRegister::rsp);
-                sub->source = creg;
+                sub->source = vreg;
                 sub->is_float = false;
                 block->m_instructions.insert(iter, std::move(sub));
 
-                count_reg = creg;
+                count_reg = vreg;
             }
 
             // Push/Move the active registers
             for (const auto reg : active_regs) {
                 if (reg.is_float) {
                     auto stack = jl::x86::MemoryOperand();
-                    stack.base = function->get_physical_register(jl::x86::PhysicalRegister::rbp);
+                    stack.base = function->get_physical_register(jl::x86::PhysicalRegister::rsp);
                     stack.displacement = float_offset_count;
                     stack.index = std::nullopt;
                     float_offset_count += 8;
@@ -423,7 +427,7 @@ void move_function_args_to_input_regs(jl::x86::MachineFunction* function, const 
 
                 if (reg.is_float) {
                     auto stack = jl::x86::MemoryOperand();
-                    stack.base = function->get_physical_register(jl::x86::PhysicalRegister::rbp);
+                    stack.base = function->get_physical_register(jl::x86::PhysicalRegister::rsp);
                     stack.displacement = float_offset_count;
                     stack.index = std::nullopt;
                     float_offset_count += 8;
@@ -444,12 +448,16 @@ void move_function_args_to_input_regs(jl::x86::MachineFunction* function, const 
             }
 
             if (float_arg_count > 0) {
-                auto add = std::make_unique<jl::x86::Mov>();
+                auto add = std::make_unique<jl::x86::Add>();
                 add->dest = function->get_physical_register(jl::x86::PhysicalRegister::rsp);
                 add->source = *count_reg;
                 add->is_float = false;
 
-                auto add_iter = std::next(iter, active_regs.size() + 1);
+                // we are adding 2 because after the  call instr, there will be a mov to move the
+                // ret value from xmm0 to some another register, then to insert this new instruction
+                // we need to move 1 + 1 + active_regs.size() (the extra one because insert() inserts before
+                // a iter)
+                auto add_iter = std::next(iter, active_regs.size() + 2);
                 block->m_instructions.insert(add_iter, std::move(add));
             }
 
